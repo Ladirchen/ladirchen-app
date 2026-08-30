@@ -12,6 +12,8 @@ public class BuildContext : FrostingContext
   public DirectoryPath ArtifactsRootDirectory { get; }
   public DirectoryPath ArtifactsWebhostPublishDirectory { get; }
   public FilePath ArtifactsWebhostZipFile { get; }
+  public FilePath ArtifactsWebhostDockerImageFile { get; }
+  public string WebhostDockerImageTag { get; }
 
   public GitVersion GitVersion { get; }
 
@@ -38,9 +40,20 @@ public class BuildContext : FrostingContext
           .CombineWithFilePath($"Webhost-{GitVersion.FullSemVer}.zip")
           .FullPath
     );
+    WebhostDockerImageTag =
+      context.Arguments.GetArgument(nameof(WebhostDockerImageTag)) ?? $"ladirchen-app-webhost:{GitVersion.SemVer}";
+    ArtifactsWebhostDockerImageFile = new FilePath(
+      context.Arguments.GetArgument(nameof(ArtifactsWebhostDockerImageFile))
+        ?? ArtifactsRootDirectory
+          .Combine("WebhostDockerImages")
+          .CombineWithFilePath($"Webhost-{GitVersion.FullSemVer}.tar")
+          .FullPath
+    );
     context.Information("*** Solution Directory: {0}", SolutionDirectory.FullPath);
     context.Information("*** Artifacts Root Directory: {0}", ArtifactsRootDirectory.FullPath);
     context.Information("*** Artifacts Webhost Directory: {0}", ArtifactsWebhostPublishDirectory.FullPath);
     context.Information("*** Artifacts Webhost Zip Directory: {0}", ArtifactsWebhostZipFile.FullPath);
+    context.Information("*** Webhost Docker Image Tag: {0}", WebhostDockerImageTag);
+    context.Information("*** Artifacts Webhost Docker Image File: {0}", ArtifactsWebhostDockerImageFile.FullPath);
   }
 }

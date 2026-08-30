@@ -14,4 +14,5 @@ public static class Program
 
 [TaskName("build-all")]
 [IsDependentOn(typeof(BuildWebhostTask))]
+[IsDependentOn(typeof(BuildDockerImageTask))]
 public class BuildAllTask : FrostingTask;
