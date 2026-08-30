@@ -10,6 +10,8 @@ EXPOSE 8081
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
+# GitVersion can't run in this container (no .git), so the version is computed on the host and passed in.
+ARG BUILD_VERSION=0.0.0
 RUN apk add --no-cache bash curl && curl -fsSL https://vite.plus | bash
 ENV PATH="/root/.local/share/vite-plus/bin:${PATH}"
 WORKDIR /src
@@ -18,12 +20,17 @@ COPY ["LadirchenApp.Webhost/LadirchenApp.Webhost.csproj", "LadirchenApp.Webhost/
 RUN dotnet restore "./LadirchenApp.Webhost/LadirchenApp.Webhost.csproj"
 COPY . .
 WORKDIR "/src/LadirchenApp.Webhost"
-RUN dotnet build "./LadirchenApp.Webhost.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./LadirchenApp.Webhost.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:Version=$BUILD_VERSION
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./LadirchenApp.Webhost.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+ARG BUILD_VERSION=0.0.0
+RUN dotnet publish "./LadirchenApp.Webhost.csproj" \
+  -c $BUILD_CONFIGURATION \
+  -o /app/publish \
+  /p:UseAppHost=false \
+  /p:Version=$BUILD_VERSION
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
