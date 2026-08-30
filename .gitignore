@@ -483,3 +483,5 @@ $RECYCLE.BIN/
 
 # Ladirchen App
 .artifacts/
+.tools/
+
