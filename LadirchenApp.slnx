@@ -8,12 +8,16 @@
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="nuget.config" />
+    <File Path="pnpm-lock.yaml" />
+    <File Path="pnpm-workspace.yaml" />
     <File Path="README.md" />
   </Folder>
   <Folder Name="/Solution Items/.vscode/">
     <File Path=".vscode/settings.json" />
   </Folder>
-  <Folder Name="/Solution Items/docs/" />
+  <Folder Name="/Solution Items/docs/">
+    <File Path="docs/Ladirchen.md" />
+  </Folder>
   <Folder Name="/Solution Items/docs/arc42/">
     <File Path="docs/arc42/index.md" />
     <File Path="docs/arc42/about-arc42.md" />
