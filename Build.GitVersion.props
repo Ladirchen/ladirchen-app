@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <GitVersionEnabled Condition="Exists('../.git')">true</GitVersionEnabled>
+    <GitVersionPrintVersionOnBuild>false</GitVersionPrintVersionOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+      Condition="'$(GitVersionEnabled)' == 'true'"
+      Include="GitVersion.MsBuild"
+      Version="6.8.2"
+    >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <Target
+    Name="GitVersion"
+    BeforeTargets="Build"
+    Condition="'$(GitVersionEnabled)' == 'true' AND '$(GitVersionPrintVersionOnBuild)' == 'true'"
+  >
+    <Message
+      Text="*** GitVersion_InformationalVersion: $(GitVersion_InformationalVersion)"
+      Importance="high"
+    />
+  </Target>
+</Project>
