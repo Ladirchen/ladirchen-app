@@ -1,0 +1,44 @@
+{
+  "name": "ladirchen-app",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build --force",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
+  },
+  "dependencies": {
+    "@fontsource/roboto": "catalog:dependencies",
+    "@fontsource/roboto-mono": "catalog:dependencies",
+    "@mdi/font": "catalog:dependencies",
+    "vue": "catalog:dependencies",
+    "vuetify": "catalog:dependencies",
+    "pinia": "catalog:dependencies",
+    "vue-i18n": "catalog:dependencies",
+    "vue-router": "catalog:dependencies"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "catalog:devDependencies",
+    "@types/node": "catalog:devDependencies",
+    "@unocss/transformer-directives": "catalog:devDependencies",
+    "@vitejs/plugin-vue": "catalog:devDependencies",
+    "@vue/tsconfig": "catalog:devDependencies",
+    "npm-run-all2": "catalog:devDependencies",
+    "sass-embedded": "catalog:devDependencies",
+    "typescript": "catalog:devDependencies",
+    "unocss": "catalog:devDependencies",
+    "unocss-preset-vuetify": "catalog:devDependencies",
+    "unplugin-fonts": "catalog:devDependencies",
+    "vite": "catalog:devDependencies",
+    "vite-plugin-vuetify": "catalog:devDependencies",
+    "vue-tsc": "catalog:devDependencies",
+    "eslint": "catalog:devDependencies",
+    "eslint-config-vuetify": "catalog:devDependencies",
+    "@vuetify/mcp": "catalog:devDependencies"
+  }
+}

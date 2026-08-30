@@ -1,0 +1,31 @@
+packages:
+  - ./LadirchenApp.Webhost/Apps/ladirchen-app/
+
+catalogs:
+  dependencies:
+    "@fontsource/roboto": ^5.2.10
+    "@fontsource/roboto-mono": ^5.2.8
+    "@mdi/font": 7.4.47
+    vue: ^3.5.30
+    vuetify: ^4.0.2
+    pinia: ^3.0.4
+    vue-i18n: ^11.3.0
+    vue-router: ^5.0.3
+  devDependencies:
+    "@tsconfig/node22": ^22.0.5
+    "@types/node": ^24.12.0
+    "@unocss/transformer-directives": ^66.6.6
+    "@vitejs/plugin-vue": ^6.0.5
+    "@vue/tsconfig": ^0.9.0
+    npm-run-all2: ^8.0.4
+    sass-embedded: ^1.98.0
+    typescript: ~5.9.3
+    unocss: ^66.6.6
+    unocss-preset-vuetify: ^0.2.1
+    unplugin-fonts: ^2.0.0
+    vite: ^8.2.2
+    vite-plugin-vuetify: ^2.1.3
+    vue-tsc: ^3.2.5
+    eslint: ^9.39.5
+    eslint-config-vuetify: ^4.3.4
+    "@vuetify/mcp": ^0.5.0
