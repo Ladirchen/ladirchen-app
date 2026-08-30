@@ -41,11 +41,11 @@ To build the Ladirchen App, follow these steps:
    **bash**
 
    ```bash
-   ./build.sh -t BuildWebhost
+   ./build.sh -t build-all
    ```
 
    **powershell**
 
    ```powershell
-   .\build.ps1 -t BuildWebhost
+   .\build.ps1 -t build-all
    ```

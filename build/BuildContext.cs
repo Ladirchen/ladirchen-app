@@ -19,7 +19,9 @@ public class BuildContext : FrostingContext
     : base(context)
   {
     SolutionDirectory = new DirectoryPath(
-      context.Arguments.GetArgument(nameof(SolutionDirectory)) ?? $"{System.IO.Directory.GetCurrentDirectory()}/.."
+      System.IO.Path.GetFullPath(
+        context.Arguments.GetArgument(nameof(SolutionDirectory)) ?? $"{System.IO.Directory.GetCurrentDirectory()}/.."
+      )
     );
     ArtifactsRootDirectory = new DirectoryPath(
       context.Arguments.GetArgument(nameof(ArtifactsRootDirectory)) ?? SolutionDirectory.Combine(".artifacts").FullPath
@@ -31,10 +33,13 @@ public class BuildContext : FrostingContext
     GitVersion = context.GitVersion();
     ArtifactsWebhostZipFile = new FilePath(
       context.Arguments.GetArgument(nameof(ArtifactsWebhostZipFile))
-        ?? ArtifactsRootDirectory.CombineWithFilePath($"Webhost-{GitVersion.FullSemVer}.zip").FullPath
+        ?? ArtifactsRootDirectory
+          .Combine("WebhostZips")
+          .CombineWithFilePath($"Webhost-{GitVersion.FullSemVer}.zip")
+          .FullPath
     );
-    context.Information("*** Artifacts Root Directory: {0}", ArtifactsRootDirectory.FullPath);
     context.Information("*** Solution Directory: {0}", SolutionDirectory.FullPath);
+    context.Information("*** Artifacts Root Directory: {0}", ArtifactsRootDirectory.FullPath);
     context.Information("*** Artifacts Webhost Directory: {0}", ArtifactsWebhostPublishDirectory.FullPath);
     context.Information("*** Artifacts Webhost Zip Directory: {0}", ArtifactsWebhostZipFile.FullPath);
   }

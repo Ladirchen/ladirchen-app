@@ -31,7 +31,6 @@ public class BuildWebhostTask : FrostingTask<BuildContext>
     );
 
     context.Information("*** Webhost zip will be created at {0}", context.ArtifactsWebhostZipFile.FullPath);
-    context.EnsureDirectoryDoesNotExist(context.ArtifactsWebhostZipFile.GetDirectory());
     context.EnsureDirectoryExists(context.ArtifactsWebhostZipFile.GetDirectory());
     context.Zip(context.ArtifactsWebhostPublishDirectory.FullPath, context.ArtifactsWebhostZipFile.FullPath);
     context.Information("*** Webhost zip created at {0}", context.ArtifactsWebhostZipFile.FullPath);
