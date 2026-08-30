@@ -2,7 +2,7 @@ import Fonts from "unplugin-fonts/vite";
 import UnoCSS from "unocss/vite";
 import Vue from "@vitejs/plugin-vue";
 import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
-import { defineConfig } from "vite";
+import { defineConfig } from "vite-plus";
 import { fileURLToPath, URL } from "node:url";
 
 // https://vitejs.dev/config/

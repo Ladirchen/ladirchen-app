@@ -8,5 +8,5 @@
 
 | Role/Name    | Contact         | Expectations        |
 | ------------ | --------------- | ------------------- |
-| *\<Role-1\>* | *\<Contact-1\>* | *\<Expectation-1\>* |
-| *\<Role-2\>* | *\<Contact-2\>* | *\<Expectation-2\>* |
+| _\<Role-1\>_ | _\<Contact-1\>_ | _\<Expectation-1\>_ |
+| _\<Role-2\>_ | _\<Contact-2\>_ | _\<Expectation-2\>_ |

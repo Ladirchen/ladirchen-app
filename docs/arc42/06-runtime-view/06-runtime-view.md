@@ -2,10 +2,10 @@
 
 ## \<Runtime Scenario 1\>
 
-- *\<insert runtime diagram or textual description of the scenario\>*
+- _\<insert runtime diagram or textual description of the scenario\>_
 
-- *\<insert description of the notable aspects of the interactions
-  between the building block instances depicted in this diagram.\>*
+- _\<insert description of the notable aspects of the interactions
+  between the building block instances depicted in this diagram.\>_
 
 ## \<Runtime Scenario 2\>
 

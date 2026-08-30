@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "vite": "catalog:devDependencies",
+    "vite-plus": "catalog:devDependencies"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.24.0",
+      "onFail": "download"
+    }
+  }
+}

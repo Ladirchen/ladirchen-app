@@ -2,38 +2,38 @@
 
 ## Whitebox Overall System
 
-***\<Overview Diagram\>***
+_**\<Overview Diagram\>**_
 
 Motivation
-*\<text explanation\>*
+_\<text explanation\>_
 
 Contained Building Blocks
-*\<Description of contained building block (black boxes)\>*
+_\<Description of contained building block (black boxes)\>_
 
 Important Interfaces
-*\<Description of important interfaces\>*
+_\<Description of important interfaces\>_
 
 ### \<Name black box 1\>
 
-*\<Purpose/Responsibility\>*
+_\<Purpose/Responsibility\>_
 
-*\<Interface(s)\>*
+_\<Interface(s)\>_
 
-*\<(Optional) Quality/Performance Characteristics\>*
+_\<(Optional) Quality/Performance Characteristics\>_
 
-*\<(Optional) Directory/File Location\>*
+_\<(Optional) Directory/File Location\>_
 
-*\<(Optional) Fulfilled Requirements\>*
+_\<(Optional) Fulfilled Requirements\>_
 
-*\<(optional) Open Issues/Problems/Risks\>*
+_\<(optional) Open Issues/Problems/Risks\>_
 
 ### \<Name black box 2\>
 
-*\<black box template\>*
+_\<black box template\>_
 
 ### \<Name black box n\>
 
-*\<black box template\>*
+_\<black box template\>_
 
 ### \<Name interface 1\>
 
@@ -43,30 +43,30 @@ Important Interfaces
 
 ## Level 2
 
-### White Box *\<building block 1\>*
+### White Box _\<building block 1\>_
 
-*\<white box template\>*
+_\<white box template\>_
 
-### White Box *\<building block 2\>*
+### White Box _\<building block 2\>_
 
-*\<white box template\>*
+_\<white box template\>_
 
 …​
 
-### White Box *\<building block m\>*
+### White Box _\<building block m\>_
 
-*\<white box template\>*
+_\<white box template\>_
 
 ## Level 3
 
 ### White Box \<\_building block x.1\_\>
 
-*\<white box template\>*
+_\<white box template\>_
 
 ### White Box \<\_building block x.2\_\>
 
-*\<white box template\>*
+_\<white box template\>_
 
 ### White Box \<\_building block y.1\_\>
 
-*\<white box template\>*
+_\<white box template\>_

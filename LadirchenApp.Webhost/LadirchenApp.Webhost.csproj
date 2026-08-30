@@ -10,8 +10,8 @@
   </ItemGroup>
   <ItemGroup>
     <SpaRoot Include="Apps/ladirchen-app\">
-      <InstallCommand>pnpm install</InstallCommand>
-      <BuildCommand>pnpm run build</BuildCommand>
+      <InstallCommand>vp install</InstallCommand>
+      <BuildCommand>vp run build</BuildCommand>
       <BuildOutputPath>Apps/ladirchen-app/dist/**</BuildOutputPath>
     </SpaRoot>
   </ItemGroup>

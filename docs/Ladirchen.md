@@ -12,10 +12,10 @@ Die gesammelten Ladirchen können anschließend genutzt werden, um Belohnungen i
 
 Ladirchen verbindet vier Bereiche:
 
-* **Mitwirken** – Aufgaben im Familienalltag übernehmen
-* **Belohnungen** – Ladirchen für bestätigte Aufgaben erhalten
-* **Sparen** – Ladirchen auf einem Sparkonto oder in Sparplänen zurücklegen
-* **Ziele erreichen** – auf konkrete Wünsche und persönliche Ziele hinarbeiten
+- **Mitwirken** – Aufgaben im Familienalltag übernehmen
+- **Belohnungen** – Ladirchen für bestätigte Aufgaben erhalten
+- **Sparen** – Ladirchen auf einem Sparkonto oder in Sparplänen zurücklegen
+- **Ziele erreichen** – auf konkrete Wünsche und persönliche Ziele hinarbeiten
 
 Dabei steht nicht die Bezahlung von Hausarbeit im Vordergrund, sondern die gemeinsame Verantwortung innerhalb der Familie.
 
@@ -35,21 +35,21 @@ Erledigte Aufgaben können zusätzlich mit **1 bis 5 Sternen** bewertet werden.
 
 Jedes Kind besitzt ein eigenes Konto mit:
 
-* aktuellem Guthaben
-* verfügbarem Guthaben
-* reserviertem Guthaben
-* vollständiger Transaktionshistorie
+- aktuellem Guthaben
+- verfügbarem Guthaben
+- reserviertem Guthaben
+- vollständiger Transaktionshistorie
 
 ## Familien-Shop
 
 Eltern können Belohnungen anbieten, zum Beispiel:
 
-* zusätzliche Bildschirmzeit
-* gemeinsame Aktivitäten
-* besondere Erlebnisse
-* kleine Geschenke
-* Privilegien
-* individuell vereinbarte Wünsche
+- zusätzliche Bildschirmzeit
+- gemeinsame Aktivitäten
+- besondere Erlebnisse
+- kleine Geschenke
+- Privilegien
+- individuell vereinbarte Wünsche
 
 Kinder können diese Belohnungen mit ihren Ladirchen anfragen.
 
@@ -69,11 +69,11 @@ Kinder können eigene Sparziele erstellen, zum Beispiel:
 
 Ein Sparplan zeigt:
 
-* Zielbetrag
-* bereits gesparten Betrag
-* Fortschritt
-* noch benötigten Betrag
-* optionales Zieldatum
+- Zielbetrag
+- bereits gesparten Betrag
+- Fortschritt
+- noch benötigten Betrag
+- optionales Zieldatum
 
 So werden größere Ziele sichtbar und erreichbar.
 
