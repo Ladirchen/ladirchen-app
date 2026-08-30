@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/build/">
+    <Project Path="build/Build.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".dockerignore" />
     <File Path=".editorconfig" />
@@ -6,6 +9,8 @@
     <File Path=".gitignore" />
     <File Path="Build.GitVersion.props" />
     <File Path="Build.NSwag.props" />
+    <File Path="build.ps1" />
+    <File Path="build.sh" />
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="nuget.config" />
