@@ -5,6 +5,14 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Mumrich.SpaDevMiddleware" Version="1.7.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <SpaRoot Include="Apps/ladirchen-app\">
+      <InstallCommand>pnpm install</InstallCommand>
+      <BuildCommand>pnpm run build</BuildCommand>
+      <BuildOutputPath>Apps/ladirchen-app/dist/**</BuildOutputPath>
+    </SpaRoot>
   </ItemGroup>
 </Project>

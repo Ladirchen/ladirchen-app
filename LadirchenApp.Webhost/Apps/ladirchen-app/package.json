@@ -40,5 +40,6 @@
     "eslint": "catalog:devDependencies",
     "eslint-config-vuetify": "catalog:devDependencies",
     "@vuetify/mcp": "catalog:devDependencies"
-  }
+  },
+  "packageManager": "pnpm@11.24.0"
 }

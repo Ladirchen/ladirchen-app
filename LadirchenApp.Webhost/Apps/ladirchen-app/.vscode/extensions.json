@@ -1,6 +1,3 @@
 {
-  "recommendations": [
-    "vuetifyjs.vuetify-vscode",
-    "vue.volar"
-  ]
+  "recommendations": ["vuetifyjs.vuetify-vscode", "vue.volar"]
 }

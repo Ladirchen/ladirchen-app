@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 
+using Mumrich.SpaDevMiddleware.Extensions;
+
 using Serilog;
 
 namespace LadirchenApp.Webhost;
@@ -23,13 +25,18 @@ public static class Program
     try
     {
       var builder = WebApplication.CreateBuilder(args);
+      var appSettings = builder.Configuration.Get<AppSettings>();
+
+      ArgumentNullException.ThrowIfNull(appSettings);
+
       builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
+      builder.SetupSpaMiddleware(appSettings);
 
       var app = builder.Build();
 
       app.UseSerilogRequestLogging();
 
-      app.MapGet("/", () => "Hello World!");
+      app.MapSinglePageApps(appSettings);
 
       await app.RunAsync();
     }
