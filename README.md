@@ -27,3 +27,23 @@ To run the Ladirchen App locally, follow these steps:
    ```
 
 1. Access the app in your browser at the port specified by your Tilt configuration.
+
+## Build
+
+To build the Ladirchen App, follow these steps:
+
+1. Ensure all prerequisites are installed and your local Kubernetes cluster is running.
+1. Navigate to the project root directory.
+1. Run the build script:
+
+   **bash**
+
+   ```bash
+   ./build.sh -t BuildWebhost
+   ```
+
+   **powershell**
+
+   ```powershell
+   .\build.ps1 -t BuildWebhost
+   ```
