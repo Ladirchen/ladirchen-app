@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ladirchen-app-webhost
+  labels:
+    app: ladirchen-app-webhost
+spec:
+  type: ClusterIP
+  selector:
+    app: ladirchen-app-webhost
+  ports:
+    - port: 8080
+      targetPort: 8080

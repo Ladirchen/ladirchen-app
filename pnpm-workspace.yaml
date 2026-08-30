@@ -1,6 +1,9 @@
 packages:
   - ./LadirchenApp.Webhost/Apps/ladirchen-app/
 
+allowBuilds:
+  '@parcel/watcher': true
+
 catalogs:
   dependencies:
     "@fontsource/roboto": ^5.3.0

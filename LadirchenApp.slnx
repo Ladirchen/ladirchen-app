@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
@@ -8,9 +9,11 @@
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="nuget.config" />
+    <File Path="package.json" />
     <File Path="pnpm-lock.yaml" />
     <File Path="pnpm-workspace.yaml" />
     <File Path="README.md" />
+    <File Path="Tiltfile" />
   </Folder>
   <Folder Name="/Solution Items/.vscode/">
     <File Path=".vscode/settings.json" />
