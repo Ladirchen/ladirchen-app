@@ -1,11 +1,13 @@
 # Event Storming
 
 ## Family / User
+
 - LadirchenKontoEröffnet
 - FamilieErstellt
 - KindHinzugefügt
 
 ## Aufgaben
+
 - AufgabeErstellt
 - AufgabeGeändert
 - AufgabeZugewiesen
@@ -14,11 +16,13 @@
 - AufgabeBewertet
 
 ## Wallet
+
 - LadirchenGutgeschrieben
 - LadirchenAusgegeben
 - KontobuchungKorrigiert
 
 ## Shop
+
 - ProduktErstellt
 - ProduktGeändert
 - ProduktAktiviert
@@ -30,11 +34,13 @@
 - ProduktÜbergeben
 
 ## Sparkonto
+
 - SparkontoEröffnet
 - LadirchenAufSparkontoÜbertragen
 - LadirchenVomSparkontoAbgehoben
 
 ## Sparpläne
+
 - SparplanErstellt
 - SparplanGeändert
 - LadirchenenSparplanZugeordnet
@@ -44,6 +50,7 @@
 - SparplanAbgebrochen
 
 ## Zinsen
+
 - WochenbewertungBerechnet
 - ZinssatzBestimmt
 - WochenzinsBerechnet

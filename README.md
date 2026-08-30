@@ -1,86 +1,49 @@
-# Ladirchen
-
-**Spielend mitwirken. Clever sparen. Ziele erreichen.**
+# Ladirchen App
 
 Ladirchen ist eine gamifizierte Familienplattform, die Kinder und Jugendliche dabei unterstützt, Verantwortung im Familienalltag zu übernehmen, eigene Ziele zu verfolgen und den bewussten Umgang mit virtuellem Geld zu lernen.
 
-Kinder erledigen Aufgaben und übernehmen Verantwortung innerhalb der Familie. Dafür erhalten sie **Ladirchen**, die interne Familienwährung der Plattform.
+## [Beschreibung & Vision](docs/Ladirchen.md)
 
-Die gesammelten Ladirchen können anschließend genutzt werden, um Belohnungen im Familien-Shop einzulösen oder auf einem Sparkonto für persönliche Ziele zu sparen.
+## Prerequisites
 
-## Grundidee
+- [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- [VitePlus](https://viteplus.dev/)
+- [Tilt](https://tilt.dev/)
+- A _local_ Kubernetes cluster
+  - [Docker Desktop with Kubernetes](https://www.docker.com/products/docker-desktop)
+  - [Rancher Desktop](https://rancherdesktop.io/)
+  - [Kind](https://kind.sigs.k8s.io/)
+  - [Minikube](https://minikube.sigs.k8s.io/docs/)
 
-Ladirchen verbindet vier Bereiche:
+## Run
 
-* **Mitwirken** – Aufgaben im Familienalltag übernehmen
-* **Belohnungen** – Ladirchen für bestätigte Aufgaben erhalten
-* **Sparen** – Ladirchen auf einem Sparkonto oder in Sparplänen zurücklegen
-* **Ziele erreichen** – auf konkrete Wünsche und persönliche Ziele hinarbeiten
+To run the Ladirchen App locally, follow these steps:
 
-Dabei steht nicht die Bezahlung von Hausarbeit im Vordergrund, sondern die gemeinsame Verantwortung innerhalb der Familie.
+1. Ensure all prerequisites are installed and your local Kubernetes cluster is running.
+1. Start the development environment using Tilt:
 
-Eltern begleiten und unterstützen ihre Kinder, während die Kinder Schritt für Schritt lernen, Verantwortung zu übernehmen, Entscheidungen zu treffen und mit begrenzten Ressourcen umzugehen.
+   ```sh
+   tilt up
+   ```
 
-## Aufgaben
+1. Access the app in your browser at the port specified by your Tilt configuration.
 
-Eltern können Aufgaben erstellen und einem Kind zuweisen.
+## Build
 
-Ein Kind kann eine Aufgabe erledigen und zur Bestätigung einreichen. Nach der Prüfung durch die Eltern werden die vereinbarten Ladirchen gutgeschrieben.
+To build the Ladirchen App, follow these steps:
 
-Erledigte Aufgaben können zusätzlich mit **1 bis 5 Sternen** bewertet werden.
+1. Ensure all prerequisites are installed and your local Kubernetes cluster is running.
+1. Navigate to the project root directory.
+1. Run the build script:
 
-## Familienwährung
+   **bash**
 
-**Ladirchen** ist eine ausschließlich innerhalb der Familie verwendete virtuelle Währung.
+   ```bash
+   ./build.sh -t BuildWebhost
+   ```
 
-Jedes Kind besitzt ein eigenes Konto mit:
+   **powershell**
 
-* aktuellem Guthaben
-* verfügbarem Guthaben
-* reserviertem Guthaben
-* vollständiger Transaktionshistorie
-
-## Familien-Shop
-
-Eltern können Belohnungen anbieten, zum Beispiel:
-
-* zusätzliche Bildschirmzeit
-* gemeinsame Aktivitäten
-* besondere Erlebnisse
-* kleine Geschenke
-* Privilegien
-* individuell vereinbarte Wünsche
-
-Kinder können diese Belohnungen mit ihren Ladirchen anfragen.
-
-## Sparkonto
-
-Kinder können Ladirchen auf ein eigenes Sparkonto übertragen.
-
-Das Sparkonto soll langfristiges Denken und bewussten Umgang mit Ressourcen fördern.
-
-Auf Basis der Bewertungen abgeschlossener Aufgaben können regelmäßig virtuelle Zinsen auf das Sparkonto gutgeschrieben werden.
-
-## Sparpläne
-
-Kinder können eigene Sparziele erstellen, zum Beispiel:
-
-> Nintendo Switch 2 – 125 von 500 Ladirchen gespart
-
-Ein Sparplan zeigt:
-
-* Zielbetrag
-* bereits gesparten Betrag
-* Fortschritt
-* noch benötigten Betrag
-* optionales Zieldatum
-
-So werden größere Ziele sichtbar und erreichbar.
-
-## Ziel von Ladirchen
-
-Ladirchen soll Kindern und Jugendlichen auf spielerische Weise helfen,
-
-**Verantwortung zu übernehmen, mitzuhelfen, zu planen, zu sparen und eigene Ziele zu erreichen.**
-
-Es handelt sich nicht um echtes Geld oder ein Bankprodukt, sondern um ein digitales Belohnungs- und Lernsystem für Familien.
+   ```powershell
+   .\build.ps1 -t BuildWebhost
+   ```
