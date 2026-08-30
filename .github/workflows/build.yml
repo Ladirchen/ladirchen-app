@@ -32,7 +32,7 @@ jobs:
           echo "$HOME/.local/share/vite-plus/bin" >> "$GITHUB_PATH"
 
       - name: Run build-all
-        run: ./build.sh -t build-all
+        run: bash build.sh -t build-all
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
