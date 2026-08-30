@@ -5,7 +5,7 @@
     </PackageReference>
   </ItemGroup>
   <PropertyGroup>
-    <NswagFileExists Condition="Exists('$(MSBuildProjectDirectory)\.nswag')">true</NswagFileExists>
+    <NswagFileExists Condition="Exists('$(MSBuildProjectDirectory)\nswag.json')">true</NswagFileExists>
   </PropertyGroup>
   <Target
     Name="NSwag"
@@ -15,7 +15,7 @@
     <Message Text="*** Running NSwag builder..." Importance="high" />
     <Exec
       WorkingDirectory="$(MSBuildProjectDirectory)"
-      Command="$(NSwagExe_Net100) run .nswag /variables:Configuration=$(Configuration),msBuildOutputPath=$(OutputPath)"
+      Command="$(NSwagExe_Net100) run nswag.json /variables:Configuration=$(Configuration),msBuildOutputPath=$(OutputPath)"
     />
   </Target>
   <Import Project="Build.GitVersion.props" />

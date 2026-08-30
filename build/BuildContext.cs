@@ -1,4 +1,5 @@
 using Cake.Common.Diagnostics;
+using Cake.Common.Tools.GitVersion;
 using Cake.Core;
 using Cake.Core.IO;
 using Cake.Frosting;
@@ -10,7 +11,9 @@ public class BuildContext : FrostingContext
   public DirectoryPath SolutionDirectory { get; }
   public DirectoryPath ArtifactsRootDirectory { get; }
   public DirectoryPath ArtifactsWebhostPublishDirectory { get; }
-  public FilePath ArtifactsWebhostZipDirectory { get; }
+  public FilePath ArtifactsWebhostZipFile { get; }
+
+  public GitVersion GitVersion { get; }
 
   public BuildContext(ICakeContext context)
     : base(context)
@@ -25,14 +28,14 @@ public class BuildContext : FrostingContext
       context.Arguments.GetArgument(nameof(ArtifactsWebhostPublishDirectory))
         ?? ArtifactsRootDirectory.Combine("Webhost").FullPath
     );
-    ArtifactsWebhostZipDirectory = new FilePath(
-      context.Arguments.GetArgument(nameof(ArtifactsWebhostZipDirectory))
-        ?? ArtifactsRootDirectory.CombineWithFilePath("Webhost.zip").FullPath
+    GitVersion = context.GitVersion();
+    ArtifactsWebhostZipFile = new FilePath(
+      context.Arguments.GetArgument(nameof(ArtifactsWebhostZipFile))
+        ?? ArtifactsRootDirectory.CombineWithFilePath($"Webhost-{GitVersion.FullSemVer}.zip").FullPath
     );
-
     context.Information("*** Artifacts Root Directory: {0}", ArtifactsRootDirectory.FullPath);
     context.Information("*** Solution Directory: {0}", SolutionDirectory.FullPath);
     context.Information("*** Artifacts Webhost Directory: {0}", ArtifactsWebhostPublishDirectory.FullPath);
-    context.Information("*** Artifacts Webhost Zip Directory: {0}", ArtifactsWebhostZipDirectory.FullPath);
+    context.Information("*** Artifacts Webhost Zip Directory: {0}", ArtifactsWebhostZipFile.FullPath);
   }
 }
