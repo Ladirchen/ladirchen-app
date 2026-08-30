@@ -1,8 +1,5 @@
 {
-  "devDependencies": {
-    "vite": "catalog:devDependencies",
-    "vite-plus": "catalog:devDependencies"
-  },
+  "type": "module",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",

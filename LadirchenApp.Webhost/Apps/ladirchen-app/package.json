@@ -39,7 +39,15 @@
     "unplugin-fonts": "catalog:devDependencies",
     "vite": "catalog:devDependencies",
     "vite-plugin-vuetify": "catalog:devDependencies",
+    "vite-plus": "catalog:devDependencies",
     "vue-tsc": "catalog:devDependencies"
   },
-  "packageManager": "pnpm@11.24.0"
+  "packageManager": "pnpm@11.24.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.24.0",
+      "onFail": "download"
+    }
+  }
 }
