@@ -20,6 +20,12 @@
     <File Path="README.md" />
     <File Path="Tiltfile" />
   </Folder>
+  <Folder Name="/Solution Items/.config/">
+    <File Path=".config/dotnet-tools.json" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/workflows/">
+    <File Path=".github/workflows/build.yml" />
+  </Folder>
   <Folder Name="/Solution Items/.vscode/">
     <File Path=".vscode/settings.json" />
   </Folder>
