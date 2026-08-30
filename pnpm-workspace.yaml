@@ -2,7 +2,7 @@ packages:
   - ./LadirchenApp.Webhost/Apps/ladirchen-app/
 
 allowBuilds:
-  '@parcel/watcher': true
+  "@parcel/watcher": true
 
 catalogs:
   dependencies:
@@ -20,7 +20,6 @@ catalogs:
     "@unocss/transformer-directives": ^66.8.1
     "@vitejs/plugin-vue": ^6.0.8
     "@vue/tsconfig": ^0.9.1
-    npm-run-all2: ^9.0.3
     sass-embedded: ^1.103.1
     typescript: ~6.0.3
     unocss: ^66.8.1
