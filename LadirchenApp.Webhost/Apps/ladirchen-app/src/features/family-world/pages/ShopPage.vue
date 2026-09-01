@@ -1,10 +1,12 @@
 <template>
   <div class="page page-padding shop-page">
-    <div class="page-heading">
-      <p class="eyebrow">Belohnungen & Gestaltung</p>
-      <h1>Shop</h1>
-      <p>Reale Familienbelohnungen und virtuelle Hausdekorationen bleiben klar voneinander getrennt.</p>
-    </div>
+    <PageHeader
+      description="Reale Familienbelohnungen und virtuelle Hausdekorationen bleiben klar voneinander getrennt."
+      eyebrow="Belohnungen & Gestaltung"
+      icon="mdi-gift-outline"
+      title="Shop"
+      tone="amber"
+    />
 
     <v-btn-toggle v-model="activeTab" class="shop-tabs mb-5" color="primary" mandatory rounded="lg">
       <v-btn value="family">Familien-Shop</v-btn>
@@ -43,7 +45,7 @@
             <span><v-icon size="13">mdi-calendar-outline</v-icon>{{ availabilityLabel(reward.availableUntil) }}</span>
           </div>
           <p class="reward-conditions mt-2"><strong>Bedingung:</strong> {{ reward.conditions }}</p>
-          <div class="d-flex align-center justify-space-between mt-4 ga-2">
+          <div class="reward-actions d-flex align-center justify-space-between ga-2">
             <span class="price"><LadirchenCoin small />{{ reward.price }}</span>
             <template v-if="store.viewerRole === 'child'">
               <v-btn v-if="reward.status === 'available'" color="info" :disabled="!canRequest(reward)" rounded="lg" size="small" variant="flat" @click="store.requestShopReward(reward.id)">Anfragen</v-btn>
@@ -120,11 +122,12 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import LadirchenCoin from '../components/LadirchenCoin.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
 import { shopRedemptionIsOpen } from '../domain/shop';
 import type { ShopReward, ShopRewardCategory } from '../domain/types';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const route = useRoute();
 const activeTab = ref<'family' | 'house'>('family');
 const houseArea = ref<'inside' | 'outside'>('inside');
@@ -210,6 +213,11 @@ onUnmounted(() => {
   border: 1px solid var(--lad-border);
   box-shadow: 0 4px 0 var(--lad-border) !important;
 }
+.reward-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 .reward-icon,
 .accessory-preview {
   height: 78px;
@@ -260,6 +268,10 @@ onUnmounted(() => {
 }
 .reward-conditions strong {
   color: var(--lad-text);
+}
+.reward-actions {
+  margin-top: auto;
+  padding-top: 16px;
 }
 .price {
   display: flex;
