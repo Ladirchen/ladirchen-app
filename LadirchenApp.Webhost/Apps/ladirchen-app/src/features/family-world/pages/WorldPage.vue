@@ -39,10 +39,9 @@
     <div class="page-padding pt-5">
       <template v-if="store.viewerRole === 'guardian'">
         <section class="guardian-world mb-6">
-          <div class="d-flex align-end justify-space-between mb-3">
-            <div><p class="eyebrow mb-1">Heute</p><h2 class="section-title">Kinder im Überblick</h2></div>
-            <span class="rating-rule">Hausziel: mindestens 60 % Energie</span>
-          </div>
+          <SectionHeader eyebrow="Heute" title="Kinder im Überblick">
+            <template #action><span class="rating-rule">Hausziel: mindestens 60 % Energie</span></template>
+          </SectionHeader>
           <div class="guardian-child-grid">
             <button
               v-for="child in childMembers"
@@ -105,13 +104,13 @@
         </div>
       </v-card>
 
-      <div v-if="store.viewerRole === 'child'" class="d-flex align-end justify-space-between mb-3">
-        <div>
-          <h2 class="section-title">Wo möchtest du helfen?</h2>
-          <p class="text-caption text-medium-emphasis">Bestätigte Grundbeiträge verändern die Welt.</p>
-        </div>
-        <RouterLink class="section-link" to="/beitraege">Alle</RouterLink>
-      </div>
+      <SectionHeader
+        v-if="store.viewerRole === 'child'"
+        description="Bestätigte Grundbeiträge verändern die Welt."
+        title="Wo möchtest du helfen?"
+      >
+        <template #action><RouterLink class="section-link" to="/beitraege">Alle</RouterLink></template>
+      </SectionHeader>
 
       <div v-if="store.viewerRole === 'child'" class="d-flex flex-column ga-3">
         <v-card v-for="contribution in quickContributions" :key="contribution.id" class="contribution-card pa-3" elevation="0" rounded="xl">
@@ -192,9 +191,10 @@ import { computed, reactive, ref } from 'vue';
 import AnimatedHouseEnergy from '../components/AnimatedHouseEnergy.vue';
 import FamilyWorldScene from '../components/FamilyWorldScene.vue';
 import HouseEnergyDialog from '../components/HouseEnergyDialog.vue';
-import { usePrototypeStore } from '../stores/prototype';
+import SectionHeader from '../components/ui/SectionHeader.vue';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
