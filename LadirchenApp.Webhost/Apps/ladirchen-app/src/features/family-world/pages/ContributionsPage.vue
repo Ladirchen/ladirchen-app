@@ -1,69 +1,27 @@
 <template>
   <div class="page page-padding contributions-page">
-    <div class="page-heading d-flex align-start justify-space-between ga-3">
-      <div><p class="eyebrow">Mitwirken</p><h1>Beiträge</h1><p>Grundbeiträge versorgen die Familienwelt. Zusatzbeiträge sind freiwillig und bringen zusätzliche Ladirchen.</p></div>
-      <v-btn v-if="store.viewerRole === 'guardian'" aria-label="Beitrag direkt hinzufügen" color="primary" icon="mdi-plus" variant="flat" @click="addDialog = true" />
-    </div>
+    <PageHeader
+      description="Grundbeiträge versorgen die Familienwelt. Zusatzbeiträge sind freiwillig und bringen zusätzliche Ladirchen."
+      eyebrow="Mitwirken"
+      icon="mdi-hand-heart-outline"
+      title="Beiträge"
+    >
+      <template v-if="store.viewerRole === 'guardian'" #action>
+        <v-btn aria-label="Beitrag direkt hinzufügen" color="primary" icon="mdi-plus" variant="flat" @click="addDialog = true" />
+      </template>
+    </PageHeader>
 
     <v-alert v-if="store.viewerRole === 'guardian'" class="guardian-context mb-5" color="info" density="compact" icon="mdi-shield-account-outline" variant="tonal">
       Bezugspersonenansicht: Du kannst Beiträge offen lassen, fest zuweisen oder eine bestehende Zuweisung ändern.
     </v-alert>
 
     <template v-if="store.viewerRole === 'child'">
-      <section class="contribution-finder mb-4" aria-labelledby="contribution-finder-title">
-        <div class="finder-heading">
-          <div class="finder-mascot" aria-hidden="true">
-            <svg class="finder-eyes" viewBox="0 0 42 28">
-              <g class="finder-eye finder-eye--left">
-                <ellipse cx="12" cy="14" rx="9" ry="11" />
-                <circle class="finder-pupil" cx="14" cy="15" r="3" />
-                <circle class="finder-glint" cx="15" cy="14" r="1" />
-              </g>
-              <g class="finder-eye finder-eye--right">
-                <ellipse cx="30" cy="14" rx="9" ry="11" />
-                <circle class="finder-pupil" cx="32" cy="15" r="3" />
-                <circle class="finder-glint" cx="33" cy="14" r="1" />
-              </g>
-            </svg>
-          </div>
-          <div>
-            <h2 id="contribution-finder-title">Was möchtest du sehen?</h2>
-            <p>Wähle zuerst, für wen die Aufgaben sind.</p>
-          </div>
-        </div>
-
-        <div class="scope-choices" role="group" aria-label="Aufgaben auswählen">
-          <button
-            v-for="option in scopeOptions"
-            :key="option.value"
-            :aria-pressed="scopeFilter === option.value"
-            :class="{ active: scopeFilter === option.value }"
-            type="button"
-            @click="scopeFilter = option.value"
-          >
-            <v-icon :icon="option.icon" size="25" />
-            <strong>{{ option.title }}</strong>
-            <span>{{ option.description }}</span>
-            <b v-if="option.value === 'open'">{{ openContributionCount }}</b>
-          </button>
-        </div>
-
-        <div class="kind-filter">
-          <span class="kind-filter-label">Welche Art?</span>
-          <div class="kind-choices" role="group" aria-label="Aufgabenart auswählen">
-            <button
-              v-for="option in kindFilterOptions"
-              :key="option.value"
-              :aria-pressed="filter === option.value"
-              :class="{ active: filter === option.value }"
-              type="button"
-              @click="filter = option.value"
-            >
-              <span aria-hidden="true">{{ option.icon }}</span>{{ option.title }}
-            </button>
-          </div>
-        </div>
-      </section>
+      <ContributionFilterPanel
+        v-model:kind="filter"
+        v-model:scope="scopeFilter"
+        class="mb-4"
+        :open-count="openContributionCount"
+      />
 
       <TransitionGroup class="d-flex flex-column ga-3" name="list" tag="div">
         <v-card v-for="contribution in filteredContributions" :key="contribution.id" class="contribution-item pa-4" elevation="0" rounded="xl">
@@ -113,10 +71,9 @@
 
     <template v-else>
       <section v-if="store.pendingContributions.length" class="mb-6">
-        <div class="d-flex align-end justify-space-between mb-3">
-          <div><h2 class="section-title">Wartet auf Prüfung</h2><p class="text-caption text-medium-emphasis">Erst nach der Bestätigung reagiert die Familienwelt.</p></div>
-          <v-chip color="warning" size="small">{{ store.pendingContributions.length }}</v-chip>
-        </div>
+        <SectionHeader description="Erst nach der Bestätigung reagiert die Familienwelt." title="Wartet auf Prüfung">
+          <template #action><v-chip color="warning" size="small">{{ store.pendingContributions.length }}</v-chip></template>
+        </SectionHeader>
         <div class="d-flex flex-column ga-3">
           <v-card v-for="contribution in store.pendingContributions" :key="contribution.id" class="review-card pa-4" elevation="0" rounded="xl">
             <div class="d-flex align-center ga-3">
@@ -142,10 +99,9 @@
         <p class="text-caption text-medium-emphasis mt-1">Aktuell wartet kein Beitrag auf eine Bestätigung.</p>
       </v-card>
 
-      <div class="d-flex align-center justify-space-between mb-3">
-        <div><h2 class="section-title">Bonusaktionen</h2><p class="text-caption text-medium-emphasis">Zeitlich begrenzte Extras für ausgewählte Beiträge.</p></div>
-        <v-btn aria-label="Bonusaktion hinzufügen" color="warning" icon="mdi-lightning-bolt" size="small" variant="tonal" @click="promotionDialog = true" />
-      </div>
+      <SectionHeader description="Zeitlich begrenzte Extras für ausgewählte Beiträge." title="Bonusaktionen">
+        <template #action><v-btn aria-label="Bonusaktion hinzufügen" color="warning" icon="mdi-lightning-bolt" size="small" variant="tonal" @click="promotionDialog = true" /></template>
+      </SectionHeader>
       <div class="d-flex flex-column ga-2 mb-6">
         <v-card v-for="promotion in store.promotions.filter((item) => item.active)" :key="promotion.id" class="promotion-row pa-3" color="amber-lighten-5" elevation="0" rounded="lg" role="button" tabindex="0" @click="selectedPromotion = promotion" @keydown.enter="selectedPromotion = promotion">
           <div class="d-flex align-center ga-3">
@@ -173,10 +129,9 @@
         </div>
       </v-card>
 
-      <div class="d-flex align-center justify-space-between mb-3">
-        <div><h2 class="section-title">Beiträge verwalten</h2><p class="text-caption text-medium-emphasis">Bezugspersonen können Grund- und Zusatzbeiträge anlegen.</p></div>
-        <v-btn color="primary" icon="mdi-plus" size="small" variant="tonal" @click="addDialog = true" />
-      </div>
+      <SectionHeader description="Bezugspersonen können Grund- und Zusatzbeiträge anlegen." title="Beiträge verwalten">
+        <template #action><v-btn color="primary" icon="mdi-plus" size="small" variant="tonal" @click="addDialog = true" /></template>
+      </SectionHeader>
       <div class="d-flex flex-column ga-2">
         <v-card v-for="contribution in managedContributions" :key="contribution.id" class="basic-row pa-3" elevation="0" rounded="lg">
           <div class="d-flex align-center ga-3">
@@ -291,12 +246,15 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import ContributionFilterPanel from '../components/contributions/ContributionFilterPanel.vue';
 import PromotionCountdown from '../components/PromotionCountdown.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
+import SectionHeader from '../components/ui/SectionHeader.vue';
 import type { Contribution, ContributionKind, Promotion } from '../domain/types';
 import { isPromotionAvailable } from '../domain/promotions';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const route = useRoute();
 const filter = ref<'all' | ContributionKind>('all');
 const scopeFilter = ref<'all' | 'mine' | 'open'>('mine');
@@ -331,16 +289,6 @@ const newPromotion = reactive({ contributionId: 'dishwasher', multiplier: 2, dea
 const multiplierOptions = [
   { title: 'Doppelte Ladirchen', value: 2 },
   { title: 'Dreifache Ladirchen', value: 3 },
-];
-const scopeOptions: Array<{ value: 'mine' | 'open' | 'all'; title: string; description: string; icon: string }> = [
-  { value: 'mine', title: 'Meine Aufgaben', description: 'Schon für dich', icon: 'mdi-account-star-outline' },
-  { value: 'open', title: 'Freie Aufgaben', description: 'Such dir eine aus', icon: 'mdi-hand-wave-outline' },
-  { value: 'all', title: 'Alle Aufgaben', description: 'Alles ansehen', icon: 'mdi-view-grid-outline' },
-];
-const kindFilterOptions: Array<{ value: 'all' | ContributionKind; title: string; icon: string }> = [
-  { value: 'all', title: 'Alle', icon: '✨' },
-  { value: 'basic', title: 'Hausenergie', icon: '⚡' },
-  { value: 'extra', title: 'Extra-Ladirchen', icon: '🪙' },
 ];
 
 const filteredContributions = computed(() =>
@@ -407,168 +355,6 @@ watch(
 </script>
 
 <style scoped>
-.contribution-finder {
-  padding: 15px;
-  border: 1px solid rgba(62, 188, 140, 0.25);
-  border-radius: 24px;
-  background: linear-gradient(145deg, #f0fbf6 0%, #fffaf0 100%);
-  box-shadow: 0 4px 0 rgba(62, 188, 140, 0.1);
-}
-.finder-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 13px;
-}
-.finder-heading h2 {
-  margin: 0;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-}
-.finder-heading p {
-  margin: 1px 0 0;
-  color: var(--lad-muted);
-  font-size: 10px;
-}
-.finder-mascot {
-  width: 39px;
-  height: 39px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 39px;
-  border-radius: 14px;
-  background: white;
-  box-shadow: 0 3px 0 rgba(62, 188, 140, 0.14);
-}
-.finder-eyes {
-  width: 31px;
-  height: 24px;
-  overflow: visible;
-}
-.finder-eye {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.finder-eye > ellipse {
-  fill: #fff;
-  stroke: #91a6a0;
-  stroke-width: 1.2;
-}
-.finder-pupil {
-  fill: #263a42;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: finder-look 8.6s ease-in-out infinite;
-}
-.finder-glint {
-  fill: white;
-}
-.finder-eye--left {
-  animation: finder-wink 7.4s 1.1s ease-in-out infinite;
-}
-.finder-eye--right {
-  animation: finder-blink 11.3s 3.2s ease-in-out infinite;
-}
-.scope-choices {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.scope-choices button {
-  min-width: 0;
-  min-height: 86px;
-  padding: 10px 6px 8px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  color: var(--lad-text);
-  border: 2px solid transparent;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 3px 0 rgba(72, 105, 91, 0.1);
-  cursor: pointer;
-  font: inherit;
-  transition:
-    transform 150ms ease,
-    border-color 150ms ease,
-    background 150ms ease;
-}
-.scope-choices button:hover {
-  transform: translateY(-1px);
-}
-.scope-choices button.active {
-  color: #16745a;
-  border-color: var(--lad-mint);
-  background: #e2f7ed;
-  box-shadow: 0 4px 0 #b7e5cf;
-}
-.scope-choices button strong {
-  font-size: 11px;
-  line-height: 1.2;
-}
-.scope-choices button span {
-  color: var(--lad-muted);
-  font-size: 8px;
-  line-height: 1.2;
-}
-.scope-choices button b {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: grid;
-  place-items: center;
-  color: #8a5908;
-  border-radius: 10px;
-  background: #ffe4a8;
-  font-size: 10px;
-}
-.kind-filter {
-  margin-top: 14px;
-  padding-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-top: 1px dashed rgba(62, 111, 91, 0.18);
-}
-.kind-filter-label {
-  flex: 0 0 auto;
-  color: var(--lad-muted);
-  font-size: 9px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.kind-choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.kind-choices button {
-  padding: 7px 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #53645d;
-  border: 1px solid rgba(73, 111, 96, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.76);
-  cursor: pointer;
-  font: inherit;
-  font-size: 9px;
-  font-weight: 850;
-}
-.kind-choices button.active {
-  color: #185f4d;
-  border-color: #9ed9bf;
-  background: white;
-  box-shadow: 0 2px 0 #cceadb;
-}
 .empty-contributions {
   border: 1px dashed rgba(62, 188, 140, 0.35);
   background: #f5fbf7;
@@ -694,66 +480,9 @@ watch(
   opacity: 0;
   transform: translateY(8px);
 }
-@keyframes finder-wink {
-  0%,
-  43%,
-  47%,
-  100% {
-    transform: scaleY(1);
-  }
-  44.5%,
-  46% {
-    transform: scaleY(0.08);
-  }
-}
-@keyframes finder-blink {
-  0%,
-  68%,
-  71%,
-  100% {
-    transform: scaleY(1);
-  }
-  69%,
-  70% {
-    transform: scaleY(0.08);
-  }
-}
-@keyframes finder-look {
-  0%,
-  18%,
-  100% {
-    transform: translateX(0);
-  }
-  28%,
-  45% {
-    transform: translateX(-2px);
-  }
-  58%,
-  75% {
-    transform: translateX(2px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .finder-eye,
-  .finder-pupil {
-    animation: none;
-  }
-}
 @media (max-width: 380px) {
   .form-columns {
     grid-template-columns: 1fr;
-  }
-  .scope-choices button {
-    min-height: 80px;
-    padding-inline: 3px;
-  }
-  .scope-choices button strong {
-    font-size: 10px;
-  }
-  .kind-filter {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 7px;
   }
 }
 </style>
