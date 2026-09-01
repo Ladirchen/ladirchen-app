@@ -86,9 +86,9 @@ import { computed, defineComponent, h, ref, watch } from 'vue';
 
 import { createDefaultAvatarAppearance } from '../domain/avatar';
 import type { FamilyMember, FamilyPet } from '../domain/types';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const step = ref(1);
 const children = ref<FamilyMember[]>([]);
 const guardians = ref<FamilyMember[]>([]);

@@ -9,7 +9,7 @@
           <LadiMascot :score="5" :show-score="false" :size="142" />
         </div>
         <div class="intro-logo-row">
-          <span class="intro-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png" /></span>
+          <span class="intro-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
           <h1>Ladirchen</h1>
         </div>
         <p>Super-Ladi bringt die Familienwelt in Ordnung …</p>

@@ -1,9 +1,16 @@
 <template>
   <div class="page page-padding wishes-page">
-    <div class="page-heading d-flex align-start justify-space-between ga-3">
-      <div><p class="eyebrow">Clever sparen</p><h1>Wünsche</h1><p>{{ store.viewerRole === 'guardian' ? `Ziele für ${store.activeChild.name} und die Familie verwalten.` : 'Spare für deine eigenen Wünsche oder unterstütze die sichtbaren Ziele deiner Familie.' }}</p></div>
-      <v-btn v-if="store.viewerRole === 'guardian'" aria-label="Sparziel direkt hinzufügen" color="primary" icon="mdi-plus" variant="flat" @click="goalDialog = true" />
-    </div>
+    <PageHeader
+      :description="store.viewerRole === 'guardian' ? `Ziele für ${store.activeChild.name} und die Familie verwalten.` : 'Spare für deine eigenen Wünsche oder unterstütze die sichtbaren Ziele deiner Familie.'"
+      eyebrow="Clever sparen"
+      icon="mdi-star-four-points-outline"
+      title="Wünsche"
+      tone="blue"
+    >
+      <template v-if="store.viewerRole === 'guardian'" #action>
+        <v-btn aria-label="Sparziel direkt hinzufügen" color="primary" icon="mdi-plus" variant="flat" @click="goalDialog = true" />
+      </template>
+    </PageHeader>
 
     <v-slide-group v-if="store.viewerRole === 'guardian'" class="child-selector mb-4" show-arrows>
       <v-slide-group-item v-for="child in childMembers" :key="child.id">
@@ -41,10 +48,12 @@
         <v-btn v-else class="raised-button" color="info" prepend-icon="mdi-gift-outline" rounded="lg" variant="flat" width="100%" @click="openSupport(store.activeGoal.id)">Ladirchen schenken</v-btn>
       </v-card>
 
-      <div class="d-flex align-center justify-space-between mb-3">
-        <div><h2 class="section-title">{{ store.viewerRole === 'guardian' ? `Weitere Ziele von ${store.activeChild.name}` : 'Meine weiteren Ziele' }}</h2><p class="text-caption text-medium-emphasis">{{ store.viewerRole === 'guardian' ? 'Private Kinderziele sind für Bezugspersonen nicht sichtbar.' : 'Private Ziele bleiben ausschließlich bei dir.' }}</p></div>
-        <v-btn aria-label="Neues Sparziel" color="primary" icon="mdi-plus" size="small" variant="tonal" @click="goalDialog = true" />
-      </div>
+      <SectionHeader
+        :description="store.viewerRole === 'guardian' ? 'Private Kinderziele sind für Bezugspersonen nicht sichtbar.' : 'Private Ziele bleiben ausschließlich bei dir.'"
+        :title="store.viewerRole === 'guardian' ? `Weitere Ziele von ${store.activeChild.name}` : 'Meine weiteren Ziele'"
+      >
+        <template #action><v-btn aria-label="Neues Sparziel" color="primary" icon="mdi-plus" size="small" variant="tonal" @click="goalDialog = true" /></template>
+      </SectionHeader>
 
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
         <v-card v-for="goal in myOtherGoals" :key="goal.id" class="family-goal pa-4" elevation="0" rounded="xl">
@@ -139,10 +148,12 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import SavingGoalDialog from '../components/SavingGoalDialog.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
+import SectionHeader from '../components/ui/SectionHeader.vue';
 import type { GoalVisibility, NewGoal } from '../domain/types';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const route = useRoute();
 const activeTab = ref<'own' | 'family'>('own');
 const saveDialog = ref(false);
