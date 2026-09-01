@@ -18,6 +18,7 @@
     "@mdi/font": "catalog:dependencies",
     "motion-v": "catalog:dependencies",
     "pinia": "catalog:dependencies",
+    "pixi.js": "catalog:dependencies",
     "vue": "catalog:dependencies",
     "vue-i18n": "catalog:dependencies",
     "vue-router": "catalog:dependencies",
