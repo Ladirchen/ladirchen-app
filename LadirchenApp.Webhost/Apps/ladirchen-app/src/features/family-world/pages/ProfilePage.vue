@@ -1,10 +1,12 @@
 <template>
   <div class="page page-padding profile-page">
-    <div class="page-heading">
-      <p class="eyebrow">Persönlicher Bereich</p>
-      <h1>Ich</h1>
-      <p>Dein Profil, deine Fortschritte und deine Einstellungen.</p>
-    </div>
+    <PageHeader
+      description="Dein Profil, deine Fortschritte und deine Einstellungen."
+      eyebrow="Persönlicher Bereich"
+      icon="mdi-account-circle-outline"
+      title="Ich"
+      tone="blue"
+    />
 
     <v-card class="profile-hero pa-5" elevation="0" rounded="xl">
       <div class="d-flex align-center ga-4">
@@ -21,13 +23,6 @@
     </v-card>
 
     <template v-if="store.viewerRole === 'child'">
-      <div class="profile-kpis mt-5">
-        <div><span>Verfügbar</span><strong>{{ store.availableBalance }} L</strong></div>
-        <div><span>Gespart</span><strong>{{ store.totalSaved }} L</strong></div>
-        <div><span>Tagesserie</span><strong>{{ store.currentDailyStreak }}</strong></div>
-        <div><span>Ladi-Level</span><strong>{{ ladiStage.name }}</strong></div>
-      </div>
-
       <v-card class="ladi-card pa-4 mt-5" elevation="0" rounded="xl">
         <div class="d-flex align-center ga-3">
           <LadiMascot :score="store.averageTaskRating" :size="78" />
@@ -71,11 +66,12 @@ import { computed, ref, watch } from 'vue';
 import AvatarBuilderDialog from '../components/AvatarBuilderDialog.vue';
 import AvatarFigure from '../components/AvatarFigure.vue';
 import LadiMascot from '../components/LadiMascot.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
 import { createDefaultAvatarAppearance } from '../domain/avatar';
 import { getLadiStage } from '../domain/ladi';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const avatarBuilderOpen = ref(false);
 const nicknameDraft = ref(store.activeChild.nickname ?? '');
 const activeAppearance = computed(() => store.activeChild.appearance ?? createDefaultAvatarAppearance());
@@ -106,29 +102,6 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   border-radius: 30px;
   box-shadow: 0 6px 16px rgba(45, 78, 65, 0.12);
   font-size: 45px;
-}
-.profile-kpis {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.profile-kpis div {
-  padding: 13px;
-  border: 1px solid var(--lad-border);
-  border-radius: 16px;
-  background: var(--lad-surface-soft);
-}
-.profile-kpis span,
-.profile-kpis strong {
-  display: block;
-}
-.profile-kpis span {
-  color: var(--lad-muted);
-  font-size: 10px;
-}
-.profile-kpis strong {
-  margin-top: 3px;
-  font-size: 20px;
 }
 .ladi-card,
 .nickname-card,

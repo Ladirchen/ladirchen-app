@@ -1,10 +1,11 @@
 <template>
   <div class="page page-padding family-page">
-    <div class="page-heading">
-      <p class="eyebrow">Gemeinsam wachsen</p>
-      <h1>Meine Familie</h1>
-      <p>Hier seht ihr Beiträge, Tagesserien und Ziele der ganzen Familie.</p>
-    </div>
+    <PageHeader
+      description="Hier seht ihr Beiträge, Tagesserien und Ziele der ganzen Familie."
+      eyebrow="Gemeinsam wachsen"
+      icon="mdi-account-group-outline"
+      title="Meine Familie"
+    />
 
     <v-card v-if="store.viewerRole === 'child'" class="my-profile pa-4 mb-5" elevation="0" rounded="xl">
       <div class="d-flex align-center ga-4">
@@ -68,10 +69,13 @@
     </v-card>
 
     <section v-if="store.viewerRole === 'guardian'" class="guardian-overview mb-6">
-      <div class="d-flex align-end justify-space-between mb-3">
-        <div><p class="eyebrow mb-1">Bezugspersonen-Dashboard</p><h2 class="section-title">Alle Kinder im Überblick</h2><p class="text-caption text-medium-emphasis">Aufgaben, Guthaben und Sparfortschritt zentral zusammengefasst.</p></div>
-        <v-chip color="info" size="small" variant="tonal">{{ childMembers.length }} Kinder</v-chip>
-      </div>
+      <SectionHeader
+        description="Aufgaben, Guthaben und Sparfortschritt zentral zusammengefasst."
+        eyebrow="Bezugspersonen-Dashboard"
+        title="Alle Kinder im Überblick"
+      >
+        <template #action><v-chip color="info" size="small" variant="tonal">{{ childMembers.length }} Kinder</v-chip></template>
+      </SectionHeader>
 
       <div class="overview-kpis mb-3">
         <div><span>Hausenergie</span><strong>{{ store.familyEnergy }} %</strong></div>
@@ -103,18 +107,11 @@
       </div>
     </section>
 
-    <div class="d-flex align-end justify-space-between mb-3">
-      <div><h2 class="section-title">Familienmitglieder</h2><p class="text-caption text-medium-emphasis">Tagesserien und sichtbare Ziele auf einen Blick.</p></div>
-      <v-btn
-        v-if="store.viewerRole === 'guardian'"
-        color="primary"
-        prepend-icon="mdi-account-plus-outline"
-        rounded="lg"
-        size="small"
-        variant="tonal"
-        @click="inviteDialog = true"
-      >Einladen</v-btn>
-    </div>
+    <SectionHeader description="Tagesserien und sichtbare Ziele auf einen Blick." title="Familienmitglieder">
+      <template v-if="store.viewerRole === 'guardian'" #action>
+        <v-btn color="primary" prepend-icon="mdi-account-plus-outline" rounded="lg" size="small" variant="tonal" @click="inviteDialog = true">Einladen</v-btn>
+      </template>
+    </SectionHeader>
 
     <div class="member-grid mb-6">
       <v-card v-for="(member, memberIndex) in store.members" :key="member.id" class="member-card pa-4" elevation="0" rounded="xl">
@@ -143,9 +140,7 @@
       </v-card>
     </div>
 
-    <div class="d-flex align-end justify-space-between mb-3">
-      <div><h2 class="section-title">Haustiere</h2><p class="text-caption text-medium-emphasis">Auch sie gehören zur Familienwelt.</p></div>
-    </div>
+    <SectionHeader description="Auch sie gehören zur Familienwelt." title="Haustiere" />
 
     <div class="pet-grid mb-6">
       <v-card v-for="pet in store.pets" :key="pet.id" class="pet-card pa-4" elevation="0" rounded="xl">
@@ -156,7 +151,7 @@
       </v-card>
     </div>
 
-    <v-card v-if="store.viewerRole === 'guardian'" class="prototype-controls pa-4" elevation="0" rounded="xl">
+    <v-card v-if="store.viewerRole === 'guardian'" class="family-world-controls pa-4" elevation="0" rounded="xl">
       <p class="eyebrow mb-1">Nur im Frontend-Prototyp</p>
       <strong>Wochenabschluss testen</strong>
       <p class="text-caption text-medium-emphasis mt-1 mb-4">Diese Schaltflächen simulieren später automatisch ausgeführte Wochenabschlüsse.</p>
@@ -210,13 +205,15 @@ import { computed, reactive, ref } from 'vue';
 import AvatarBuilderDialog from '../components/AvatarBuilderDialog.vue';
 import AvatarFigure from '../components/AvatarFigure.vue';
 import AnimatedPet from '../components/AnimatedPet.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
+import SectionHeader from '../components/ui/SectionHeader.vue';
 import { HOUSE_STAGES } from '../data/house-catalog';
 import { createDefaultAvatarAppearance } from '../domain/avatar';
 import type { AvatarAppearance } from '../domain/avatar';
 import type { FamilyCurrency, FamilyMember } from '../domain/types';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const revealDialog = ref(false);
 const inviteDialog = ref(false);
 const avatarBuilderOpen = ref(false);
@@ -230,7 +227,7 @@ const currencyOptions: Array<{ title: string; value: FamilyCurrency }> = [
 const currentLevel = computed(() => HOUSE_STAGES[store.houseLevel] ?? HOUSE_STAGES[0]);
 const houseLevelName = computed(() => currentLevel.value.name);
 const houseLevelIcon = computed(() => currentLevel.value.icon);
-const canInvite = computed(() => invite.name.trim().length > 1 && /.+@.+\..+/.test(invite.email));
+const canInvite = computed(() => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email));
 const childMembers = computed(() => store.members.filter((member) => member.role === 'child'));
 const totalPending = computed(() => childMembers.value.reduce((sum, child) => sum + store.pendingCountFor(child.id), 0));
 const totalOpen = computed(() => childMembers.value.reduce((sum, child) => sum + store.openCountFor(child.id), 0));
@@ -284,7 +281,7 @@ const finishWeek = (successful: boolean) => {
 }
 .member-card,
 .pet-card,
-.prototype-controls {
+.family-world-controls {
   border: 1px solid var(--lad-border);
   box-shadow: 0 4px 0 var(--lad-border) !important;
 }
