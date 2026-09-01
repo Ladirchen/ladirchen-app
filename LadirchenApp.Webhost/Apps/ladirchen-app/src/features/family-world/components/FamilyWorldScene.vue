@@ -11,197 +11,198 @@
       :on-drag="trackDrag"
       :on-drag-end="finishDrag"
     >
+      <PixiWorldFoundation :energy="energy" :view="view" />
       <svg class="world-scene" viewBox="10 8 440 325" role="img" :aria-label="ariaLabel">
-      <defs>
-        <linearGradient id="meadowGround" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stop-color="#8fca86" />
-          <stop offset=".48" stop-color="#b7dda0" />
-          <stop offset="1" stop-color="#eef3d7" />
-        </linearGradient>
-        <linearGradient id="insideFloor" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stop-color="#f8d89b" />
-          <stop offset="1" stop-color="#e7ae68" />
-        </linearGradient>
-        <linearGradient id="insideWall" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stop-color="#fff8df" />
-          <stop offset="1" stop-color="#f8e7bd" />
-        </linearGradient>
-        <filter id="sceneShadow" height="160%" width="160%" x="-30%" y="-30%">
-          <feDropShadow dx="0" dy="12" flood-color="#335443" flood-opacity=".2" stdDeviation="8" />
-        </filter>
-      </defs>
+        <defs>
+          <linearGradient id="meadowGround" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#8fca86" />
+            <stop offset=".48" stop-color="#b7dda0" />
+            <stop offset="1" stop-color="#eef3d7" />
+          </linearGradient>
+          <linearGradient id="insideFloor" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stop-color="#f8d89b" />
+            <stop offset="1" stop-color="#e7ae68" />
+          </linearGradient>
+          <linearGradient id="insideWall" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#fff8df" />
+            <stop offset="1" stop-color="#f8e7bd" />
+          </linearGradient>
+          <filter id="sceneShadow" height="160%" width="160%" x="-30%" y="-30%">
+            <feDropShadow dx="0" dy="12" flood-color="#335443" flood-opacity=".2" stdDeviation="8" />
+          </filter>
+        </defs>
 
-      <g class="scene-sun" :style="{ opacity: sunOpacity }" aria-hidden="true">
-        <circle class="sun-halo" cx="375" cy="48" r="39" />
-        <circle class="sun-core" cx="375" cy="48" r="23" />
-        <path class="sun-rays" d="M375 10V1m0 94v-9m38-38h9m-94 0h9m65-27 7-7m-67 67 7-7m53 7 7 7m-67-67 7 7" />
-      </g>
-      <g class="cloud cloud-a" :class="{ heavy: energy < 45 }"><ellipse cx="75" cy="79" rx="38" ry="12" /><circle cx="60" cy="70" r="15" /><circle cx="81" cy="65" r="21" /></g>
-      <g class="cloud cloud-b" :class="{ heavy: energy < 60 }"><ellipse cx="381" cy="91" rx="32" ry="10" /><circle cx="370" cy="84" r="13" /><circle cx="388" cy="80" r="17" /></g>
-      <g v-if="energy < 40" class="rain-cloud" aria-hidden="true">
-        <ellipse cx="229" cy="68" rx="48" ry="15" /><circle cx="209" cy="57" r="20" /><circle cx="237" cy="52" r="25" /><circle cx="258" cy="62" r="17" />
-        <path class="rain-drops" d="M205 86l-6 12m31-12-6 12m31-12-6 12" />
-      </g>
-
-      <g class="far-landscape" aria-hidden="true">
-        <g class="mountains">
-          <path class="mountain-layer" d="M0 180V145l48-48 35 34 47-60 48 58 43-42 57 61 47-65 62 53 43-38 50 40v42Z" />
-          <path class="mountain-snow" d="m31 114 17-17 14 14 21 20-17-7-10 7-11-10-14 5Zm74-12 25-31 25 30-15-8-10 10-9-9Zm96 5 20-20 21 23-12-5-9 8-9-9Zm105 9 26-33 28 24-17-6-11 11-11-9Zm101-2 23-16 18 15-11-3-8 7-10-7Z" />
+        <g class="scene-sun" :style="{ opacity: sunOpacity }" aria-hidden="true">
+          <circle class="sun-halo" cx="375" cy="48" r="39" />
+          <circle class="sun-core" cx="375" cy="48" r="23" />
+          <path class="sun-rays" d="M375 10V1m0 94v-9m38-38h9m-94 0h9m65-27 7-7m-67 67 7-7m53 7 7 7m-67-67 7 7" />
         </g>
-        <path class="hill-layer hill-back" d="M0 194v-38q59-34 116 11 60-48 124 0 53-39 104-1 59-34 116 2v26Z" />
-        <path class="hill-layer hill-front" d="M0 207v-29q58-37 128 7 68-43 136 1 71-42 128-2 37-21 68-3v26Z" />
-        <path class="meadow-ground" d="M0 192q60-18 123 4 70-28 139 0 71-27 131-4 35-12 67 1v147H0Z" />
-        <path class="meadow-highlight" d="M-5 231q86-28 165 2t157 1q78-27 148 1M11 281q74-19 145 3t147 0q76-21 151 0" />
-        <g class="distant-pines">
-          <path d="m23 165 10-23 10 23h-6l8 16H21l8-16Zm367 1 10-25 10 25h-6l8 16h-24l8-16Zm37 4 8-19 8 19h-5l7 14h-20l7-14Z" />
-        </g>
-      </g>
-
-      <g :key="revealVersion" :class="['island', 'world-reveal', `plot-level-${houseLevel}`]" filter="url(#sceneShadow)">
-        <g v-if="houseLevel >= 1" class="plot-upgrade plot-flower-border" aria-hidden="true">
-          <path d="M82 215q18 16 40 25m256-25q-17 16-38 25" />
-          <circle cx="91" cy="220" r="4" /><circle cx="103" cy="230" r="3" /><circle cx="115" cy="237" r="4" />
-          <circle cx="369" cy="222" r="4" /><circle cx="357" cy="231" r="3" /><circle cx="345" cy="238" r="4" />
-        </g>
-        <g v-if="houseLevel >= 2" class="plot-upgrade plot-path" aria-hidden="true">
-          <ellipse cx="232" cy="274" rx="13" ry="6" /><ellipse cx="232" cy="291" rx="10" ry="5" />
-        </g>
-        <g v-if="houseLevel >= 3" class="plot-upgrade plot-garden-bed" aria-hidden="true">
-          <path d="m319 246 42-18 13 13-42 19Z" />
-          <path d="m327 245 32-13m-23 17 30-13" />
-          <path class="plot-sprouts" d="M337 239q-7-8-10 1m10-1q4-9 10-3m5 7q-4-8-10-1m10 1q5-7 10-2" />
+        <g class="cloud cloud-a" :class="{ heavy: energy < 45 }"><ellipse cx="75" cy="79" rx="38" ry="12" /><circle cx="60" cy="70" r="15" /><circle cx="81" cy="65" r="21" /></g>
+        <g class="cloud cloud-b" :class="{ heavy: energy < 60 }"><ellipse cx="381" cy="91" rx="32" ry="10" /><circle cx="370" cy="84" r="13" /><circle cx="388" cy="80" r="17" /></g>
+        <g v-if="energy < 40" class="rain-cloud" aria-hidden="true">
+          <ellipse cx="229" cy="68" rx="48" ry="15" /><circle cx="209" cy="57" r="20" /><circle cx="237" cy="52" r="25" /><circle cx="258" cy="62" r="17" />
+          <path class="rain-drops" d="M205 86l-6 12m31-12-6 12m31-12-6 12" />
         </g>
 
-        <g class="tree" :class="{ subdued: !hasEffect('garden') }" transform="translate(94 139)">
-          <g class="tree-motion">
-            <path d="m35 61 7 37-13 6-2-41z" fill="#76533e" />
-            <g class="tree-crown"><circle cx="31" cy="35" fill="#3d9f66" r="27" /><circle cx="14" cy="48" fill="#5bbd79" r="21" /><circle cx="51" cy="49" fill="#2f8a59" r="23" /><circle cx="35" cy="21" fill="#70cf88" r="22" /></g>
+        <g class="far-landscape" aria-hidden="true">
+          <g class="mountains">
+            <path class="mountain-layer" d="M0 180V145l48-48 35 34 47-60 48 58 43-42 57 61 47-65 62 53 43-38 50 40v42Z" />
+            <path class="mountain-snow" d="m31 114 17-17 14 14 21 20-17-7-10 7-11-10-14 5Zm74-12 25-31 25 30-15-8-10 10-9-9Zm96 5 20-20 21 23-12-5-9 8-9-9Zm105 9 26-33 28 24-17-6-11 11-11-9Zm101-2 23-16 18 15-11-3-8 7-10-7Z" />
+          </g>
+          <path class="hill-layer hill-back" d="M0 194v-38q59-34 116 11 60-48 124 0 53-39 104-1 59-34 116 2v26Z" />
+          <path class="hill-layer hill-front" d="M0 207v-29q58-37 128 7 68-43 136 1 71-42 128-2 37-21 68-3v26Z" />
+          <path class="meadow-ground" d="M0 192q60-18 123 4 70-28 139 0 71-27 131-4 35-12 67 1v147H0Z" />
+          <path class="meadow-highlight" d="M-5 231q86-28 165 2t157 1q78-27 148 1M11 281q74-19 145 3t147 0q76-21 151 0" />
+          <g class="distant-pines">
+            <path d="m23 165 10-23 10 23h-6l8 16H21l8-16Zm367 1 10-25 10 25h-6l8 16h-24l8-16Zm37 4 8-19 8 19h-5l7 14h-20l7-14Z" />
           </g>
         </g>
 
-        <g :key="view" class="house-view">
-          <g v-if="view === 'front'" class="house house-front" :class="`house-level-${houseLevel}`">
-            <ellipse class="toy-house-shadow" cx="232" cy="271" rx="125" ry="21" />
-            <rect class="toy-house-body" x="137" :y="houseLevel >= 1 ? 145 : 151" width="188" :height="houseLevel >= 1 ? 110 : 104" rx="10" />
-            <g v-if="houseLevel >= 1" class="house-addon toy-upper-floor">
-              <rect x="163" y="87" width="136" height="69" rx="10" />
-              <path d="M163 147h136" />
-              <g class="toy-window upper-window"><rect x="205" y="101" width="52" height="37" rx="8" /><path d="M231 105v29m-22-15h44" /></g>
-            </g>
-
-            <g class="toy-roof">
-              <path :d="houseLevel >= 1 ? 'M143 91 230 36l88 55-13 17-75-45-74 45Z' : 'M112 155 230 78l119 77-15 18-104-66-103 66Z'" />
-              <path class="roof-highlight" :d="houseLevel >= 1 ? 'M230 36l88 55-7 9-81-49Z' : 'M230 78l119 77-8 10-111-70Z'" />
-            </g>
-
-            <g class="toy-door">
-              <path d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
-              <circle cx="241" cy="220" r="4" />
-              <path d="M203 255h55" />
-            </g>
-            <g class="toy-window left-window"><rect x="157" y="174" width="43" height="39" rx="9" /><path d="M178 178v31m-17-15h35" /></g>
-            <g class="toy-window right-window"><rect x="263" y="174" width="43" height="39" rx="9" /><path d="M284 178v31m-17-15h35" /></g>
-
-            <g v-if="houseLevel >= 2" class="house-addon toy-extension">
-              <rect x="90" y="196" width="55" height="58" rx="10" />
-              <path d="m80 199 38-32 38 32-9 12-29-23-29 23Z" />
-              <rect x="104" y="211" width="28" height="25" rx="6" />
-            </g>
-            <g v-if="houseLevel >= 3" class="house-addon toy-tower">
-              <rect x="303" y="112" width="54" height="143" rx="9" />
-              <path d="m294 115 36-42 36 42-10 11-26-30-27 30Z" />
-              <rect x="316" y="137" width="28" height="31" rx="8" /><rect x="316" y="187" width="28" height="31" rx="8" />
-            </g>
-            <g v-if="houseLevel >= 4" class="house-addon toy-balcony-front">
-              <path d="M170 144h120v18H170Z" /><path d="M179 147v27m25-27v27m26-27v27m26-27v27m25-27v27" />
-            </g>
-
-            <g class="front-step"><path d="M195 255h71l15 15h-101Z" /><path d="M188 265h86l12 12H176Z" /></g>
-            <g class="toy-bush bush-left"><circle cx="135" cy="242" r="19" /><circle cx="118" cy="250" r="15" /></g>
-            <g class="toy-bush bush-right"><circle cx="327" cy="241" r="18" /><circle cx="343" cy="250" r="14" /></g>
+        <g :key="revealVersion" :class="['island', 'world-reveal', `plot-level-${houseLevel}`]" filter="url(#sceneShadow)">
+          <g v-if="houseLevel >= 1" class="plot-upgrade plot-flower-border" aria-hidden="true">
+            <path d="M82 215q18 16 40 25m256-25q-17 16-38 25" />
+            <circle cx="91" cy="220" r="4" /><circle cx="103" cy="230" r="3" /><circle cx="115" cy="237" r="4" />
+            <circle cx="369" cy="222" r="4" /><circle cx="357" cy="231" r="3" /><circle cx="345" cy="238" r="4" />
+          </g>
+          <g v-if="houseLevel >= 2" class="plot-upgrade plot-path" aria-hidden="true">
+            <ellipse cx="232" cy="274" rx="13" ry="6" /><ellipse cx="232" cy="291" rx="10" ry="5" />
+          </g>
+          <g v-if="houseLevel >= 3" class="plot-upgrade plot-garden-bed" aria-hidden="true">
+            <path d="m319 246 42-18 13 13-42 19Z" />
+            <path d="m327 245 32-13m-23 17 30-13" />
+            <path class="plot-sprouts" d="M337 239q-7-8-10 1m10-1q4-9 10-3m5 7q-4-8-10-1m10 1q5-7 10-2" />
           </g>
 
-          <g v-else-if="view === 'side'" class="house house-side">
-            <ellipse class="toy-house-shadow" cx="232" cy="271" rx="126" ry="21" />
-            <path class="toy-side-body" d="M139 148h151l45 28v80H139Z" />
-            <path class="toy-side-wall" d="m290 148 45 28v80l-45-13Z" />
-            <path class="toy-side-roof" d="M112 151 218 74l106 72 37 28-17 16-48-31-78-56-91 66Z" />
-            <g class="toy-window side-wide"><rect x="178" y="171" width="68" height="47" rx="11" /><path d="M212 176v37m-29-18h58" /></g>
-            <g class="side-door"><path d="M266 194q0-10 10-10h22q10 0 10 10v61h-42Z" /><circle cx="296" cy="220" r="4" /></g>
-            <g v-if="houseLevel >= 1" class="house-addon side-upper"><rect x="177" y="103" width="83" height="50" rx="9" /><g class="toy-window"><rect x="199" y="113" width="39" height="29" rx="7" /></g></g>
-            <g v-if="houseLevel >= 2" class="house-addon side-sunroom"><rect x="87" y="197" width="59" height="58" rx="12" /><path d="m80 199 36-30 37 30" /><rect x="99" y="210" width="34" height="29" rx="8" /></g>
-            <g v-if="houseLevel >= 3" class="house-addon side-deck"><path d="M314 235h66v13h-66Z" /><path d="M326 247v25m42-25v25" /></g>
-            <g v-if="houseLevel >= 4" class="house-addon side-pool"><ellipse cx="355" cy="260" rx="36" ry="13" /><ellipse cx="355" cy="257" rx="27" ry="8" /></g>
-            <g class="toy-bush bush-left"><circle cx="129" cy="239" r="19" /><circle cx="111" cy="249" r="14" /></g>
+          <g class="tree" :class="{ subdued: !hasEffect('garden') }" transform="translate(94 139)">
+            <g class="tree-motion">
+              <path d="m35 61 7 37-13 6-2-41z" fill="#76533e" />
+              <g class="tree-crown"><circle cx="31" cy="35" fill="#3d9f66" r="27" /><circle cx="14" cy="48" fill="#5bbd79" r="21" /><circle cx="51" cy="49" fill="#2f8a59" r="23" /><circle cx="35" cy="21" fill="#70cf88" r="22" /></g>
+            </g>
           </g>
 
-          <g v-else class="house house-inside dollhouse">
-            <ellipse class="room-shadow" cx="232" cy="279" fill="#456052" opacity=".2" rx="145" ry="20" />
-
-            <g class="ground-room">
-              <path class="room-wall" d="M111 126Q111 116 122 116H338Q349 116 349 127V230H111Z" fill="var(--house-wall)" />
-              <path class="room-side" d="m349 127 24 15v102l-24-14Z" fill="#e6c08a" />
-              <path class="room-floor" d="M111 230h238l24 15-63 37H89Z" fill="var(--house-floor)" />
-              <path class="floorboards" d="m111 244 224 1m-197-15-18 39m72-39-7 52m61-52 8 47m46-47 21 29" />
-              <path class="baseboard" d="M113 225h234" />
-              <path class="room-frame" d="M111 230V126Q111 116 122 116h216q11 0 11 11v103m0 0 24 15M111 230l-22 52h221l63-37" />
-
-              <g class="wide-window">
-                <rect x="205" y="137" width="54" height="45" rx="7" fill="#fff" />
-                <rect x="211" y="143" width="42" height="33" rx="4" :fill="hasEffect('lights') ? '#ffe27c' : '#96d8e8'" />
-                <path d="M232 143v33m-21-16h42" />
-                <path class="curtain" d="M204 137c-9 14-7 35 0 47m56-47c9 14 7 35 0 47" />
+          <g :key="view" class="house-view">
+            <g v-if="view === 'front'" class="house house-front" :class="`house-level-${houseLevel}`">
+              <ellipse class="toy-house-shadow" cx="232" cy="271" rx="125" ry="21" />
+              <rect class="toy-house-body" x="137" :y="houseLevel >= 1 ? 145 : 151" width="188" :height="houseLevel >= 1 ? 110 : 104" rx="10" />
+              <g v-if="houseLevel >= 1" class="house-addon toy-upper-floor">
+                <rect x="163" y="87" width="136" height="69" rx="10" />
+                <path d="M163 147h136" />
+                <g class="toy-window upper-window"><rect x="205" y="101" width="52" height="37" rx="8" /><path d="M231 105v29m-22-15h44" /></g>
               </g>
 
-              <g class="starter-shelf">
-                <rect x="287" y="151" width="38" height="8" rx="4" />
-                <circle cx="297" cy="143" r="8" />
-                <path d="M297 136c-6-8 4-13 6-4 5-6 10 3 2 7" />
-                <rect x="311" y="137" width="8" height="14" rx="2" />
+              <g class="toy-roof">
+                <path :d="houseLevel >= 1 ? 'M143 91 230 36l88 55-13 17-75-45-74 45Z' : 'M112 155 230 78l119 77-15 18-104-66-103 66Z'" />
+                <path class="roof-highlight" :d="houseLevel >= 1 ? 'M230 36l88 55-7 9-81-49Z' : 'M230 78l119 77-8 10-111-70Z'" />
               </g>
 
-              <HouseFurniture v-for="item in equippedInteriorItems" :key="item.id" :item="item" />
+              <g class="toy-door">
+                <path d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
+                <circle cx="241" cy="220" r="4" />
+                <path d="M203 255h55" />
+              </g>
+              <g class="toy-window left-window"><rect x="157" y="174" width="43" height="39" rx="9" /><path d="M178 178v31m-17-15h35" /></g>
+              <g class="toy-window right-window"><rect x="263" y="174" width="43" height="39" rx="9" /><path d="M284 178v31m-17-15h35" /></g>
+
+              <g v-if="houseLevel >= 2" class="house-addon toy-extension">
+                <rect x="90" y="196" width="55" height="58" rx="10" />
+                <path d="m80 199 38-32 38 32-9 12-29-23-29 23Z" />
+                <rect x="104" y="211" width="28" height="25" rx="6" />
+              </g>
+              <g v-if="houseLevel >= 3" class="house-addon toy-tower">
+                <rect x="303" y="112" width="54" height="143" rx="9" />
+                <path d="m294 115 36-42 36 42-10 11-26-30-27 30Z" />
+                <rect x="316" y="137" width="28" height="31" rx="8" /><rect x="316" y="187" width="28" height="31" rx="8" />
+              </g>
+              <g v-if="houseLevel >= 4" class="house-addon toy-balcony-front">
+                <path d="M170 144h120v18H170Z" /><path d="M179 147v27m25-27v27m26-27v27m26-27v27m25-27v27" />
+              </g>
+
+              <g class="front-step"><path d="M195 255h71l15 15h-101Z" /><path d="M188 265h86l12 12H176Z" /></g>
+              <g class="toy-bush bush-left"><circle cx="135" cy="242" r="19" /><circle cx="118" cy="250" r="15" /></g>
+              <g class="toy-bush bush-right"><circle cx="327" cy="241" r="18" /><circle cx="343" cy="250" r="14" /></g>
             </g>
 
-            <g v-if="houseLevel >= 1" class="house-addon upper-dollhouse-room">
-              <path d="M139 76q0-8 9-8h164q9 0 9 9v49H139Z" fill="var(--house-wall-upper)" />
-              <path d="M139 121h182v9H139Z" fill="#a86c59" />
-              <rect x="205" y="83" width="49" height="30" rx="6" fill="#fff" />
-              <rect x="211" y="89" width="37" height="18" rx="3" fill="#9bd9e6" />
-              <path d="M230 89v18" stroke="#fff" stroke-width="3" />
-              <g class="upper-room-toys"><path d="M158 104h31v17h-31Z" fill="#80a8e4" /><circle cx="166" cy="101" fill="#f3b44f" r="7" /><path d="m283 106 8-14 8 14v15h-16Z" fill="#7dc895" /></g>
+            <g v-else-if="view === 'side'" class="house house-side">
+              <ellipse class="toy-house-shadow" cx="232" cy="271" rx="126" ry="21" />
+              <path class="toy-side-body" d="M139 148h151l45 28v80H139Z" />
+              <path class="toy-side-wall" d="m290 148 45 28v80l-45-13Z" />
+              <path class="toy-side-roof" d="M112 151 218 74l106 72 37 28-17 16-48-31-78-56-91 66Z" />
+              <g class="toy-window side-wide"><rect x="178" y="171" width="68" height="47" rx="11" /><path d="M212 176v37m-29-18h58" /></g>
+              <g class="side-door"><path d="M266 194q0-10 10-10h22q10 0 10 10v61h-42Z" /><circle cx="296" cy="220" r="4" /></g>
+              <g v-if="houseLevel >= 1" class="house-addon side-upper"><rect x="177" y="103" width="83" height="50" rx="9" /><g class="toy-window"><rect x="199" y="113" width="39" height="29" rx="7" /></g></g>
+              <g v-if="houseLevel >= 2" class="house-addon side-sunroom"><rect x="87" y="197" width="59" height="58" rx="12" /><path d="m80 199 36-30 37 30" /><rect x="99" y="210" width="34" height="29" rx="8" /></g>
+              <g v-if="houseLevel >= 3" class="house-addon side-deck"><path d="M314 235h66v13h-66Z" /><path d="M326 247v25m42-25v25" /></g>
+              <g v-if="houseLevel >= 4" class="house-addon side-pool"><ellipse cx="355" cy="260" rx="36" ry="13" /><ellipse cx="355" cy="257" rx="27" ry="8" /></g>
+              <g class="toy-bush bush-left"><circle cx="129" cy="239" r="19" /><circle cx="111" cy="249" r="14" /></g>
             </g>
 
-            <g class="dollhouse-roof" :class="{ raised: houseLevel >= 1 }">
-              <path :d="houseLevel >= 1 ? 'M121 68 230 18l111 50-15 15-96-42-95 42Z' : 'M91 116 230 53l139 63-17 18-122-55-122 55Z'" fill="var(--house-roof)" />
-              <path :d="houseLevel >= 1 ? 'm230 18 111 50-9 9-102-44Z' : 'm230 53 139 63-10 11-129-57Z'" fill="var(--house-roof-shade)" />
-            </g>
+            <g v-else class="house house-inside dollhouse">
+              <ellipse class="room-shadow" cx="232" cy="279" fill="#456052" opacity=".2" rx="145" ry="20" />
 
-            <g v-if="houseLevel >= 2" class="house-addon attic-star"><circle cx="230" cy="58" r="17" fill="#ffe27b" /><path d="m230 46 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" fill="#fff7cd" /></g>
-            <g v-if="houseLevel >= 3" class="house-addon toy-balcony"><path d="M321 119h43v56h-43Z" fill="#fff0ce" /><path d="M316 119h54l-7-13h-40Z" fill="#6f8edb" /><path d="M326 145h33m-28-14v39m23-39v39" stroke="#d47a63" stroke-width="4" /></g>
-            <g v-if="houseLevel >= 4" class="house-addon rooftop-flag"><path d="M231 18V1m0 1 30 9-30 9" fill="#ffd05b" stroke="#96602c" stroke-linejoin="round" stroke-width="3" /></g>
+              <g class="ground-room">
+                <path class="room-wall" d="M111 126Q111 116 122 116H338Q349 116 349 127V230H111Z" fill="var(--house-wall)" />
+                <path class="room-side" d="m349 127 24 15v102l-24-14Z" fill="#e6c08a" />
+                <path class="room-floor" d="M111 230h238l24 15-63 37H89Z" fill="var(--house-floor)" />
+                <path class="floorboards" d="m111 244 224 1m-197-15-18 39m72-39-7 52m61-52 8 47m46-47 21 29" />
+                <path class="baseboard" d="M113 225h234" />
+                <path class="room-frame" d="M111 230V126Q111 116 122 116h216q11 0 11 11v103m0 0 24 15M111 230l-22 52h221l63-37" />
+
+                <g class="wide-window">
+                  <rect x="205" y="137" width="54" height="45" rx="7" fill="#fff" />
+                  <rect x="211" y="143" width="42" height="33" rx="4" :fill="hasEffect('lights') ? '#ffe27c' : '#96d8e8'" />
+                  <path d="M232 143v33m-21-16h42" />
+                  <path class="curtain" d="M204 137c-9 14-7 35 0 47m56-47c9 14 7 35 0 47" />
+                </g>
+
+                <g class="starter-shelf">
+                  <rect x="287" y="151" width="38" height="8" rx="4" />
+                  <circle cx="297" cy="143" r="8" />
+                  <path d="M297 136c-6-8 4-13 6-4 5-6 10 3 2 7" />
+                  <rect x="311" y="137" width="8" height="14" rx="2" />
+                </g>
+
+                <HouseFurniture v-for="item in equippedInteriorItems" :key="item.id" :item="item" />
+              </g>
+
+              <g v-if="houseLevel >= 1" class="house-addon upper-dollhouse-room">
+                <path d="M139 76q0-8 9-8h164q9 0 9 9v49H139Z" fill="var(--house-wall-upper)" />
+                <path d="M139 121h182v9H139Z" fill="#a86c59" />
+                <rect x="205" y="83" width="49" height="30" rx="6" fill="#fff" />
+                <rect x="211" y="89" width="37" height="18" rx="3" fill="#9bd9e6" />
+                <path d="M230 89v18" stroke="#fff" stroke-width="3" />
+                <g class="upper-room-toys"><path d="M158 104h31v17h-31Z" fill="#80a8e4" /><circle cx="166" cy="101" fill="#f3b44f" r="7" /><path d="m283 106 8-14 8 14v15h-16Z" fill="#7dc895" /></g>
+              </g>
+
+              <g class="dollhouse-roof" :class="{ raised: houseLevel >= 1 }">
+                <path :d="houseLevel >= 1 ? 'M121 68 230 18l111 50-15 15-96-42-95 42Z' : 'M91 116 230 53l139 63-17 18-122-55-122 55Z'" fill="var(--house-roof)" />
+                <path :d="houseLevel >= 1 ? 'm230 18 111 50-9 9-102-44Z' : 'm230 53 139 63-10 11-129-57Z'" fill="var(--house-roof-shade)" />
+              </g>
+
+              <g v-if="houseLevel >= 2" class="house-addon attic-star"><circle cx="230" cy="58" r="17" fill="#ffe27b" /><path d="m230 46 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" fill="#fff7cd" /></g>
+              <g v-if="houseLevel >= 3" class="house-addon toy-balcony"><path d="M321 119h43v56h-43Z" fill="#fff0ce" /><path d="M316 119h54l-7-13h-40Z" fill="#6f8edb" /><path d="M326 145h33m-28-14v39m23-39v39" stroke="#d47a63" stroke-width="4" /></g>
+              <g v-if="houseLevel >= 4" class="house-addon rooftop-flag"><path d="M231 18V1m0 1 30 9-30 9" fill="#ffd05b" stroke="#96602c" stroke-linejoin="round" stroke-width="3" /></g>
+            </g>
           </g>
-        </g>
 
-        <g v-if="view !== 'inside' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="#8d5d49" /><circle cx="288" cy="122" fill="#fff" opacity=".55" r="8" /><circle cx="296" cy="110" fill="#fff" opacity=".38" r="11" /></g>
-        <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)"><ellipse fill="#438c58" rx="20" ry="8" /><circle cx="-9" cy="-8" fill="#ff8378" r="6" /><circle cx="4" cy="-11" fill="#ffd161" r="6" /><circle cx="13" cy="-5" fill="#f5a0b9" r="5" /></g>
-        <g v-if="energy >= 85 && energy < 100" class="sparkles" fill="#fff4a2">
-          <path d="m330 154 4 10 10 4-10 4-4 10-4-10-10-4 10-4z" /><path d="m353 179 3 7 7 3-7 3-3 7-3-7-7-3 7-3z" /><path d="m115 181 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
-        </g>
-        <g v-if="energy === 100" class="perfect-shimmer" aria-label="Glitzereffekt für 100 Prozent Energie">
-          <path class="shimmer-star shimmer-one" d="m352 125 5 13 13 5-13 5-5 13-5-13-13-5 13-5Z" />
-          <path class="shimmer-star shimmer-two" d="m397 172 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
-          <path class="shimmer-star shimmer-three" d="m111 172 4 10 10 4-10 4-4 10-4-10-10-4 10-4Z" />
-          <path class="shimmer-star shimmer-four" d="m176 104 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" />
-          <path class="shimmer-star shimmer-five" d="m289 226 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
-          <path class="shimmer-sweep" d="M138 139c54-47 146-62 204-22" />
-        </g>
+          <g v-if="view !== 'inside' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="#8d5d49" /><circle cx="288" cy="122" fill="#fff" opacity=".55" r="8" /><circle cx="296" cy="110" fill="#fff" opacity=".38" r="11" /></g>
+          <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)"><ellipse fill="#438c58" rx="20" ry="8" /><circle cx="-9" cy="-8" fill="#ff8378" r="6" /><circle cx="4" cy="-11" fill="#ffd161" r="6" /><circle cx="13" cy="-5" fill="#f5a0b9" r="5" /></g>
+          <g v-if="energy >= 85 && energy < 100" class="sparkles" fill="#fff4a2">
+            <path d="m330 154 4 10 10 4-10 4-4 10-4-10-10-4 10-4z" /><path d="m353 179 3 7 7 3-7 3-3 7-3-7-7-3 7-3z" /><path d="m115 181 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
+          </g>
+          <g v-if="energy === 100" class="perfect-shimmer" aria-label="Glitzereffekt für 100 Prozent Energie">
+            <path class="shimmer-star shimmer-one" d="m352 125 5 13 13 5-13 5-5 13-5-13-13-5 13-5Z" />
+            <path class="shimmer-star shimmer-two" d="m397 172 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
+            <path class="shimmer-star shimmer-three" d="m111 172 4 10 10 4-10 4-4 10-4-10-10-4 10-4Z" />
+            <path class="shimmer-star shimmer-four" d="m176 104 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" />
+            <path class="shimmer-star shimmer-five" d="m289 226 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
+            <path class="shimmer-sweep" d="M138 139c54-47 146-62 204-22" />
+          </g>
 
-        <g v-if="isEquipped('flower-boxes') && view !== 'inside'" class="accessory flowers"><rect x="250" y="213" width="24" height="5" rx="2" fill="#9c684b" /><circle cx="255" cy="210" fill="#ff8a83" r="4" /><circle cx="263" cy="208" fill="#ffd264" r="4" /><circle cx="271" cy="210" fill="#e98db0" r="4" /></g>
-        <g v-if="isEquipped('garden-lights')" class="accessory lights"><path d="m123 235 29 15m-22-11v15m13-10v15" stroke="#6b624c" stroke-width="2" /><circle cx="130" cy="240" fill="#ffe270" r="4" /><circle cx="143" cy="246" fill="#ffe270" r="4" /></g>
-        <g v-if="isEquipped('hammock')" class="accessory hammock"><path d="m111 205 57 29" stroke="#e87363" stroke-width="5" /><path d="m112 198-8 41m65-14 8 42" stroke="#705441" stroke-width="3" /></g>
-        <g v-if="isEquipped('telescope')" class="accessory telescope"><path d="m350 192 18-8" stroke="#496272" stroke-width="7" /><path d="m358 190-8 25m8-25 9 20" stroke="#496272" stroke-width="3" /></g>
-      </g>
+          <g v-if="isEquipped('flower-boxes') && view !== 'inside'" class="accessory flowers"><rect x="250" y="213" width="24" height="5" rx="2" fill="#9c684b" /><circle cx="255" cy="210" fill="#ff8a83" r="4" /><circle cx="263" cy="208" fill="#ffd264" r="4" /><circle cx="271" cy="210" fill="#e98db0" r="4" /></g>
+          <g v-if="isEquipped('garden-lights')" class="accessory lights"><path d="m123 235 29 15m-22-11v15m13-10v15" stroke="#6b624c" stroke-width="2" /><circle cx="130" cy="240" fill="#ffe270" r="4" /><circle cx="143" cy="246" fill="#ffe270" r="4" /></g>
+          <g v-if="isEquipped('hammock')" class="accessory hammock"><path d="m111 205 57 29" stroke="#e87363" stroke-width="5" /><path d="m112 198-8 41m65-14 8 42" stroke="#705441" stroke-width="3" /></g>
+          <g v-if="isEquipped('telescope')" class="accessory telescope"><path d="m350 192 18-8" stroke="#496272" stroke-width="7" /><path d="m358 190-8 25m8-25 9 20" stroke="#496272" stroke-width="3" /></g>
+        </g>
       </svg>
 
       <div class="world-family" :class="{ inside: view === 'inside', 'guardian-active': activeFamilyMember?.role === 'guardian' }" aria-label="Familienmitglieder in der Familienwelt">
@@ -260,6 +261,8 @@
 import { computed, onUnmounted, ref } from 'vue';
 import { motion, useReducedMotion } from 'motion-v';
 import type { PanInfo } from 'motion-v';
+
+import PixiWorldFoundation from '@/components/PixiWorldFoundation.vue';
 
 import AvatarFigure from './AvatarFigure.vue';
 import AnimatedPet from './AnimatedPet.vue';
@@ -408,7 +411,10 @@ onUnmounted(() => {
 .world-scene {
   width: 100%;
   height: auto;
+  position: relative;
+  z-index: 1;
   overflow: visible;
+  opacity: 0.16;
 }
 .island {
   transform-origin: 230px 210px;
