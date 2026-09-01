@@ -79,13 +79,13 @@
 import { computed } from 'vue';
 
 import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
-import { usePrototypeStore } from '../stores/prototype';
+import { useFamilyWorldStore } from '../stores/family-world';
 
 type DayStatus = 'done' | 'today' | 'upcoming';
 
-const props = defineProps<{ modelValue: boolean }>();
+defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
-const store = usePrototypeStore();
+const store = useFamilyWorldStore();
 const labels = [
   { label: 'Mo', fullLabel: 'Montag' },
   { label: 'Di', fullLabel: 'Dienstag' },
