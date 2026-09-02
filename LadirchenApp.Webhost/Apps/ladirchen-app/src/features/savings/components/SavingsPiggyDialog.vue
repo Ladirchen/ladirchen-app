@@ -152,16 +152,16 @@
 import { computed, ref, watch } from 'vue';
 
 import AnimatedExchangeIcon from './AnimatedExchangeIcon.vue';
-import LadirchenCoin from './LadirchenCoin.vue';
-import LadiMascot from './LadiMascot.vue';
+import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import LadiMascot from '@/shared/components/LadiMascot.vue';
 import SavingGoalDialog from './SavingGoalDialog.vue';
-import SavingsInterestSimulator from './savings/SavingsInterestSimulator.vue';
-import type { NewGoal, SavingGoal } from '../domain/types';
-import { getLadiStage } from '../domain/ladi';
-import { useFamilyWorldStore } from '../stores/family-world';
+import SavingsInterestSimulator from './SavingsInterestSimulator.vue';
+import type { NewGoal, SavingGoal, SavingGoalId } from '@/domain/types';
+import { getLadiStage } from '@/domain/ladi';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
-const selectedGoalId = ref('');
+const selectedGoalId = ref<SavingGoalId>();
 const amount = ref(25);
 const goalDialog = ref(false);
 const editingGoal = ref<SavingGoal | null>(null);
@@ -189,10 +189,12 @@ const formatRate = (value: number) => value.toLocaleString('de-DE', { minimumFra
 const progress = (saved: number, target: number) => Math.min(100, (saved / target) * 100);
 const weeklyInterest = (saved: number) => saved <= 0 ? 0 : Math.max(1, Math.round(saved * (store.savingsInterestRate / 100)));
 const deposit = () => {
+  if (!selectedGoalId.value) {return;}
   store.saveToGoal(selectedGoalId.value, amount.value);
   amount.value = 25;
 };
 const withdraw = () => {
+  if (!selectedGoalId.value) {return;}
   store.withdrawFromGoal(selectedGoalId.value, amount.value);
   amount.value = 25;
 };
@@ -237,7 +239,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   border-bottom: 1px solid rgba(181, 107, 107, 0.14);
 }
 .piggy-header h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 23px;
   letter-spacing: -0.035em;
 }
@@ -248,12 +250,12 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   background: linear-gradient(145deg, #fffaf0, #eef9f4);
 }
 .balance-grid {
-  display: grid;
+  @apply d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 .balance-tile {
-  padding: 12px;
+  @apply pa-3;
   border: 1px solid rgba(110, 82, 72, 0.13);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.62);
@@ -264,7 +266,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 }
 .balance-tile span,
 .balance-tile strong {
-  display: block;
+  @apply d-block;
 }
 .balance-tile span {
   color: var(--lad-muted);
@@ -276,8 +278,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 }
 .family-currency-value {
   padding: 10px 12px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
   border: 1px solid rgba(110, 82, 72, 0.13);
   border-radius: 16px;
@@ -288,7 +289,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 }
 .family-currency-value span,
 .family-currency-value strong {
-  display: block;
+  @apply d-block;
 }
 .family-currency-value span {
   color: var(--lad-muted);
@@ -312,8 +313,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   font-weight: 950;
 }
 .interest-factors {
-  display: flex;
-  flex-wrap: wrap;
+  @apply d-flex flex-wrap;
   gap: 6px;
 }
 .interest-factors span {
@@ -328,21 +328,16 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   border: 1px solid rgba(242, 175, 66, 0.25);
 }
 .saving-goals-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  @apply d-flex align-center justify-space-between ga-3;
 }
 .saving-goals-heading > div {
-  min-width: 0;
+  @apply min-w-0;
 }
 .saving-goals-heading :deep(.v-btn) {
-  flex-shrink: 0;
+  @apply flex-shrink-0;
 }
 .interest-equation {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  @apply d-flex align-center flex-wrap;
   gap: 5px;
 }
 .interest-equation span {
@@ -356,12 +351,11 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   color: #b47a1f;
 }
 .tip-list {
-  display: grid;
+  @apply d-grid;
   gap: 9px;
 }
 .tip-list > div {
-  display: flex;
-  align-items: flex-start;
+  @apply d-flex align-start;
   gap: 9px;
 }
 .tip-list > div > span {
@@ -370,10 +364,10 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 .tip-list p,
 .tip-list strong,
 .tip-list small {
-  display: block;
+  @apply d-block;
 }
 .tip-list p {
-  margin: 0;
+  @apply ma-0;
 }
 .tip-list strong {
   font-size: 12px;
@@ -391,7 +385,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   font-size: 12px;
 }
 .dialog-section-title {
-  margin: 0;
+  @apply ma-0;
   font-size: 18px;
   letter-spacing: -0.025em;
 }
@@ -400,8 +394,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   border: 1px solid var(--lad-border);
 }
 .bonus-lock-note {
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 5px;
   color: #8a641f;
   font-size: 10px;
@@ -410,9 +403,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 .goal-emoji {
   width: 43px;
   height: 43px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+  @apply d-grid place-center flex-shrink-0;
   border-radius: 13px;
   background: var(--lad-surface-soft);
   font-size: 24px;
@@ -424,9 +415,7 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   grid-template-columns: 1fr 1fr;
 }
 .setting-label {
-  margin-top: 12px;
-  display: flex;
-  justify-content: space-between;
+  @apply mt-3 d-flex justify-space-between;
   color: var(--lad-muted);
   font-size: 12px;
 }

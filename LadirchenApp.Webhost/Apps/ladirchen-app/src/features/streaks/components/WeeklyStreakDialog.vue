@@ -79,7 +79,7 @@
 import { computed } from 'vue';
 
 import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
-import { useFamilyWorldStore } from '../stores/family-world';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 type DayStatus = 'done' | 'today' | 'upcoming';
 
@@ -123,13 +123,12 @@ const close = () => emit('update:modelValue', false);
 <style scoped>
 .streak-dialog {
   max-height: min(820px, 94dvh);
-  overflow: hidden;
+  @apply overflow-hidden;
   color: #253843;
   background: #fffdf8 !important;
 }
 .streak-header {
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   flex: 0 0 auto;
   background: linear-gradient(145deg, #ffe2e9 0%, #ffedda 48%, #fff4c9 100%);
   border-bottom: 1px solid rgba(181, 107, 107, 0.14);
@@ -137,9 +136,9 @@ const close = () => emit('update:modelValue', false);
 .streak-header::before,
 .streak-header::after {
   content: "";
-  position: absolute;
+  @apply position-absolute;
   border-radius: 50%;
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .streak-header::before {
   width: 190px;
@@ -159,16 +158,15 @@ const close = () => emit('update:modelValue', false);
 }
 .streak-title-row {
   min-height: 104px;
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: flex;
-  align-items: flex-start;
+  @apply d-flex align-start;
 }
 .streak-title-row > div:first-child {
   max-width: 255px;
 }
 .streak-dialog h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 27px;
   letter-spacing: -0.04em;
 }
@@ -179,7 +177,7 @@ const close = () => emit('update:modelValue', false);
   line-height: 1.4;
 }
 .close-button {
-  position: absolute;
+  @apply position-absolute;
   top: -7px;
   right: -8px;
   z-index: 3;
@@ -187,14 +185,13 @@ const close = () => emit('update:modelValue', false);
 .streak-hero {
   width: 92px;
   height: 92px;
-  position: absolute;
+  @apply position-absolute;
   top: 13px;
   right: 20px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
 }
 .hero-spark {
-  position: absolute;
+  @apply position-absolute;
   z-index: 2;
   color: #df8b2a;
   font-size: 16px;
@@ -210,17 +207,14 @@ const close = () => emit('update:modelValue', false);
   animation-delay: -0.8s;
 }
 .summary-grid {
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: grid;
+  @apply d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 .summary-tile {
-  min-width: 0;
-  padding: 12px;
-  display: flex;
-  align-items: center;
+  @apply min-w-0 pa-3 d-flex align-center;
   gap: 10px;
   border: 1px solid rgba(110, 82, 72, 0.13);
   border-radius: 17px;
@@ -230,8 +224,7 @@ const close = () => emit('update:modelValue', false);
 .summary-icon {
   width: 42px;
   height: 42px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 42px;
   border-radius: 14px;
 }
@@ -245,7 +238,7 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile span,
 .summary-tile strong {
-  display: block;
+  @apply d-block;
 }
 .summary-tile span {
   color: var(--lad-muted);
@@ -254,23 +247,21 @@ const close = () => emit('update:modelValue', false);
 .summary-tile strong {
   margin-top: 1px;
   font-size: 17px;
-  white-space: nowrap;
+  @apply text-no-wrap;
 }
 .streak-content {
   min-height: 0;
   flex: 1 1 auto;
-  overflow-y: auto;
+  @apply overflow-y-auto;
   background: linear-gradient(180deg, #fffdf8, #f2fbf6);
 }
 .week-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  @apply d-flex align-end justify-space-between;
   gap: 10px;
 }
 .week-heading > div span,
 .week-heading > div strong {
-  display: block;
+  @apply d-block;
 }
 .week-heading > div strong {
   margin-top: 2px;
@@ -288,7 +279,7 @@ const close = () => emit('update:modelValue', false);
   border-radius: 999px;
   background: #ffe6a8;
   font-size: 9px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .week-heading > .week-complete {
   color: #176348;
@@ -296,23 +287,21 @@ const close = () => emit('update:modelValue', false);
 }
 .week-days {
   padding: 12px 7px 10px;
-  display: grid;
+  @apply d-grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  @apply ga-1;
   border: 1px solid rgba(79, 124, 105, 0.11);
   border-radius: 19px;
   background: rgba(255, 255, 255, 0.76);
 }
 .week-day {
-  min-width: 0;
-  position: relative;
-  text-align: center;
+  @apply min-w-0 position-relative text-center;
 }
 .week-day:not(:last-child)::after {
   content: "";
   width: calc(100% - 30px);
   height: 3px;
-  position: absolute;
+  @apply position-absolute;
   top: 29px;
   left: calc(50% + 17px);
   z-index: 0;
@@ -325,28 +314,26 @@ const close = () => emit('update:modelValue', false);
 .week-day > span {
   color: #40524b;
   font-size: 9px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .day-symbol {
   width: 32px;
   height: 32px;
   margin: 5px auto;
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   color: #9aa8a2;
   border: 2px solid #dfe9e4;
   border-radius: 50%;
   background: #f5f8f6;
 }
 .week-day small {
-  display: block;
-  overflow: hidden;
+  @apply d-block overflow-hidden;
   color: var(--lad-muted);
   font-size: 7px;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  @apply text-no-wrap;
 }
 .week-day--done .day-symbol {
   color: white;
@@ -372,7 +359,7 @@ const close = () => emit('update:modelValue', false);
 }
 .week-day--today small {
   color: #99600c;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .week-progress {
   padding: 12px 13px;
@@ -386,16 +373,14 @@ const close = () => emit('update:modelValue', false);
 .week-message {
   margin-bottom: 0;
   color: #52655d;
-  text-align: center;
+  @apply text-center;
   font-size: 9px;
   font-weight: 800;
   line-height: 1.4;
 }
 .energy-card {
   padding: 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  @apply d-flex align-center ga-3;
   border: 1px solid rgba(62, 188, 140, 0.2);
   border-radius: 20px;
   background: linear-gradient(145deg, #ecfaf3, #f9fff8);
@@ -404,36 +389,31 @@ const close = () => emit('update:modelValue', false);
 .energy-illustration {
   width: 58px;
   height: 58px;
-  position: relative;
-  display: grid;
-  place-items: center;
+  @apply position-relative d-grid place-center;
   flex: 0 0 58px;
   color: #268765;
   border-radius: 18px;
   background: #d9f4e6;
 }
 .energy-illustration > span {
-  position: absolute;
+  @apply position-absolute;
   top: -6px;
   right: -5px;
   width: 25px;
   height: 25px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border: 3px solid #f7fff9;
   border-radius: 50%;
   background: #fff0ad;
   font-size: 12px;
 }
 .energy-copy {
-  min-width: 0;
+  @apply min-w-0;
   flex: 1;
 }
 .energy-row {
   margin: 2px 0 7px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @apply d-flex align-center justify-space-between;
   gap: 10px;
 }
 .energy-row strong {
@@ -453,9 +433,7 @@ const close = () => emit('update:modelValue', false);
   line-height: 1.35;
 }
 .energy-success {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  @apply d-flex align-center ga-1;
 }
 .energy-hint {
   color: var(--lad-muted);

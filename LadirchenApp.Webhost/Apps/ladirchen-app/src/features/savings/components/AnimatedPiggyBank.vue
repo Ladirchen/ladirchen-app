@@ -82,9 +82,9 @@ const piggyStyle = computed(() => ({
 
 <style scoped>
 .animated-piggy {
-  display: inline-grid;
+  @apply d-inline-grid;
   flex: 0 0 auto;
-  place-items: center;
+  @apply place-center;
   transform-origin: center bottom;
   animation: piggy-breathe 8s ease-in-out infinite;
 }
@@ -100,9 +100,7 @@ const piggyStyle = computed(() => ({
   animation: piggy-wiggle 900ms ease-in-out;
 }
 svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  @apply w-100 h-100 overflow-visible;
   filter: drop-shadow(0 5px 3px rgba(83, 46, 74, 0.18));
 }
 .body,

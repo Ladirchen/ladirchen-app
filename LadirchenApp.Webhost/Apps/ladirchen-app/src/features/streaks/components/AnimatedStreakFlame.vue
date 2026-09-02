@@ -31,16 +31,14 @@ const flameStyle = computed(() => ({
 
 <style scoped>
 .animated-streak-flame {
-  display: inline-grid;
+  @apply d-inline-grid;
   flex: 0 0 auto;
-  place-items: center;
+  @apply place-center;
   transform-origin: center bottom;
   animation: flame-bob 3.4s ease-in-out infinite;
 }
 svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  @apply w-100 h-100 overflow-visible;
   filter: drop-shadow(0 3px 2px rgba(142, 83, 20, 0.2));
 }
 .flame-shadow {

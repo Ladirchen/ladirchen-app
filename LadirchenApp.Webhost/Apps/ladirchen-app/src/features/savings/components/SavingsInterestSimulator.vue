@@ -66,12 +66,13 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { AnimatePresence, motion } from 'motion-v';
 
-import AnimatedPiggyBank from '../AnimatedPiggyBank.vue';
-import LadirchenCoin from '../LadirchenCoin.vue';
-import LadiMascot from '../LadiMascot.vue';
-import { getLadiStage } from '../../domain/ladi';
-import { familyParticipationInterestStrategy } from '../../domain/savings-interest';
-import { useFamilyWorldStore } from '../../stores/family-world';
+import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import LadiMascot from '@/shared/components/LadiMascot.vue';
+
+import AnimatedPiggyBank from './AnimatedPiggyBank.vue';
+import { getLadiStage } from '@/domain/ladi';
+import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const simulatedCompletion = ref(0);
@@ -141,14 +142,13 @@ onUnmounted(() => {
   background: linear-gradient(155deg, #eef7ff, #f1fbf6 62%, #fff8db) !important;
 }
 h3 {
-  margin: 0;
+  @apply ma-0;
   font-size: 18px;
   letter-spacing: -0.025em;
 }
 .simulator-preview {
   padding: 11px 12px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
   border: 1px solid rgba(62, 137, 116, 0.15);
   border-radius: 18px;
@@ -157,7 +157,7 @@ h3 {
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) strong,
 .simulator-preview > div:nth-child(2) small {
-  display: block;
+  @apply d-block;
 }
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) small {
@@ -170,11 +170,11 @@ h3 {
 }
 .simulator-rate {
   min-width: 70px;
-  text-align: right;
+  @apply text-right;
 }
 .simulator-rate strong,
 .simulator-rate span {
-  display: block;
+  @apply d-block;
 }
 .simulator-rate strong {
   color: var(--lad-blue-dark);
@@ -186,9 +186,7 @@ h3 {
 }
 .simulator-label {
   margin-top: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  @apply d-flex align-center justify-space-between;
   color: var(--lad-muted);
   font-size: 11px;
 }
@@ -201,10 +199,7 @@ h3 {
   background: rgba(255, 255, 255, 0.76);
 }
 .payout-estimate > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  @apply d-flex align-center justify-space-between ga-3;
 }
 .payout-estimate span,
 .payout-estimate small {
@@ -216,22 +211,16 @@ h3 {
   font-size: 22px;
 }
 .payout-estimate small {
-  display: block;
+  @apply d-block;
   margin-top: 3px;
   line-height: 1.35;
 }
 .simulator-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  @apply d-flex align-center justify-end;
   gap: 6px;
 }
 .payout-success {
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  overflow: hidden;
+  @apply pa-3 d-flex align-center ga-3 overflow-hidden;
   border: 1px solid rgba(62, 188, 140, 0.25);
   border-radius: 17px;
   background: linear-gradient(145deg, #e2f8ec, #fff4c9);
@@ -239,7 +228,7 @@ h3 {
 }
 .payout-success > div:last-child strong,
 .payout-success > div:last-child span {
-  display: block;
+  @apply d-block;
 }
 .payout-success > div:last-child strong {
   color: #247b5d;
@@ -254,31 +243,26 @@ h3 {
 .payout-visual {
   width: 96px;
   height: 70px;
-  position: relative;
-  display: grid;
-  place-items: center;
+  @apply position-relative d-grid place-center;
   flex: 0 0 96px;
 }
 .payout-visual > .animated-piggy {
-  position: absolute;
-  right: 0;
+  @apply position-absolute right-0;
 }
 .payout-coin {
-  position: absolute;
+  @apply position-absolute;
   z-index: 2;
   left: 9px;
 }
 @media (max-width: 400px) {
   .simulator-preview {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    @apply align-start flex-wrap;
   }
   .simulator-rate {
-    margin-left: auto;
+    @apply ms-auto;
   }
   .simulator-actions {
-    align-items: stretch;
-    flex-direction: column-reverse;
+    @apply align-stretch flex-column-reverse;
   }
 }
 </style>
