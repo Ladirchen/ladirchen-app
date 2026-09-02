@@ -44,59 +44,59 @@ defineProps<{ name: 'base' | 'face' | 'hair' | 'outfit' | 'extras' | 'fun' | 'se
 .category-icon {
   width: 34px;
   height: 34px;
-  overflow: visible;
+  @apply overflow-visible;
 }
 .line {
   fill: none;
-  stroke: #40535a;
+  stroke: var(--lad-palette-muted-700);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.6;
 }
 .soft {
-  fill: #fff7dd;
-  stroke: #d6b85c;
+  fill: var(--lad-palette-amber-100);
+  stroke: var(--lad-palette-orange-350);
   stroke-width: 1.5;
 }
 .skin {
-  fill: #efba91;
-  stroke: #865d49;
+  fill: var(--lad-palette-amber-200);
+  stroke: var(--lad-palette-orange-600);
   stroke-width: 1.8;
 }
 .dark {
-  fill: #32454d;
+  fill: var(--lad-palette-muted-700);
 }
 .hair,
 .mustache {
-  fill: #67432f;
-  stroke: #47352c;
+  fill: var(--lad-palette-orange-750);
+  stroke: var(--lad-palette-muted-750);
   stroke-linejoin: round;
   stroke-width: 1.8;
 }
 .mint {
-  fill: #65c9a3;
-  stroke: #347861;
+  fill: var(--lad-palette-teal-400);
+  stroke: var(--lad-palette-teal-700);
   stroke-linejoin: round;
   stroke-width: 2;
 }
 .glass {
-  fill: #c9eff4;
-  stroke: #40535a;
+  fill: var(--lad-palette-blue-150);
+  stroke: var(--lad-palette-muted-700);
   stroke-width: 2.5;
 }
 .gold {
-  fill: #ffd45e;
-  stroke: #a26b22;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 1.2;
 }
 .red {
-  fill: #ef6570;
-  stroke: #963842;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
   stroke-linejoin: round;
   stroke-width: 1.8;
 }
 .shine {
-  fill: #ffc0c4;
+  fill: var(--lad-palette-red-100);
 }
 </style>
