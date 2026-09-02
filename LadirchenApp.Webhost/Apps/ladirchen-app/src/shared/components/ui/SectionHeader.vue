@@ -22,26 +22,22 @@ withDefaults(defineProps<{
 
 <style scoped>
 .family-world-section-header {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  @apply d-flex align-end justify-space-between mb-3 ga-3;
 }
 .section-copy {
-  min-width: 0;
+  @apply min-w-0;
 }
 .section-copy > span {
-  display: block;
+  @apply d-block;
   margin-bottom: 2px;
   color: var(--lad-mint-dark);
   font-size: 8px;
   font-weight: 950;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+  @apply text-uppercase;
 }
 h2 {
-  margin: 0;
+  @apply ma-0;
   color: var(--lad-text);
   font-size: 18px;
   line-height: 1.2;
@@ -54,6 +50,6 @@ p {
   line-height: 1.4;
 }
 .section-action {
-  flex: 0 0 auto;
+  @apply flex-shrink-0;
 }
 </style>

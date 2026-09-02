@@ -22,11 +22,6 @@
     width: min(100%, 500px);
     height: calc(100dvh - 56px);
     min-height: calc(100dvh - 56px);
-    margin: 0 auto;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
     color: var(--lad-text);
     background: var(--lad-surface);
     border: 1px solid var(--lad-border);
@@ -37,13 +32,9 @@
   .family-world-header {
     min-height: 70px;
     padding: 12px 18px;
-    position: sticky;
-    top: 0;
+    @apply position-sticky top-0;
     z-index: 20;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    @apply ga-4;
     color: var(--lad-text);
     background: rgba(255, 253, 248, 0.96);
     border-bottom: 1px solid var(--lad-border);
@@ -52,12 +43,9 @@
   }
 
   .family-world-brand {
-    min-width: 0;
-    display: flex;
-    align-items: center;
+    @apply min-w-0;
     gap: 9px;
     color: #286a59;
-    text-decoration: none;
     font-size: 19px;
     font-weight: 950;
     letter-spacing: -0.04em;
@@ -69,9 +57,6 @@
   .family-world-logo {
     width: 46px;
     height: 46px;
-    position: relative;
-    flex-shrink: 0;
-    overflow: hidden;
     border: 1px solid rgba(40, 106, 89, 0.09);
     border-radius: 14px;
     background: white;
@@ -80,27 +65,22 @@
   .family-world-logo img {
     width: 86px;
     height: 86px;
-    position: absolute;
+    @apply position-absolute;
     top: -8px;
     left: -22px;
     max-width: none;
   }
   .header-stats {
     width: min(52%, 250px);
-    display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    align-items: center;
-    gap: 8px;
+    @apply ga-2;
   }
   .header-stat {
-    width: 100%;
+    @apply w-100;
     height: 42px;
-    min-width: 0;
+    @apply min-w-0;
     padding: 6px 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 5px;
     color: #365d52;
     border: 1px solid #d9e9e2;
@@ -108,7 +88,6 @@
     background: #f4faf7;
     font: inherit;
     font-size: 12px;
-    cursor: pointer;
     transition:
       background 160ms ease,
       transform 160ms ease,
@@ -137,14 +116,9 @@
     background: #eef8f3;
   }
   .reward-animation {
-    position: absolute;
     top: 48%;
     left: 50%;
     z-index: 60;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: none;
     animation: coin-to-piggy 1.4s cubic-bezier(0.25, 0.75, 0.25, 1) forwards;
   }
   .reward-animation .ladirchen-coin {
@@ -158,9 +132,7 @@
     text-shadow: 0 2px 0 white;
   }
   .family-world-content {
-    flex: 1;
     min-height: 0;
-    overflow-y: auto;
     padding-bottom: 80px;
   }
   .family-world-route {
@@ -192,39 +164,30 @@
       padding-inline: 8px;
     }
     .header-stat-label {
-      display: none;
+      @apply d-none;
     }
     .header-balance .animated-piggy {
-      display: none;
+      @apply d-none;
     }
   }
 
   .family-world-navigation {
     min-height: 70px;
     padding: 8px 8px 10px;
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    @apply right-0 bottom-0 left-0;
     z-index: 20;
-    display: grid;
     grid-template-columns: repeat(6, 1fr);
     background: rgba(255, 253, 248, 0.95);
     border-top: 1px solid var(--lad-border);
     backdrop-filter: blur(14px);
 
     a {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      @apply min-w-0;
       gap: 2px;
       color: var(--lad-muted);
       border-radius: 13px;
-      text-decoration: none;
       font-size: 9px;
-      font-weight: 800;
+      @apply font-weight-black;
       transition:
         color 160ms ease,
         background 160ms ease,
@@ -261,7 +224,7 @@
     margin-bottom: 18px;
   }
   .page-heading h1 {
-    margin: 0;
+    @apply ma-0;
     color: var(--lad-text);
     font-size: 27px;
     line-height: 1.08;
@@ -277,12 +240,12 @@
     margin: 0 0 5px;
     color: var(--lad-mint-dark);
     font-size: 11px;
-    font-weight: 900;
+    @apply font-weight-black;
     letter-spacing: 0.09em;
-    text-transform: uppercase;
+    @apply text-uppercase;
   }
   .section-title {
-    margin: 0;
+    @apply ma-0;
     font-size: 18px;
     letter-spacing: -0.025em;
   }
@@ -339,7 +302,7 @@
 
 @media (max-width: 600px) {
   .family-world-background {
-    padding: 0;
+    @apply pa-0;
   }
   .family-world-background .family-world-shell {
     height: 100dvh;

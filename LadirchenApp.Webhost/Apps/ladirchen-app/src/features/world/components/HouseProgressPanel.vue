@@ -43,25 +43,25 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
-import { HOUSE_STAGES } from '../../data/house-catalog';
+import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '../data/house-catalog';
+import type { HouseStageLevel } from '@/domain/house';
 
 const props = defineProps<{
   completedWeeks: number;
-  houseLevel: number;
+  houseLevel: HouseStageLevel;
 }>();
 
 const houseStages = HOUSE_STAGES;
-const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages[0]);
+const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOUSE_STAGE);
 </script>
 
 <style scoped>
 .house-stage-card {
   min-height: 126px;
   padding: 14px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 13px;
-  overflow: hidden;
+  @apply overflow-hidden;
   border: 1px solid rgba(236, 179, 74, 0.2);
   border-radius: 20px;
   background: linear-gradient(135deg, #fff9ed, #fff1d4 58%, #edf9f2);
@@ -70,15 +70,13 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
 .house-stage-visual {
   width: 88px;
   height: 88px;
-  position: relative;
-  display: grid;
-  place-items: center;
+  @apply position-relative d-grid place-center;
   flex: 0 0 88px;
 }
 .house-halo {
   width: 72px;
   height: 72px;
-  position: absolute;
+  @apply position-absolute;
   border-radius: 50%;
   background: repeating-conic-gradient(
     from 0deg,
@@ -88,7 +86,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
   animation: house-halo-spin 12s linear infinite;
 }
 .house-stage-icon {
-  position: relative;
+  @apply position-relative;
   z-index: 2;
   font-size: 52px;
   line-height: 1;
@@ -96,7 +94,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
   animation: house-stage-bounce 3.2s ease-in-out infinite;
 }
 .house-spark {
-  position: absolute;
+  @apply position-absolute;
   z-index: 3;
   color: #e99a2c;
   font-size: 14px;
@@ -112,7 +110,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
   animation-delay: -0.9s;
 }
 .house-stage-copy {
-  min-width: 0;
+  @apply min-w-0;
   flex: 1;
 }
 .section-kicker {
@@ -123,9 +121,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
 }
 .house-stage-title {
   margin: 2px 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  @apply d-flex align-center flex-wrap;
   gap: 5px;
 }
 .house-stage-title strong {
@@ -137,25 +133,24 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
   border-radius: 999px;
   background: #ffe8ad;
   font-size: 8px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .house-stage-copy > p {
-  margin: 0;
+  @apply ma-0;
   color: var(--lad-muted);
   font-size: 9px;
   line-height: 1.35;
 }
 .house-stage-copy > b {
-  display: block;
+  @apply d-block;
   margin-top: 5px;
   color: #7b581d;
   font-size: 8px;
 }
 .stage-track {
-  margin-top: 8px;
-  display: grid;
+  @apply mt-2 d-grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  @apply ga-1;
 }
 .stage-track span {
   height: 6px;
@@ -176,13 +171,12 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
   background: rgba(255, 255, 255, 0.78);
 }
 .evolution-heading {
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
 }
 .evolution-heading > div:last-child span,
 .evolution-heading > div:last-child strong {
-  display: block;
+  @apply d-block;
 }
 .evolution-heading > div:last-child strong {
   margin-top: 1px;
@@ -191,20 +185,19 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? houseStages
 .evolution-icon {
   width: 40px;
   height: 40px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 40px;
   color: #278568;
   border-radius: 13px;
   background: #def4e8;
 }
 .evolution-steps {
-  display: grid;
+  @apply d-grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 .evolution-steps > div {
-  padding: 8px;
+  @apply pa-2;
   border-radius: 12px;
   background: #f5faf7;
 }

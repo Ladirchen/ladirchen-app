@@ -158,7 +158,7 @@
 import { computed } from 'vue';
 import { motion, useReducedMotion } from 'motion-v';
 
-import { getLadiStage } from '../domain/ladi';
+import { getLadiStage } from '@/domain/ladi';
 
 const props = withDefaults(defineProps<{ score: number; size?: number; showScore?: boolean }>(), { size: 46, showScore: true });
 const stage = computed(() => getLadiStage(props.score));
@@ -186,15 +186,12 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   --mask: #806047;
   width: calc(var(--ladi-size) + 23px);
   height: var(--ladi-size);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
+  @apply position-relative d-inline-flex align-center flex-shrink-0;
 }
 .ladi {
   width: var(--ladi-size);
   height: var(--ladi-size);
-  overflow: visible;
+  @apply overflow-visible;
   filter: drop-shadow(0 3px 2px rgba(48, 45, 36, 0.22));
 }
 .ladi-sloth {
@@ -506,8 +503,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   min-width: 30px;
   margin-left: -8px;
   padding: 3px 6px 3px 9px;
-  display: inline-flex;
-  align-items: center;
+  @apply d-inline-flex align-center;
   gap: 3px;
   color: #594016;
   border: 1px solid rgba(166, 96, 24, 0.16);
@@ -516,7 +512,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   box-shadow: 0 2px 5px rgba(87, 59, 17, 0.1);
   font-size: 9px;
   font-weight: 950;
-  white-space: nowrap;
+  @apply text-no-wrap;
 }
 .ladi-score i {
   width: 5px;

@@ -1,13 +1,13 @@
 <template>
   <div class="page page-padding wishes-page">
     <PageHeader
-      :description="store.viewerRole === 'guardian' ? `Ziele für ${store.activeChild.name} und die Familie verwalten.` : 'Spare für deine eigenen Wünsche oder unterstütze die sichtbaren Ziele deiner Familie.'"
+      :description="store.viewerRole === 'guardian' ? (store.permissions.canManageGoals ? `Ziele für ${store.activeChild.name} und die Familie verwalten.` : `Öffentliche Ziele von ${store.activeChild.name} ansehen und unterstützen.`) : 'Spare für deine eigenen Wünsche oder unterstütze die sichtbaren Ziele deiner Familie.'"
       eyebrow="Clever sparen"
-      icon="mdi-star-four-points-outline"
       title="Wünsche"
       tone="blue"
     >
-      <template v-if="store.viewerRole === 'guardian'" #action>
+      <template #icon><AnimatedWishIcon /></template>
+      <template v-if="store.permissions.canManageGoals" #action>
         <v-btn aria-label="Sparziel direkt hinzufügen" color="primary" icon="mdi-plus" variant="flat" @click="goalDialog = true" />
       </template>
     </PageHeader>
@@ -18,10 +18,7 @@
       </v-slide-group-item>
     </v-slide-group>
 
-    <v-btn-toggle v-model="activeTab" class="wish-tabs mb-5" color="primary" mandatory rounded="lg">
-      <v-btn value="own">{{ store.viewerRole === 'guardian' ? `${store.activeChild.name}s Ziele` : 'Meine Ziele' }}</v-btn>
-      <v-btn value="family">Familienziele</v-btn>
-    </v-btn-toggle>
+    <PageViewSwitch v-model="activeTab" class="mb-5" label="Zielansicht auswählen" :options="wishViewOptions" />
 
     <template v-if="activeTab === 'own'">
       <v-card class="active-goal pa-5 mb-6" color="blue-lighten-5" elevation="0" rounded="xl">
@@ -52,7 +49,7 @@
         :description="store.viewerRole === 'guardian' ? 'Private Kinderziele sind für Bezugspersonen nicht sichtbar.' : 'Private Ziele bleiben ausschließlich bei dir.'"
         :title="store.viewerRole === 'guardian' ? `Weitere Ziele von ${store.activeChild.name}` : 'Meine weiteren Ziele'"
       >
-        <template #action><v-btn aria-label="Neues Sparziel" color="primary" icon="mdi-plus" size="small" variant="tonal" @click="goalDialog = true" /></template>
+        <template v-if="store.viewerRole === 'child' || store.permissions.canManageGoals" #action><v-btn aria-label="Neues Sparziel" color="primary" icon="mdi-plus" size="small" variant="tonal" @click="goalDialog = true" /></template>
       </SectionHeader>
 
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
@@ -147,11 +144,14 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import AnimatedWishIcon from '../components/AnimatedWishIcon.vue';
 import SavingGoalDialog from '../components/SavingGoalDialog.vue';
-import PageHeader from '../components/ui/PageHeader.vue';
-import SectionHeader from '../components/ui/SectionHeader.vue';
-import type { GoalVisibility, NewGoal } from '../domain/types';
-import { useFamilyWorldStore } from '../stores/family-world';
+import PageHeader from '@/shared/components/ui/PageHeader.vue';
+import PageViewSwitch from '@/shared/components/ui/PageViewSwitch.vue';
+import type { PageViewOption } from '@/shared/components/ui/PageViewSwitch.vue';
+import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
+import type { FamilyMemberId, GoalVisibility, NewGoal, SavingGoalId, SavingGoalOwnerId } from '@/domain/types';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const route = useRoute();
@@ -159,7 +159,7 @@ const activeTab = ref<'own' | 'family'>('own');
 const saveDialog = ref(false);
 const goalDialog = ref(false);
 const supportDialog = ref(false);
-const supportGoalId = ref('');
+const supportGoalId = ref<SavingGoalId>();
 const supportAmount = ref(25);
 const saveAmount = ref(25);
 
@@ -170,13 +170,29 @@ const myOtherGoals = computed(() =>
 );
 const visibleFamilyGoals = computed(() =>
   store.goals.filter(
-    (goal) =>
+    (goal) => {
+      if (store.viewerRole === 'guardian' && !store.permissions.canViewFamilyGoals) {
+        return goal.ownerId !== 'family' && goal.ownerId !== store.activeChildId && goal.visibility === 'family';
+      }
+      return (
       goal.ownerId !== store.activeChildId &&
       (goal.visibility === 'family' ||
         (store.viewerRole === 'child' && goal.ownerId === store.activeChildId) ||
-        (store.viewerRole === 'guardian' && goal.visibility === 'guardians')),
+        (store.viewerRole === 'guardian' && store.permissions.canViewGuardianGoals && goal.visibility === 'guardians'))
+      );
+    },
   ),
 );
+const wishViewOptions = computed<Array<PageViewOption<'own' | 'family'>>>(() => {
+  const options: Array<PageViewOption<'own' | 'family'>> = [{
+    id: 'own',
+    icon: 'mdi-account-star-outline',
+    subtitle: `${store.ownSavingGoals.length} ${store.ownSavingGoals.length === 1 ? 'Wunsch' : 'Wünsche'}`,
+    title: store.viewerRole === 'guardian' ? `${store.activeChild.name}s Ziele` : 'Meine Ziele',
+  }];
+  if (store.permissions.canViewFamilyGoals) options.push({ id: 'family', icon: 'mdi-account-group-outline', subtitle: `${visibleFamilyGoals.value.length} sichtbar`, title: 'Familienziele' });
+  return options;
+});
 const childMembers = computed(() => store.members.filter((member) => member.role === 'child'));
 const supportGoal = computed(() => store.goals.find((goal) => goal.id === supportGoalId.value));
 const supportMaximum = computed(() => {
@@ -189,7 +205,7 @@ const supportExplanation = computed(() => store.viewerRole === 'child'
   : 'Das Geschenk wird nicht vom Guthaben des Kindes abgezogen.');
 
 const progress = (saved: number, target: number) => Math.min(100, (saved / target) * 100);
-const ownerName = (ownerId: string) => ownerId === 'family' ? 'Meine Familie' : store.members.find((member) => member.id === ownerId)?.name ?? 'Familie';
+const ownerName = (ownerId: SavingGoalOwnerId) => ownerId === 'family' ? 'Meine Familie' : store.members.find((member) => member.id === ownerId)?.name ?? 'Familie';
 const visibilityLabel = (visibility: GoalVisibility) => {
   if (visibility === 'private') return 'Nur für mich';
   if (visibility === 'guardians') return 'Mit Bezugspersonen';
@@ -200,12 +216,12 @@ const saveToGoal = () => {
   saveDialog.value = false;
   saveAmount.value = 25;
 };
-const selectChild = (childId: string) => {
+const selectChild = (childId: FamilyMemberId) => {
   store.selectChildForGuardian(childId);
   const firstGoal = store.goals.find((goal) => goal.ownerId === childId);
   if (firstGoal) store.activeGoalId = firstGoal.id;
 };
-const openSupport = (goalId: string) => {
+const openSupport = (goalId: SavingGoalId) => {
   supportGoalId.value = goalId;
   const goal = store.goals.find((item) => item.id === goalId);
   const remaining = goal ? Math.max(0, goal.target - goal.saved) : 0;
@@ -213,6 +229,7 @@ const openSupport = (goalId: string) => {
   supportDialog.value = true;
 };
 const giveSupport = () => {
+  if (!supportGoalId.value) {return;}
   if (store.viewerRole === 'child') store.giftLadirchenToGoal(supportGoalId.value, supportAmount.value);
   else store.supportGoal(supportGoalId.value, supportAmount.value);
   supportDialog.value = false;
@@ -220,25 +237,20 @@ const giveSupport = () => {
 const addGoal = (goal: NewGoal) => store.addGoal(goal);
 watch(
   () => route.query.new,
-  (value) => { if (value === '1' && store.viewerRole === 'guardian') goalDialog.value = true; },
+  (value) => { if (value === '1' && store.permissions.canManageGoals) goalDialog.value = true; },
   { immediate: true },
 );
+watch(() => store.permissions.canViewFamilyGoals, canViewFamilyGoals => {
+  if (!canViewFamilyGoals) activeTab.value = 'own';
+});
 </script>
 
 <style scoped>
-.wish-tabs {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-.wish-tabs :deep(.v-btn) {
-  min-width: 0;
-}
 .active-goal {
   border: 1px solid rgba(78, 143, 221, 0.18);
 }
 .active-goal h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 21px;
   letter-spacing: -0.03em;
 }
@@ -247,16 +259,16 @@ watch(
   animation: goal-float 2.8s ease-in-out infinite;
 }
 .goal-numbers strong {
-  display: block;
+  @apply d-block;
   font-size: 20px;
 }
 .goal-numbers span {
-  display: block;
+  @apply d-block;
   color: var(--lad-muted);
   font-size: 10px;
 }
 .goal-grid {
-  display: grid;
+  @apply d-grid;
   gap: 11px;
 }
 .family-goal {
@@ -266,9 +278,7 @@ watch(
 .goal-icon {
   width: 47px;
   height: 47px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+  @apply d-grid place-center flex-shrink-0;
   border-radius: 14px;
   background: var(--lad-surface-soft);
   font-size: 25px;
@@ -285,22 +295,20 @@ watch(
 .support-icon {
   width: 58px;
   height: 58px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border-radius: 19px;
   background: #eaf6ff;
   font-size: 31px;
   animation: goal-float 2.8s ease-in-out infinite;
 }
 .family-goal-actions {
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 6px;
 }
 .save-value {
   color: var(--lad-blue-dark);
   font-size: 30px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .dialog-actions {
   grid-template-columns: 1fr 1.3fr;

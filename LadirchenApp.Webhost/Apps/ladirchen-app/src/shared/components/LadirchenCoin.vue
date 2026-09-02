@@ -14,11 +14,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
 .ladirchen-coin {
   width: 66px;
   height: 66px;
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  overflow: hidden;
-  flex-shrink: 0;
+  @apply position-relative d-inline-grid place-center overflow-hidden flex-shrink-0;
   color: #69460a;
   border: 4px solid #ffc84f;
   border-radius: 50%;
@@ -34,7 +30,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
     inset 0 -6px 7px rgba(128, 70, 0, 0.18),
     0 5px 0 #b76b08,
     0 9px 18px rgba(116, 74, 9, 0.24);
-  font-weight: 950;
+  @apply font-weight-950;
 }
 .ladirchen-coin.small {
   width: 25px;
@@ -53,7 +49,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   content: "";
   width: 22%;
   height: 155%;
-  position: absolute;
+  @apply position-absolute;
   top: -28%;
   left: -48%;
   z-index: 4;
@@ -67,10 +63,10 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   );
   filter: blur(0.4px);
   animation: coin-sweep 2.8s ease-in-out infinite;
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .coin-letter {
-  position: relative;
+  @apply position-relative;
   z-index: 2;
   font-size: 29px;
   line-height: 1;
@@ -80,7 +76,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   font-size: 12px;
 }
 .coin-star {
-  position: absolute;
+  @apply position-absolute;
   top: 5px;
   right: 8px;
   color: #fff2a2;
@@ -95,7 +91,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
 .coin-shine {
   width: 22px;
   height: 7px;
-  position: absolute;
+  @apply position-absolute;
   top: 10px;
   left: 8px;
   transform: rotate(-35deg);

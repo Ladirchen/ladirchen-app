@@ -1,14 +1,19 @@
 import { defineStore } from 'pinia';
 
-import { createContributions, createFamilyMembers, createFamilyPets, createHouseAccessories, createPromotions, createSavingGoals, createShopRewards } from '../data/fixtures';
-import { HOUSE_THEMES } from '../data/house-catalog';
-import type { AvatarAppearance } from '../domain/avatar';
-import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '../domain/energy';
-import { isPromotionAvailable } from '../domain/promotions';
-import { familyParticipationInterestStrategy } from '../domain/savings-interest';
-import { shopRedemptionIsOpen } from '../domain/shop';
-import type { Contribution, FamilyCurrency, FamilyMember, FamilyPet, HouseAccessory, NewContribution, NewGoal, NewPromotion, NewShopReward, SavingGoal, ViewerRole } from '../domain/types';
-import { FAMILY_WORLD_STORAGE_KEYS, localFamilyWorldPersistence } from '../infrastructure/local-family-world-storage';
+import { createContributions, createFamilyMembers, createFamilyPets, createHouseAccessories, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
+import { HOUSE_STAGES, HOUSE_THEMES } from '@/features/world/data/house-catalog';
+import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/domain/avatar';
+import type { AvatarAppearance } from '@/domain/avatar';
+import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
+import type { HouseStageLevel } from '@/domain/house';
+import { resolveFamilyPermissions } from '@/domain/family-permissions';
+import type { FamilyPermissions } from '@/domain/family-permissions';
+import { isPromotionAvailable } from '@/domain/promotions';
+import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
+import { shopRedemptionIsOpen } from '@/domain/shop';
+import { createDomainId } from '@/domain/types';
+import type { Contribution, ContributionId, FamilyCurrency, FamilyMember, FamilyMemberId, FamilyPet, FamilyPetKindId, GuardianAccessLevel, GuardianGiftId, HouseAccessory, NewContribution, NewGoal, NewPromotion, NewShopReward, SavingGoal, SavingGoalId, ShopRewardId, ViewerRole, WorldEffect } from '@/domain/types';
+import { FAMILY_WORLD_STORAGE_KEYS, localFamilyWorldPersistence } from '@/infrastructure/local-family-world-storage';
 
 const persistence = localFamilyWorldPersistence;
 
@@ -16,6 +21,43 @@ const onboardingWasCompleted = () =>
   persistence.readText(FAMILY_WORLD_STORAGE_KEYS.familySetup) === 'completed';
 
 const supportedFamilyCurrencies: FamilyCurrency[] = ['CHF', 'EUR', 'HUF'];
+const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] => {
+  const guardians = members.filter(member => member.role === 'guardian');
+  const hasAdministrator = guardians.some(member => member.guardianAccess === 'admin');
+  return members.map((member) => {
+    if (member.role !== 'guardian') {
+      return member.appearance ? { ...member, appearance: normalizeAvatarAppearance(member.appearance) } : member;
+    }
+    const isFirstGuardian = member.id === guardians[0]?.id;
+    const fallbackAppearance = createGuardianAvatarAppearance(isFirstGuardian ? 'adult' : 'grandpa');
+    return {
+      ...member,
+      guardianAccess: member.guardianAccess ?? (!hasAdministrator && isFirstGuardian ? 'admin' : 'supporter'),
+      appearance: normalizeAvatarAppearance(member.appearance, fallbackAppearance),
+    };
+  });
+};
+const loadFamilyMembers = (): FamilyMember[] => normalizeFamilyMembers(
+  persistence.readList<FamilyMember>(FAMILY_WORLD_STORAGE_KEYS.familyMembers, createFamilyMembers),
+);
+const familyPetKinds: Record<string, { id: FamilyPetKindId; label: string }> = {
+  bird: { id: 'bird', label: 'Vogel' },
+  cat: { id: 'cat', label: 'Katze' },
+  dog: { id: 'dog', label: 'Hund' },
+  other: { id: 'other', label: 'Anderes Tier' },
+  rabbit: { id: 'rabbit', label: 'Kaninchen' },
+  Vogel: { id: 'bird', label: 'Vogel' },
+  Katze: { id: 'cat', label: 'Katze' },
+  Hund: { id: 'dog', label: 'Hund' },
+  'Anderes Tier': { id: 'other', label: 'Anderes Tier' },
+  Kaninchen: { id: 'rabbit', label: 'Kaninchen' },
+};
+const loadFamilyPets = (): FamilyPet[] => persistence
+  .readList<FamilyPet>(FAMILY_WORLD_STORAGE_KEYS.familyPets, createFamilyPets)
+  .map((pet) => {
+    const kind = familyPetKinds[pet.kind] ?? familyPetKinds.other!;
+    return { ...pet, kind: kind.id, kindLabel: pet.kindLabel ?? kind.label };
+  });
 const loadFamilyCurrency = (): FamilyCurrency => {
   const stored = persistence.readText(FAMILY_WORLD_STORAGE_KEYS.familyCurrency) as FamilyCurrency | null;
   return stored && supportedFamilyCurrencies.includes(stored) ? stored : 'CHF';
@@ -41,8 +83,8 @@ const shopRewardIsAvailable = (availableUntil?: string) => {
 };
 
 interface PendingGuardianGift {
-  id: string;
-  childId: string;
+  id: GuardianGiftId;
+  childId: FamilyMemberId;
   guardianName: string;
   goalTitle: string;
   destination: 'balance' | 'goal';
@@ -51,14 +93,14 @@ interface PendingGuardianGift {
 
 export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
   state: () => ({
-    signedInMemberId: 'laura',
+    signedInMemberId: FAMILY_MEMBER_IDS.laura,
     viewerRole: 'child' as ViewerRole,
-    activeChildId: persistence.readList<FamilyMember>(FAMILY_WORLD_STORAGE_KEYS.familyMembers, createFamilyMembers)
-      .find((member) => member.role === 'child')?.id ?? 'laura',
-    activeGoalId: 'bike',
+    activeChildId: loadFamilyMembers()
+      .find((member) => member.role === 'child')?.id ?? FAMILY_MEMBER_IDS.laura,
+    activeGoalId: SAVING_GOAL_IDS.bike,
     onboardingCompleted: onboardingWasCompleted(),
     familySetupOpen: !onboardingWasCompleted(),
-    balances: { laura: 340, adam: 220, daniel: 175 } as Record<string, number>,
+    balances: { [FAMILY_MEMBER_IDS.laura]: 340, [FAMILY_MEMBER_IDS.adam]: 220, [FAMILY_MEMBER_IDS.daniel]: 175 } as Record<FamilyMemberId, number>,
     familyCurrencyCode: loadFamilyCurrency(),
     ladirchenPerCurrencyUnit: loadLadirchenExchangeRate(),
     perfectRatingBonusPercent: 5,
@@ -75,12 +117,12 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     completedWeeklyStreak: 0,
     currentWeekDays: 4,
     currentWeekTarget: 7,
-    houseLevel: 0,
+    houseLevel: 0 as HouseStageLevel,
     houseThemeId: HOUSE_THEMES[0]?.id ?? 'sunny-dollhouse',
     revealVersion: 0,
     snackbar: { visible: false, message: '' },
-    members: persistence.readList<FamilyMember>(FAMILY_WORLD_STORAGE_KEYS.familyMembers, createFamilyMembers),
-    pets: persistence.readList<FamilyPet>(FAMILY_WORLD_STORAGE_KEYS.familyPets, createFamilyPets),
+    members: loadFamilyMembers(),
+    pets: loadFamilyPets(),
     contributions: createContributions(),
     goals: createSavingGoals(),
     accessories: loadHouseAccessories(),
@@ -90,23 +132,29 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
 
   getters: {
     activeChild(state): FamilyMember {
-      return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0];
+      return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0] ?? createFamilyMembers()[0]!;
     },
     signedInMember(state): FamilyMember {
-      return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0];
+      return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0] ?? createFamilyMembers()[0]!;
     },
-    balanceFor: (state) => (memberId: string): number => state.balances[memberId] ?? 0,
-    displayNameFor: (state) => (memberId: string): string => {
+    permissions(): FamilyPermissions {
+      return resolveFamilyPermissions(this.signedInMember);
+    },
+    isFamilyAdmin(): boolean {
+      return this.signedInMember.role === 'guardian' && this.signedInMember.guardianAccess === 'admin';
+    },
+    balanceFor: (state) => (memberId: FamilyMemberId): number => state.balances[memberId] ?? 0,
+    displayNameFor: (state) => (memberId: FamilyMemberId): string => {
       const member = state.members.find((item) => item.id === memberId);
       return member?.nickname?.trim() || member?.name || 'Familienmitglied';
     },
     balance(): number {
       return this.balanceFor(this.activeChildId);
     },
-    totalVisibleSavedFor: (state) => (memberId: string): number => state.goals
+    totalVisibleSavedFor: (state) => (memberId: FamilyMemberId): number => state.goals
       .filter((goal) => goal.ownerId === memberId && goal.visibility !== 'private')
       .reduce((sum, goal) => sum + goal.saved, 0),
-    averageTaskRatingFor: (state) => (memberId: string): number => {
+    averageTaskRatingFor: (state) => (memberId: FamilyMemberId): number => {
       const rated = state.contributions.filter(
         (contribution) => contribution.assigneeId === memberId && contribution.stars,
       );
@@ -114,10 +162,10 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
         ? 0
         : rated.reduce((sum, contribution) => sum + (contribution.stars ?? 0), 0) / rated.length;
     },
-    pendingCountFor: (state) => (memberId: string): number => state.contributions.filter(
+    pendingCountFor: (state) => (memberId: FamilyMemberId): number => state.contributions.filter(
       (contribution) => contribution.assigneeId === memberId && contribution.status === 'pending',
     ).length,
-    openCountFor: (state) => (memberId: string): number => state.contributions.filter(
+    openCountFor: (state) => (memberId: FamilyMemberId): number => state.contributions.filter(
       (contribution) => contribution.assigneeId === memberId && contribution.status === 'available',
     ).length,
     dailyBaseContributions(state): Contribution[] {
@@ -140,7 +188,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     pendingContributions(state): Contribution[] {
       return state.contributions.filter((contribution) => contribution.status === 'pending');
     },
-    contributionProgress: (state) => (memberId: string): number => {
+    contributionProgress: (state) => (memberId: FamilyMemberId): number => {
       return calculateContributionProgress(state.contributions, memberId);
     },
     familyEnergy(): number {
@@ -154,7 +202,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     currentDailyStreak(): number {
       return this.completedWeeklyStreak * this.currentWeekTarget + this.currentWeekDays;
     },
-    rewardForContribution: (state) => (contributionId: string): number => {
+    rewardForContribution: (state) => (contributionId: ContributionId): number => {
       const contribution = state.contributions.find((item) => item.id === contributionId);
       const promotion = state.promotions.find(
         (item) => item.contributionId === contributionId && isPromotionAvailable(item),
@@ -163,20 +211,26 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     },
     activeGoal(state): SavingGoal {
       const visibleGoals = state.goals.filter(
-        (goal) =>
-          goal.visibility === 'family' ||
+        (goal) => {
+          const permissions = resolveFamilyPermissions(state.members.find(member => member.id === state.signedInMemberId));
+          return (goal.visibility === 'family' && (goal.ownerId !== 'family' || permissions.canViewFamilyGoals)) ||
           (state.viewerRole === 'child' && goal.ownerId === state.activeChildId) ||
-          (state.viewerRole === 'guardian' && goal.visibility === 'guardians'),
+          (state.viewerRole === 'guardian' && permissions.canViewGuardianGoals && goal.visibility === 'guardians');
+        },
       );
       return visibleGoals.find((goal) => goal.id === state.activeGoalId) ??
         visibleGoals.find((goal) => goal.ownerId === state.activeChildId) ??
         visibleGoals[0] ??
-        state.goals[0];
+        state.goals[0] ??
+        createSavingGoals()[0]!;
     },
     ownSavingGoals(state): SavingGoal[] {
       return state.goals.filter(
-        (goal) => goal.ownerId === state.activeChildId &&
-          (state.viewerRole === 'child' || goal.visibility !== 'private'),
+        (goal) => goal.ownerId === state.activeChildId && (
+          state.viewerRole === 'child' ||
+          goal.visibility === 'family' ||
+          (goal.visibility === 'guardians' && resolveFamilyPermissions(state.members.find(member => member.id === state.signedInMemberId)).canViewGuardianGoals)
+        ),
       );
     },
     totalSaved(): number {
@@ -203,7 +257,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     averageTaskRating(): number {
       return this.averageTaskRatingFor(this.activeChildId);
     },
-    savingsInterestRateFor: (state) => (memberId: string): number => {
+    savingsInterestRateFor: (state) => (memberId: FamilyMemberId): number => {
       const baseContributions = state.contributions.filter(
         (contribution) => contribution.kind === 'basic' && contribution.assigneeId === memberId,
       );
@@ -229,10 +283,10 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     savingsInterestRate(): number {
       return this.savingsInterestRateFor(this.activeChildId);
     },
-    activeWorldEffects(state): string[] {
+    activeWorldEffects(state): WorldEffect[] {
       return state.contributions
-        .filter((contribution) => contribution.status === 'approved' && contribution.worldEffect)
-        .map((contribution) => contribution.worldEffect as string);
+        .filter((contribution): contribution is Contribution & { worldEffect: WorldEffect } => contribution.status === 'approved' && Boolean(contribution.worldEffect))
+        .map((contribution) => contribution.worldEffect);
     },
   },
 
@@ -242,16 +296,18 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.snackbar.visible = true;
     },
     setFamilyCurrency(currency: FamilyCurrency) {
+      if (!this.permissions.canManageFamily) {return;}
       if (!supportedFamilyCurrencies.includes(currency)) {return;}
       this.familyCurrencyCode = currency;
       persistence.writeText(FAMILY_WORLD_STORAGE_KEYS.familyCurrency, currency);
     },
     setLadirchenExchangeRate(rate: number) {
+      if (!this.permissions.canManageFamily) {return;}
       if (!Number.isFinite(rate) || rate < 1) {return;}
       this.ladirchenPerCurrencyUnit = Math.round(rate);
       persistence.writeText(FAMILY_WORLD_STORAGE_KEYS.exchangeRate, String(this.ladirchenPerCurrencyUnit));
     },
-    switchSession(memberId: string) {
+    switchSession(memberId: FamilyMemberId) {
       const member = this.members.find((item) => item.id === memberId);
       if (!member) {return;}
       this.signedInMemberId = member.id;
@@ -262,7 +318,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       }
       this.notify(`Prototyp-Sitzung: Angemeldet als ${member.name}.`);
     },
-    selectChildForGuardian(memberId: string) {
+    selectChildForGuardian(memberId: FamilyMemberId) {
       if (this.viewerRole !== 'guardian') {return;}
       const child = this.members.find((member) => member.id === memberId && member.role === 'child');
       if (!child) {return;}
@@ -270,8 +326,8 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.notify(`${child.name} ist für die Detailansichten ausgewählt.`);
     },
     saveOwnAppearance(appearance: AvatarAppearance) {
-      const member = this.members.find((item) => item.id === this.activeChildId && item.role === 'child');
-      if (!member) {return;}
+      const member = this.members.find(item => item.id === this.signedInMemberId && item.role === this.viewerRole);
+      if (!member || (member.role === 'child' && member.id !== this.activeChildId)) {return;}
       member.appearance = { ...appearance };
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyMembers, this.members);
       this.notify('Dein neues Profil wurde gespeichert.');
@@ -284,20 +340,20 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyMembers, this.members);
       this.notify(member.nickname ? `Dein Spitzname ist jetzt ${member.nickname}.` : 'Dein Spitzname wurde entfernt.');
     },
-    submitContribution(id: string) {
+    submitContribution(id: ContributionId) {
       const contribution = this.contributions.find((item) => item.id === id);
       if (this.viewerRole !== 'child' || !contribution || contribution.assigneeId !== this.activeChildId || contribution.status !== 'available') {return;}
       contribution.status = 'pending';
       this.notify('Beitrag eingereicht. Die Welt reagiert nach der Bestätigung.');
     },
-    claimContribution(id: string) {
+    claimContribution(id: ContributionId) {
       const contribution = this.contributions.find((item) => item.id === id);
       if (this.viewerRole !== 'child' || !contribution || contribution.assigneeId || contribution.status !== 'available') {return;}
       contribution.assigneeId = this.activeChildId;
       this.notify(`„${contribution.title}“ gehört jetzt zu deinen Beiträgen.`);
     },
-    assignContribution(id: string, childId?: string) {
-      if (this.viewerRole !== 'guardian') {return;}
+    assignContribution(id: ContributionId, childId?: FamilyMemberId) {
+      if (!this.permissions.canManageContent) {return;}
       const contribution = this.contributions.find((item) => item.id === id);
       if (!contribution || contribution.status !== 'available') {return;}
       if (childId && !this.members.some((member) => member.id === childId && member.role === 'child')) {return;}
@@ -306,9 +362,9 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       const childName = childId ? this.members.find((member) => member.id === childId)?.name : undefined;
       this.notify(childName ? `„${contribution.title}“ wurde ${childName} zugewiesen.` : `„${contribution.title}“ ist jetzt für alle Kinder offen.`);
     },
-    approveContribution(id: string, stars: number) {
+    approveContribution(id: ContributionId, stars: number) {
       const contribution = this.contributions.find((item) => item.id === id);
-      if (this.viewerRole !== 'guardian' || !contribution?.assigneeId || contribution.status !== 'pending') {return;}
+      if (!this.permissions.canManageContent || !contribution?.assigneeId || contribution.status !== 'pending') {return;}
       contribution.status = 'approved';
       contribution.stars = stars;
       const baseReward = this.rewardForContribution(id);
@@ -324,16 +380,16 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
           : `${reward} Ladirchen wurden gutgeschrieben.`,
       );
     },
-    returnContribution(id: string) {
+    returnContribution(id: ContributionId) {
       const contribution = this.contributions.find((item) => item.id === id);
-      if (this.viewerRole !== 'guardian' || !contribution || contribution.status !== 'pending') {return;}
+      if (!this.permissions.canManageContent || !contribution || contribution.status !== 'pending') {return;}
       contribution.status = 'available';
       this.notify('Der Beitrag wurde mit der Bitte um Nachbesserung zurückgegeben.');
     },
     addContribution(input: NewContribution) {
-      if (this.viewerRole !== 'guardian') {return;}
+      if (!this.permissions.canManageContent) {return;}
       this.contributions.push({
-        id: `contribution-${Date.now()}`,
+        id: createDomainId.contribution(`contribution-${Date.now()}`),
         ...input,
         area: 'Familie',
         status: 'available',
@@ -344,7 +400,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       });
       this.notify('Beitrag wurde lokal hinzugefügt.');
     },
-    setContributionPartners(id: string, childIds: string[]) {
+    setContributionPartners(id: ContributionId, childIds: FamilyMemberId[]) {
       const contribution = this.contributions.find((item) => item.id === id);
       if (!contribution || contribution.kind !== 'extra') {return;}
       const allowedIds = new Set(this.members
@@ -356,19 +412,26 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
         .map((member) => member.name);
       this.notify(names.length > 0 ? `${names.join(' und ')} wurden zur Spezialaufgabe eingeladen.` : 'Die Einladungen wurden entfernt.');
     },
-    toggleCheer(id: string) {
+    toggleCheer(id: SavingGoalId) {
       const goal = this.goals.find((item) => item.id === id);
       if (!goal) {return;}
+      if (this.viewerRole === 'guardian') {
+        const canViewGoal = (goal.visibility === 'family' && (goal.ownerId !== 'family' || this.permissions.canViewFamilyGoals)) ||
+          (goal.visibility === 'guardians' && this.permissions.canViewGuardianGoals);
+        if (!this.permissions.canSupportChildGoals || !canViewGoal) {return;}
+      }
       goal.cheered = !goal.cheered;
       this.notify(goal.cheered ? 'Deine Unterstützung ist für die Familie sichtbar.' : 'Unterstützung zurückgenommen.');
     },
     addGoal(input: NewGoal) {
-      const id = `goal-${Date.now()}`;
+      if (this.viewerRole === 'guardian' && !this.permissions.canManageGoals) {return;}
+      const id = createDomainId.savingGoal(`goal-${Date.now()}`);
       this.goals.push({ id, ...input, ownerId: this.activeChildId, saved: 5, starterBonus: 5, shared: false, cheered: false });
       this.activeGoalId = id;
       this.notify('Neues Sparziel angelegt: 5 L geschützter Startbonus wurden gutgeschrieben.');
     },
-    updateGoal(id: string, input: NewGoal) {
+    updateGoal(id: SavingGoalId, input: NewGoal) {
+      if (this.viewerRole === 'guardian' && !this.permissions.canManageGoals) {return;}
       const goal = this.goals.find((item) => item.id === id && item.ownerId === this.activeChildId);
       if (!goal) {return;}
       goal.title = input.title;
@@ -377,17 +440,22 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       goal.visibility = input.visibility;
       this.notify('Sparziel wurde aktualisiert.');
     },
-    supportGoal(id: string, amount: number) {
-      if (this.viewerRole !== 'guardian') {return;}
-      const goal = this.goals.find((item) => item.id === id && item.ownerId !== 'family');
-      if (!goal) {return;}
+    supportGoal(id: SavingGoalId, amount: number) {
+      if (!this.permissions.canSupportChildGoals) {return;}
+      const goal = this.goals.find((item) =>
+        item.id === id &&
+        item.ownerId !== 'family' &&
+        item.visibility !== 'private' &&
+        (this.permissions.canViewGuardianGoals || item.visibility === 'family'),
+      );
+      if (!goal || goal.ownerId === 'family') {return;}
       const safeAmount = Math.max(0, Math.min(Math.round(amount), goal.target - goal.saved));
       if (safeAmount === 0) {return;}
       goal.saved += safeAmount;
       const childName = this.members.find((member) => member.id === goal.ownerId)?.name ?? 'das Kind';
       const guardianName = this.signedInMember.name.replace(' (du)', '');
       this.pendingGuardianGifts.push({
-        id: `gift-${Date.now()}`,
+        id: createDomainId.guardianGift(`gift-${Date.now()}`),
         childId: goal.ownerId,
         guardianName,
         goalTitle: goal.title,
@@ -397,7 +465,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.pendingGifts, this.pendingGuardianGifts);
       this.notify(`${safeAmount} Ladirchen wurden ${childName}s Sparziel geschenkt.`);
     },
-    giftLadirchenToGoal(id: string, amount: number) {
+    giftLadirchenToGoal(id: SavingGoalId, amount: number) {
       if (this.viewerRole !== 'child') {return;}
       const goal = this.goals.find((item) =>
         item.id === id &&
@@ -418,7 +486,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.balances[this.activeChildId] = this.balance - safeAmount;
       goal.saved += safeAmount;
       this.pendingGuardianGifts.push({
-        id: `gift-${Date.now()}`,
+        id: createDomainId.guardianGift(`gift-${Date.now()}`),
         childId: recipient.id,
         guardianName: this.signedInMember.name,
         goalTitle: goal.title,
@@ -428,15 +496,15 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.pendingGifts, this.pendingGuardianGifts);
       this.notify(`${safeAmount} Ladirchen wurden ${recipient.name}s Sparziel geschenkt.`);
     },
-    giftLadirchenToChild(childId: string, amount: number, reason: string) {
-      if (this.viewerRole !== 'guardian') {return;}
+    giftLadirchenToChild(childId: FamilyMemberId, amount: number, reason: string) {
+      if (!this.permissions.canManageContent) {return;}
       const child = this.members.find((member) => member.id === childId && member.role === 'child');
       const safeAmount = Math.max(1, Math.min(10_000, Math.round(amount)));
       const safeReason = reason.trim();
       if (!child || !safeReason) {return;}
       this.balances[child.id] = this.balanceFor(child.id) + safeAmount;
       this.pendingGuardianGifts.push({
-        id: `gift-${Date.now()}`,
+        id: createDomainId.guardianGift(`gift-${Date.now()}`),
         childId: child.id,
         guardianName: this.signedInMember.name.replace(' (du)', ''),
         goalTitle: safeReason,
@@ -451,6 +519,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       const giftIndex = this.pendingGuardianGifts.findIndex((gift) => gift.childId === this.activeChildId);
       if (giftIndex < 0) {return;}
       const [gift] = this.pendingGuardianGifts.splice(giftIndex, 1);
+      if (!gift) {return;}
       this.guardianGiftAnimation = {
         visible: true,
         guardianName: gift.guardianName,
@@ -465,26 +534,39 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.guardianGiftAnimation.visible = false;
       setTimeout(() => this.revealNextGuardianGift(), 250);
     },
-    inviteGuardian(name: string, email: string) {
+    inviteGuardian(name: string, email: string, guardianAccess: GuardianAccessLevel = 'supporter') {
+      if (!this.permissions.canInviteMembers) {return;}
+      const normalizedName = name.toLocaleLowerCase('de');
+      const preset = normalizedName.includes('oma') ? 'grandma' : normalizedName.includes('opa') ? 'grandpa' : 'adult';
       this.members.push({
-        id: `guardian-${Date.now()}`,
+        id: createDomainId.familyMember(`guardian-${Date.now()}`),
         name,
         email,
         avatar: '🧑',
         color: '#7e8db8',
         role: 'guardian',
+        guardianAccess,
         weeklyStreak: 0,
         invitationPending: true,
+        appearance: createGuardianAvatarAppearance(preset),
       });
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyMembers, this.members);
       this.notify(`Einladung an ${name} wurde im Prototyp vorgemerkt.`);
     },
+    setGuardianAccess(memberId: FamilyMemberId, guardianAccess: GuardianAccessLevel) {
+      if (!this.permissions.canManageFamily || memberId === this.signedInMemberId) {return;}
+      const member = this.members.find(item => item.id === memberId && item.role === 'guardian');
+      if (!member) {return;}
+      member.guardianAccess = guardianAccess;
+      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyMembers, this.members);
+      this.notify(`${member.name} hat jetzt die Berechtigung „${guardianAccess === 'admin' ? 'Administration' : 'Zielbegleitung'}“.`);
+    },
     addPromotion(input: NewPromotion) {
-      if (this.viewerRole !== 'guardian') {return;}
+      if (!this.permissions.canManageContent) {return;}
       const contribution = this.contributions.find((item) => item.id === input.contributionId);
       if (!contribution) {return;}
       this.promotions.push({
-        id: `promotion-${Date.now()}`,
+        id: createDomainId.promotion(`promotion-${Date.now()}`),
         ...input,
         title: `Nur heute: ${input.multiplier}-fache Ladirchen`,
         active: true,
@@ -492,11 +574,11 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.notify(`Bonusaktion für „${contribution.title}“ wurde aktiviert.`);
     },
     addShopReward(input: NewShopReward) {
-      if (this.viewerRole !== 'guardian') {return;}
-      this.shopRewards.unshift({ id: `shop-reward-${Date.now()}`, ...input, status: 'available' });
+      if (!this.permissions.canManageContent) {return;}
+      this.shopRewards.unshift({ id: createDomainId.shopReward(`shop-reward-${Date.now()}`), ...input, status: 'available' });
       this.notify(`„${input.title}“ wurde in den Familien-Shop gestellt.`);
     },
-    requestShopReward(id: string) {
+    requestShopReward(id: ShopRewardId) {
       const reward = this.shopRewards.find((item) => item.id === id);
       if (this.viewerRole !== 'child' || !reward || reward.status !== 'available' || reward.quantity < 1 || !shopRewardIsAvailable(reward.availableUntil) || reward.price > this.availableBalance) {return;}
       if (!shopRedemptionIsOpen()) {
@@ -507,16 +589,16 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       reward.requesterId = this.activeChildId;
       this.notify(`${reward.price} Ladirchen sind für „${reward.title}“ reserviert.`);
     },
-    cancelShopRewardRequest(id: string) {
+    cancelShopRewardRequest(id: ShopRewardId) {
       const reward = this.shopRewards.find((item) => item.id === id && item.requesterId === this.activeChildId);
       if (!reward || reward.status !== 'requested') {return;}
       reward.status = 'available';
       reward.requesterId = undefined;
       this.notify('Die Reservierung wurde aufgehoben.');
     },
-    decideShopReward(id: string, approved: boolean) {
+    decideShopReward(id: ShopRewardId, approved: boolean) {
       const reward = this.shopRewards.find((item) => item.id === id);
-      if (this.viewerRole !== 'guardian' || !reward || reward.status !== 'requested') {return;}
+      if (!this.permissions.canManageContent || !reward || reward.status !== 'requested') {return;}
       if (approved) {
         if (!shopRedemptionIsOpen()) {
           this.notify('Nach 18:00 Uhr können Belohnungen nicht mehr freigegeben werden.');
@@ -544,25 +626,27 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       }, 1450);
     },
     openFamilySetup() {
+      if (this.onboardingCompleted && !this.permissions.canManageFamily) {return;}
       this.familySetupOpen = true;
     },
     completeFamilySetup(members: FamilyMember[], pets: FamilyPet[]) {
-      this.members = members;
+      const normalizedMembers = normalizeFamilyMembers(members);
+      this.members = normalizedMembers;
       this.pets = pets;
-      const activeChildStillExists = members.some(
+      const activeChildStillExists = normalizedMembers.some(
         (member) => member.id === this.activeChildId && member.role === 'child',
       );
       if (!activeChildStillExists) {
-        this.activeChildId = members.find((member) => member.role === 'child')?.id ?? this.activeChildId;
+        this.activeChildId = normalizedMembers.find((member) => member.role === 'child')?.id ?? this.activeChildId;
       }
       this.onboardingCompleted = true;
       this.familySetupOpen = false;
       persistence.writeText(FAMILY_WORLD_STORAGE_KEYS.familySetup, 'completed');
-      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyMembers, members);
+      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyMembers, normalizedMembers);
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.familyPets, pets);
       this.notify('Eure Familie ist eingerichtet. Willkommen in eurer Familienwelt!');
     },
-    saveToGoal(id: string, amount: number) {
+    saveToGoal(id: SavingGoalId, amount: number) {
       const goal = this.goals.find((item) => item.id === id);
       if (!goal) {return;}
       const remaining = Math.max(0, goal.target - goal.saved);
@@ -572,7 +656,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.balances[this.activeChildId] = this.balance - safeAmount;
       this.notify(`${safeAmount} Ladirchen wurden dem Ziel zugeordnet.`);
     },
-    withdrawFromGoal(id: string, amount: number) {
+    withdrawFromGoal(id: SavingGoalId, amount: number) {
       const goal = this.goals.find((item) => item.id === id && item.ownerId === this.activeChildId);
       if (!goal) {return;}
       const safeAmount = Math.max(0, Math.min(amount, this.withdrawableGoalBalance(goal)));
@@ -581,17 +665,18 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       this.balances[this.activeChildId] = this.balance + safeAmount;
       this.notify(`${safeAmount} Ladirchen sind wieder frei für den Familien-Shop.`);
     },
-    cancelGoal(id: string) {
+    cancelGoal(id: SavingGoalId) {
       const goalIndex = this.goals.findIndex((item) => item.id === id && item.ownerId === this.activeChildId);
       if (goalIndex < 0) {return;}
       const goal = this.goals[goalIndex];
+      if (!goal) {return;}
       const completed = goal.saved >= goal.target;
       const forfeitedBonus = completed ? 0 : Math.min(goal.starterBonus ?? 0, goal.saved);
       const returned = Math.max(0, goal.saved - forfeitedBonus);
       this.balances[this.activeChildId] = this.balance + returned;
       this.goals.splice(goalIndex, 1);
       if (this.activeGoalId === id) {
-        this.activeGoalId = this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? '';
+        this.activeGoalId = this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? SAVING_GOAL_IDS.bike;
       }
       this.notify(forfeitedBonus > 0
         ? `Sparziel aufgelöst: ${returned} L sind wieder frei, der 5-L-Startbonus ist verfallen.`
@@ -632,7 +717,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       }
       return credited;
     },
-    purchaseAccessory(id: string) {
+    purchaseAccessory(id: HouseAccessory['id']) {
       const accessory = this.accessories.find((item) => item.id === id);
       if (this.viewerRole !== 'child' || !accessory || accessory.owned || accessory.price > this.availableBalance) {return;}
       accessory.owned = true;
@@ -641,24 +726,25 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
       this.notify(`${accessory.title} wurde zur Familienwelt hinzugefügt.`);
     },
-    toggleAccessory(id: string) {
+    toggleAccessory(id: HouseAccessory['id']) {
       const accessory = this.accessories.find((item) => item.id === id);
       if (!accessory?.owned) {return;}
       accessory.equipped = !accessory.equipped;
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
     },
     setSimulatedEnergy(value: number | null) {
-      if (this.viewerRole !== 'guardian') {return;}
+      if (!this.permissions.canManageContent) {return;}
       this.simulatedEnergy = value === null ? null : Math.max(0, Math.min(100, Math.round(value)));
     },
     completeWeekDemo(): boolean {
+      if (!this.permissions.canManageContent) {return false;}
       if (!this.houseMeetsMinimumEnergy) {
         this.notify('Die Hausentwicklung wartet: Die gemeinsame Hausenergie muss mindestens 60 % erreichen.');
         return false;
       }
       this.completedWeeklyStreak += 1;
       this.currentWeekDays = 0;
-      this.houseLevel = Math.min(4, this.houseLevel + 1);
+      this.houseLevel = HOUSE_STAGES[Math.min(HOUSE_STAGES.length - 1, this.houseLevel + 1)]!.level;
       this.revealVersion += 1;
       const member = this.members.find((item) => item.id === this.activeChildId);
       if (member) {member.weeklyStreak = this.completedWeeklyStreak;}
@@ -666,9 +752,10 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       return true;
     },
     failWeekDemo() {
+      if (!this.permissions.canManageContent) {return;}
       this.completedWeeklyStreak = 0;
       this.currentWeekDays = 0;
-      this.houseLevel = Math.max(0, this.houseLevel - 1);
+      this.houseLevel = HOUSE_STAGES[Math.max(0, this.houseLevel - 1)]!.level;
       this.revealVersion += 1;
       const member = this.members.find((item) => item.id === this.activeChildId);
       if (member) {member.weeklyStreak = 0;}

@@ -1,10 +1,14 @@
 <template>
   <div class="page world-page">
     <section class="world-hero px-4 pt-5">
-      <div v-if="store.viewerRole === 'child'" class="d-flex align-start justify-space-between ga-3">
-        <div>
+      <div class="d-flex align-start justify-space-between ga-3">
+        <div v-if="store.viewerRole === 'child'">
           <p class="eyebrow">{{ store.activeChild.name }}s Familienwelt</p>
           <h1 class="world-title">Jeder Beitrag macht unser Zuhause lebendiger.</h1>
+        </div>
+        <div v-else>
+          <p class="eyebrow">Bezugspersonen-Übersicht</p>
+          <h1 class="world-title">So geht es allen Kindern heute.</h1>
         </div>
         <button :aria-label="`Hausenergie öffnen: ${store.familyEnergy} Prozent`" class="energy-trigger text-right flex-shrink-0" type="button" @click="energyDialogOpen = true">
           <AnimatedHouseEnergy :size="43" />
@@ -14,13 +18,6 @@
           </span>
           <v-icon class="energy-chevron" icon="mdi-chevron-right" size="15" />
         </button>
-      </div>
-      <div v-else class="d-flex align-start justify-space-between ga-3">
-        <div>
-          <p class="eyebrow">Bezugspersonen-Übersicht</p>
-          <h1 class="world-title">So geht es allen Kindern heute.</h1>
-        </div>
-        <v-chip color="info" size="small" variant="tonal">{{ childMembers.length }} Kinder</v-chip>
       </div>
 
       <FamilyWorldScene
@@ -37,7 +34,7 @@
     </section>
 
     <div class="page-padding pt-5">
-      <template v-if="store.viewerRole === 'guardian'">
+      <template v-if="store.viewerRole === 'guardian' && store.permissions.canManageContent">
         <section class="guardian-world mb-6">
           <SectionHeader eyebrow="Heute" title="Kinder im Überblick">
             <template #action><span class="rating-rule">Hausziel: mindestens 60 % Energie</span></template>
@@ -91,6 +88,18 @@
           </div>
         </v-card>
       </template>
+
+      <v-card v-else-if="store.viewerRole === 'guardian'" class="supporter-card pa-4 mb-6" elevation="0" rounded="xl">
+        <div class="d-flex align-center ga-3">
+          <v-avatar color="primary" size="46" variant="tonal"><v-icon icon="mdi-hand-heart-outline" /></v-avatar>
+          <div class="flex-grow-1 min-w-0">
+            <p class="eyebrow mb-1">Zielbegleitung</p>
+            <strong>Du siehst freigegebene Kinderziele</strong>
+            <p class="text-caption text-medium-emphasis mt-1">Familienziele und Verwaltungsbereiche bleiben für Administratoren geschützt.</p>
+          </div>
+        </div>
+        <v-btn class="mt-4" color="primary" prepend-icon="mdi-gift-outline" rounded="lg" to="/wuensche" variant="flat" width="100%">Kinderziele unterstützen</v-btn>
+      </v-card>
 
       <v-card v-if="store.viewerRole === 'child' && activePromotion" class="promotion-banner pa-4 mb-6" color="amber-lighten-5" elevation="0" rounded="xl" role="button" tabindex="0" @click="promoDetailsOpen = true" @keydown.enter="promoDetailsOpen = true">
         <div class="d-flex align-center ga-3">
@@ -191,8 +200,9 @@ import { computed, reactive, ref } from 'vue';
 import AnimatedHouseEnergy from '../components/AnimatedHouseEnergy.vue';
 import FamilyWorldScene from '../components/FamilyWorldScene.vue';
 import HouseEnergyDialog from '../components/HouseEnergyDialog.vue';
-import SectionHeader from '../components/ui/SectionHeader.vue';
-import { useFamilyWorldStore } from '../stores/family-world';
+import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
+import type { ContributionId, FamilyMemberId } from '@/domain/types';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const promoDetailsOpen = ref(false);
@@ -213,10 +223,10 @@ const activePromotion = computed(() =>
   ),
 );
 const goalProgress = computed(() => (store.activeGoal.saved / store.activeGoal.target) * 100);
-const contributionTitle = (contributionId: string) =>
+const contributionTitle = (contributionId: ContributionId) =>
   store.contributions.find((contribution) => contribution.id === contributionId)?.title ?? 'Beitrag';
 const childMembers = computed(() => store.members.filter((member) => member.role === 'child'));
-const ratingLabel = (memberId: string) => {
+const ratingLabel = (memberId: FamilyMemberId) => {
   const rating = store.averageTaskRatingFor(memberId);
   return rating > 0 ? `${rating.toFixed(1)} ★` : 'Noch offen';
 };
@@ -235,41 +245,37 @@ const giveDirectGift = () => {
 <style scoped>
 .world-hero {
   padding-bottom: 16px;
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   color: #233948;
   background: linear-gradient(180deg, #dff5ff 0%, #f7fbeb 78%, #f8f1dd 100%);
 }
 .world-title {
   max-width: 310px;
-  margin: 0;
+  @apply ma-0;
   font-size: 23px;
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
 .energy-value {
-  display: block;
+  @apply d-block;
   color: var(--lad-mint-dark);
   font-size: 20px;
   line-height: 1;
-  white-space: nowrap;
+  @apply text-no-wrap;
 }
 .energy-label {
-  display: block;
-  margin-top: 4px;
+  @apply d-block mt-1;
   color: #65808f;
   font-size: 10px;
 }
 .energy-trigger-copy {
-  min-width: 0;
-  text-align: left;
+  @apply min-w-0 text-left;
 }
 .energy-trigger {
   min-width: 136px;
-  position: relative;
+  @apply position-relative;
   padding: 7px 22px 7px 8px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 6px;
   color: inherit;
   border: 1px solid rgba(73, 150, 121, 0.1);
@@ -277,7 +283,7 @@ const giveDirectGift = () => {
   background: rgba(255, 255, 255, 0.46);
   box-shadow: 0 3px 0 rgba(57, 137, 106, 0.07);
   font: inherit;
-  cursor: pointer;
+  @apply cursor-pointer;
   transition:
     background 160ms ease,
     transform 160ms ease,
@@ -292,7 +298,7 @@ const giveDirectGift = () => {
   box-shadow: 0 1px 0 rgba(57, 137, 106, 0.09);
 }
 .energy-chevron {
-  position: absolute;
+  @apply position-absolute;
   top: 50%;
   right: 5px;
   color: var(--lad-mint-dark);
@@ -321,14 +327,12 @@ const giveDirectGift = () => {
 }
 .promotion-banner {
   border: 1px solid rgba(242, 175, 66, 0.3);
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .promotion-bolt {
   width: 44px;
   height: 44px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+  @apply d-grid place-center flex-shrink-0;
   border-radius: 15px;
   background: #ffe5a8;
   font-size: 23px;
@@ -337,14 +341,13 @@ const giveDirectGift = () => {
 .promotion-detail-bolt {
   width: 62px;
   height: 62px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border-radius: 20px;
   background: #ffe7ac;
   font-size: 32px;
 }
 .promotion-dialog-title {
-  margin: 0;
+  @apply ma-0;
   font-size: 22px;
   letter-spacing: -0.03em;
 }
@@ -353,14 +356,14 @@ const giveDirectGift = () => {
   font-size: 28px;
 }
 .section-title {
-  margin: 0;
+  @apply ma-0;
   font-size: 19px;
   letter-spacing: -0.025em;
 }
 .section-link {
   color: var(--lad-mint-dark);
   font-size: 12px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .goal-preview {
   border: 1px solid rgba(62, 188, 140, 0.2);
@@ -369,22 +372,21 @@ const giveDirectGift = () => {
   font-size: 36px;
 }
 .guardian-child-grid {
-  display: grid;
+  @apply d-grid;
   gap: 9px;
 }
 .guardian-child {
-  width: 100%;
+  @apply w-100;
   padding: 10px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
   color: var(--lad-text);
-  text-align: left;
+  @apply text-left;
   border: 1px solid var(--lad-border);
   border-radius: 15px;
   background: var(--lad-surface);
   box-shadow: 0 3px 0 var(--lad-border);
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .guardian-child.selected {
   border-color: rgba(62, 188, 140, 0.55);
@@ -394,20 +396,18 @@ const giveDirectGift = () => {
 .guardian-child-avatar {
   width: 39px;
   height: 39px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+  @apply d-grid place-center flex-shrink-0;
   border-radius: 13px;
   background: var(--lad-surface-soft);
   font-size: 21px;
 }
 .guardian-child-copy {
   flex: 1;
-  min-width: 0;
+  @apply min-w-0;
 }
 .guardian-child-copy strong,
 .guardian-child-copy small {
-  display: block;
+  @apply d-block;
 }
 .guardian-child-copy small {
   color: var(--lad-muted);
@@ -419,7 +419,7 @@ const giveDirectGift = () => {
   border-radius: 8px;
   background: #fff3d3;
   font-size: 9px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .guardian-child-rating.ready {
   color: #22734f;
@@ -428,18 +428,23 @@ const giveDirectGift = () => {
 .rating-rule {
   color: #956117;
   font-size: 9px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .management-card {
   border: 1px solid rgba(78, 143, 221, 0.2);
 }
+.supporter-card {
+  border: 1px solid rgba(62, 188, 140, 0.24);
+  background: linear-gradient(145deg, #effaf5, #fff8df);
+  box-shadow: 0 4px 0 rgba(62, 188, 140, 0.12) !important;
+}
 .management-actions {
-  display: grid;
+  @apply d-grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 7px;
 }
 .management-actions :deep(.v-btn) {
-  min-width: 0;
+  @apply min-w-0;
   padding-inline: 8px;
   font-size: 9px;
 }
@@ -454,8 +459,7 @@ const giveDirectGift = () => {
 .direct-gift-icon {
   width: 58px;
   height: 58px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border-radius: 19px;
   background: #fff0d5;
   font-size: 31px;

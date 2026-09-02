@@ -6,8 +6,10 @@
       <p>{{ description }}</p>
     </div>
     <div class="page-header-side">
-      <div v-if="icon" class="page-header-icon" aria-hidden="true">
-        <v-icon :icon="icon" size="30" />
+      <div v-if="icon || $slots.icon" class="page-header-icon" aria-hidden="true">
+        <slot name="icon">
+          <v-icon :icon="icon" size="30" />
+        </slot>
       </div>
       <slot name="action" />
     </div>
@@ -32,14 +34,7 @@ withDefaults(defineProps<{
   --header-accent: #2e9d75;
   --header-accent-soft: #dff5e9;
   min-height: 138px;
-  margin-bottom: 20px;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  @apply mb-5 pa-5 position-relative overflow-hidden d-flex align-center justify-space-between ga-4;
   border: 1px solid color-mix(in srgb, var(--header-accent) 18%, white);
   border-radius: 24px;
   background: linear-gradient(
@@ -52,9 +47,9 @@ withDefaults(defineProps<{
 .family-world-page-header::before,
 .family-world-page-header::after {
   content: "";
-  position: absolute;
+  @apply position-absolute;
   border-radius: 50%;
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .family-world-page-header::before {
   width: 130px;
@@ -86,7 +81,7 @@ withDefaults(defineProps<{
 }
 .page-header-copy {
   max-width: 310px;
-  position: relative;
+  @apply position-relative;
   z-index: 1;
 }
 .page-header-kicker {
@@ -95,10 +90,10 @@ withDefaults(defineProps<{
   font-size: 10px;
   font-weight: 950;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+  @apply text-uppercase;
 }
 h1 {
-  margin: 0;
+  @apply ma-0;
   color: var(--lad-text);
   font-size: 27px;
   line-height: 1.08;
@@ -112,17 +107,14 @@ h1 {
 }
 .page-header-side {
   min-width: 54px;
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @apply d-flex align-center ga-2;
 }
 .page-header-icon {
   width: 54px;
   height: 54px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   color: var(--header-accent);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.74);

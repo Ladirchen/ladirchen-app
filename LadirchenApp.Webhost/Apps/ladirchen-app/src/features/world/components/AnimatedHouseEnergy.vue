@@ -40,15 +40,12 @@ const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.ro
 
 <style scoped>
 .animated-house-energy {
-  display: inline-grid;
+  @apply d-inline-grid;
   flex: 0 0 auto;
-  place-items: center;
+  @apply place-center;
 }
 svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
+  @apply w-100 h-100 d-block overflow-visible;
 }
 .soft-glow {
   fill: #ffe8a0;
