@@ -79,8 +79,9 @@
 import { computed } from 'vue';
 
 import AnimatedHouseEnergy from './AnimatedHouseEnergy.vue';
-import HouseProgressPanel from './world/HouseProgressPanel.vue';
-import { useFamilyWorldStore } from '../stores/family-world';
+import HouseProgressPanel from './HouseProgressPanel.vue';
+import type { FamilyMemberId } from '@/domain/types';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
@@ -91,22 +92,21 @@ const energyState = computed(() => {
   if (store.familyEnergy >= 60) return { title: 'Gut versorgt', copy: 'Gemeinsam habt ihr das Tagesziel erreicht.' };
   return { title: 'Braucht noch Energie', copy: 'Weitere Grundbeiträge bringen Licht und Leben zurück.' };
 });
-const baseContributions = (childId: string) => store.contributions.filter((item) => item.kind === 'basic' && item.assigneeId === childId);
-const baseCount = (childId: string) => baseContributions(childId).length;
-const approvedCount = (childId: string) => baseContributions(childId).filter((item) => item.status === 'approved').length;
+const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === 'basic' && item.assigneeId === childId);
+const baseCount = (childId: FamilyMemberId) => baseContributions(childId).length;
+const approvedCount = (childId: FamilyMemberId) => baseContributions(childId).filter((item) => item.status === 'approved').length;
 const close = () => emit('update:modelValue', false);
 </script>
 
 <style scoped>
 .energy-dialog {
   max-height: min(820px, 94dvh);
-  overflow: hidden;
+  @apply overflow-hidden;
   color: #253843;
   background: #fffdf8 !important;
 }
 .energy-dialog-header {
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   flex: 0 0 auto;
   border-bottom: 1px solid rgba(181, 107, 107, 0.14);
   background: linear-gradient(145deg, #ffe3e9 0%, #ffedda 48%, #fff4c9 100%);
@@ -114,9 +114,9 @@ const close = () => emit('update:modelValue', false);
 .energy-dialog-header::before,
 .energy-dialog-header::after {
   content: "";
-  position: absolute;
+  @apply position-absolute;
   border-radius: 50%;
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .energy-dialog-header::before {
   width: 190px;
@@ -136,16 +136,15 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-title-row {
   min-height: 108px;
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: flex;
-  align-items: flex-start;
+  @apply d-flex align-start;
 }
 .energy-title-row > div:first-child {
   max-width: 280px;
 }
 .energy-dialog-header h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 27px;
   letter-spacing: -0.04em;
 }
@@ -156,28 +155,27 @@ const close = () => emit('update:modelValue', false);
   line-height: 1.4;
 }
 .close-button {
-  position: absolute;
+  @apply position-absolute;
   top: -7px;
   right: -8px;
   z-index: 4;
 }
 .energy-mascot {
-  position: absolute;
+  @apply position-absolute;
   top: 10px;
   right: 19px;
 }
 .summary-grid {
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: grid;
+  @apply d-grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: 10px;
 }
 .summary-tile {
-  min-width: 0;
+  @apply min-w-0;
   padding: 11px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
   border: 1px solid rgba(110, 82, 72, 0.13);
   border-radius: 18px;
@@ -185,12 +183,12 @@ const close = () => emit('update:modelValue', false);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 .summary-tile > div:last-child {
-  min-width: 0;
+  @apply min-w-0;
 }
 .summary-tile span,
 .summary-tile strong,
 .summary-tile small {
-  display: block;
+  @apply d-block;
 }
 .summary-tile span {
   color: var(--lad-muted);
@@ -203,7 +201,7 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile small {
   margin-top: 3px;
-  overflow: hidden;
+  @apply overflow-hidden;
   color: #64756e;
   font-size: 8px;
   line-height: 1.3;
@@ -211,8 +209,7 @@ const close = () => emit('update:modelValue', false);
 .energy-orb {
   width: 60px;
   height: 60px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 60px;
   border-radius: 50%;
   background: conic-gradient(
@@ -240,14 +237,13 @@ const close = () => emit('update:modelValue', false);
   font-weight: 950;
 }
 .energy-orb small {
-  display: inline;
+  @apply d-inline;
   font-size: 9px;
 }
 .summary-icon {
   width: 44px;
   height: 44px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 44px;
   color: #b27518;
   border-radius: 14px;
@@ -257,7 +253,7 @@ const close = () => emit('update:modelValue', false);
 .energy-content {
   min-height: 0;
   flex: 1 1 auto;
-  overflow-y: auto;
+  @apply overflow-y-auto;
   background: linear-gradient(180deg, #fffdf8, #f1faf5);
 }
 .threshold-card {
@@ -268,14 +264,11 @@ const close = () => emit('update:modelValue', false);
   box-shadow: 0 4px 0 rgba(179, 126, 45, 0.07);
 }
 .threshold-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  @apply d-flex align-end justify-space-between ga-3;
 }
 .threshold-heading > div span,
 .threshold-heading > div strong {
-  display: block;
+  @apply d-block;
 }
 .threshold-heading > div strong {
   margin-top: 2px;
@@ -287,8 +280,7 @@ const close = () => emit('update:modelValue', false);
   border-radius: 999px;
   background: #ffe8ad;
   font-size: 8px;
-  font-weight: 900;
-  white-space: nowrap;
+  @apply font-weight-black text-no-wrap;
 }
 .section-kicker {
   color: #278568;
@@ -297,14 +289,13 @@ const close = () => emit('update:modelValue', false);
   letter-spacing: 0.1em;
 }
 .progress-wrap {
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   border-radius: 999px;
 }
 .progress-glint {
   width: 52px;
   height: 24px;
-  position: absolute;
+  @apply position-absolute;
   top: -6px;
   left: -58px;
   background: linear-gradient(
@@ -317,9 +308,7 @@ const close = () => emit('update:modelValue', false);
   animation: progress-glint 3.2s ease-in-out infinite;
 }
 .threshold-card p {
-  margin: 0;
-  display: flex;
-  align-items: center;
+  @apply ma-0 d-flex align-center;
   gap: 5px;
   color: #52655d;
   font-size: 9px;
@@ -327,10 +316,7 @@ const close = () => emit('update:modelValue', false);
   line-height: 1.4;
 }
 .children-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  @apply d-flex align-end justify-space-between ga-3;
 }
 .energy-dialog h3 {
   margin: 1px 0 0;
@@ -342,14 +328,12 @@ const close = () => emit('update:modelValue', false);
   font-weight: 800;
 }
 .child-energy-list {
-  display: flex;
-  flex-direction: column;
+  @apply d-flex flex-column;
   gap: 9px;
 }
 .child-energy-row {
   padding: 11px 12px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 11px;
   border: 1px solid rgba(74, 145, 114, 0.14);
   border-radius: 17px;
@@ -366,21 +350,17 @@ const close = () => emit('update:modelValue', false);
 .child-avatar {
   width: 44px;
   height: 44px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 44px;
   border-radius: 15px;
   font-size: 24px;
 }
 .child-energy-copy {
-  min-width: 0;
+  @apply min-w-0;
   flex: 1;
 }
 .child-energy-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  @apply d-flex align-center justify-space-between ga-2;
 }
 .child-energy-row strong,
 .child-energy-row b {
@@ -393,15 +373,13 @@ const close = () => emit('update:modelValue', false);
   background: #e4f6ec;
 }
 .child-energy-row small {
-  display: block;
-  margin-top: 4px;
+  @apply d-block mt-1;
   color: var(--lad-muted);
   font-size: 9px;
 }
 .calculation-note {
   padding: 13px;
-  display: flex;
-  align-items: flex-start;
+  @apply d-flex align-start;
   gap: 11px;
   border: 1px solid rgba(87, 153, 202, 0.1);
   border-radius: 18px;
@@ -410,8 +388,7 @@ const close = () => emit('update:modelValue', false);
 .calculation-icon {
   width: 40px;
   height: 40px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 40px;
   color: #3e88c5;
   border-radius: 13px;
@@ -420,10 +397,10 @@ const close = () => emit('update:modelValue', false);
 .calculation-note p,
 .calculation-note strong,
 .calculation-note span {
-  display: block;
+  @apply d-block;
 }
 .calculation-note p {
-  margin: 0;
+  @apply ma-0;
 }
 .calculation-note strong {
   font-size: 11px;

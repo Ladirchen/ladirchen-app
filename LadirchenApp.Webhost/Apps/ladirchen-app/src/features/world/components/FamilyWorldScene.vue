@@ -263,39 +263,40 @@ import { motion, useReducedMotion } from 'motion-v';
 import type { PanInfo } from 'motion-v';
 
 import PixiWorldFoundation from '@/components/PixiWorldFoundation.vue';
-
-import AvatarFigure from './AvatarFigure.vue';
+import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
 import AnimatedPet from './AnimatedPet.vue';
 import HouseFurniture from './HouseFurniture.vue';
 import { HOUSE_THEMES } from '../data/house-catalog';
-import { createDefaultAvatarAppearance } from '../domain/avatar';
-import type { AvatarAppearance } from '../domain/avatar';
-import type { FamilyMember, FamilyPet, HouseAccessory } from '../domain/types';
+import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
+import type { AvatarAppearance } from '@/domain/avatar';
+import type { HouseAccessoryId, HouseStageLevel, HouseThemeId } from '@/domain/house';
+import type { FamilyMember, FamilyMemberId, FamilyPet, FamilyPetId, HouseAccessory, WorldEffect } from '@/domain/types';
 
 type HouseView = 'front' | 'side' | 'inside';
 
 const props = defineProps<{
   energy: number;
-  houseLevel: number;
-  houseThemeId?: string;
-  effects: string[];
+  houseLevel: HouseStageLevel;
+  houseThemeId?: HouseThemeId;
+  effects: WorldEffect[];
   accessories: HouseAccessory[];
   members: FamilyMember[];
   pets: FamilyPet[];
   revealVersion: number;
-  viewerMemberId: string;
+  viewerMemberId: FamilyMemberId;
 }>();
 
 const views: HouseView[] = ['front', 'side', 'inside'];
 const viewIndex = ref(0);
 const dragDirection = ref(0);
-const speakingMemberId = ref<string | null>(null);
-const activePetId = ref<string | null>(null);
+const speakingMemberId = ref<FamilyMemberId | null>(null);
+const activePetId = ref<FamilyPetId | null>(null);
 let memberNameTimer: number | undefined;
 let petNameTimer: number | undefined;
 const reducedMotion = useReducedMotion();
-const view = computed(() => views[viewIndex.value]);
-const viewLabel = computed(() => ({ front: 'Vorne', side: 'Seite', inside: 'Innen' })[view.value]);
+const view = computed<HouseView>(() => views[viewIndex.value] ?? 'front');
+const viewLabels: Record<HouseView, string> = { front: 'Vorne', side: 'Seite', inside: 'Innen' };
+const viewLabel = computed(() => viewLabels[view.value]);
 const weatherLabel = computed(() => props.energy >= 70 ? 'sonnig' : props.energy >= 40 ? 'wolkig' : 'regnerisch');
 const sunOpacity = computed(() => Math.max(.08, props.energy / 100));
 const familyChildren = computed(() => props.members.filter((member) => member.role === 'child'));
@@ -344,33 +345,30 @@ const ariaLabel = computed(
   () => `Drehbare Familienwelt, Hausstufe ${props.houseLevel + 1}, ${viewLabel.value}, ${props.energy} Prozent Hausenergie, ${weatherLabel.value}`,
 );
 
-const hasEffect = (effect: string) => props.effects.includes(effect);
-const isEquipped = (id: string) => props.accessories.some((accessory) => accessory.id === id && accessory.equipped);
+const hasEffect = (effect: WorldEffect) => props.effects.includes(effect);
+const isEquipped = (id: HouseAccessoryId) => props.accessories.some((accessory) => accessory.id === id && accessory.equipped);
 const appearanceFor = (member: FamilyMember, index: number): AvatarAppearance => {
   if (member.appearance) return member.appearance;
-  const appearance = createDefaultAvatarAppearance();
   if (member.role === 'guardian') {
     const guardianIndex = familyGuardians.value.findIndex((guardian) => guardian.id === member.id);
-    const guardianVariants: Array<Partial<AvatarAppearance>> = [
-      { faceShape: 'soft', hair: 'waves', hairColor: '#6b4535', outfit: 'explorer', outfitColor: member.color },
-      { faceShape: 'angular', hair: 'short', hairColor: '#3f3029', outfit: 'hoodie', outfitColor: member.color },
-    ];
-    return { ...appearance, ...(guardianVariants[guardianIndex % guardianVariants.length] ?? {}) };
+    const preset = guardianIndex % 2 === 0 ? 'adult' : 'grandpa';
+    return { ...createGuardianAvatarAppearance(preset), outfitColorId: guardianIndex % 2 === 0 ? 'outfit-rose' : 'outfit-mint' };
   }
+  const appearance = createDefaultAvatarAppearance();
   const childIndex = familyChildren.value.findIndex((child) => child.id === member.id);
   const variants: Array<Partial<AvatarAppearance>> = [
-    { hair: 'ponytail', outfitColor: '#6f8df5' },
-    { hair: 'short', hairColor: '#33251f', outfit: 'overalls', outfitColor: '#e6a83f' },
-    { hair: 'curls', hairColor: '#69432b', outfit: 'space', outfitColor: '#3b8aaa' },
+    { hair: 'ponytail', outfitColorId: 'outfit-blue' },
+    { hair: 'short', hairColorId: 'hair-black', outfit: 'overalls', outfitColorId: 'outfit-gold' },
+    { hair: 'curls', hairColorId: 'hair-brown', outfit: 'space', outfitColorId: 'outfit-ocean' },
   ];
   return { ...appearance, ...(variants[(childIndex >= 0 ? childIndex : index) % variants.length] ?? {}) };
 };
-const showMemberName = (memberId: string) => {
+const showMemberName = (memberId: FamilyMemberId) => {
   speakingMemberId.value = memberId;
   if (memberNameTimer !== undefined) window.clearTimeout(memberNameTimer);
   memberNameTimer = window.setTimeout(() => { speakingMemberId.value = null; }, 1900);
 };
-const showPetName = (petId: string) => {
+const showPetName = (petId: FamilyPetId) => {
   activePetId.value = petId;
   if (petNameTimer !== undefined) window.clearTimeout(petNameTimer);
   petNameTimer = window.setTimeout(() => { activePetId.value = null; }, 1900);
@@ -393,27 +391,23 @@ onUnmounted(() => {
 
 <style scoped>
 .world-scene-wrap {
-  width: 100%;
+  @apply w-100;
   padding-bottom: 8px;
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   touch-action: pan-y;
-  user-select: none;
+  @apply select-none;
 }
 .scene-drag-layer {
-  position: relative;
-  cursor: grab;
+  @apply position-relative cursor-grab;
   touch-action: pan-y;
 }
 .scene-drag-layer:active {
-  cursor: grabbing;
+  @apply cursor-grabbing;
 }
 .world-scene {
-  width: 100%;
+  @apply w-100 position-relative overflow-visible;
   height: auto;
-  position: relative;
   z-index: 1;
-  overflow: visible;
   opacity: 0.16;
 }
 .island {
@@ -540,7 +534,7 @@ onUnmounted(() => {
   stroke: #f1bf63;
 }
 .floor-lamp circle {
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .dollhouse-roof {
   transform-origin: 230px 75px;
@@ -693,20 +687,17 @@ onUnmounted(() => {
 .world-family {
   width: 215px;
   height: 108px;
-  position: absolute;
-  left: 0;
+  @apply position-absolute left-0;
   bottom: 3.5%;
   z-index: 3;
-  display: grid;
-  place-items: end center;
-  pointer-events: none;
+  @apply d-grid place-end-center pointer-events-none;
   filter: drop-shadow(0 6px 5px rgba(67, 58, 48, 0.16));
 }
 .world-family::before {
   content: "";
   width: 145px;
   height: 20px;
-  position: absolute;
+  @apply position-absolute;
   left: 50%;
   bottom: -2px;
   z-index: 0;
@@ -719,19 +710,15 @@ onUnmounted(() => {
   bottom: 4.5%;
 }
 .world-family-background {
-  width: 100%;
+  @apply w-100;
   grid-area: 1 / 1;
   z-index: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  @apply d-flex align-end justify-space-between;
   transform: translateY(-17px);
 }
 .world-family-side {
   width: 86px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  @apply d-flex align-end justify-center;
 }
 .world-family-side .world-family-member {
   margin-inline: -5px;
@@ -740,20 +727,20 @@ onUnmounted(() => {
   margin-inline: -7px;
 }
 .world-family-member {
-  position: relative;
+  @apply position-relative;
   z-index: 2;
   margin-inline: -8px;
   transform-origin: center bottom;
 }
 .world-family-member :deep(.avatar-figure) {
   pointer-events: auto;
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .member-name-bubble,
 .pet-name-bubble {
   min-width: max-content;
   padding: 5px 8px;
-  position: absolute;
+  @apply position-absolute;
   left: 50%;
   bottom: calc(100% + 4px);
   z-index: 7;
@@ -764,16 +751,16 @@ onUnmounted(() => {
   background: #fffdf8;
   box-shadow: 0 4px 10px rgba(54, 78, 66, 0.18);
   font-size: 9px;
-  font-weight: 900;
+  @apply font-weight-black;
   line-height: 1;
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .member-name-bubble::after,
 .pet-name-bubble::after {
   content: "";
   width: 8px;
   height: 8px;
-  position: absolute;
+  @apply position-absolute;
   left: 50%;
   bottom: -5px;
   transform: translateX(-50%) rotate(45deg);
@@ -806,7 +793,7 @@ onUnmounted(() => {
 .world-family > .world-family-member.is-active-member {
   grid-area: 1 / 1;
   z-index: 6;
-  margin: 0;
+  @apply ma-0;
   translate: 0 8px;
   opacity: 1;
 }
@@ -824,25 +811,22 @@ onUnmounted(() => {
 }
 .world-pets {
   width: 108px;
-  position: absolute;
+  @apply position-absolute;
   right: 3%;
   bottom: 13%;
   z-index: 4;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  @apply d-flex align-end justify-center;
   gap: 2px;
-  pointer-events: none;
+  @apply pointer-events-none;
 }
 .world-pets.inside {
   right: 3%;
   bottom: 13%;
 }
 .world-pet {
-  position: relative;
+  @apply position-relative;
   z-index: 1;
-  display: flex;
-  align-items: flex-end;
+  @apply d-flex align-end;
   pointer-events: auto;
 }
 .world-pet:nth-child(2) :deep(.animated-pet) {
@@ -850,7 +834,7 @@ onUnmounted(() => {
 }
 .world-pets :deep(.animated-pet) {
   pointer-events: auto;
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .far-landscape {
   opacity: 0.92;
@@ -1031,13 +1015,11 @@ onUnmounted(() => {
   min-width: 92px;
   height: 42px;
   padding: 5px 11px;
-  position: absolute;
+  @apply position-absolute;
   right: 50%;
   bottom: 3px;
   z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply d-flex align-center justify-center;
   gap: 7px;
   transform: translateX(50%);
   color: #315f51;
@@ -1047,7 +1029,7 @@ onUnmounted(() => {
   box-shadow:
     0 4px 0 #c1e4d2,
     0 8px 18px rgba(45, 76, 64, 0.14);
-  cursor: pointer;
+  @apply cursor-pointer;
   font: inherit;
   backdrop-filter: blur(10px);
   transition:
@@ -1066,10 +1048,10 @@ onUnmounted(() => {
 .scene-rotate span,
 .scene-rotate strong,
 .scene-rotate small {
-  display: block;
+  @apply d-block;
 }
 .scene-rotate span {
-  text-align: left;
+  @apply text-left;
   line-height: 1.05;
 }
 .scene-rotate strong {

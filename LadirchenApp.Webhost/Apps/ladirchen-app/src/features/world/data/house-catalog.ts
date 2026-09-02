@@ -1,13 +1,15 @@
-import type { HouseStageDefinition, HouseThemeDefinition } from '../domain/house';
-import type { HouseAccessory } from '../domain/types';
+import type { HouseStageDefinition, HouseThemeDefinition } from '@/domain/house';
+import type { HouseAccessory } from '@/domain/types';
 
 export const HOUSE_STAGES: HouseStageDefinition[] = [
-  { level: 0, name: 'kleines Häuschen', icon: '🏠', rooms: 1 },
-  { level: 1, name: 'gemütliches Familienhaus', icon: '🏡', rooms: 2 },
-  { level: 2, name: 'großes Gartenhaus', icon: '🏘️', rooms: 3 },
-  { level: 3, name: 'Haus mit Turm', icon: '🏰', rooms: 4 },
-  { level: 4, name: 'Traumhaus', icon: '✨🏡', rooms: 5 },
+  { id: 'starter-home', level: 0, name: 'kleines Häuschen', icon: '🏠', rooms: 1 },
+  { id: 'family-home', level: 1, name: 'gemütliches Familienhaus', icon: '🏡', rooms: 2 },
+  { id: 'garden-home', level: 2, name: 'großes Gartenhaus', icon: '🏘️', rooms: 3 },
+  { id: 'tower-home', level: 3, name: 'Haus mit Turm', icon: '🏰', rooms: 4 },
+  { id: 'dream-home', level: 4, name: 'Traumhaus', icon: '✨🏡', rooms: 5 },
 ];
+
+export const DEFAULT_HOUSE_STAGE = HOUSE_STAGES[0]!;
 
 export const HOUSE_THEMES: HouseThemeDefinition[] = [
   {

@@ -4,7 +4,7 @@
     :class="{ reacting: isReacting }"
     :style="petStyle"
     role="img"
-    :aria-label="`${pet.name}, eine animierte ${pet.kind}`"
+    :aria-label="`${pet.name}, eine animierte ${pet.kindLabel}`"
     :title="pet.name"
     @click="react"
   >
@@ -50,7 +50,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 
-import type { FamilyPet } from '../domain/types';
+import type { FamilyPet } from '@/domain/types';
 
 const props = withDefaults(defineProps<{
   pet: FamilyPet;
@@ -82,23 +82,21 @@ const petStyle = computed(() => {
 
 <style scoped>
 .animated-pet {
-  display: inline-grid;
+  @apply d-inline-grid;
   flex: 0 0 auto;
-  place-items: center;
+  @apply place-center;
   transform-origin: center bottom;
   animation: pet-hop 11s var(--pet-phase) ease-in-out infinite;
 }
 .animated-pet {
   pointer-events: auto;
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .animated-pet.reacting {
   animation: pet-tap 620ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  @apply w-100 h-100 overflow-visible;
   filter: drop-shadow(0 5px 3px rgba(55, 57, 55, 0.16));
 }
 .pet-shadow {

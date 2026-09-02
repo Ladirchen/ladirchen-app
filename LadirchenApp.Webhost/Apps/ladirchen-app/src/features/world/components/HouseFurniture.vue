@@ -84,7 +84,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { HouseAccessory } from '../domain/types';
+import type { HouseAccessory } from '@/domain/types';
 
 defineProps<{ item: HouseAccessory }>();
 </script>
