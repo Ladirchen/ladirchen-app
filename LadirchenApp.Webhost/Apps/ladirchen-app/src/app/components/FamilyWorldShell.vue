@@ -2,24 +2,24 @@
   <div class="family-world-background">
     <LadirchenIntro />
 
-    <div class="family-world-shell">
-      <header class="family-world-header">
-        <RouterLink aria-label="Ladirchen Familienwelt" class="family-world-brand" to="/">
-          <span class="family-world-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
+    <div class="family-world-shell position-relative d-flex flex-column overflow-hidden mx-auto">
+      <header class="family-world-header d-flex align-center justify-space-between">
+        <RouterLink aria-label="Ladirchen Familienwelt" class="family-world-brand d-flex align-center text-decoration-none" to="/">
+          <span class="family-world-logo position-relative flex-shrink-0 overflow-hidden" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
           <span class="family-world-wordmark">Ladirchen</span>
         </RouterLink>
-        <div class="header-stats">
-          <button class="header-stat header-streak" :aria-label="`Tagesserie öffnen: ${store.currentDailyStreak} geschaffte Tage`" aria-haspopup="dialog" type="button" @click="streakDialog = true">
+        <div class="header-stats d-grid align-center">
+          <button class="header-stat header-streak d-flex align-center justify-center cursor-pointer" :aria-label="`Tagesserie öffnen: ${store.currentDailyStreak} geschaffte Tage`" aria-haspopup="dialog" type="button" @click="streakDialog = true">
             <AnimatedStreakFlame :size="25" /><strong>{{ store.currentDailyStreak }}</strong><span class="header-stat-label">Tage</span>
           </button>
-          <button class="header-stat header-balance" :aria-label="`Guthaben von ${store.displayNameFor(store.activeChildId)} öffnen: ${store.availableBalance} verfügbare Ladirchen`" aria-haspopup="dialog" type="button" @click="store.piggyBankOpen = true">
+          <button class="header-stat header-balance d-flex align-center justify-center cursor-pointer" :aria-label="`Guthaben von ${store.displayNameFor(store.activeChildId)} öffnen: ${store.availableBalance} verfügbare Ladirchen`" aria-haspopup="dialog" type="button" @click="store.piggyBankOpen = true">
             <LadirchenCoin animated small />
             <strong>{{ store.availableBalance }} L</strong>
           </button>
         </div>
       </header>
 
-      <main class="family-world-content">
+      <main class="family-world-content flex-grow-1 overflow-auto">
         <RouterView v-slot="{ Component, route }">
           <AnimatePresence :initial="false" mode="wait">
             <motion.div
@@ -36,15 +36,15 @@
         </RouterView>
       </main>
 
-      <nav aria-label="Hauptnavigation" class="family-world-navigation">
-        <RouterLink v-for="item in navigation" :key="item.to" :to="item.to">
+      <nav aria-label="Hauptnavigation" class="family-world-navigation position-absolute d-grid">
+        <RouterLink v-for="item in navigation" :key="item.to" class="d-flex flex-column align-center justify-center text-decoration-none" :to="item.to">
           <AppNavigationIcon :name="item.icon" />
           <span>{{ item.label }}</span>
         </RouterLink>
       </nav>
 
       <Transition name="reward-flight">
-        <div v-if="store.rewardAnimation.visible" :key="store.rewardAnimation.version" class="reward-animation" aria-live="polite">
+        <div v-if="store.rewardAnimation.visible" :key="store.rewardAnimation.version" class="reward-animation position-absolute d-flex flex-column align-center pointer-events-none" aria-live="polite">
           <div class="reward-value">+{{ store.rewardAnimation.value }}</div>
           <LadirchenCoin />
         </div>
@@ -79,15 +79,16 @@
 import { computed, ref } from 'vue';
 import { AnimatePresence, motion, useReducedMotion } from 'motion-v';
 
-import FamilySetupDialog from './FamilySetupDialog.vue';
-import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
+import FamilySetupDialog from '@/features/family/components/FamilySetupDialog.vue';
+import LadirchenIntro from '@/features/onboarding/components/LadirchenIntro.vue';
+import SavingsPiggyDialog from '@/features/savings/components/SavingsPiggyDialog.vue';
+import AnimatedStreakFlame from '@/features/streaks/components/AnimatedStreakFlame.vue';
+import WeeklyStreakDialog from '@/features/streaks/components/WeeklyStreakDialog.vue';
+import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+
 import AppNavigationIcon from './AppNavigationIcon.vue';
-import LadirchenIntro from './LadirchenIntro.vue';
-import LadirchenCoin from './LadirchenCoin.vue';
 import DevelopmentSessionSwitcher from './DevelopmentSessionSwitcher.vue';
-import SavingsPiggyDialog from './SavingsPiggyDialog.vue';
-import WeeklyStreakDialog from './WeeklyStreakDialog.vue';
-import { useFamilyWorldStore } from '../stores/family-world';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const isDevelopment = import.meta.env.DEV;
@@ -101,7 +102,7 @@ const pageMotion = computed(() => reducedMotion.value ? {
   exit: { opacity: 0, y: -8, scale: .996 },
   transition: { duration: .22, ease: [.22, .8, .26, 1] },
 });
-const navigation = [
+const navigationItems = [
   { to: '/', icon: 'world', label: 'Unsere Welt' },
   { to: '/beitraege', icon: 'contributions', label: 'Beiträge' },
   { to: '/wuensche', icon: 'wishes', label: 'Wünsche' },
@@ -109,32 +110,33 @@ const navigation = [
   { to: '/familie', icon: 'family', label: 'Familie' },
   { to: '/ich', icon: 'profile', label: 'Ich' },
 ] as const;
+const navigation = computed(() => store.viewerRole === 'guardian' && !store.permissions.canManageContent
+  ? navigationItems.filter(item => !['/beitraege', '/shop'].includes(item.to))
+  : navigationItems,
+);
 
 </script>
 
-<style src="../styles/family-world.scss"></style>
+<style src="@/styles/family-world.scss"></style>
 
 <style scoped>
 .guardian-gift-card {
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   background: linear-gradient(160deg, #f3fff8, #fff7db 72%) !important;
   border: 1px solid rgba(62, 188, 140, 0.25);
 }
 .guardian-gift-card h2 {
-  position: relative;
-  margin: 0;
+  @apply position-relative ma-0;
   font-size: 23px;
   letter-spacing: -0.035em;
 }
 .gift-coin {
   width: 82px;
   height: 82px;
-  position: relative;
+  @apply position-relative;
   z-index: 2;
   margin: 15px auto 0;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 10px 28px rgba(204, 144, 35, 0.2);
@@ -145,15 +147,13 @@ const navigation = [
   animation: gift-coin-spin 1.2s 700ms ease-in-out;
 }
 .gift-amount {
-  display: block;
-  position: relative;
-  margin-top: 12px;
+  @apply d-block position-relative mt-3;
   color: #279267;
   font-size: 35px;
   animation: gift-amount-pop 700ms 500ms both cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 .gift-confetti span {
-  position: absolute;
+  @apply position-absolute;
   z-index: 1;
   color: #f2b443;
   font-size: 18px;
