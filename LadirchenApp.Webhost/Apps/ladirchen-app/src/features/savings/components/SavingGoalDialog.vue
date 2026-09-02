@@ -55,7 +55,7 @@
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue';
 
-import type { GoalVisibility, NewGoal } from '../domain/types';
+import type { GoalVisibility, NewGoal } from '@/domain/types';
 
 const props = withDefaults(defineProps<{
   modelValue: boolean;
@@ -113,8 +113,7 @@ watch(() => props.modelValue, (isOpen) => {
 .visibility-hint {
   min-height: 46px;
   padding: 10px 12px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 9px;
   color: var(--lad-muted);
   border: 1px solid var(--lad-border);
@@ -131,8 +130,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .starter-bonus {
   padding: 10px 12px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
   border: 1px solid rgba(62, 188, 140, 0.24);
   border-radius: 14px;
@@ -144,10 +142,10 @@ watch(() => props.modelValue, (isOpen) => {
 .starter-bonus p,
 .starter-bonus strong,
 .starter-bonus small {
-  display: block;
+  @apply d-block;
 }
 .starter-bonus p {
-  margin: 0;
+  @apply ma-0;
 }
 .starter-bonus strong {
   color: var(--lad-mint-dark);
@@ -160,11 +158,9 @@ watch(() => props.modelValue, (isOpen) => {
   line-height: 1.35;
 }
 .goal-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  @apply d-flex justify-end ga-2;
 }
 .goal-dialog-actions > :first-child:not(:last-child) {
-  margin-right: auto;
+  @apply me-auto;
 }
 </style>

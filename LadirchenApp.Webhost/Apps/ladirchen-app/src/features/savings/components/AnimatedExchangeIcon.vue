@@ -44,8 +44,7 @@ const currencyMark = computed(() => ({ CHF: 'Fr', EUR: '€', HUF: 'Ft' })[props
 .exchange-icon {
   width: 42px;
   height: 42px;
-  display: block;
-  overflow: visible;
+  @apply d-block overflow-visible;
 }
 .exchange-backdrop {
   fill: #fff0c3;
