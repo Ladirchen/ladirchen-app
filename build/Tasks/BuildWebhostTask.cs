@@ -30,10 +30,9 @@ public class BuildWebhostTask : FrostingTask<BuildContext>
       new DotNetPublishSettings { OutputDirectory = context.ArtifactsWebhostPublishDirectory }
     );
 
-    context.Information("*** Webhost zip will be created at {0}", context.ArtifactsWebhostZipDirectory.FullPath);
-    context.EnsureDirectoryDoesNotExist(context.ArtifactsWebhostZipDirectory.GetDirectory());
-    context.EnsureDirectoryExists(context.ArtifactsWebhostZipDirectory.GetDirectory());
-    context.Zip(context.ArtifactsWebhostPublishDirectory.FullPath, context.ArtifactsWebhostZipDirectory.FullPath);
-    context.Information("*** Webhost zip created at {0}", context.ArtifactsWebhostZipDirectory.FullPath);
+    context.Information("*** Webhost zip will be created at {0}", context.ArtifactsWebhostZipFile.FullPath);
+    context.EnsureDirectoryExists(context.ArtifactsWebhostZipFile.GetDirectory());
+    context.Zip(context.ArtifactsWebhostPublishDirectory.FullPath, context.ArtifactsWebhostZipFile.FullPath);
+    context.Information("*** Webhost zip created at {0}", context.ArtifactsWebhostZipFile.FullPath);
   }
 }

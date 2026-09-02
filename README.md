@@ -9,6 +9,8 @@ Ladirchen ist eine gamifizierte Familienplattform, die Kinder und Jugendliche da
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 - [VitePlus](https://viteplus.dev/)
 - [Tilt](https://tilt.dev/)
+- [GitVersion](https://gitversion.net/)
+  - <https://gitversion.net/docs/usage/cli/installation>
 - A _local_ Kubernetes cluster
   - [Docker Desktop with Kubernetes](https://www.docker.com/products/docker-desktop)
   - [Rancher Desktop](https://rancherdesktop.io/)
@@ -39,11 +41,11 @@ To build the Ladirchen App, follow these steps:
    **bash**
 
    ```bash
-   ./build.sh -t BuildWebhost
+   ./build.sh -t build-all
    ```
 
    **powershell**
 
    ```powershell
-   .\build.ps1 -t BuildWebhost
+   .\build.ps1 -t build-all
    ```

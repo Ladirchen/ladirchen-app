@@ -1,12 +1,11 @@
 using System;
 using System.Threading.Tasks;
 
+using LadirchenApp.Webhost.Extensions;
+using LadirchenApp.Webhost.Helpers;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
-
-using Mumrich.SpaDevMiddleware.Extensions;
-
-using Serilog;
 
 namespace LadirchenApp.Webhost;
 
@@ -14,39 +13,24 @@ public static class Program
 {
   private static async Task Main(string[] args)
   {
-    var configuration = new ConfigurationBuilder()
-      .SetBasePath(AppContext.BaseDirectory)
-      .AddJsonFile("appsettings.json", optional: false)
-      .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true)
-      .Build();
-
-    Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateBootstrapLogger();
-
-    try
+    await LoggerHelper.RunWithSerilogAsync(async logger =>
     {
       var builder = WebApplication.CreateBuilder(args);
       var appSettings = builder.Configuration.Get<AppSettings>();
 
       ArgumentNullException.ThrowIfNull(appSettings);
 
-      builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
-      builder.SetupSpaMiddleware(appSettings);
+      builder.SetupLadierchenWebhost(appSettings);
+
+      logger.Information("*** Setup for Ladirchen webhost complete, building and configuring application..§.");
 
       var app = builder.Build();
 
-      app.UseSerilogRequestLogging();
+      app.ConfigLadierchenWebhostApp(appSettings, logger);
 
-      app.MapSinglePageApps(appSettings);
+      logger.Information("*** Configuration for Ladirchen webhost complete, launching application...");
 
       await app.RunAsync();
-    }
-    catch (Exception ex)
-    {
-      Log.Fatal(ex, "Host terminated unexpectedly");
-    }
-    finally
-    {
-      await Log.CloseAndFlushAsync();
-    }
+    });
   }
 }
