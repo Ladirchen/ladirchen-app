@@ -44,8 +44,7 @@ defineProps<{
 .app-navigation-icon {
   width: 27px;
   height: 27px;
-  display: block;
-  overflow: visible;
+  @apply d-block overflow-visible;
 }
 .line {
   fill: none;
@@ -58,13 +57,13 @@ defineProps<{
   stroke-width: 2;
 }
 .soft {
-  fill: #def2e9;
+  fill: var(--lad-palette-background);
 }
 .accent {
-  fill: #ffd267;
+  fill: var(--lad-palette-yellow);
 }
 .shine {
-  fill: #73cdaa;
+  fill: var(--lad-palette-teal-400);
   stroke: currentColor;
   stroke-width: 0.8;
 }

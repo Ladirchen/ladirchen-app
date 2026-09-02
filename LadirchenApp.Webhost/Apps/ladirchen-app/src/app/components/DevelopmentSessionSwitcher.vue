@@ -27,14 +27,14 @@
 </template>
 
 <script lang="ts" setup>
-import { useFamilyWorldStore } from '../stores/family-world';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 </script>
 
 <style scoped>
 .session-switcher {
-  position: fixed;
+  @apply position-fixed;
   right: 18px;
   bottom: 18px;
   z-index: 90;

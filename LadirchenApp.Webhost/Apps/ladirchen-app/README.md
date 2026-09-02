@@ -20,16 +20,24 @@ Scaffolded with Vuetify CLI.
 
 - Main entry: `src/main.ts`
 - Main app component: `src/App.vue`
-- Main styles: `src/styles/`
+- Application shell: `src/app/`
+- Capability modules: `src/features/`
+- Domain model: `src/domain/`
 - Plugin setup: `src/plugins/`
 
 ## 📁 Project Structure
 
 - `src/main.ts` — application entry point
 - `src/App.vue` — root component
-- `src/components/` — reusable Vue components
+- `src/app/` — application shell and navigation
+- `src/application/` — application ports and use-case boundaries
+- `src/domain/` — framework-independent family-world model and rules
+- `src/features/` — capability-oriented pages, components, and feature data
+- `src/infrastructure/` — persistence adapters and initial fixture data
 - `src/plugins/` — plugin registration and setup
-- `src/styles/` — global styles and theme settings
+- `src/shared/` — reusable presentation components without feature ownership
+- `src/stores/` — Pinia state orchestration
+- `src/styles/` — global design tokens, shell styles, and theme settings
 - `public/` — static public files
 
 ## ✨ Enabled Features
