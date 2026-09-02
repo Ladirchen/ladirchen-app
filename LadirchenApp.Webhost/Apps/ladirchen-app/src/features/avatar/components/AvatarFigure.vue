@@ -1,5 +1,5 @@
 <template>
-  <span class="avatar-figure" :class="[`outfit-${appearance.outfit}`, { reacting: isReacting, 'full-body': fullBody, calm }]" :style="figureStyle" role="img" aria-label="Animierter, zusammengestellter Profilavatar" @click="react">
+  <span class="avatar-figure" :class="[`outfit-${appearance.outfit}`, `age-${appearance.age ?? 'child'}`, { reacting: isReacting, 'full-body': fullBody, calm }]" :style="figureStyle" role="img" aria-label="Animierter, zusammengestellter Profilavatar" @click="react">
     <svg :viewBox="fullBody ? '0 0 160 260' : '0 0 160 180'">
       <template v-if="!fullBody">
         <circle class="backdrop" cx="80" cy="88" r="74" />
@@ -7,13 +7,13 @@
         <circle class="backdrop-dot dot-two" cx="135" cy="115" r="10" />
       </template>
 
-      <g v-if="appearance.fun === 'rainbow'" class="rainbow">
+      <g v-if="appearance.funAccessoryId === 'rainbow'" class="rainbow">
         <path d="M17 111c4-58 121-58 126 0" />
         <path d="M25 111c5-47 105-47 110 0" />
         <path d="M34 111c4-35 88-35 92 0" />
       </g>
 
-      <g v-if="appearance.fun === 'monster-horns'" class="monster-horns">
+      <g v-if="appearance.funAccessoryId === 'monster-horns'" class="monster-horns">
         <path d="M45 38C25 33 21 12 28 3c4 13 16 12 25 23Z" />
         <path d="M115 38c20-5 24-26 17-35-4 13-16 12-25 23Z" />
         <circle cx="31" cy="9" r="4" /><circle cx="129" cy="9" r="4" />
@@ -125,16 +125,20 @@
           <circle cx="53" cy="84" r="1.5" /><circle cx="58" cy="86" r="1.3" /><circle cx="63" cy="84" r="1.4" />
           <circle cx="97" cy="84" r="1.4" /><circle cx="102" cy="86" r="1.3" /><circle cx="107" cy="84" r="1.5" />
         </g>
-        <g v-if="appearance.fun === 'whiskers'" class="whiskers">
+        <g v-if="appearance.age === 'senior'" class="senior-details">
+          <path d="M48 78q7 4 13 0m38 0q7 4 13 0M54 99q5 4 10 1m32 0q5 3 10-1" />
+          <path class="smile-line" d="M68 106q12 6 24 0" />
+        </g>
+        <g v-if="appearance.funAccessoryId === 'whiskers'" class="whiskers">
           <path d="M53 91 31 86m23 10-22 4m75-9 22-5m-23 10 22 4" />
         </g>
-        <path v-if="appearance.fun === 'mustache'" class="mustache" d="M80 90c-7-10-17-7-18 1 1 9 13 9 18 2 5 7 17 7 18-2-1-8-11-11-18-1Z" />
-        <g v-if="appearance.fun === 'clown-nose'" class="clown-nose">
+        <path v-if="appearance.funAccessoryId === 'mustache'" class="mustache" d="M80 90c-7-10-17-7-18 1 1 9 13 9 18 2 5 7 17 7 18-2-1-8-11-11-18-1Z" />
+        <g v-if="appearance.funAccessoryId === 'clown-nose'" class="clown-nose">
           <circle cx="80" cy="82" r="10" /><ellipse cx="76" cy="78" rx="3" ry="2" />
         </g>
       </g>
 
-      <g v-if="appearance.fun === 'pirate'" class="pirate-patch">
+      <g v-if="appearance.funAccessoryId === 'pirate'" class="pirate-patch">
         <path d="M36 50c30 8 59 8 88 0" />
         <path d="M49 61q12-8 24 0l-2 22q-11 10-22 0Z" />
         <path class="pirate-star" d="m60 65 2 5 5 1-4 3 1 5-4-3-5 3 2-5-4-3 5-1Z" />
@@ -180,12 +184,12 @@
         <circle class="shark-eye-glint" cx="46" cy="40" r="1.6" /><circle class="shark-eye-glint" cx="110" cy="40" r="1.6" />
       </g>
 
-      <g v-if="appearance.accessory === 'glasses'" class="glasses">
+      <g v-if="appearance.accessoryId === 'glasses'" class="glasses">
         <circle class="glasses-lens" cx="59" cy="71" r="13" /><circle class="glasses-lens" cx="101" cy="71" r="13" />
         <path class="glasses-frame" d="M72 70q8-5 16 0m-42-2-10-4m78 4 10-4" />
         <path class="glasses-shine" d="m52 64 5-3m36 3 5-3" />
       </g>
-      <g v-if="appearance.accessory === 'headphones' && allowsHeadAccessory" class="headphones">
+      <g v-if="appearance.accessoryId === 'headphones' && allowsHeadAccessory" class="headphones">
         <path class="headphone-band" d="M38 68C38 20 122 20 122 68" />
         <path class="headphone-band-highlight" d="M44 63C45 29 115 29 116 63" />
         <path class="headphone-connector" d="M38 60v13m84-13v13" />
@@ -193,34 +197,34 @@
         <rect class="headphone-pad" x="38" y="70" width="8" height="24" rx="4" /><rect class="headphone-pad" x="114" y="70" width="8" height="24" rx="4" />
         <path class="headphone-star" d="m39 74 2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1Zm82 0 2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1Z" />
       </g>
-      <g v-if="appearance.accessory === 'cat-ears' && allowsHeadAccessory" class="cat-ears">
+      <g v-if="appearance.accessoryId === 'cat-ears' && allowsHeadAccessory" class="cat-ears">
         <path class="cat-ear-outer" d="M39 36 44 7l27 23Z" /><path class="cat-ear-outer" d="m89 30 27-23 5 29Z" />
         <path class="cat-ear-inner" d="m47 27 2-12 12 13Zm66 0-2-12-12 13Z" />
         <path class="cat-ear-band" d="M44 36q36-24 72 0" />
         <circle class="cat-ear-dot" cx="45" cy="10" r="3" /><circle class="cat-ear-dot" cx="115" cy="10" r="3" />
       </g>
-      <g v-if="appearance.accessory === 'cap' && allowsHeadAccessory" class="cap">
+      <g v-if="appearance.accessoryId === 'cap' && allowsHeadAccessory" class="cap">
         <path class="cap-body" d="M42 43c4-31 65-40 78-4-25 10-53 11-78 4Z" /><path class="cap-brim" d="M83 38c22-6 41-1 49 7-20 5-36 3-49-7Z" />
         <path class="cap-seam" d="M80 18v23M54 25q25 11 52-2" /><circle class="cap-button" cx="80" cy="17" r="4" />
       </g>
-      <g v-if="appearance.accessory === 'crown' && allowsHeadAccessory" class="crown">
+      <g v-if="appearance.accessoryId === 'crown' && allowsHeadAccessory" class="crown">
         <path class="crown-body" d="m49 30 6-25 18 16L82 0l12 20 17-17 2 28Z" />
         <circle class="crown-tip" cx="55" cy="5" r="4" /><circle class="crown-tip" cx="82" cy="1" r="4" /><circle class="crown-tip" cx="111" cy="3" r="4" />
         <path class="crown-gems" d="m65 24 5-5 5 5-5 5Zm24 0 5-5 5 5-5 5Z" /><path class="crown-shine" d="m83 7 2 4 4 2-4 2-2 4-2-4-4-2 4-2Z" />
       </g>
-      <g v-if="appearance.accessory === 'star-glasses'" class="star-glasses">
+      <g v-if="appearance.accessoryId === 'star-glasses'" class="star-glasses">
         <path d="m59 57 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Zm42 0 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" />
         <path class="star-glasses-bridge" d="M68 69q12-6 24 0M47 66l-10-4m76 4 10-4" />
         <path class="star-glasses-shine" d="m55 64 4-2m38 2 4-2" />
       </g>
-      <g v-if="appearance.accessory === 'flower-crown' && allowsHeadAccessory" class="flower-crown">
+      <g v-if="appearance.accessoryId === 'flower-crown' && allowsHeadAccessory" class="flower-crown">
         <path class="flower-band" d="M40 39q40-25 80 0" />
         <g transform="translate(50 25)"><circle cx="0" cy="-6" r="5" /><circle cx="6" cy="0" r="5" /><circle cx="0" cy="6" r="5" /><circle cx="-6" cy="0" r="5" /><circle class="flower-center" r="4" /></g>
         <g transform="translate(80 17)"><circle cx="0" cy="-7" r="6" /><circle cx="7" cy="0" r="6" /><circle cx="0" cy="7" r="6" /><circle cx="-7" cy="0" r="6" /><circle class="flower-center" r="4" /></g>
         <g transform="translate(110 25)"><circle cx="0" cy="-6" r="5" /><circle cx="6" cy="0" r="5" /><circle cx="0" cy="6" r="5" /><circle cx="-6" cy="0" r="5" /><circle class="flower-center" r="4" /></g>
         <path class="flower-leaf" d="M60 28q8-13 15-4-7 9-15 4Zm40 0q-8-13-15-4 7 9 15 4Z" />
       </g>
-      <g v-if="appearance.accessory === 'propeller-cap' && allowsHeadAccessory" class="propeller-cap">
+      <g v-if="appearance.accessoryId === 'propeller-cap' && allowsHeadAccessory" class="propeller-cap">
         <path class="propeller-cap-body" d="M42 43c4-30 65-39 78-4-25 10-53 11-78 4Z" />
         <path class="propeller-cap-panel" d="M80 16c-14 0-25 6-31 15m31-15c14 0 25 6 31 15M80 16v25" />
         <path class="propeller-stem" d="M80 16V7" /><circle class="propeller-hub" cx="80" cy="7" r="4" />
@@ -228,7 +232,29 @@
       </g>
 
       <g class="outfit-detail">
-        <template v-if="appearance.outfit === 'hoodie'">
+        <template v-if="appearance.outfit === 'shirt'">
+          <path class="adult-shirt" d="M45 138q8-12 23-16l12 13 12-13q15 4 23 16l3 42H42Z" />
+          <path class="shirt-collar" d="m63 122 17 13-14 14-10-20m41-7-17 13 14 14 10-20M80 136v44" />
+          <circle class="shirt-button" cx="80" cy="151" r="2.5" /><circle class="shirt-button" cx="80" cy="163" r="2.5" />
+        </template>
+        <template v-else-if="appearance.outfit === 'blouse'">
+          <path class="adult-blouse" d="M44 139q9-13 25-17l11 12 11-12q16 4 25 17l2 41H42Z" />
+          <path class="blouse-collar" d="m61 123 19 11-12 17-13-21m44-7-19 11 12 17 13-21" />
+          <path class="blouse-detail" d="M80 135v45m-25-22q25 9 50 0" />
+        </template>
+        <template v-else-if="appearance.outfit === 'cardigan'">
+          <path class="cardigan-shirt" d="M55 132q25-17 50 0l5 48H50Z" />
+          <path class="cardigan" d="M44 138q8-12 24-16l12 14 12-14q16 4 24 16l2 42H91l-11-44-11 44H42Z" />
+          <path class="cardigan-edge" d="m68 123 12 13 12-13M80 136v44" />
+          <circle class="cardigan-button" cx="80" cy="151" r="2.5" /><circle class="cardigan-button" cx="80" cy="164" r="2.5" />
+        </template>
+        <template v-else-if="appearance.outfit === 'blazer'">
+          <path class="blazer-shirt" d="M58 127h44l5 53H53Z" />
+          <path class="blazer" d="M44 138q8-12 25-16l11 14 11-14q17 4 25 16l2 42H91l-11-44-11 44H42Z" />
+          <path class="blazer-lapel" d="m67 123 13 13-15 20-9-27m37-6-13 13 15 20 9-27M80 136v44" />
+          <circle class="blazer-button" cx="80" cy="158" r="3" />
+        </template>
+        <template v-else-if="appearance.outfit === 'hoodie'">
           <path class="hood-rim" d="M53 126c7 20 47 20 54 0-8-7-17-10-27-10s-19 3-27 10Z" />
           <path d="M75 134v16m10-16v16" /><circle class="hood-tip" cx="75" cy="152" r="3" /><circle class="hood-tip" cx="85" cy="152" r="3" />
           <path class="hood-pocket" d="M59 160q21-12 42 0l-5 16H64Z" />
@@ -297,33 +323,33 @@
       </g>
 
       <g class="seasonal">
-        <g v-if="appearance.season === 'witch'" class="witch">
+        <g v-if="appearance.seasonalAccessoryId === 'witch'" class="witch">
           <path class="witch-top" d="M42 40 62 19 83 1l17 29 21 12Z" /><path class="witch-fold" d="M83 1q23 11 17 29" />
           <path class="witch-brim" d="M17 42q63-30 126 0-6 14-63 14T17 42Z" /><path class="witch-band" d="m54 31 56 2-4 15-59 1Z" /><path class="witch-buckle" d="M75 32h18v15H75Z" />
           <path class="witch-charm" d="m126 40 8 11 10-1-6 8 5 9-11-3-7 8-1-11-10-4 10-6Z" />
         </g>
-        <g v-else-if="appearance.season === 'pumpkin'" class="pumpkin">
+        <g v-else-if="appearance.seasonalAccessoryId === 'pumpkin'" class="pumpkin">
           <path class="pumpkin-hood" d="M37 70C30 32 49 12 80 12s50 20 43 58l-9-17-8 12-11-17-15 14-15-14-11 17-8-12Z" />
           <path class="pumpkin-lines" d="M55 22q-11 17-9 31m59-31q11 17 9 31M80 13v28" /><path class="pumpkin-stem" d="M80 13q-3-12 8-13" /><path class="pumpkin-leaf" d="M84 6q13-8 16 2-10 5-16-2Z" />
         </g>
-        <g v-else-if="appearance.season === 'santa'" class="santa">
+        <g v-else-if="appearance.seasonalAccessoryId === 'santa'" class="santa">
           <path class="santa-hat" d="M38 42C50 4 93-5 121 28L92 43Z" /><path class="santa-fold" d="M87 10q19 2 34 18" /><circle class="santa-pom" cx="121" cy="28" r="10" /><path class="santa-rim" d="M36 39q43-14 85 0l-3 12q-39-11-79 1Z" />
           <path class="santa-holly" d="M49 38q-9-10-13-1 7 7 13 1Zm0 0q9-10 13-1-7 7-13 1Z" /><circle class="santa-berry" cx="49" cy="39" r="4" />
         </g>
-        <g v-else-if="appearance.season === 'reindeer'" class="reindeer">
+        <g v-else-if="appearance.seasonalAccessoryId === 'reindeer'" class="reindeer">
           <path class="antlers" d="M51 31 38 13m8 9-12-1m12 1 1-14m62 23 13-18m-8 9 12-1m-12 1-1-14" />
           <path class="reindeer-band" d="M43 39q37-23 74 0" /><path class="reindeer-ear" d="M48 31Q30 23 31 38q9 8 17-7Zm64 0q18-8 17 7-9 8-17-7Z" />
           <circle class="reindeer-nose" cx="80" cy="82" r="7" /><circle class="reindeer-shine" cx="78" cy="79" r="2" />
         </g>
-        <g v-else-if="appearance.season === 'bat'" class="bat-costume">
+        <g v-else-if="appearance.seasonalAccessoryId === 'bat'" class="bat-costume">
           <path class="bat-wing" d="M43 127C20 108 4 117 9 141l11-7 7 11 9-8 13 17Zm74 0c23-19 39-10 34 14l-11-7-7 11-9-8-13 17Z" />
           <path class="bat-band" d="M43 40q37-24 74 0" /><path class="bat-ear" d="m49 33 4-22 15 20m43 2-4-22-15 20" />
         </g>
-        <g v-else-if="appearance.season === 'elf'" class="elf">
+        <g v-else-if="appearance.seasonalAccessoryId === 'elf'" class="elf">
           <path class="elf-hat" d="M37 43Q49 8 83 8l35 1-25 14 21 16Z" /><path class="elf-fold" d="M82 8q20 3 31 13" /><circle class="elf-bell" cx="118" cy="9" r="7" />
           <path class="elf-rim" d="M36 40q43-14 85 0l-3 11q-39-10-79 1Z" /><path class="elf-ear" d="m39 69-20-11 14 25m88-14 20-11-14 25" />
         </g>
-        <g v-else-if="appearance.season === 'snow-monster'" class="snow-monster">
+        <g v-else-if="appearance.seasonalAccessoryId === 'snow-monster'" class="snow-monster">
           <path class="snow-hood" d="M30 82C18 44 36 9 80 9s62 35 50 73l-13-19-8 19-12-17-17 15-17-15-12 17-8-19Z" />
           <path class="snow-ear" d="M39 31 27 11 51 22m70 9 12-20-24 11" /><circle class="snow-pom" cx="31" cy="13" r="7" /><circle class="snow-pom" cx="129" cy="13" r="7" />
           <path class="snow-brow" d="M51 58q10-7 18 0m22 0q10-7 18 0" />
@@ -336,7 +362,8 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 
-import type { AvatarAppearance } from '../domain/avatar';
+import { avatarHairColors, avatarOutfitColors, avatarSkinToneColors } from '@/domain/avatar';
+import type { AvatarAppearance } from '@/domain/avatar';
 
 const props = withDefaults(defineProps<{ appearance: AvatarAppearance; size?: number; fullBody?: boolean; calm?: boolean }>(), { size: 64, fullBody: false, calm: false });
 const emit = defineEmits<{ interact: [] }>();
@@ -350,8 +377,8 @@ const react = () => {
   reactionTimer = window.setTimeout(() => { isReacting.value = false; }, 620);
 };
 const outfitHasHeadwear = computed(() => ['superhero', 'dinosaur', 'monster', 'shark', 'robot', 'space'].includes(props.appearance.outfit));
-const showsOutfitHeadwear = computed(() => props.appearance.season === 'none');
-const allowsHeadAccessory = computed(() => (props.appearance.season === 'none' || props.appearance.season === 'bat') && !outfitHasHeadwear.value);
+const showsOutfitHeadwear = computed(() => props.appearance.seasonalAccessoryId === 'none');
+const allowsHeadAccessory = computed(() => (props.appearance.seasonalAccessoryId === 'none' || props.appearance.seasonalAccessoryId === 'bat') && !outfitHasHeadwear.value);
 const phase = computed(() => {
   const fingerprint = `${props.appearance.hair}-${props.appearance.face}-${props.appearance.outfit}`;
   return -(fingerprint.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0) % 37) / 10;
@@ -360,9 +387,9 @@ const figureStyle = computed(() => ({
   '--avatar-size': `${props.size}px`,
   '--avatar-height': `${Math.round(props.size * 1.625)}px`,
   '--avatar-phase': `${phase.value}s`,
-  '--skin': props.appearance.skinColor,
-  '--hair': props.appearance.hairColor,
-  '--outfit': props.appearance.outfitColor,
+  '--skin': avatarSkinToneColors[props.appearance.skinToneId],
+  '--hair': avatarHairColors[props.appearance.hairColorId],
+  '--outfit': avatarOutfitColors[props.appearance.outfitColorId],
 }));
 </script>
 
@@ -370,30 +397,26 @@ const figureStyle = computed(() => ({
 .avatar-figure {
   width: var(--avatar-size);
   height: var(--avatar-size);
-  display: inline-flex;
-  flex-shrink: 0;
-  overflow: hidden;
+  @apply d-inline-flex flex-shrink-0 overflow-hidden;
   border-radius: 38%;
   background: linear-gradient(145deg, #f4fff9, #dff2eb);
   box-shadow: inset 0 -5px 0 rgba(46, 105, 83, 0.08);
 }
 .avatar-figure.full-body {
   height: var(--avatar-height);
-  overflow: visible;
+  @apply overflow-visible;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
 .avatar-figure {
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .avatar-figure.reacting svg {
   animation: avatar-tap 620ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+  @apply w-100 h-100 overflow-visible;
   transform-origin: center bottom;
   animation: avatar-idle 9s var(--avatar-phase) ease-in-out infinite;
 }
@@ -586,6 +609,16 @@ svg {
 }
 .mustache {
   fill: #49332d;
+}
+.senior-details {
+  fill: none;
+  stroke: #a66f5d;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+.senior-details .smile-line {
+  opacity: 0.7;
 }
 .lashes path {
   fill: none;
@@ -1021,6 +1054,39 @@ svg {
   stroke-linejoin: round;
   stroke-width: 3;
 }
+.adult-shirt,
+.adult-blouse {
+  fill: color-mix(in srgb, var(--outfit) 72%, white);
+  stroke: #40535a;
+}
+.shirt-collar,
+.blouse-collar,
+.blouse-detail {
+  fill: rgba(255, 255, 255, 0.65);
+  stroke: #40535a;
+}
+.shirt-button,
+.cardigan-button,
+.blazer-button {
+  fill: #f0c45c;
+  stroke: #805f26;
+  stroke-width: 1;
+}
+.cardigan-shirt,
+.blazer-shirt {
+  fill: #f8f3e8;
+  stroke: #4c5d62;
+}
+.cardigan,
+.blazer {
+  fill: var(--outfit);
+  stroke: #40535a;
+}
+.cardigan-edge,
+.blazer-lapel {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: #eef7f5;
+}
 .hood-rim {
   fill: rgba(255, 255, 255, 0.12);
 }
@@ -1080,7 +1146,7 @@ svg {
   text-anchor: middle;
   font-family: sans-serif;
   font-size: 28px;
-  font-weight: 900;
+  @apply font-weight-black;
 }
 .pajama-top {
   fill: rgba(32, 41, 80, 0.12);
@@ -1200,6 +1266,7 @@ svg {
 }
 .robot-green {
   fill: #65c98f;
+  stroke: none;
 }
 .robot-grille {
   fill: none;

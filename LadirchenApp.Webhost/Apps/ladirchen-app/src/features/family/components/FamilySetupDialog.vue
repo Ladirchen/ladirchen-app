@@ -46,7 +46,7 @@
                   <div class="setup-avatar" :style="{ background: `${pet.color}24` }">{{ pet.avatar }}</div>
                   <div class="d-grid pet-fields ga-2 flex-grow-1">
                     <v-text-field v-model="pet.name" density="compact" hide-details label="Name" variant="outlined" />
-                    <v-select v-model="pet.kind" density="compact" hide-details :items="petKinds" label="Tierart" variant="outlined" @update:model-value="updatePetAvatar(pet)" />
+                    <v-select v-model="pet.kind" density="compact" hide-details item-title="title" item-value="value" :items="petKinds" label="Tierart" variant="outlined" @update:model-value="updatePetAvatar(pet)" />
                   </div>
                   <v-btn aria-label="Haustier entfernen" icon="mdi-delete-outline" size="small" variant="text" @click="pets.splice(index, 1)" />
                 </div>
@@ -84,16 +84,23 @@
 <script lang="ts" setup>
 import { computed, defineComponent, h, ref, watch } from 'vue';
 
-import { createDefaultAvatarAppearance } from '../domain/avatar';
-import type { FamilyMember, FamilyPet } from '../domain/types';
-import { useFamilyWorldStore } from '../stores/family-world';
+import { createDefaultAvatarAppearance } from '@/domain/avatar';
+import { createDomainId } from '@/domain/types';
+import type { FamilyMember, FamilyPet, FamilyPetKindId } from '@/domain/types';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const step = ref(1);
 const children = ref<FamilyMember[]>([]);
 const guardians = ref<FamilyMember[]>([]);
 const pets = ref<FamilyPet[]>([]);
-const petKinds = ['Katze', 'Hund', 'Kaninchen', 'Vogel', 'Anderes Tier'];
+const petKinds: Array<{ title: string; value: FamilyPetKindId }> = [
+  { title: 'Katze', value: 'cat' },
+  { title: 'Hund', value: 'dog' },
+  { title: 'Kaninchen', value: 'rabbit' },
+  { title: 'Vogel', value: 'bird' },
+  { title: 'Anderes Tier', value: 'other' },
+];
 
 const SetupSectionHeader = defineComponent({
   props: { icon: { type: String, required: true }, title: { type: String, required: true }, copy: { type: String, required: true } },
@@ -121,11 +128,12 @@ const resetDraft = () => {
   pets.value = store.pets.map((pet) => ({ ...pet }));
   step.value = 1;
 };
-const addChild = () => children.value.push({ id: newId('child', children.value.length), name: '', avatar: '🧒', color: '#7295e8', role: 'child', weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
-const addGuardian = () => guardians.value.push({ id: newId('guardian', guardians.value.length), name: '', avatar: '🧑', color: '#68a985', role: 'guardian', weeklyStreak: 0 });
-const addPet = () => pets.value.push({ id: newId('pet', pets.value.length), name: '', kind: 'Katze', avatar: '🐈', color: '#d9a465' });
+const addChild = () => children.value.push({ id: createDomainId.familyMember(newId('child', children.value.length)), name: '', avatar: '🧒', color: '#7295e8', role: 'child', weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
+const addGuardian = () => guardians.value.push({ id: createDomainId.familyMember(newId('guardian', guardians.value.length)), name: '', avatar: '🧑', color: '#68a985', role: 'guardian', guardianAccess: 'supporter', weeklyStreak: 0 });
+const addPet = () => pets.value.push({ id: createDomainId.familyPet(newId('pet', pets.value.length)), name: '', kind: 'cat', kindLabel: 'Katze', avatar: '🐈', color: '#d9a465' });
 const updatePetAvatar = (pet: FamilyPet) => {
-  const avatars: Record<string, string> = { Katze: '🐈', Hund: '🐕', Kaninchen: '🐇', Vogel: '🐦', 'Anderes Tier': '🐾' };
+  const avatars: Record<FamilyPetKindId, string> = { cat: '🐈', dog: '🐕', rabbit: '🐇', bird: '🐦', other: '🐾' };
+  pet.kindLabel = petKinds.find(kind => kind.value === pet.kind)?.title ?? 'Anderes Tier';
   pet.avatar = avatars[pet.kind] ?? '🐾';
 };
 const finishSetup = () => store.completeFamilySetup(
@@ -147,7 +155,7 @@ watch(() => store.familySetupOpen, (isOpen) => {
   border-bottom: 1px solid var(--lad-border);
 }
 .setup-header h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 23px;
   letter-spacing: -0.035em;
 }
@@ -156,9 +164,7 @@ watch(() => store.familySetupOpen, (isOpen) => {
 }
 .setup-avatar,
 .setup-section-icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+  @apply d-grid place-center flex-shrink-0;
   border-radius: 14px;
   font-size: 24px;
 }
@@ -172,7 +178,7 @@ watch(() => store.familySetupOpen, (isOpen) => {
   background: var(--lad-surface-soft);
 }
 .setup-section-title {
-  margin: 0;
+  @apply ma-0;
   font-size: 18px;
 }
 .pet-fields {

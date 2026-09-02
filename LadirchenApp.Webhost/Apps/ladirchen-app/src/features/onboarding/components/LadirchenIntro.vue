@@ -22,7 +22,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue';
 
-import LadiMascot from './LadiMascot.vue';
+import LadiMascot from '@/shared/components/LadiMascot.vue';
 
 const visible = ref(true);
 let timer: number | undefined;
@@ -39,18 +39,15 @@ onUnmounted(() => {
 
 <style scoped>
 .app-intro {
-  position: fixed;
-  inset: 0;
+  @apply position-fixed inset-0;
   z-index: 1000;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  @apply d-grid place-center overflow-hidden;
   background: linear-gradient(155deg, #dff7ff 0%, #f2ffe7 58%, #fff2c9 100%);
 }
 .intro-sun {
   width: 120px;
   height: 120px;
-  position: absolute;
+  @apply position-absolute;
   top: -30px;
   right: -25px;
   border-radius: 50%;
@@ -61,7 +58,7 @@ onUnmounted(() => {
 .intro-cloud {
   width: 110px;
   height: 35px;
-  position: absolute;
+  @apply position-absolute;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.75);
   filter: blur(0.2px);
@@ -69,7 +66,7 @@ onUnmounted(() => {
 .intro-cloud::before,
 .intro-cloud::after {
   content: "";
-  position: absolute;
+  @apply position-absolute;
   bottom: 5px;
   border-radius: 50%;
   background: inherit;
@@ -97,9 +94,9 @@ onUnmounted(() => {
 }
 .intro-card {
   width: min(360px, calc(100vw - 40px));
-  position: relative;
+  @apply position-relative;
   padding: 28px 26px 24px;
-  text-align: center;
+  @apply text-center;
   border: 3px solid rgba(64, 123, 101, 0.13);
   border-radius: 38px;
   background: rgba(255, 255, 255, 0.82);
@@ -112,35 +109,31 @@ onUnmounted(() => {
 .intro-mascot {
   width: 185px;
   height: 155px;
-  position: relative;
+  @apply position-relative;
   margin: -16px auto 3px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
 }
 .intro-logo-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply d-flex align-center justify-center;
   gap: 9px;
 }
 .intro-logo {
   width: 40px;
   height: 40px;
-  position: relative;
-  overflow: hidden;
+  @apply position-relative overflow-hidden;
   border-radius: 11px;
   background: white;
 }
 .intro-logo img {
   width: 72px;
   height: 72px;
-  position: absolute;
+  @apply position-absolute;
   top: -5.5px;
   left: -16px;
   max-width: none;
 }
 .intro-logo-row h1 {
-  margin: 0;
+  @apply ma-0;
   color: #294d41;
   font-size: 35px;
   letter-spacing: -0.06em;
@@ -149,14 +142,12 @@ onUnmounted(() => {
   margin: 8px 0 0;
   color: #6b8077;
   font-size: 12px;
-  font-weight: 700;
+  @apply font-weight-bold;
 }
 .intro-dots {
   height: 18px;
   margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply d-flex align-center justify-center;
   gap: 6px;
 }
 .intro-dots i {
