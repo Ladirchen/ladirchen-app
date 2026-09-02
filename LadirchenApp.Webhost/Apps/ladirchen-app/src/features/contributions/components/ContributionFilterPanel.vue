@@ -56,7 +56,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ContributionKind } from '../../domain/types';
+import type { ContributionKind } from '@/domain/types';
 
 type ContributionScope = 'all' | 'mine' | 'open';
 type KindFilter = 'all' | ContributionKind;
@@ -93,12 +93,11 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
 }
 .filter-heading {
   margin-bottom: 13px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
 }
 .filter-heading h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 16px;
   letter-spacing: -0.02em;
 }
@@ -110,8 +109,7 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
 .filter-mascot {
   width: 39px;
   height: 39px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   flex: 0 0 39px;
   border-radius: 14px;
   background: white;
@@ -120,7 +118,7 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
 .filter-eyes {
   width: 31px;
   height: 24px;
-  overflow: visible;
+  @apply overflow-visible;
 }
 .filter-eye {
   transform-box: fill-box;
@@ -147,26 +145,22 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   animation: filter-blink 11.3s 3.2s ease-in-out infinite;
 }
 .scope-options {
-  display: grid;
+  @apply d-grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  @apply ga-2;
 }
 .scope-options button {
-  min-width: 0;
+  @apply min-w-0;
   min-height: 86px;
   padding: 10px 6px 8px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  @apply position-relative d-flex flex-column align-center justify-center;
   gap: 2px;
   color: var(--lad-text);
   border: 2px solid transparent;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 3px 0 rgba(72, 105, 91, 0.1);
-  cursor: pointer;
+  @apply cursor-pointer;
   font: inherit;
   transition:
     transform 150ms ease,
@@ -199,11 +193,10 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   min-width: 20px;
   height: 20px;
   padding: 0 5px;
-  position: absolute;
+  @apply position-absolute;
   top: 6px;
   right: 6px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   color: #8a5908;
   border-radius: 10px;
   background: #ffe4a8;
@@ -212,8 +205,7 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
 .kind-filter {
   margin-top: 14px;
   padding-top: 12px;
-  display: flex;
-  align-items: center;
+  @apply d-flex align-center;
   gap: 10px;
   border-top: 1px dashed rgba(62, 111, 91, 0.18);
 }
@@ -223,23 +215,20 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+  @apply text-uppercase;
 }
 .kind-options {
-  display: flex;
-  flex-wrap: wrap;
+  @apply d-flex flex-wrap;
   gap: 6px;
 }
 .kind-options button {
   padding: 7px 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  @apply d-inline-flex align-center ga-1;
   color: #53645d;
   border: 1px solid rgba(73, 111, 96, 0.16);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.76);
-  cursor: pointer;
+  @apply cursor-pointer;
   font: inherit;
   font-size: 9px;
   font-weight: 850;
@@ -298,8 +287,7 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
     font-size: 10px;
   }
   .kind-filter {
-    align-items: flex-start;
-    flex-direction: column;
+    @apply align-start flex-column;
     gap: 7px;
   }
 }

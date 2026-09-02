@@ -8,7 +8,7 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
-import { promotionDeadline } from '../domain/promotions';
+import { promotionDeadline } from '@/domain/promotions';
 
 const props = defineProps<{ deadline: string }>();
 const now = ref(new Date());
@@ -38,16 +38,14 @@ onBeforeUnmount(() => {
 .countdown {
   width: fit-content;
   padding: 5px 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  @apply d-inline-flex align-center ga-1;
   color: #7d570d;
   border: 1px solid rgba(199, 128, 23, 0.2);
   border-radius: 9px;
   background: rgba(255, 246, 211, 0.92);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
-  font-weight: 900;
+  @apply font-weight-black;
   letter-spacing: 0.01em;
 }
 .countdown.urgent {

@@ -1,11 +1,11 @@
-import type { Contribution } from './types';
+import type { Contribution, FamilyMemberId } from './types';
 
 export const DEFAULT_ENERGY_PERCENT = 60;
 export const MINIMUM_HOUSE_ENERGY_PERCENT = 60;
 
 export function calculateContributionProgress(
   contributions: Contribution[],
-  memberId: string,
+  memberId: FamilyMemberId,
   emptyProgress = DEFAULT_ENERGY_PERCENT,
 ): number {
   const baseContributions = contributions.filter(

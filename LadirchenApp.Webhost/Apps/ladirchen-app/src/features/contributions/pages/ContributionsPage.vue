@@ -3,15 +3,15 @@
     <PageHeader
       description="Grundbeiträge versorgen die Familienwelt. Zusatzbeiträge sind freiwillig und bringen zusätzliche Ladirchen."
       eyebrow="Mitwirken"
-      icon="mdi-hand-heart-outline"
       title="Beiträge"
     >
-      <template v-if="store.viewerRole === 'guardian'" #action>
+      <template #icon><AnimatedSectionIcon variant="contributions" /></template>
+      <template v-if="store.permissions.canManageContent" #action>
         <v-btn aria-label="Beitrag direkt hinzufügen" color="primary" icon="mdi-plus" variant="flat" @click="addDialog = true" />
       </template>
     </PageHeader>
 
-    <v-alert v-if="store.viewerRole === 'guardian'" class="guardian-context mb-5" color="info" density="compact" icon="mdi-shield-account-outline" variant="tonal">
+    <v-alert v-if="store.permissions.canManageContent" class="guardian-context mb-5" color="info" density="compact" icon="mdi-shield-account-outline" variant="tonal">
       Bezugspersonenansicht: Du kannst Beiträge offen lassen, fest zuweisen oder eine bestehende Zuweisung ändern.
     </v-alert>
 
@@ -69,7 +69,7 @@
       </v-card>
     </template>
 
-    <template v-else>
+    <template v-else-if="store.permissions.canManageContent">
       <section v-if="store.pendingContributions.length" class="mb-6">
         <SectionHeader description="Erst nach der Bestätigung reagiert die Familienwelt." title="Wartet auf Prüfung">
           <template #action><v-chip color="warning" size="small">{{ store.pendingContributions.length }}</v-chip></template>
@@ -147,12 +147,14 @@
               item-value="value"
               :model-value="contribution.assigneeId ?? ''"
               variant="outlined"
-              @update:model-value="store.assignContribution(contribution.id, String($event) || undefined)"
+              @update:model-value="assignContribution(contribution.id, $event)"
             />
           </div>
         </v-card>
       </div>
     </template>
+
+    <v-alert v-else color="primary" icon="mdi-lock-outline" variant="tonal">Dieser Verwaltungsbereich ist für Administratoren geschützt. Mit Zielbegleitung kannst du öffentliche Kinderziele unter „Wünsche“ unterstützen.</v-alert>
 
     <v-dialog v-model="addDialog" max-width="440">
       <v-card class="pa-5" rounded="xl">
@@ -246,13 +248,15 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import ContributionFilterPanel from '../components/contributions/ContributionFilterPanel.vue';
+import AnimatedSectionIcon from '@/shared/components/ui/AnimatedSectionIcon.vue';
+import ContributionFilterPanel from '../components/ContributionFilterPanel.vue';
 import PromotionCountdown from '../components/PromotionCountdown.vue';
-import PageHeader from '../components/ui/PageHeader.vue';
-import SectionHeader from '../components/ui/SectionHeader.vue';
-import type { Contribution, ContributionKind, Promotion } from '../domain/types';
-import { isPromotionAvailable } from '../domain/promotions';
-import { useFamilyWorldStore } from '../stores/family-world';
+import PageHeader from '@/shared/components/ui/PageHeader.vue';
+import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
+import { CONTRIBUTION_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
+import type { Contribution, ContributionId, ContributionKind, FamilyMemberId, NewContribution, NewPromotion, Promotion } from '@/domain/types';
+import { isPromotionAvailable } from '@/domain/promotions';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const route = useRoute();
@@ -261,11 +265,11 @@ const scopeFilter = ref<'all' | 'mine' | 'open'>('mine');
 const addDialog = ref(false);
 const promotionDialog = ref(false);
 const teamDialog = ref(false);
-const teamContributionId = ref('');
-const selectedSiblingIds = ref<string[]>([]);
+const teamContributionId = ref<ContributionId>();
+const selectedSiblingIds = ref<FamilyMemberId[]>([]);
 const selectedPromotion = ref<Promotion>();
-const ratings = reactive<Record<string, number>>({});
-const newContribution = reactive({
+const ratings = reactive<Partial<Record<ContributionId, number>>>({});
+const newContribution = reactive<Omit<NewContribution, 'assigneeId'> & { assigneeId: FamilyMemberId | '' }>({
   title: '',
   description: '',
   icon: '✨',
@@ -285,7 +289,7 @@ const assignmentOptions = computed(() => [
   { title: 'Noch offen – Kinder wählen selbst', value: '' },
   ...childOptions.value,
 ]);
-const newPromotion = reactive({ contributionId: 'dishwasher', multiplier: 2, deadline: '17:00', teamworkBonus: 10 });
+const newPromotion = reactive<NewPromotion>({ contributionId: CONTRIBUTION_IDS.dishwasher, multiplier: 2, deadline: '17:00', teamworkBonus: 10 });
 const multiplierOptions = [
   { title: 'Doppelte Ladirchen', value: 2 },
   { title: 'Dreifache Ladirchen', value: 3 },
@@ -314,15 +318,19 @@ const siblingOptions = computed(() => store.members
   .filter((member) => member.role === 'child' && member.id !== teamContribution.value?.assigneeId)
   .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
 );
-const promotionFor = (contributionId: string) =>
+const promotionFor = (contributionId: ContributionId) =>
   store.promotions.find((promotion) => promotion.contributionId === contributionId && isPromotionAvailable(promotion));
-const contributionTitle = (contributionId: string) =>
+const contributionTitle = (contributionId: ContributionId) =>
   store.contributions.find((contribution) => contribution.id === contributionId)?.title ?? 'Beitrag';
-const memberName = (memberId?: string) => store.members.find((member) => member.id === memberId)?.name ?? 'Noch offen';
+const memberName = (memberId?: FamilyMemberId) => store.members.find((member) => member.id === memberId)?.name ?? 'Noch offen';
 const assigneeLabel = (contribution: Contribution) => {
   if (!contribution.assigneeId) return 'Noch frei';
   if (contribution.assigneeId === store.activeChildId) return 'Für dich';
   return memberName(contribution.assigneeId);
+};
+const assignContribution = (contributionId: ContributionId, value: unknown) => {
+  const child = store.members.find(member => member.role === 'child' && member.id === value);
+  store.assignContribution(contributionId, child?.id);
 };
 const invitedChildNames = (contribution: Contribution) => store.members
   .filter((member) => member.role === 'child' && contribution.invitedChildIds?.includes(member.id))
@@ -333,23 +341,24 @@ const openTeamInvite = (contribution: Contribution) => {
   teamDialog.value = true;
 };
 const saveTeamInvite = () => {
+  if (!teamContributionId.value) {return;}
   store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
   teamDialog.value = false;
 };
 
 const addContribution = () => {
-  store.addContribution({ ...newContribution });
+  store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
   addDialog.value = false;
   Object.assign(newContribution, { title: '', description: '', icon: '✨', reward: 10, energy: 10, kind: 'basic', assigneeId: '' });
 };
 const addPromotion = () => {
   store.addPromotion({ ...newPromotion });
   promotionDialog.value = false;
-  Object.assign(newPromotion, { contributionId: 'dishwasher', multiplier: 2, deadline: '17:00', teamworkBonus: 10 });
+  Object.assign(newPromotion, { contributionId: CONTRIBUTION_IDS.dishwasher, multiplier: 2, deadline: '17:00', teamworkBonus: 10 });
 };
 watch(
   () => route.query.new,
-  (value) => { if (value === '1' && store.viewerRole === 'guardian') addDialog.value = true; },
+  (value) => { if (value === '1' && store.permissions.canManageContent) addDialog.value = true; },
   { immediate: true },
 );
 </script>
@@ -373,19 +382,18 @@ watch(
 }
 .promotion-row {
   border: 1px solid rgba(242, 175, 66, 0.25);
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .promotion-detail-icon {
   width: 62px;
   height: 62px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border-radius: 20px;
   background: #ffe7ac;
   font-size: 32px;
 }
 .promotion-detail-title {
-  margin: 0;
+  @apply ma-0;
   font-size: 22px;
   letter-spacing: -0.03em;
 }
@@ -397,7 +405,7 @@ watch(
 .promotion-reward span,
 .promotion-reward strong,
 .promotion-reward small {
-  display: block;
+  @apply d-block;
 }
 .promotion-reward span,
 .promotion-reward small {
@@ -409,9 +417,7 @@ watch(
   font-size: 27px;
 }
 .invited-team {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  @apply d-flex align-center flex-wrap;
   gap: 5px;
 }
 .invited-team > span {
@@ -422,17 +428,14 @@ watch(
 .team-dialog-icon {
   width: 58px;
   height: 58px;
-  display: grid;
-  place-items: center;
+  @apply d-grid place-center;
   border-radius: 18px;
   background: #eaf6ff;
   font-size: 30px;
 }
 .sibling-rule {
   padding: 10px 12px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  @apply d-flex align-start ga-2;
   color: var(--lad-muted);
   border-radius: 12px;
   background: #f1f7fa;
@@ -451,7 +454,7 @@ watch(
   font-size: 11px;
 }
 .section-title {
-  margin: 0;
+  @apply ma-0;
   font-size: 18px;
   letter-spacing: -0.025em;
 }
