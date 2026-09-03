@@ -1,5 +1,5 @@
 import type { AvatarAppearance } from './avatar';
-import type { FurniturePlacement, FurnitureVisualId, HexColor, HouseAccessoryId, HouseAccessoryPlacement } from './house';
+import type { FurniturePlacement, FurnitureSetId, FurnitureVisualId, HexColor, HouseAccessoryId, HouseAccessoryPlacement, HouseLayoutEntityType, HouseRoomId, HouseStageLevel, HouseZoneId } from './house';
 
 declare const domainIdBrand: unique symbol;
 
@@ -12,6 +12,7 @@ export type SavingGoalId = DomainId<'saving-goal'>;
 export type PromotionId = DomainId<'promotion'>;
 export type ShopRewardId = DomainId<'shop-reward'>;
 export type GuardianGiftId = DomainId<'guardian-gift'>;
+export type HouseLayoutPlacementId = DomainId<'house-layout-placement'>;
 
 const domainId = <Kind extends string>(value: string): DomainId<Kind> => value as DomainId<Kind>;
 
@@ -20,12 +21,14 @@ export const createDomainId = {
   familyMember: (value: string): FamilyMemberId => domainId<'family-member'>(value),
   familyPet: (value: string): FamilyPetId => domainId<'family-pet'>(value),
   guardianGift: (value: string): GuardianGiftId => domainId<'guardian-gift'>(value),
+  houseLayoutPlacement: (value: string): HouseLayoutPlacementId => domainId<'house-layout-placement'>(value),
   promotion: (value: string): PromotionId => domainId<'promotion'>(value),
   savingGoal: (value: string): SavingGoalId => domainId<'saving-goal'>(value),
   shopReward: (value: string): ShopRewardId => domainId<'shop-reward'>(value),
 } as const;
 
 export type ViewerRole = 'child' | 'guardian';
+export type SubscriptionTier = 'free' | 'pro';
 export type GuardianAccessLevel = 'admin' | 'supporter';
 export type FamilyCurrency = 'CHF' | 'EUR' | 'HUF';
 export type ContributionKind = 'basic' | 'extra';
@@ -96,11 +99,29 @@ export interface HouseAccessory {
   icon: string;
   price: number;
   placement: HouseAccessoryPlacement;
+  roomId?: HouseRoomId;
+  setIds?: ReadonlyArray<FurnitureSetId>;
+  minimumHouseLevel?: HouseStageLevel;
   visual?: FurnitureVisualId;
   scene?: FurniturePlacement;
   owned: boolean;
   equipped: boolean;
 }
+
+interface HouseLayoutPlacementBase {
+  id: HouseLayoutPlacementId;
+  entityType: HouseLayoutEntityType;
+  zoneId: HouseZoneId;
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export type HouseLayoutPlacement =
+  | (HouseLayoutPlacementBase & { entityType: 'furniture'; entityId: HouseAccessoryId })
+  | (HouseLayoutPlacementBase & { entityType: 'member'; entityId: FamilyMemberId })
+  | (HouseLayoutPlacementBase & { entityType: 'pet'; entityId: FamilyPetId })
+  | (HouseLayoutPlacementBase & { entityType: 'ladi'; entityId: 'family-ladi' });
 
 export interface Promotion {
   id: PromotionId;
