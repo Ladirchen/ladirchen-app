@@ -1,4 +1,33 @@
-export type FurnitureVisualId = 'rug' | 'sofa' | 'bookshelf' | 'lamp' | 'bunk-bed' | 'table' | 'plant' | 'wall-art' | 'cat-tree' | 'pet-bed' | 'dog-blanket' | 'food-bowl';
+export type FurnitureVisualId =
+  | 'rug'
+  | 'sofa'
+  | 'bookshelf'
+  | 'lamp'
+  | 'bunk-bed'
+  | 'table'
+  | 'plant'
+  | 'wall-art'
+  | 'cat-tree'
+  | 'pet-bed'
+  | 'dog-blanket'
+  | 'food-bowl'
+  | 'kitchen-counter'
+  | 'retro-fridge'
+  | 'dining-table'
+  | 'double-bed'
+  | 'wardrobe'
+  | 'bedside-table'
+  | 'art-desk'
+  | 'storage-cabinet'
+  | 'pool'
+  | 'garden-chair'
+  | 'garden-table'
+  | 'trampoline'
+  | 'sunshade'
+  | 'flower-box'
+  | 'string-lights'
+  | 'hammock'
+  | 'telescope';
 
 export type HouseAccessoryId =
   | 'flower-boxes'
@@ -16,9 +45,26 @@ export type HouseAccessoryId =
   | 'cat-tree'
   | 'cat-bed'
   | 'dog-blanket'
-  | 'pet-bowl';
+  | 'pet-bowl'
+  | 'kitchen-counter'
+  | 'retro-fridge'
+  | 'family-dining-table'
+  | 'double-bed'
+  | 'wardrobe'
+  | 'bedside-table'
+  | 'art-desk'
+  | 'storage-cabinet'
+  | 'garden-pool'
+  | 'garden-chair'
+  | 'garden-table'
+  | 'garden-trampoline'
+  | 'garden-sunshade';
 
 export type HouseAccessoryPlacement = 'inside' | 'outside';
+export type HouseRoomId = 'living-room' | 'kitchen' | 'children-room' | 'bedroom' | 'creative-room';
+export type HouseZoneId = HouseRoomId | 'garden';
+export type FurnitureSetId = 'cozy-living-set' | 'family-kitchen-set' | 'adventure-kids-set' | 'calm-bedroom-set' | 'creative-studio-set' | 'pet-comfort-set' | 'summer-garden-set' | 'garden-play-set';
+export type HouseLayoutEntityType = 'furniture' | 'member' | 'pet' | 'ladi';
 export type HouseStageId = 'starter-home' | 'family-home' | 'garden-home' | 'tower-home' | 'dream-home';
 export type HouseStageLevel = 0 | 1 | 2 | 3 | 4;
 export type HouseRoomCount = 1 | 2 | 3 | 4 | 5;
@@ -37,6 +83,26 @@ export interface HouseStageDefinition {
   readonly name: string;
   readonly icon: string;
   readonly rooms: HouseRoomCount;
+}
+
+export interface HouseRoomDefinition {
+  readonly id: HouseRoomId;
+  readonly name: string;
+  readonly icon: string;
+  readonly minimumHouseLevel: HouseStageLevel;
+  readonly wall: HexColor;
+  readonly floor: HexColor;
+}
+
+export interface FurnitureSetDefinition {
+  readonly id: FurnitureSetId;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly price: number;
+  readonly zoneId: HouseZoneId;
+  readonly minimumHouseLevel: HouseStageLevel;
+  readonly accessoryIds: ReadonlyArray<HouseAccessoryId>;
 }
 
 export interface HouseThemeDefinition {
