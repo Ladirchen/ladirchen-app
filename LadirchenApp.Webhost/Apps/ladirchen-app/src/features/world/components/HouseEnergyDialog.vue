@@ -13,14 +13,21 @@
         </div>
 
         <div class="summary-grid mt-4">
-          <div class="summary-tile summary-tile--energy">
+          <div class="summary-tile summary-tile--energy" :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }">
             <div class="energy-orb" :style="{ '--energy': `${store.familyEnergy * 3.6}deg` }">
               <span>{{ store.familyEnergy }}<small>%</small></span>
             </div>
-            <div><span>Gemeinsame Hausenergie</span><strong>{{ energyState.title }}</strong><small>{{ energyState.copy }}</small></div>
+            <div>
+              <span>Gemeinsame Hausenergie</span>
+              <strong class="energy-state-title">{{ energyState.title }}<span v-if="store.houseMeetsMinimumEnergy" class="energy-state-spark" aria-hidden="true">✦</span></strong>
+              <small>{{ energyState.copy }}</small>
+            </div>
           </div>
           <div class="summary-tile summary-tile--goal">
-            <div class="summary-icon" aria-hidden="true"><v-icon size="25">mdi-lightning-bolt</v-icon></div>
+            <div class="summary-icon" :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }" aria-hidden="true">
+              <AnimatedEnergyStar v-if="store.houseMeetsMinimumEnergy" :size="38" />
+              <v-icon v-else size="25">mdi-progress-clock</v-icon>
+            </div>
             <div>
               <span>Heutiges Tagesziel</span>
               <strong>{{ store.houseMeetsMinimumEnergy ? 'Erreicht' : `Noch ${60 - store.familyEnergy} %` }}</strong>
@@ -54,12 +61,14 @@
           <span class="average-label">Durchschnitt</span>
         </div>
         <div class="child-energy-list">
-          <div v-for="child in children" :key="child.id" class="child-energy-row">
-            <div class="child-avatar" :style="{ background: `${child.color}20` }">{{ child.avatar }}</div>
+          <div v-for="(child, childIndex) in children" :key="child.id" class="child-energy-row" :style="{ '--avatar-color': child.color }">
+            <div class="child-avatar">
+              <AvatarFigure :appearance="childAppearance(child, childIndex)" calm :size="54" />
+            </div>
             <div class="child-energy-copy">
               <div class="child-energy-title"><strong>{{ child.name }}</strong><b>{{ store.contributionProgress(child.id) }} %</b></div>
               <v-progress-linear class="mt-2" color="primary" height="8" :model-value="store.contributionProgress(child.id)" rounded />
-              <small>{{ approvedCount(child.id) }} von {{ baseCount(child.id) }} Grundbeiträgen bestätigt</small>
+              <p class="child-energy-description"><span>{{ approvedCount(child.id) }} von {{ baseCount(child.id) }}</span> Grundbeiträgen bestätigt</p>
             </div>
           </div>
         </div>
@@ -78,10 +87,15 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
+import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import { createDefaultAvatarAppearance } from '@/domain/avatar';
+import type { AvatarAppearance } from '@/domain/avatar';
+import type { FamilyMember, FamilyMemberId } from '@/domain/types';
+import { useFamilyWorldStore } from '@/stores/family-world';
+
+import AnimatedEnergyStar from './AnimatedEnergyStar.vue';
 import AnimatedHouseEnergy from './AnimatedHouseEnergy.vue';
 import HouseProgressPanel from './HouseProgressPanel.vue';
-import type { FamilyMemberId } from '@/domain/types';
-import { useFamilyWorldStore } from '@/stores/family-world';
 
 defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
@@ -95,6 +109,16 @@ const energyState = computed(() => {
 const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === 'basic' && item.assigneeId === childId);
 const baseCount = (childId: FamilyMemberId) => baseContributions(childId).length;
 const approvedCount = (childId: FamilyMemberId) => baseContributions(childId).filter((item) => item.status === 'approved').length;
+const childAppearance = (child: FamilyMember, index: number): AvatarAppearance => {
+  if (child.appearance) return child.appearance;
+  const appearance = createDefaultAvatarAppearance();
+  const variants: ReadonlyArray<Partial<AvatarAppearance>> = [
+    { hair: 'ponytail', outfitColorId: 'outfit-blue' },
+    { hair: 'short', hairColorId: 'hair-black', outfit: 'overalls', outfitColorId: 'outfit-gold' },
+    { hair: 'curls', hairColorId: 'hair-brown', outfit: 'space', outfitColorId: 'outfit-ocean' },
+  ];
+  return { ...appearance, ...(variants[index % variants.length] ?? {}) };
+};
 const close = () => emit('update:modelValue', false);
 </script>
 
@@ -182,6 +206,27 @@ const close = () => emit('update:modelValue', false);
   background: rgba(255, 255, 255, 0.7);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
+.summary-tile--energy {
+  @apply position-relative overflow-hidden;
+}
+.summary-tile--energy::after {
+  width: 48px;
+  height: 130%;
+  content: "";
+  @apply position-absolute pointer-events-none;
+  top: -15%;
+  left: -70px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.78),
+    transparent
+  );
+  transform: skewX(-18deg);
+}
+.summary-tile--energy.is-achieved::after {
+  animation: energy-card-shimmer 4s 1s ease-in-out infinite;
+}
 .summary-tile > div:last-child {
   @apply min-w-0;
 }
@@ -205,6 +250,15 @@ const close = () => emit('update:modelValue', false);
   color: #64756e;
   font-size: 8px;
   line-height: 1.3;
+}
+.energy-state-title {
+  @apply d-flex align-center;
+  gap: 4px;
+}
+.energy-state-spark {
+  color: #efa827 !important;
+  font-size: 12px !important;
+  animation: energy-state-spark 2.4s ease-in-out infinite;
 }
 .energy-orb {
   width: 60px;
@@ -248,7 +302,10 @@ const close = () => emit('update:modelValue', false);
   color: #b27518;
   border-radius: 14px;
   background: #ffedb5;
-  animation: energy-bolt-pulse 2.3s ease-in-out infinite;
+}
+.summary-icon.is-achieved {
+  background: linear-gradient(145deg, #fff8cf, #ffe59b);
+  box-shadow: 0 3px 0 rgba(181, 111, 18, 0.13);
 }
 .energy-content {
   min-height: 0;
@@ -329,15 +386,20 @@ const close = () => emit('update:modelValue', false);
 }
 .child-energy-list {
   @apply d-flex flex-column;
-  gap: 9px;
+  gap: 10px;
 }
 .child-energy-row {
+  min-height: 78px;
   padding: 11px 12px;
   @apply d-flex align-center;
-  gap: 11px;
-  border: 1px solid rgba(74, 145, 114, 0.14);
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.77);
+  gap: 12px;
+  border: 1px solid rgba(74, 145, 114, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.94),
+    color-mix(in srgb, var(--avatar-color, #6f8df5) 7%, white)
+  );
   box-shadow: 0 3px 0 rgba(57, 137, 106, 0.07);
   transition:
     transform 0.2s ease,
@@ -348,12 +410,15 @@ const close = () => emit('update:modelValue', false);
   transform: translateY(-1px);
 }
 .child-avatar {
-  width: 44px;
-  height: 44px;
-  @apply d-grid place-center;
-  flex: 0 0 44px;
-  border-radius: 15px;
-  font-size: 24px;
+  width: 58px;
+  height: 58px;
+  @apply d-grid place-center overflow-hidden;
+  flex: 0 0 58px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 19px;
+  background: color-mix(in srgb, var(--avatar-color, #6f8df5) 18%, white);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--avatar-color, #6f8df5) 18%, transparent);
 }
 .child-energy-copy {
   @apply min-w-0;
@@ -362,20 +427,27 @@ const close = () => emit('update:modelValue', false);
 .child-energy-title {
   @apply d-flex align-center justify-space-between ga-2;
 }
-.child-energy-row strong,
-.child-energy-row b {
-  font-size: 11px;
+.child-energy-row strong {
+  font-size: 13px;
 }
 .child-energy-row b {
-  padding: 3px 7px;
+  padding: 4px 8px;
   color: var(--lad-mint-dark);
   border-radius: 999px;
   background: #e4f6ec;
+  font-size: 11px;
 }
-.child-energy-row small {
-  @apply d-block mt-1;
-  color: var(--lad-muted);
-  font-size: 9px;
+.child-energy-description {
+  @apply ma-0 mt-2;
+  color: #62766d;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.child-energy-description span {
+  @apply d-inline;
+  color: #278568;
+  font-weight: 900;
 }
 .calculation-note {
   padding: 13px;
@@ -423,13 +495,27 @@ const close = () => emit('update:modelValue', false);
     transform: scale(1.035);
   }
 }
-@keyframes energy-bolt-pulse {
+@keyframes energy-card-shimmer {
   0%,
-  100% {
-    transform: rotate(-3deg) scale(1);
+  35% {
+    left: -70px;
   }
-  50% {
-    transform: rotate(3deg) scale(1.08);
+  68%,
+  100% {
+    left: 120%;
+  }
+}
+@keyframes energy-state-spark {
+  0%,
+  30%,
+  100% {
+    opacity: 0.42;
+    transform: rotate(0) scale(0.72);
+  }
+  48%,
+  62% {
+    opacity: 1;
+    transform: rotate(25deg) scale(1.2);
   }
 }
 @keyframes progress-glint {
@@ -457,7 +543,8 @@ const close = () => emit('update:modelValue', false);
 }
 @media (prefers-reduced-motion: reduce) {
   .energy-orb,
-  .summary-icon,
+  .summary-tile--energy::after,
+  .energy-state-spark,
   .progress-glint {
     animation: none;
   }
