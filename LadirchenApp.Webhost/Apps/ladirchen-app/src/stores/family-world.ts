@@ -1,18 +1,18 @@
 import { defineStore } from 'pinia';
 
-import { createContributions, createFamilyMembers, createFamilyPets, createHouseAccessories, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
-import { HOUSE_STAGES, HOUSE_THEMES } from '@/features/world/data/house-catalog';
+import { createContributions, createFamilyMembers, createFamilyPets, createHouseAccessories, createHouseLayoutPlacements, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
+import { FURNITURE_SETS, HOUSE_ROOMS, HOUSE_STAGES, HOUSE_THEMES } from '@/features/world/data/house-catalog';
 import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
-import type { HouseStageLevel } from '@/domain/house';
+import type { FurnitureSetId, HouseStageLevel, HouseZoneId } from '@/domain/house';
 import { resolveFamilyPermissions } from '@/domain/family-permissions';
 import type { FamilyPermissions } from '@/domain/family-permissions';
 import { isPromotionAvailable } from '@/domain/promotions';
 import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
 import { shopRedemptionIsOpen } from '@/domain/shop';
 import { createDomainId } from '@/domain/types';
-import type { Contribution, ContributionId, FamilyCurrency, FamilyMember, FamilyMemberId, FamilyPet, FamilyPetKindId, GuardianAccessLevel, GuardianGiftId, HouseAccessory, NewContribution, NewGoal, NewPromotion, NewShopReward, SavingGoal, SavingGoalId, ShopRewardId, ViewerRole, WorldEffect } from '@/domain/types';
+import type { Contribution, ContributionId, FamilyCurrency, FamilyMember, FamilyMemberId, FamilyPet, FamilyPetKindId, GuardianAccessLevel, GuardianGiftId, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId, NewContribution, NewGoal, NewPromotion, NewShopReward, SavingGoal, SavingGoalId, ShopRewardId, SubscriptionTier, ViewerRole, WorldEffect } from '@/domain/types';
 import { FAMILY_WORLD_STORAGE_KEYS, localFamilyWorldPersistence } from '@/infrastructure/local-family-world-storage';
 
 const persistence = localFamilyWorldPersistence;
@@ -77,6 +77,23 @@ const loadHouseAccessories = (): HouseAccessory[] => {
   });
 };
 
+const loadHouseLayout = (): HouseLayoutPlacement[] => {
+  const defaults = createHouseLayoutPlacements();
+  const stored = persistence.readList<HouseLayoutPlacement>(FAMILY_WORLD_STORAGE_KEYS.houseLayout, () => []);
+  const storedById = new Map(stored.map((placement) => [placement.id, placement]));
+  return defaults.map((placement) => {
+    const saved = storedById.get(placement.id);
+    if (!saved) {return placement;}
+    return {
+      ...placement,
+      zoneId: saved.zoneId,
+      x: Math.max(4, Math.min(96, saved.x)),
+      y: Math.max(8, Math.min(94, saved.y)),
+      scale: Math.max(.5, Math.min(1.35, saved.scale)),
+    } as HouseLayoutPlacement;
+  });
+};
+
 const shopRewardIsAvailable = (availableUntil?: string) => {
   if (!availableUntil) {return true;}
   return new Date(`${availableUntil}T23:59:59`).getTime() >= Date.now();
@@ -119,6 +136,8 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     currentWeekTarget: 7,
     houseLevel: 0 as HouseStageLevel,
     houseThemeId: HOUSE_THEMES[0]?.id ?? 'sunny-dollhouse',
+    subscriptionTier: 'pro' as SubscriptionTier,
+    houseLayout: loadHouseLayout(),
     revealVersion: 0,
     snackbar: { visible: false, message: '' },
     members: loadFamilyMembers(),
@@ -142,6 +161,17 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     },
     isFamilyAdmin(): boolean {
       return this.signedInMember.role === 'guardian' && this.signedInMember.guardianAccess === 'admin';
+    },
+    canArrangeHouse(state): boolean {
+      return state.subscriptionTier === 'pro';
+    },
+    unlockedHouseRooms(state) {
+      return HOUSE_ROOMS.filter((room) => room.minimumHouseLevel <= state.houseLevel);
+    },
+    ownedFurnitureSetIds(state): FurnitureSetId[] {
+      return FURNITURE_SETS
+        .filter((set) => set.accessoryIds.every((id) => state.accessories.find((accessory) => accessory.id === id)?.owned))
+        .map((set) => set.id);
     },
     balanceFor: (state) => (memberId: FamilyMemberId): number => state.balances[memberId] ?? 0,
     displayNameFor: (state) => (memberId: FamilyMemberId): string => {
@@ -726,11 +756,34 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
       this.notify(`${accessory.title} wurde zur Familienwelt hinzugefügt.`);
     },
+    purchaseFurnitureSet(id: FurnitureSetId) {
+      const set = FURNITURE_SETS.find((item) => item.id === id);
+      if (this.viewerRole !== 'child' || !set || set.minimumHouseLevel > this.houseLevel || this.ownedFurnitureSetIds.includes(id) || set.price > this.availableBalance) {return;}
+      for (const accessory of this.accessories) {
+        if (!set.accessoryIds.includes(accessory.id)) {continue;}
+        accessory.owned = true;
+        accessory.equipped = true;
+      }
+      this.balances[this.activeChildId] = this.balance - set.price;
+      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
+      this.notify(`${set.name} wurde vollständig zur Familienwelt hinzugefügt.`);
+    },
     toggleAccessory(id: HouseAccessory['id']) {
       const accessory = this.accessories.find((item) => item.id === id);
       if (!accessory?.owned) {return;}
       accessory.equipped = !accessory.equipped;
       persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
+    },
+    moveHouseEntity(placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) {
+      if (!this.canArrangeHouse) {return;}
+      const room = HOUSE_ROOMS.find((item) => item.id === zoneId);
+      if (room && room.minimumHouseLevel > this.houseLevel) {return;}
+      const placement = this.houseLayout.find((item) => item.id === placementId);
+      if (!placement) {return;}
+      placement.zoneId = zoneId;
+      placement.x = Math.max(4, Math.min(96, Number(x.toFixed(2))));
+      placement.y = Math.max(8, Math.min(94, Number(y.toFixed(2))));
+      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseLayout, this.houseLayout);
     },
     setSimulatedEnergy(value: number | null) {
       if (!this.permissions.canManageContent) {return;}
