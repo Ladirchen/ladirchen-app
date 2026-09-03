@@ -4,7 +4,7 @@
 
     <div class="family-world-shell position-relative d-flex flex-column overflow-hidden mx-auto">
       <header class="family-world-header d-flex align-center justify-space-between">
-        <RouterLink aria-label="Ladirchen Familienwelt" class="family-world-brand d-flex align-center text-decoration-none" to="/">
+        <RouterLink aria-label="Ladirchen Familienwelt" class="family-world-brand d-flex align-end text-decoration-none" to="/">
           <span class="family-world-logo position-relative flex-shrink-0 overflow-hidden" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
           <span class="family-world-wordmark">Ladirchen</span>
         </RouterLink>
