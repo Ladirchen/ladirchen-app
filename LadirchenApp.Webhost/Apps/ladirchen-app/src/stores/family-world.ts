@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia';
 
+import { familyContext, homeCustomizationService } from '@/app/composition-root';
 import { createContributions, createFamilyMembers, createFamilyPets, createHouseAccessories, createHouseLayoutPlacements, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
 import { FURNITURE_SETS, HOUSE_ROOMS, HOUSE_STAGES, HOUSE_THEMES } from '@/features/world/data/house-catalog';
 import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
-import type { FurnitureSetId, HouseStageLevel, HouseZoneId } from '@/domain/house';
+import type { FurnitureSetId, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
 import { resolveFamilyPermissions } from '@/domain/family-permissions';
 import type { FamilyPermissions } from '@/domain/family-permissions';
 import { isPromotionAvailable } from '@/domain/promotions';
@@ -67,21 +68,9 @@ const loadLadirchenExchangeRate = (): number => {
   return Number.isFinite(stored) && stored >= 1 ? stored : 10;
 };
 
-const loadHouseAccessories = (): HouseAccessory[] => {
-  const catalog = createHouseAccessories();
-  const stored = persistence.readList<HouseAccessory>(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, () => []);
-  const storedById = new Map(stored.map((accessory) => [accessory.id, accessory]));
-  return catalog.map((accessory) => {
-    const saved = storedById.get(accessory.id);
-    return saved ? { ...accessory, owned: saved.owned, equipped: saved.equipped } : accessory;
-  });
-};
-
-const loadHouseLayout = (): HouseLayoutPlacement[] => {
-  const defaults = createHouseLayoutPlacements();
-  const stored = persistence.readList<HouseLayoutPlacement>(FAMILY_WORLD_STORAGE_KEYS.houseLayout, () => []);
-  const storedById = new Map(stored.map((placement) => [placement.id, placement]));
-  return defaults.map((placement) => {
+const mergeHouseLayout = (stored: ReadonlyArray<HouseLayoutPlacement>): HouseLayoutPlacement[] => {
+  const storedById = new Map(stored.map(placement => [placement.id, placement]));
+  return createHouseLayoutPlacements().map((placement) => {
     const saved = storedById.get(placement.id);
     if (!saved) {return placement;}
     return {
@@ -136,15 +125,17 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     currentWeekTarget: 7,
     houseLevel: 0 as HouseStageLevel,
     houseThemeId: HOUSE_THEMES[0]?.id ?? 'sunny-dollhouse',
+    ownedHouseThemeIds: HOUSE_THEMES.filter(theme => theme.ownedByDefault).map(theme => theme.id),
     subscriptionTier: 'pro' as SubscriptionTier,
-    houseLayout: loadHouseLayout(),
+    houseLayout: createHouseLayoutPlacements(),
+    homeCustomizationHydrated: false,
     revealVersion: 0,
     snackbar: { visible: false, message: '' },
     members: loadFamilyMembers(),
     pets: loadFamilyPets(),
     contributions: createContributions(),
     goals: createSavingGoals(),
-    accessories: loadHouseAccessories(),
+    accessories: createHouseAccessories(),
     promotions: createPromotions(),
     shopRewards: createShopRewards(),
   }),
@@ -321,6 +312,47 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
   },
 
   actions: {
+    async hydrateHomeCustomization() {
+      if (this.homeCustomizationHydrated) {return;}
+      try {
+        const snapshot = await homeCustomizationService.load(familyContext.activeFamilyId);
+        if (snapshot) {
+          const accessoryStateById = new Map(snapshot.accessories.map(item => [item.id, item]));
+          this.accessories = createHouseAccessories().map((accessory) => {
+            const saved = accessoryStateById.get(accessory.id);
+            return saved
+              ? { ...accessory, owned: accessory.owned || saved.owned, equipped: accessory.equipped || saved.equipped }
+              : accessory;
+          });
+          this.houseLayout = mergeHouseLayout(snapshot.placements);
+          this.ownedHouseThemeIds = snapshot.editions.filter(edition => edition.owned).map(edition => edition.id);
+          this.houseThemeId = this.ownedHouseThemeIds.includes(snapshot.selectedEditionId)
+            ? snapshot.selectedEditionId
+            : 'sunny-dollhouse';
+        }
+      } catch {
+        this.notify('Die lokale Hausgestaltung konnte nicht geladen werden.');
+      } finally {
+        this.homeCustomizationHydrated = true;
+      }
+    },
+    persistHomeCustomization() {
+      homeCustomizationService.scheduleSave({
+        familyId: familyContext.activeFamilyId,
+        updatedBy: this.signedInMemberId,
+        accessories: this.accessories.map(accessory => ({
+          id: accessory.id,
+          equipped: accessory.equipped,
+          owned: accessory.owned,
+        })),
+        editions: HOUSE_THEMES.map(edition => ({
+          id: edition.id,
+          owned: this.ownedHouseThemeIds.includes(edition.id),
+        })),
+        placements: this.houseLayout,
+        selectedEditionId: this.houseThemeId,
+      }, () => this.notify('Die Hausgestaltung konnte nicht lokal gespeichert werden.'));
+    },
     notify(message: string) {
       this.snackbar.message = message;
       this.snackbar.visible = true;
@@ -753,7 +785,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       accessory.owned = true;
       accessory.equipped = true;
       this.balances[this.activeChildId] = this.balance - accessory.price;
-      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
+      this.persistHomeCustomization();
       this.notify(`${accessory.title} wurde zur Familienwelt hinzugefügt.`);
     },
     purchaseFurnitureSet(id: FurnitureSetId) {
@@ -765,14 +797,30 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
         accessory.equipped = true;
       }
       this.balances[this.activeChildId] = this.balance - set.price;
-      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
+      this.persistHomeCustomization();
       this.notify(`${set.name} wurde vollständig zur Familienwelt hinzugefügt.`);
     },
     toggleAccessory(id: HouseAccessory['id']) {
       const accessory = this.accessories.find((item) => item.id === id);
       if (!accessory?.owned) {return;}
       accessory.equipped = !accessory.equipped;
-      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseAccessories, this.accessories);
+      this.persistHomeCustomization();
+    },
+    purchaseHouseTheme(id: HouseThemeId) {
+      const edition = HOUSE_THEMES.find(item => item.id === id);
+      if (this.viewerRole !== 'child' || !edition || this.ownedHouseThemeIds.includes(id) || edition.price > this.availableBalance) {return;}
+      this.ownedHouseThemeIds.push(id);
+      this.houseThemeId = id;
+      this.balances[this.activeChildId] = this.balance - edition.price;
+      this.persistHomeCustomization();
+      this.notify(`${edition.name} wurde gekauft und am Haus angebracht.`);
+    },
+    selectHouseTheme(id: HouseThemeId) {
+      if (!this.ownedHouseThemeIds.includes(id)) {return;}
+      this.houseThemeId = id;
+      this.persistHomeCustomization();
+      const edition = HOUSE_THEMES.find(item => item.id === id);
+      this.notify(`${edition?.name ?? 'Hausstil'} ist jetzt aktiv.`);
     },
     moveHouseEntity(placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) {
       if (!this.canArrangeHouse) {return;}
@@ -783,7 +831,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       placement.zoneId = zoneId;
       placement.x = Math.max(4, Math.min(96, Number(x.toFixed(2))));
       placement.y = Math.max(8, Math.min(94, Number(y.toFixed(2))));
-      persistence.writeList(FAMILY_WORLD_STORAGE_KEYS.houseLayout, this.houseLayout);
+      this.persistHomeCustomization();
     },
     setSimulatedEnergy(value: number | null) {
       if (!this.permissions.canManageContent) {return;}
