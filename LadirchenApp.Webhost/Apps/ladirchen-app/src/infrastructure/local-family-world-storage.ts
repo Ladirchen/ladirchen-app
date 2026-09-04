@@ -8,8 +8,6 @@ export const FAMILY_WORLD_STORAGE_KEYS = {
   familyMembers: 'ladirchen-family-members',
   familyPets: 'ladirchen-family-pets',
   familySetup: 'ladirchen-family-setup',
-  houseAccessories: 'ladirchen-house-accessories',
-  houseLayout: 'ladirchen-house-layout',
   pendingGifts: 'ladirchen-pending-gifts',
 } as const;
 
