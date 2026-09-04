@@ -67,6 +67,78 @@
       <template v-else>
         <PageViewSwitch v-model="houseArea" compact label="Hausbereich auswählen" class="mb-4" :options="houseAreaOptions" tone="amber" />
 
+        <section v-if="houseArea === 'outside'" class="catalog-section mb-5">
+          <div class="catalog-heading mb-3">
+            <div><p class="eyebrow mb-1">Hauseditionen</p><h2 class="section-title">Ein neuer Stil für euer Zuhause</h2></div>
+            <span>Bleibt dauerhaft gespeichert</span>
+          </div>
+          <div class="edition-grid">
+            <v-card
+              v-for="edition in houseEditions"
+              :key="edition.id"
+              class="edition-card pa-3"
+              :class="{ active: edition.id === store.houseThemeId }"
+              elevation="0"
+              rounded="xl"
+            >
+              <div class="edition-preview" :style="{ '--edition-roof': edition.roof, '--edition-wall': edition.wall, '--edition-door': edition.door, '--edition-accent': edition.landscapeAccent }">
+                <span class="edition-sky">{{ edition.icon }}</span><i class="edition-house"><b /></i>
+                <v-chip v-if="edition.id === store.houseThemeId" class="edition-status" color="success" size="x-small">Aktiv</v-chip>
+              </div>
+              <strong class="d-block mt-2">{{ edition.name }}</strong>
+              <p class="catalog-description text-caption text-medium-emphasis mt-1">{{ edition.description }}</p>
+              <div class="catalog-actions mt-3">
+                <span class="price"><LadirchenCoin small />{{ edition.price }}</span>
+                <v-btn
+                  v-if="!ownsEdition(edition.id) && store.viewerRole === 'child'"
+                  color="info"
+                  :disabled="edition.price > store.availableBalance"
+                  rounded="lg"
+                  size="small"
+                  variant="flat"
+                  @click="store.purchaseHouseTheme(edition.id)"
+                >Kaufen</v-btn>
+                <v-chip v-else-if="!ownsEdition(edition.id)" color="info" size="x-small" variant="tonal">Kinderkauf</v-chip>
+                <v-btn v-else-if="edition.id !== store.houseThemeId" color="primary" rounded="lg" size="small" variant="tonal" @click="store.selectHouseTheme(edition.id)">Verwenden</v-btn>
+                <v-chip v-else color="success" size="small" variant="tonal">Ausgewählt</v-chip>
+              </div>
+            </v-card>
+          </div>
+        </section>
+
+        <section class="catalog-section mb-5">
+          <div class="catalog-heading mb-3">
+            <div><p class="eyebrow mb-1">Komplette Sets</p><h2 class="section-title">Aufeinander abgestimmt</h2></div>
+            <span>{{ houseArea === 'inside' ? 'Für eure Räume' : 'Für Garten & Fassade' }}</span>
+          </div>
+          <div class="set-list">
+            <v-card v-for="set in visibleFurnitureSets" :key="set.id" class="set-card pa-3" elevation="0" rounded="xl">
+              <div class="set-icon">{{ set.icon }}</div>
+              <div class="set-copy min-w-0">
+                <strong>{{ set.name }}</strong>
+                <p class="text-caption text-medium-emphasis">{{ set.description }}</p>
+                <small>{{ set.accessoryIds.length }} Elemente · ab Hausstufe {{ set.minimumHouseLevel + 1 }}</small>
+              </div>
+              <div class="set-action">
+                <v-chip v-if="ownsSet(set.id)" color="success" size="x-small" variant="tonal">In Besitz</v-chip>
+                <v-chip v-else-if="set.minimumHouseLevel > store.houseLevel" color="warning" size="x-small" variant="tonal">Noch gesperrt</v-chip>
+                <v-btn
+                  v-else-if="store.viewerRole === 'child'"
+                  color="info"
+                  :disabled="set.price > store.availableBalance"
+                  rounded="lg"
+                  size="small"
+                  variant="flat"
+                  @click="store.purchaseFurnitureSet(set.id)"
+                ><LadirchenCoin small />{{ set.price }}</v-btn>
+                <v-chip v-else color="info" size="x-small" variant="tonal">Kinderkauf</v-chip>
+              </div>
+            </v-card>
+          </div>
+        </section>
+
+        <div class="catalog-heading mb-3"><div><p class="eyebrow mb-1">Einzelstücke</p><h2 class="section-title">Frei kombinieren</h2></div></div>
+
         <div class="accessory-grid">
           <v-card v-for="accessory in visibleAccessories" :key="accessory.id" class="accessory-card pa-4" :class="{ owned: accessory.owned }" elevation="0" rounded="xl">
             <div class="accessory-preview">
@@ -124,9 +196,11 @@ import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 import PageHeader from '@/shared/components/ui/PageHeader.vue';
 import PageViewSwitch from '@/shared/components/ui/PageViewSwitch.vue';
 import type { PageViewOption } from '@/shared/components/ui/PageViewSwitch.vue';
+import type { FurnitureSetId, HouseThemeId } from '@/domain/house';
 import { shopRedemptionIsOpen } from '@/domain/shop';
 import type { ShopReward, ShopRewardCategory } from '@/domain/types';
 import { useFamilyWorldStore } from '@/stores/family-world';
+import { FURNITURE_SETS, HOUSE_THEMES } from '@/features/world/data/house-catalog';
 
 const store = useFamilyWorldStore();
 const route = useRoute();
@@ -162,6 +236,12 @@ const canAddReward = computed(() => Boolean(
 const visibleAccessories = computed(() =>
   store.accessories.filter((accessory) => (accessory.placement ?? 'outside') === houseArea.value),
 );
+const houseEditions = HOUSE_THEMES;
+const visibleFurnitureSets = computed(() => FURNITURE_SETS.filter((set) =>
+  houseArea.value === 'outside' ? set.zoneId === 'garden' : set.zoneId !== 'garden',
+));
+const ownsEdition = (id: HouseThemeId) => store.ownedHouseThemeIds.includes(id);
+const ownsSet = (id: FurnitureSetId) => store.ownedFurnitureSetIds.includes(id);
 const redemptionOpen = computed(() => shopRedemptionIsOpen(currentTime.value));
 const categoryLabel = (category: ShopRewardCategory) => categoryOptions.find((option) => option.value === category)?.title ?? 'Belohnung';
 const availabilityLabel = (availableUntil?: string) => availableUntil
@@ -205,6 +285,131 @@ onUnmounted(() => {
   @apply d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 11px;
+}
+.catalog-heading {
+  @apply d-flex align-end justify-space-between;
+  gap: 10px;
+}
+.catalog-heading > span {
+  color: var(--lad-muted);
+  font-size: 9px;
+  text-align: right;
+}
+.edition-grid {
+  @apply d-grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.edition-card {
+  min-width: 0;
+  border: 1px solid var(--lad-border);
+  box-shadow: 0 3px 0 var(--lad-border) !important;
+}
+.edition-card.active {
+  border-color: rgba(52, 176, 130, 0.6);
+  box-shadow: 0 3px 0 rgba(52, 176, 130, 0.25) !important;
+}
+.edition-preview {
+  height: 82px;
+  @apply position-relative overflow-hidden;
+  border-radius: 14px;
+  background: linear-gradient(155deg, #dff5ff, #f1f8dd);
+}
+.edition-preview::after {
+  content: "";
+  @apply position-absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 28%;
+  background: var(--edition-accent);
+  opacity: 0.72;
+}
+.edition-sky {
+  @apply position-absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 19px;
+}
+.edition-house {
+  width: 56px;
+  height: 39px;
+  @apply position-absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 1;
+  transform: translateX(-50%);
+  border: 3px solid color-mix(in srgb, var(--edition-roof) 70%, #55453c);
+  border-radius: 5px;
+  background: var(--edition-wall);
+}
+.edition-house::before {
+  content: "";
+  @apply position-absolute;
+  right: -8px;
+  bottom: 30px;
+  left: -8px;
+  height: 28px;
+  transform: skewY(-2deg);
+  clip-path: polygon(50% 0, 100% 72%, 92% 100%, 50% 35%, 8% 100%, 0 72%);
+  background: var(--edition-roof);
+}
+.edition-house b {
+  width: 13px;
+  height: 23px;
+  @apply position-absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 6px 6px 0 0;
+  background: var(--edition-door);
+}
+.edition-status {
+  @apply position-absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 3;
+}
+.catalog-description {
+  min-height: 49px;
+}
+.catalog-actions {
+  @apply d-flex align-center justify-space-between;
+  gap: 6px;
+}
+.set-list {
+  @apply d-flex flex-column;
+  gap: 8px;
+}
+.set-card {
+  @apply d-grid align-center;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 1px solid var(--lad-border);
+  box-shadow: 0 3px 0 var(--lad-border) !important;
+}
+.set-icon {
+  width: 56px;
+  height: 56px;
+  @apply d-grid place-center;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #e9f5ff, #f2f7db);
+  font-size: 29px;
+}
+.set-copy p {
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.set-copy small {
+  color: var(--lad-mint-dark);
+  font-size: 8px;
+  font-weight: 850;
+}
+.set-action {
+  @apply d-flex justify-end;
+}
+.set-action :deep(.v-btn__content) {
+  gap: 5px;
 }
 .reward-card,
 .accessory-card {
@@ -301,6 +506,28 @@ onUnmounted(() => {
   border: 2px solid var(--lad-mint);
   background: #eaf8f1;
 }
+@media (max-width: 460px) {
+  .edition-grid {
+    grid-template-columns: 1fr;
+  }
+  .catalog-description {
+    min-height: 0;
+  }
+  .edition-card {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    column-gap: 10px;
+  }
+  .edition-preview {
+    grid-row: span 3;
+  }
+  .edition-card > strong {
+    margin-top: 2px !important;
+  }
+  .edition-card .catalog-actions {
+    align-self: end;
+  }
+}
 @media (max-width: 380px) {
   .reward-grid,
   .accessory-grid {
@@ -309,6 +536,17 @@ onUnmounted(() => {
   .reward-description,
   .accessory-description {
     min-height: 0;
+  }
+  .set-card {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .set-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .set-action {
+    grid-column: 2;
+    justify-content: flex-start;
   }
 }
 </style>
