@@ -15,11 +15,24 @@ export type ShopRewardId = DomainId<'shop-reward'>;
 export type GuardianGiftId = DomainId<'guardian-gift'>;
 export type HouseLayoutPlacementId = DomainId<'house-layout-placement'>;
 
-const domainId = <Kind extends string>(value: string): DomainId<Kind> => value as DomainId<Kind>;
+const domainIdPattern = /^\w[\w.:-]{0,127}$/u;
+const uuidPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/iu;
+export const isDomainIdValue = (value: unknown): value is string =>
+  typeof value === 'string' && domainIdPattern.test(value);
+export const isUuidValue = (value: unknown): value is string =>
+  typeof value === 'string' && uuidPattern.test(value);
+
+const domainId = <Kind extends string>(value: string): DomainId<Kind> => {
+  if (!isDomainIdValue(value)) {throw new TypeError(`Invalid ${value ? 'format' : 'empty value'} for a domain ID.`);}
+  return value as DomainId<Kind>;
+};
 
 export const createDomainId = {
   contribution: (value: string): ContributionId => domainId<'contribution'>(value),
-  family: (value: string): FamilyId => domainId<'family'>(value),
+  family: (value: string): FamilyId => {
+    if (!isUuidValue(value)) {throw new TypeError('A family ID must be a UUID.');}
+    return domainId<'family'>(value);
+  },
   familyMember: (value: string): FamilyMemberId => domainId<'family-member'>(value),
   familyPet: (value: string): FamilyPetId => domainId<'family-pet'>(value),
   guardianGift: (value: string): GuardianGiftId => domainId<'guardian-gift'>(value),
@@ -48,6 +61,7 @@ export interface FamilyMember {
   color: HexColor;
   role: ViewerRole;
   guardianAccess?: GuardianAccessLevel;
+  participatesInWeeklyGoal?: boolean;
   weeklyStreak: number;
   email?: string;
   invitationPending?: boolean;
@@ -63,25 +77,43 @@ export interface FamilyPet {
   color: HexColor;
 }
 
+export interface GuardianGift {
+  id: GuardianGiftId;
+  childId: FamilyMemberId;
+  guardianName: string;
+  goalTitle: string;
+  destination: 'balance' | 'goal';
+  amount: number;
+}
+
 export interface Contribution {
   id: ContributionId;
+  translationKey?: string;
   title: string;
   description: string;
   icon: string;
   area: string;
+  areaKey?: string;
   kind: ContributionKind;
   status: ContributionStatus;
   reward: number;
   energy: number;
   assigneeId?: FamilyMemberId;
   dueLabel: string;
+  dueLabelKey?: string;
   worldEffect?: WorldEffect;
   stars?: number;
   invitedChildIds?: FamilyMemberId[];
+  earnedReward?: number;
+  earnedRatingBonus?: number;
+  earnedPromotionMultiplier?: number;
+  approvedAt?: string;
+  rewardCelebrated?: boolean;
 }
 
 export interface SavingGoal {
   id: SavingGoalId;
+  translationKey?: string;
   title: string;
   icon: string;
   ownerId: SavingGoalOwnerId;
@@ -96,6 +128,7 @@ export interface SavingGoal {
 
 export interface HouseAccessory {
   id: HouseAccessoryId;
+  translationKey?: string;
   title: string;
   description: string;
   icon: string;
@@ -127,8 +160,10 @@ export type HouseLayoutPlacement =
 
 export interface Promotion {
   id: PromotionId;
+  translationKey?: string;
   contributionId: ContributionId;
   title: string;
+  titleKey?: string;
   multiplier: number;
   deadline: string;
   teamworkBonus: number;
@@ -147,6 +182,7 @@ export type ShopRewardCategory = 'time' | 'activity' | 'allowance' | 'gift' | 'p
 
 export interface ShopReward {
   id: ShopRewardId;
+  translationKey?: string;
   title: string;
   description: string;
   icon: string;
@@ -154,7 +190,9 @@ export interface ShopReward {
   category: ShopRewardCategory;
   quantity: number;
   conditions: string;
+  availableFrom?: string;
   availableUntil?: string;
+  isVisible?: boolean;
   status: ShopRewardStatus;
   requesterId?: FamilyMemberId;
 }
@@ -167,7 +205,9 @@ export interface NewShopReward {
   category: ShopRewardCategory;
   quantity: number;
   conditions: string;
+  availableFrom?: string;
   availableUntil?: string;
+  isVisible?: boolean;
 }
 
 export interface NewContribution {
