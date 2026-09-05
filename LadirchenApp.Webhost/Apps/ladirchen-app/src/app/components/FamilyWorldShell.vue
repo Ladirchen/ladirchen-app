@@ -91,7 +91,7 @@ import DevelopmentSessionSwitcher from './DevelopmentSessionSwitcher.vue';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
-void store.hydrateHomeCustomization();
+void store.hydrateFamilyAggregates();
 const isDevelopment = import.meta.env.DEV;
 const reducedMotion = useReducedMotion();
 const streakDialog = ref(false);

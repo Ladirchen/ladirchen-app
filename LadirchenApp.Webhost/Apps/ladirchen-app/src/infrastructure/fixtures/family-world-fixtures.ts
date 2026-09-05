@@ -1,5 +1,5 @@
 import { createDomainId } from '@/domain/types';
-import type { Contribution, FamilyMember, FamilyPet, HouseLayoutPlacement, Promotion, SavingGoal, ShopReward } from '@/domain/types';
+import type { Contribution, FamilyMember, FamilyMemberId, FamilyPet, HouseLayoutPlacement, Promotion, SavingGoal, ShopReward } from '@/domain/types';
 import { createGuardianAvatarAppearance } from '@/domain/avatar';
 
 export { createHouseAccessories } from '@/features/world/data/house-catalog';
@@ -45,13 +45,19 @@ export const createFamilyMembers = (): FamilyMember[] => [
   { id: FAMILY_MEMBER_IDS.hannes, name: 'Hannes', avatar: '🧑', color: '#58aa82', role: 'guardian', guardianAccess: 'supporter', weeklyStreak: 0, appearance: { ...createGuardianAvatarAppearance('adult'), faceShape: 'angular', outfitColorId: 'outfit-mint' } },
 ];
 
+export const createFamilyBalances = (): Record<FamilyMemberId, number> => ({
+  [FAMILY_MEMBER_IDS.laura]: 340,
+  [FAMILY_MEMBER_IDS.adam]: 220,
+  [FAMILY_MEMBER_IDS.daniel]: 175,
+});
+
 export const createFamilyPets = (): FamilyPet[] => [
   { id: FAMILY_PET_IDS.anna, name: 'Anna', kind: 'cat', kindLabel: 'Katze', avatar: '🐈', color: '#efb767' },
   { id: FAMILY_PET_IDS.elsa, name: 'Elsa', kind: 'cat', kindLabel: 'Katze', avatar: '🐈‍⬛', color: '#8996ac' },
 ];
 
 export const createHouseLayoutPlacements = (): HouseLayoutPlacement[] => [
-  { id: createDomainId.houseLayoutPlacement('furniture-flower-boxes'), entityType: 'furniture', entityId: 'flower-boxes', zoneId: 'garden', x: 48, y: 34, scale: .72 },
+  { id: createDomainId.houseLayoutPlacement('furniture-flower-boxes'), entityType: 'furniture', entityId: 'flower-boxes', zoneId: 'garden', x: 18, y: 77, scale: .72 },
   { id: createDomainId.houseLayoutPlacement('furniture-garden-lights'), entityType: 'furniture', entityId: 'garden-lights', zoneId: 'garden', x: 47, y: 24, scale: .82 },
   { id: createDomainId.houseLayoutPlacement('furniture-hammock'), entityType: 'furniture', entityId: 'hammock', zoneId: 'garden', x: 22, y: 72, scale: .78 },
   { id: createDomainId.houseLayoutPlacement('furniture-telescope'), entityType: 'furniture', entityId: 'telescope', zoneId: 'garden', x: 88, y: 57, scale: .72 },
@@ -80,11 +86,15 @@ export const createHouseLayoutPlacements = (): HouseLayoutPlacement[] => [
   { id: createDomainId.houseLayoutPlacement('furniture-garden-table'), entityType: 'furniture', entityId: 'garden-table', zoneId: 'garden', x: 82, y: 69, scale: .74 },
   { id: createDomainId.houseLayoutPlacement('furniture-garden-trampoline'), entityType: 'furniture', entityId: 'garden-trampoline', zoneId: 'garden', x: 74, y: 38, scale: .82 },
   { id: createDomainId.houseLayoutPlacement('furniture-garden-sunshade'), entityType: 'furniture', entityId: 'garden-sunshade', zoneId: 'garden', x: 49, y: 48, scale: .8 },
+  { id: createDomainId.houseLayoutPlacement('furniture-halloween-pumpkin-arch'), entityType: 'furniture', entityId: 'halloween-pumpkin-arch', zoneId: 'garden', x: 48, y: 66, scale: .78 },
+  { id: createDomainId.houseLayoutPlacement('furniture-halloween-bat-garland'), entityType: 'furniture', entityId: 'halloween-bat-garland', zoneId: 'garden', x: 49, y: 23, scale: .9 },
+  { id: createDomainId.houseLayoutPlacement('furniture-candy-cloud-bushes'), entityType: 'furniture', entityId: 'candy-cloud-bushes', zoneId: 'garden', x: 30, y: 66, scale: .86 },
+  { id: createDomainId.houseLayoutPlacement('furniture-candy-striped-fence'), entityType: 'furniture', entityId: 'candy-striped-fence', zoneId: 'garden', x: 68, y: 70, scale: .82 },
   { id: createDomainId.houseLayoutPlacement('member-laura'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.laura, zoneId: 'living-room', x: 42, y: 72, scale: .75 },
   { id: createDomainId.houseLayoutPlacement('member-adam'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.adam, zoneId: 'living-room', x: 56, y: 72, scale: .75 },
   { id: createDomainId.houseLayoutPlacement('member-daniel'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.daniel, zoneId: 'living-room', x: 67, y: 72, scale: .75 },
-  { id: createDomainId.houseLayoutPlacement('member-mama'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.mama, zoneId: 'living-room', x: 31, y: 70, scale: .78 },
-  { id: createDomainId.houseLayoutPlacement('member-hannes'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.hannes, zoneId: 'living-room', x: 78, y: 70, scale: .78 },
+  { id: createDomainId.houseLayoutPlacement('member-mama'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.mama, zoneId: 'kitchen', x: 28, y: 72, scale: .78 },
+  { id: createDomainId.houseLayoutPlacement('member-hannes'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.hannes, zoneId: 'kitchen', x: 72, y: 72, scale: .78 },
   { id: createDomainId.houseLayoutPlacement('pet-anna'), entityType: 'pet', entityId: FAMILY_PET_IDS.anna, zoneId: 'living-room', x: 18, y: 80, scale: .72 },
   { id: createDomainId.houseLayoutPlacement('pet-elsa'), entityType: 'pet', entityId: FAMILY_PET_IDS.elsa, zoneId: 'living-room', x: 86, y: 80, scale: .72 },
   { id: createDomainId.houseLayoutPlacement('family-ladi'), entityType: 'ladi', entityId: 'family-ladi', zoneId: 'living-room', x: 50, y: 48, scale: .78 },
