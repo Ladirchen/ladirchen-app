@@ -1,8 +1,8 @@
 import type { FamilyContext } from '@/application/ports/family-context';
-import { createDomainId } from '@/domain/types';
+import type { FamilyId } from '@/domain/types';
+import { createDomainId, isUuidValue } from '@/domain/types';
 
 const ACTIVE_FAMILY_ID_KEY = 'ladirchen-active-family-id';
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 let inMemoryFamilyId: ReturnType<typeof createDomainId.family> | null = null;
 
@@ -14,7 +14,7 @@ const resolveActiveFamilyId = () => {
   }
   try {
     const storedFamilyId = localStorage.getItem(ACTIVE_FAMILY_ID_KEY);
-    if (storedFamilyId && UUID_PATTERN.test(storedFamilyId)) {
+    if (isUuidValue(storedFamilyId)) {
       inMemoryFamilyId = createDomainId.family(storedFamilyId);
       return inMemoryFamilyId;
     }
@@ -26,8 +26,16 @@ const resolveActiveFamilyId = () => {
   return inMemoryFamilyId;
 };
 
-export const localFamilyContext: FamilyContext = {
+export interface LocalFamilyContext extends FamilyContext {
+  setActiveFamilyId: (familyId: FamilyId) => void;
+}
+
+export const localFamilyContext: LocalFamilyContext = {
   get activeFamilyId() {
     return resolveActiveFamilyId();
+  },
+  setActiveFamilyId(familyId) {
+    inMemoryFamilyId = familyId;
+    localStorage.setItem(ACTIVE_FAMILY_ID_KEY, familyId);
   },
 };
