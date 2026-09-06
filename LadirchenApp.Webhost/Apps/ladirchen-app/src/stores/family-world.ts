@@ -6,7 +6,7 @@ import { FURNITURE_SETS, HOUSE_ROOMS, HOUSE_STAGES, HOUSE_THEMES } from '@/featu
 import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
-import type { FurnitureSetId, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
+import type { FurnitureSetId, HouseAccessoryId, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
 import { resolveFamilyPermissions } from '@/domain/family-permissions';
 import type { FamilyPermissions } from '@/domain/family-permissions';
 import { isPromotionAvailable } from '@/domain/promotions';
@@ -55,11 +55,21 @@ const mergeHouseLayout = (stored: ReadonlyArray<HouseLayoutPlacement>): HouseLay
   return createHouseLayoutPlacements().map((placement) => {
     const saved = storedById.get(placement.id);
     if (!saved) {return placement;}
+    const isCharacter = placement.entityType === 'member' || placement.entityType === 'pet';
+    const isLadi = placement.entityType === 'ladi';
+    const savedLadiWasPerched = isLadi && saved.y < 62;
+    const isWallDecoration = placement.entityType === 'furniture'
+      && (placement.entityId === 'wall-art' || placement.entityId === 'halloween-bat-garland');
+    const savedYIsValid = isWallDecoration
+      ? saved.y >= 12 && saved.y <= 46
+      : isLadi
+        ? (saved.y >= 22 && saved.y <= 38) || saved.y >= 62
+        : saved.y >= (isCharacter ? 62 : 52);
     return {
       ...placement,
       zoneId: saved.zoneId,
-      x: Math.max(4, Math.min(96, saved.x)),
-      y: Math.max(8, Math.min(94, saved.y)),
+      x: savedLadiWasPerched ? placement.x : Math.max(4, Math.min(96, saved.x)),
+      y: savedYIsValid ? Math.max(8, Math.min(94, saved.y)) : placement.y,
       scale: Math.max(.5, Math.min(1.35, saved.scale)),
     } as HouseLayoutPlacement;
   });
@@ -875,11 +885,11 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       const accessory = this.accessories.find((item) => item.id === id);
       if (this.viewerRole !== 'child' || !accessory || accessory.owned || accessory.price > this.availableBalance) {return;}
       accessory.owned = true;
-      accessory.equipped = true;
+      accessory.equipped = false;
       this.balances[this.activeChildId] = this.balance - accessory.price;
       this.persistHomeCustomization();
       this.persistSavings();
-      this.notify(`${accessory.title} wurde zur Familienwelt hinzugefügt.`);
+      this.notify(`${accessory.title} wurde gekauft und liegt jetzt im Möbellager.`);
     },
     purchaseFurnitureSet(id: FurnitureSetId) {
       const set = FURNITURE_SETS.find((item) => item.id === id);
@@ -887,17 +897,42 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       for (const accessory of this.accessories) {
         if (!set.accessoryIds.includes(accessory.id)) {continue;}
         accessory.owned = true;
-        accessory.equipped = true;
+        accessory.equipped = false;
       }
       this.balances[this.activeChildId] = this.balance - set.price;
       this.persistHomeCustomization();
       this.persistSavings();
-      this.notify(`${set.name} wurde vollständig zur Familienwelt hinzugefügt.`);
+      this.notify(`${set.name} wurde gekauft und vollständig im Möbellager abgelegt.`);
     },
     toggleAccessory(id: HouseAccessory['id']) {
       const accessory = this.accessories.find((item) => item.id === id);
       if (!accessory?.owned) {return;}
       accessory.equipped = !accessory.equipped;
+      this.persistHomeCustomization();
+    },
+    storeHouseAccessory(id: HouseAccessoryId) {
+      const accessory = this.accessories.find(item => item.id === id);
+      if (!accessory?.owned || !accessory.equipped) {return;}
+      accessory.equipped = false;
+      this.persistHomeCustomization();
+    },
+    placeStoredHouseAccessory(id: HouseAccessoryId, requestedZoneId: HouseZoneId) {
+      const accessory = this.accessories.find(item => item.id === id);
+      const placement = this.houseLayout.find(item => item.entityType === 'furniture' && item.entityId === id);
+      if (!accessory?.owned || !placement) {return;}
+      const targetZoneId: HouseZoneId = accessory.placement === 'outside'
+        ? 'garden'
+        : requestedZoneId === 'garden'
+          ? accessory.roomId ?? 'living-room'
+          : requestedZoneId;
+      const targetRoom = HOUSE_ROOMS.find(item => item.id === targetZoneId);
+      if (targetRoom && targetRoom.minimumHouseLevel > this.houseLevel) {return;}
+      if (placement.zoneId !== targetZoneId) {
+        placement.zoneId = targetZoneId;
+        placement.x = 50;
+        placement.y = accessory.visual === 'wall-art' ? 28 : targetZoneId === 'garden' ? 68 : 66;
+      }
+      accessory.equipped = true;
       this.persistHomeCustomization();
     },
     purchaseHouseTheme(id: HouseThemeId) {
@@ -926,6 +961,17 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       placement.zoneId = zoneId;
       placement.x = Math.max(4, Math.min(96, Number(x.toFixed(2))));
       placement.y = Math.max(8, Math.min(94, Number(y.toFixed(2))));
+      this.persistHomeCustomization();
+    },
+    resetHouseEntityPosition(placementId: HouseLayoutPlacementId) {
+      if (!this.canArrangeHouse) {return;}
+      const initialPlacement = createHouseLayoutPlacements().find((item) => item.id === placementId);
+      const placement = this.houseLayout.find((item) => item.id === placementId);
+      if (!initialPlacement || !placement) {return;}
+      placement.zoneId = initialPlacement.zoneId;
+      placement.x = initialPlacement.x;
+      placement.y = initialPlacement.y;
+      placement.scale = initialPlacement.scale;
       this.persistHomeCustomization();
     },
     setSimulatedEnergy(value: number | null) {
