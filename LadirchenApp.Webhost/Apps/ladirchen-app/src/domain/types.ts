@@ -1,5 +1,5 @@
 import type { AvatarAppearance } from './avatar';
-import type { FurniturePlacement, FurnitureSetId, FurnitureVisualId, HexColor, HouseAccessoryId, HouseAccessoryPlacement, HouseLayoutEntityType, HouseRoomId, HouseStageLevel, HouseZoneId } from './house';
+import type { FurniturePlacement, FurnitureSetId, FurnitureVisualId, HexColor, HouseAccessoryCategory, HouseAccessoryId, HouseAccessoryMotion, HouseAccessoryPlacement, HouseLayoutEntityType, HouseRoomId, HouseStageLevel, HouseZoneId } from './house';
 
 declare const domainIdBrand: unique symbol;
 
@@ -129,6 +129,7 @@ export interface SavingGoal {
 export interface HouseAccessory {
   id: HouseAccessoryId;
   translationKey?: string;
+  category?: HouseAccessoryCategory;
   title: string;
   description: string;
   icon: string;
@@ -137,6 +138,7 @@ export interface HouseAccessory {
   roomId?: HouseRoomId;
   setIds?: ReadonlyArray<FurnitureSetId>;
   minimumHouseLevel?: HouseStageLevel;
+  motion?: HouseAccessoryMotion;
   visual?: FurnitureVisualId;
   scene?: FurniturePlacement;
   owned: boolean;
