@@ -13,7 +13,7 @@
     :aria-label="`${stage.name}, das Sparfaultier, Bewertung ${score.toFixed(1)} von 5`"
   >
     <svg class="ladi" viewBox="0 0 150 150">
-      <g v-if="isBored" class="bored-branch">
+      <g v-if="isBored && showSceneBase" class="bored-branch">
         <path d="M5 24c41 8 91-8 141 2" />
         <path class="branch-twig" d="m112 24 14-13" />
         <path class="branch-ring" d="M18 23q5 5 10 1" />
@@ -43,19 +43,19 @@
       </g>
 
       <g class="ladi-sloth" :class="{ 'is-bored': isBored, 'is-super': isSuper }">
-        <ellipse v-if="!isBored" class="ground-shadow" cx="76" cy="138" rx="42" ry="6" />
+        <ellipse v-if="!isBored && showSceneBase" class="ground-shadow" cx="76" cy="138" rx="42" ry="6" />
 
-        <g v-if="!isBored && score >= 3" class="leaf-cluster leaf-left">
+        <g v-if="!isBored && showSceneBase && score >= 3" class="leaf-cluster leaf-left">
           <path d="M27 124C10 116 7 101 12 95c12 2 20 12 15 29Z" />
           <path d="M31 125c-3-17 7-29 16-29 6 11 2 23-16 29Z" />
         </g>
-        <g v-if="!isBored && score >= 4.5" class="leaf-cluster leaf-right">
+        <g v-if="!isBored && showSceneBase && score >= 4.5" class="leaf-cluster leaf-right">
           <path d="M119 124c3-17 14-26 24-23 2 12-6 22-24 23Z" />
           <path d="M116 124c-3-14-12-21-21-18 0 10 7 17 21 18Z" />
         </g>
 
-        <path v-if="!isBored && !isSuper" class="branch" d="M10 127c31-9 71 8 130-4" />
-        <path v-if="!isBored && !isSuper" class="branch-cut" d="m111 125 14-12" />
+        <path v-if="!isBored && !isSuper && showSceneBase" class="branch" d="M10 127c31-9 71 8 130-4" />
+        <path v-if="!isBored && !isSuper && showSceneBase" class="branch-cut" d="m111 125 14-12" />
 
         <g v-if="!isBored && !isSuper" class="feet">
           <path d="M51 117c-9 5-12 14-6 18 6 3 13-3 16-12" />
@@ -160,7 +160,7 @@ import { motion, useReducedMotion } from 'motion-v';
 
 import { getLadiStage } from '@/domain/ladi';
 
-const props = withDefaults(defineProps<{ score: number; size?: number; showScore?: boolean }>(), { size: 46, showScore: true });
+const props = withDefaults(defineProps<{ score: number; showSceneBase?: boolean; size?: number; showScore?: boolean }>(), { showSceneBase: true, size: 46, showScore: true });
 const stage = computed(() => getLadiStage(props.score));
 const isBored = computed(() => props.score < 2.5);
 const isCool = computed(() => props.score >= 4.3 && props.score < 4.8);

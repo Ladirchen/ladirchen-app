@@ -52,14 +52,24 @@ withDefaults(defineProps<{
   --switch-alt: #2a9b73;
   --switch-alt-dark: #21795b;
   --switch-bg: #edf7ff;
-  padding: 6px;
-  @apply d-grid;
+  position: relative;
+  isolation: isolate;
+  padding: 8px;
+  @apply d-grid overflow-hidden;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  border: 1px solid color-mix(in srgb, var(--switch-accent) 18%, white);
-  border-radius: 22px;
-  background: linear-gradient(145deg, var(--switch-bg), #fffdf8);
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--switch-accent) 12%, transparent);
+  gap: 9px;
+  border: 2px solid color-mix(in srgb, var(--switch-accent) 20%, white);
+  border-radius: 27px;
+  background:
+    radial-gradient(
+      circle at 88% 12%,
+      color-mix(in srgb, var(--switch-alt) 10%, transparent) 0 34px,
+      transparent 35px
+    ),
+    linear-gradient(145deg, var(--switch-bg), #fffdf8);
+  box-shadow:
+    0 6px 0 color-mix(in srgb, var(--switch-accent) 14%, transparent),
+    0 12px 24px color-mix(in srgb, var(--switch-accent) 7%, transparent);
 }
 .page-view-switch--amber {
   --switch-accent: #e49b2f;
@@ -72,13 +82,13 @@ withDefaults(defineProps<{
   grid-template-columns: minmax(0, 1fr);
 }
 .page-view-switch button {
-  min-height: 68px;
-  padding: 10px 11px;
-  @apply position-relative d-flex align-center ga-2 text-left cursor-pointer;
+  min-height: 76px;
+  padding: 11px 12px;
+  @apply position-relative d-flex align-center ga-2 text-left cursor-pointer overflow-hidden;
   color: var(--lad-muted);
-  border: 1px solid transparent;
-  border-radius: 17px;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--switch-accent) 9%, white);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.42);
   font: inherit;
   transition:
     color 180ms ease,
@@ -87,26 +97,36 @@ withDefaults(defineProps<{
     transform 180ms ease;
 }
 .page-view-switch button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .page-view-switch button.active {
   color: var(--switch-accent-dark);
-  border-color: color-mix(in srgb, var(--switch-accent) 24%, white);
-  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--switch-accent) 30%, white);
+  background: linear-gradient(145deg, #fff, #f8fcff);
   box-shadow:
-    0 4px 12px color-mix(in srgb, var(--switch-accent) 16%, transparent),
-    0 3px 0 color-mix(in srgb, var(--switch-accent) 16%, transparent);
+    0 6px 0 color-mix(in srgb, var(--switch-accent) 19%, transparent),
+    0 11px 17px color-mix(in srgb, var(--switch-accent) 12%, transparent);
+}
+.page-view-switch button:nth-child(2).active {
+  border-color: color-mix(in srgb, var(--switch-alt) 30%, white);
+  box-shadow:
+    0 6px 0 color-mix(in srgb, var(--switch-alt) 19%, transparent),
+    0 11px 17px color-mix(in srgb, var(--switch-alt) 11%, transparent);
 }
 .page-view-switch button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--switch-accent) 26%, transparent);
   outline-offset: 2px;
 }
 .page-view-icon {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   @apply d-grid place-center flex-shrink-0;
-  border-radius: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
   background: color-mix(in srgb, var(--switch-accent) 11%, white);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--switch-accent) 13%, transparent);
+  transform: rotate(-3deg);
   transition:
     transform 180ms ease,
     background 180ms ease;
@@ -121,8 +141,8 @@ withDefaults(defineProps<{
     color-mix(in srgb, var(--switch-accent) 78%, white),
     var(--switch-accent)
   );
-  box-shadow: 0 3px 0 var(--switch-accent-dark);
-  transform: rotate(-3deg) scale(1.04);
+  box-shadow: 0 4px 0 var(--switch-accent-dark);
+  transform: rotate(-7deg) scale(1.06);
 }
 .page-view-switch button:nth-child(2).active .page-view-icon {
   background: linear-gradient(
@@ -149,16 +169,19 @@ withDefaults(defineProps<{
   font-size: 9px;
 }
 .page-view-check {
-  width: 19px;
-  height: 19px;
+  width: 21px;
+  height: 21px;
   @apply position-absolute d-grid place-center;
   top: 7px;
   right: 7px;
   color: white;
-  border-radius: 50%;
+  border: 2px solid #fff;
+  border-radius: 7px;
   background: var(--switch-accent);
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--switch-accent-dark) 45%, transparent);
   opacity: 0;
-  transform: scale(0.65);
+  transform: rotate(12deg) scale(0.65);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
@@ -168,16 +191,16 @@ withDefaults(defineProps<{
 }
 .page-view-switch button.active .page-view-check {
   opacity: 1;
-  transform: scale(1);
+  transform: rotate(12deg) scale(1);
 }
 .page-view-switch--compact {
-  padding: 5px;
-  border-radius: 18px;
+  padding: 6px;
+  border-radius: 21px;
 }
 .page-view-switch--compact button {
-  min-height: 55px;
+  min-height: 60px;
   padding: 8px 10px;
-  border-radius: 14px;
+  border-radius: 16px;
 }
 .page-view-switch--compact .page-view-icon {
   width: 34px;
