@@ -35,6 +35,9 @@
         :reveal-version="store.revealVersion"
         :viewer-member-id="store.signedInMemberId"
         @move-entity="store.moveHouseEntity"
+        @place-furniture="store.placeStoredHouseAccessory"
+        @reset-entity="store.resetHouseEntityPosition"
+        @store-furniture="store.storeHouseAccessory"
       />
     </section>
 
@@ -108,7 +111,7 @@
 
       <v-card v-if="store.viewerRole === 'child' && activePromotion" class="promotion-banner pa-4 mb-6" color="amber-lighten-5" elevation="0" rounded="xl" role="button" tabindex="0" @click="promoDetailsOpen = true" @keydown.enter="promoDetailsOpen = true">
         <div class="d-flex align-center ga-3">
-          <div class="promotion-bolt">⚡</div>
+          <div class="promotion-gem" aria-hidden="true"><v-icon icon="mdi-diamond-stone" size="27" /><i>✦</i><i>✧</i></div>
           <div class="flex-grow-1">
             <p class="eyebrow mb-1">Bonusaktion</p>
             <strong>{{ activePromotion.title }}</strong>
@@ -118,50 +121,51 @@
         </div>
       </v-card>
 
-      <SectionHeader
-        v-if="store.viewerRole === 'child'"
-        description="Bestätigte Grundbeiträge verändern die Welt."
-        title="Wo möchtest du helfen?"
-      >
-        <template #action><RouterLink class="section-link" to="/beitraege">Alle</RouterLink></template>
-      </SectionHeader>
+      <section v-if="store.viewerRole === 'child'" class="contribution-board">
+        <div class="contribution-board-heading">
+          <div>
+            <p class="eyebrow mb-1">Heute für dich</p>
+            <h2>Meine Aufgaben</h2>
+            <p>Bestätigte Grundbeiträge verändern eure Familienwelt.</p>
+          </div>
+          <RouterLink class="all-contributions" to="/beitraege"><v-icon icon="mdi-view-grid-plus-outline" size="19" /><span>Alle Beiträge</span><v-icon icon="mdi-chevron-right" size="17" /></RouterLink>
+        </div>
 
-      <div v-if="store.viewerRole === 'child'" class="d-flex flex-column ga-3">
-        <v-card v-for="contribution in quickContributions" :key="contribution.id" class="contribution-card pa-3" elevation="0" rounded="xl">
-          <div class="d-flex align-center ga-3">
-            <v-avatar color="blue-lighten-5" rounded="lg" size="48">{{ contribution.icon }}</v-avatar>
-            <div class="flex-grow-1 min-w-0">
-              <strong class="d-block text-body-small">{{ contribution.title }}</strong>
-              <p class="text-caption text-medium-emphasis">{{ contribution.dueLabel }} · +{{ store.rewardForContribution(contribution.id) }} L</p>
+        <div v-if="personalContributions.length" class="contribution-list">
+          <v-card v-for="contribution in personalContributions" :key="contribution.id" class="contribution-card pa-3" elevation="0" rounded="xl">
+            <div class="d-flex align-center ga-3">
+              <div class="contribution-icon">{{ contribution.icon }}</div>
+              <div class="flex-grow-1 min-w-0">
+                <strong class="d-block text-body-small">{{ contribution.title }}</strong>
+                <p class="text-caption text-medium-emphasis">{{ contribution.dueLabel }} · +{{ store.rewardForContribution(contribution.id) }} L</p>
+              </div>
+              <v-chip v-if="contribution.status === 'pending'" color="warning" size="small" variant="tonal">Wartet</v-chip>
+              <v-btn
+                v-else
+                class="raised-button"
+                color="info"
+                rounded="lg"
+                size="small"
+                variant="flat"
+                @click="store.submitContribution(contribution.id)"
+              >
+                Fertig
+              </v-btn>
             </div>
-            <v-chip v-if="contribution.status === 'pending'" color="warning" size="small" variant="tonal">Wartet</v-chip>
-            <v-btn
-              v-else
-              class="raised-button"
-              color="info"
-              rounded="lg"
-              size="small"
-              variant="flat"
-              @click="store.submitContribution(contribution.id)"
-            >
-              Fertig
-            </v-btn>
+          </v-card>
+        </div>
+
+        <v-card v-else class="contribution-empty pa-4" elevation="0" rounded="xl">
+          <LadiMascot :score="emptyLadiScore" :show-score="false" :size="82" />
+          <div class="flex-grow-1 min-w-0">
+            <p class="eyebrow mb-1">{{ emptyTaskEyebrow }}</p>
+            <strong>{{ emptyTaskTitle }}</strong>
+            <p>{{ emptyTaskMessage }}</p>
+            <RouterLink class="empty-task-link" to="/beitraege">Freie Aufgaben ansehen <v-icon icon="mdi-arrow-right" size="15" /></RouterLink>
           </div>
         </v-card>
-      </div>
+      </section>
 
-      <v-card v-if="store.viewerRole === 'child'" class="goal-preview pa-4 mt-6" color="green-lighten-5" elevation="0" rounded="xl" to="/wuensche">
-        <div class="d-flex align-center ga-3">
-          <span class="goal-preview-icon">{{ store.activeGoal.icon }}</span>
-          <div class="flex-grow-1">
-            <p class="eyebrow mb-1">Mein nächster Wunsch</p>
-            <strong>{{ store.activeGoal.title }}</strong>
-            <v-progress-linear class="mt-2" color="primary" height="8" :model-value="goalProgress" rounded />
-            <p class="text-caption text-medium-emphasis mt-1">{{ store.activeGoal.saved }} von {{ store.activeGoal.target }} Ladirchen</p>
-          </div>
-          <v-icon icon="mdi-chevron-right" />
-        </div>
-      </v-card>
     </div>
 
     <v-dialog v-model="giftDialogOpen" max-width="420">
@@ -182,7 +186,7 @@
 
     <v-dialog v-model="promoDetailsOpen" max-width="410">
       <v-card v-if="activePromotion" class="pa-5" rounded="xl">
-        <div class="promotion-detail-bolt">⚡</div>
+        <div class="promotion-detail-gem" aria-hidden="true"><v-icon icon="mdi-diamond-stone" size="38" /><i>✦</i><i>✧</i></div>
         <p class="eyebrow mt-3 mb-1">Nur heute</p>
         <h2 class="promotion-dialog-title">{{ activePromotion.title }}</h2>
         <p class="text-body-small text-medium-emphasis mt-2">Erledige „{{ contributionTitle(activePromotion.contributionId) }}“ bis {{ activePromotion.deadline }} Uhr.</p>
@@ -205,8 +209,10 @@ import { computed, reactive, ref } from 'vue';
 import AnimatedHouseEnergy from '../components/AnimatedHouseEnergy.vue';
 import FamilyWorldScene from '../components/FamilyWorldScene.vue';
 import HouseEnergyDialog from '../components/HouseEnergyDialog.vue';
+import LadiMascot from '@/shared/components/LadiMascot.vue';
 import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
 import type { ContributionId, FamilyMemberId } from '@/domain/types';
+import { getLadiStage } from '@/domain/ladi';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
@@ -215,11 +221,22 @@ const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
 const gift = reactive({ childId: store.activeChildId, amount: 20, reason: '' });
 
-const quickContributions = computed(() =>
+const personalContributions = computed(() =>
   store.contributions
-    .filter((contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== 'approved')
-    .slice(0, 2),
+    .filter((contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== 'approved'),
 );
+const completedPersonalContributions = computed(() => store.contributions.filter(
+  contribution => contribution.assigneeId === store.activeChildId && contribution.status === 'approved',
+));
+const isProudLadi = computed(() => store.averageTaskRating >= 4.3);
+const emptyLadiScore = computed(() => completedPersonalContributions.value.length ? store.averageTaskRating : 0);
+const emptyTaskEyebrow = computed(() => completedPersonalContributions.value.length ? 'Für heute geschafft' : 'Ladi wartet auf eine Mission');
+const emptyTaskTitle = computed(() => completedPersonalContributions.value.length ? 'Alles erledigt!' : 'Heute ist noch nichts zugeteilt');
+const emptyTaskMessage = computed(() => {
+  if (!completedPersonalContributions.value.length) return 'Schau bei den freien Aufgaben vorbei – vielleicht braucht gerade jemand deine Hilfe.';
+  if (isProudLadi.value) return `${getLadiStage(store.averageTaskRating).name} ist richtig stolz auf dich. Für heute hast du alles geschafft.`;
+  return 'Für heute hast du alles geschafft. Ladi macht es sich nach eurem Einsatz gemütlich.';
+});
 const activePromotion = computed(() =>
   store.promotions.find((promotion) =>
     promotion.active && store.contributions.some(
@@ -227,7 +244,6 @@ const activePromotion = computed(() =>
     ),
   ),
 );
-const goalProgress = computed(() => (store.activeGoal.saved / store.activeGoal.target) * 100);
 const contributionTitle = (contributionId: ContributionId) =>
   store.contributions.find((contribution) => contribution.id === contributionId)?.title ?? 'Beitrag';
 const childMembers = computed(() => store.members.filter((member) => member.role === 'child'));
@@ -326,30 +342,193 @@ const giveDirectGift = () => {
     font-size: 9px;
   }
 }
+.contribution-board {
+  padding: 15px;
+  @apply position-relative overflow-hidden;
+  border: 2px solid rgba(71, 153, 122, 0.17);
+  border-radius: 27px;
+  background:
+    radial-gradient(
+      circle at 92% 7%,
+      rgba(255, 218, 112, 0.22),
+      transparent 23%
+    ),
+    linear-gradient(145deg, #fffef9, #f0faf6);
+  box-shadow:
+    0 7px 0 rgba(58, 135, 105, 0.11),
+    0 15px 27px rgba(62, 100, 85, 0.07);
+}
+.contribution-board::after {
+  content: "✦";
+  @apply position-absolute pointer-events-none;
+  top: 10px;
+  right: 13px;
+  color: rgba(226, 166, 45, 0.65);
+  font-size: 13px;
+}
+.contribution-board-heading {
+  @apply position-relative d-flex align-start justify-space-between;
+  z-index: 1;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.contribution-board-heading h2 {
+  @apply ma-0;
+  font-size: 20px;
+  letter-spacing: -0.035em;
+}
+.contribution-board-heading > div > p:last-child {
+  margin-top: 3px;
+  color: var(--lad-muted);
+  font-size: 10px;
+}
+.all-contributions {
+  min-height: 46px;
+  padding: 7px 8px 7px 10px;
+  @apply d-flex align-center flex-shrink-0;
+  gap: 5px;
+  color: #236f57;
+  border: 2px solid rgba(62, 163, 124, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #eaf9f2, #fff);
+  box-shadow: 0 4px 0 rgba(49, 139, 105, 0.13);
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.all-contributions:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(49, 139, 105, 0.13);
+}
+.contribution-list {
+  @apply d-flex flex-column;
+  gap: 11px;
+}
 .contribution-card {
-  border: 1px solid var(--lad-border);
-  box-shadow: 0 4px 0 var(--lad-border) !important;
+  border: 2px solid rgba(78, 143, 221, 0.14);
+  background: linear-gradient(145deg, #fff, #f5faff);
+  box-shadow: 0 5px 0 rgba(78, 143, 221, 0.11) !important;
+}
+.contribution-icon {
+  width: 50px;
+  height: 50px;
+  @apply d-grid place-center flex-shrink-0;
+  border: 3px solid #fff;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #e7f6ff, #fff2c9);
+  box-shadow: 0 4px 0 rgba(78, 143, 221, 0.13);
+  font-size: 25px;
+  transform: rotate(-4deg);
+}
+.contribution-empty {
+  @apply d-flex align-center position-relative overflow-hidden;
+  gap: 13px;
+  border: 2px dashed rgba(77, 153, 122, 0.28);
+  background:
+    radial-gradient(
+      circle at 88% 18%,
+      rgba(255, 218, 112, 0.25),
+      transparent 26%
+    ),
+    linear-gradient(145deg, #f4fbf7, #fff9e8);
+  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.35) !important;
+}
+.contribution-empty strong {
+  font-size: 15px;
+}
+.contribution-empty p:not(.eyebrow) {
+  margin: 3px 0 8px;
+  color: var(--lad-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+.empty-task-link {
+  @apply d-inline-flex align-center;
+  gap: 4px;
+  color: var(--lad-mint-dark);
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
 }
 .promotion-banner {
-  border: 1px solid rgba(242, 175, 66, 0.3);
-  @apply cursor-pointer;
+  @apply position-relative overflow-hidden cursor-pointer;
+  border: 2px solid rgba(114, 174, 215, 0.38);
+  background: linear-gradient(135deg, #eef9ff, #fff4d4 54%, #f5eaff) !important;
+  box-shadow:
+    0 7px 0 rgba(112, 164, 198, 0.18),
+    0 14px 25px rgba(75, 105, 136, 0.09) !important;
 }
-.promotion-bolt {
-  width: 44px;
-  height: 44px;
-  @apply d-grid place-center flex-shrink-0;
-  border-radius: 15px;
-  background: #ffe5a8;
-  font-size: 23px;
-  animation: bonus-pulse 1.8s ease-in-out infinite;
+.promotion-banner::before {
+  content: "";
+  width: 72px;
+  height: 180%;
+  @apply position-absolute;
+  top: -40%;
+  left: -95px;
+  transform: rotate(18deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  animation: bonus-shimmer 3.4s ease-in-out infinite;
 }
-.promotion-detail-bolt {
-  width: 62px;
-  height: 62px;
-  @apply d-grid place-center;
-  border-radius: 20px;
-  background: #ffe7ac;
-  font-size: 32px;
+.promotion-banner::after {
+  content: "✦  ✧  ★";
+  @apply position-absolute;
+  top: 9px;
+  right: 11px;
+  color: #e5a52a;
+  text-shadow:
+    0 0 7px rgba(255, 224, 126, 0.95),
+    18px 12px 0 rgba(121, 106, 205, 0.55);
+  font-size: 14px;
+  letter-spacing: 6px;
+  animation: bonus-stars 2.1s ease-in-out infinite;
+}
+.promotion-gem,
+.promotion-detail-gem {
+  @apply position-relative d-grid place-center flex-shrink-0;
+  color: #fff;
+  border: 3px solid #fff;
+  background: linear-gradient(145deg, #7bd5ea, #6482dc 58%, #a66ed0);
+  box-shadow:
+    0 5px 0 #596ab1,
+    0 9px 16px rgba(77, 89, 154, 0.22);
+  transform: rotate(-5deg);
+  animation: bonus-gem 2.4s ease-in-out infinite;
+}
+.promotion-gem {
+  width: 49px;
+  height: 49px;
+  border-radius: 17px;
+}
+.promotion-detail-gem {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+}
+.promotion-gem i,
+.promotion-detail-gem i {
+  @apply position-absolute;
+  color: #fff7b0;
+  font-style: normal;
+  text-shadow: 0 0 7px #fff;
+}
+.promotion-gem i:first-of-type,
+.promotion-detail-gem i:first-of-type {
+  top: -9px;
+  right: -8px;
+}
+.promotion-gem i:last-of-type,
+.promotion-detail-gem i:last-of-type {
+  bottom: -8px;
+  left: -6px;
+  animation-delay: -1s;
 }
 .promotion-dialog-title {
   @apply ma-0;
@@ -364,17 +543,6 @@ const giveDirectGift = () => {
   @apply ma-0;
   font-size: 19px;
   letter-spacing: -0.025em;
-}
-.section-link {
-  color: var(--lad-mint-dark);
-  font-size: 12px;
-  @apply font-weight-black;
-}
-.goal-preview {
-  border: 1px solid rgba(62, 188, 140, 0.2);
-}
-.goal-preview-icon {
-  font-size: 36px;
 }
 .guardian-child-grid {
   @apply d-grid;
@@ -477,6 +645,56 @@ const giveDirectGift = () => {
   }
   50% {
     transform: scale(1.08) rotate(3deg);
+  }
+}
+@keyframes bonus-gem {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-5deg) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) rotate(4deg) scale(1.06);
+  }
+}
+@keyframes bonus-shimmer {
+  0%,
+  34% {
+    left: -95px;
+  }
+  70%,
+  100% {
+    left: 120%;
+  }
+}
+@keyframes bonus-stars {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8) rotate(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(14deg);
+  }
+}
+@media (max-width: 420px) {
+  .contribution-board {
+    padding: 13px;
+  }
+  .contribution-board-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .all-contributions {
+    width: fit-content;
+    min-height: 38px;
+  }
+  .contribution-empty {
+    align-items: flex-start;
+  }
+  .contribution-empty :deep(.ladi-mascot) {
+    transform: scale(0.9);
+    transform-origin: top left;
   }
 }
 </style>
