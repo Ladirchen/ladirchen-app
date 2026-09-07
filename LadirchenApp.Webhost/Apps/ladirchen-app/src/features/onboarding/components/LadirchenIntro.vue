@@ -1,5 +1,5 @@
 <template>
-  <Transition name="intro-fade">
+  <Transition name="intro-fade" @after-leave="emit('finished')">
     <div v-if="visible" class="app-intro" aria-live="polite" aria-label="Ladirchen wird geladen">
       <div class="intro-sun" aria-hidden="true" />
       <div class="intro-cloud intro-cloud-one" aria-hidden="true" />
@@ -24,6 +24,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 
+const emit = defineEmits<{ finished: [] }>();
 const visible = ref(true);
 let timer: number | undefined;
 
@@ -113,8 +114,12 @@ onUnmounted(() => {
   margin: -16px auto 3px;
   @apply d-grid place-center;
 }
+.intro-mascot :deep(.ladi-wrap) {
+  width: var(--ladi-size);
+  justify-content: center;
+}
 .intro-logo-row {
-  @apply d-flex align-center justify-center;
+  @apply d-flex align-end justify-center;
   gap: 9px;
 }
 .intro-logo {
@@ -136,7 +141,9 @@ onUnmounted(() => {
   @apply ma-0;
   color: #294d41;
   font-size: 35px;
+  line-height: 0.9;
   letter-spacing: -0.06em;
+  transform: translateY(1px);
 }
 .intro-card > p {
   margin: 8px 0 0;
