@@ -1,128 +1,24 @@
 import { defineStore } from 'pinia';
 
-import { contributionsService, familyContext, familyProfileService, familyProgressionService, homeCustomizationService, rewardShopService, savingsService } from '@/app/composition-root';
-import { createContributions, createFamilyMembers, createFamilyPets, createHouseAccessories, createHouseLayoutPlacements, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
-import { FURNITURE_SETS, HOUSE_ROOMS, HOUSE_STAGES, HOUSE_THEMES } from '@/features/world/data/house-catalog';
-import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/domain/avatar';
-import type { AvatarAppearance } from '@/domain/avatar';
+import { FURNITURE_SETS, HOUSE_ROOMS } from '@/domain/house-catalog';
 import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
-import type { FurnitureSetId, HouseAccessoryId, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
+import type { FurnitureSetId } from '@/domain/house';
 import { resolveFamilyPermissions } from '@/domain/family-permissions';
 import type { FamilyPermissions } from '@/domain/family-permissions';
 import { isPromotionAvailable } from '@/domain/promotions';
 import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
-import { shopRedemptionIsOpen } from '@/domain/shop';
-import { createDomainId } from '@/domain/types';
-import type { Contribution, ContributionId, FamilyCurrency, FamilyMember, FamilyMemberId, FamilyPet, FamilyPetKindId, GuardianAccessLevel, GuardianGift, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId, NewContribution, NewGoal, NewPromotion, NewShopReward, SavingGoal, SavingGoalId, ShopRewardId, SubscriptionTier, ViewerRole, WorldEffect } from '@/domain/types';
-
-const supportedFamilyCurrencies: FamilyCurrency[] = ['CHF', 'EUR', 'HUF'];
-const createUuid = (): string => globalThis.crypto.randomUUID();
-const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] => {
-  const guardians = members.filter(member => member.role === 'guardian');
-  const hasAdministrator = guardians.some(member => member.guardianAccess === 'admin');
-  return members.map((member) => {
-    if (member.role !== 'guardian') {
-      return member.appearance ? { ...member, appearance: normalizeAvatarAppearance(member.appearance) } : member;
-    }
-    const isFirstGuardian = member.id === guardians[0]?.id;
-    const fallbackAppearance = createGuardianAvatarAppearance(isFirstGuardian ? 'adult' : 'grandpa');
-    return {
-      ...member,
-      guardianAccess: member.guardianAccess ?? (!hasAdministrator && isFirstGuardian ? 'admin' : 'supporter'),
-      appearance: normalizeAvatarAppearance(member.appearance, fallbackAppearance),
-    };
-  });
-};
-const familyPetKinds: Record<string, { id: FamilyPetKindId; label: string }> = {
-  bird: { id: 'bird', label: 'Vogel' },
-  cat: { id: 'cat', label: 'Katze' },
-  dog: { id: 'dog', label: 'Hund' },
-  other: { id: 'other', label: 'Anderes Tier' },
-  rabbit: { id: 'rabbit', label: 'Kaninchen' },
-  Vogel: { id: 'bird', label: 'Vogel' },
-  Katze: { id: 'cat', label: 'Katze' },
-  Hund: { id: 'dog', label: 'Hund' },
-  'Anderes Tier': { id: 'other', label: 'Anderes Tier' },
-  Kaninchen: { id: 'rabbit', label: 'Kaninchen' },
-};
-const normalizeFamilyPets = (pets: ReadonlyArray<FamilyPet>): FamilyPet[] => pets.map((pet) => {
-    const kind = familyPetKinds[pet.kind] ?? familyPetKinds.other!;
-    return { ...pet, kind: kind.id, kindLabel: pet.kindLabel ?? kind.label };
-  });
-
-const mergeHouseLayout = (stored: ReadonlyArray<HouseLayoutPlacement>): HouseLayoutPlacement[] => {
-  const storedById = new Map(stored.map(placement => [placement.id, placement]));
-  return createHouseLayoutPlacements().map((placement) => {
-    const saved = storedById.get(placement.id);
-    if (!saved) {return placement;}
-    const isCharacter = placement.entityType === 'member' || placement.entityType === 'pet';
-    const isLadi = placement.entityType === 'ladi';
-    const savedLadiWasPerched = isLadi && saved.y < 62;
-    const isWallDecoration = placement.entityType === 'furniture'
-      && (placement.entityId === 'wall-art' || placement.entityId === 'halloween-bat-garland');
-    const savedYIsValid = isWallDecoration
-      ? saved.y >= 12 && saved.y <= 46
-      : isLadi
-        ? (saved.y >= 22 && saved.y <= 38) || saved.y >= 62
-        : saved.y >= (isCharacter ? 62 : 52);
-    return {
-      ...placement,
-      zoneId: saved.zoneId,
-      x: savedLadiWasPerched ? placement.x : Math.max(4, Math.min(96, saved.x)),
-      y: savedYIsValid ? Math.max(8, Math.min(94, saved.y)) : placement.y,
-      scale: Math.max(.5, Math.min(1.35, saved.scale)),
-    } as HouseLayoutPlacement;
-  });
-};
-
-const shopRewardIsAvailable = (availableUntil?: string) => {
-  if (!availableUntil) {return true;}
-  return new Date(`${availableUntil}T23:59:59`).getTime() >= Date.now();
-};
+import type { Contribution, ContributionId, FamilyMember, FamilyMemberId, SavingGoal, WorldEffect } from '@/domain/types';
+import { createFamilyMembers, createSavingGoals } from '@/infrastructure/fixtures/family-world-fixtures';
+import { contributionsActions } from './family-world-actions/contributions-actions';
+import { familyActions } from './family-world-actions/family-actions';
+import { homeActions } from './family-world-actions/home-actions';
+import { lifecycleActions } from './family-world-actions/lifecycle-actions';
+import { savingsActions } from './family-world-actions/savings-actions';
+import { shopActions } from './family-world-actions/shop-actions';
+import { createFamilyWorldState } from './family-world-state';
 
 export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
-  state: () => ({
-    signedInMemberId: FAMILY_MEMBER_IDS.laura,
-    viewerRole: 'child' as ViewerRole,
-    activeChildId: createFamilyMembers()
-      .find((member) => member.role === 'child')?.id ?? FAMILY_MEMBER_IDS.laura,
-    activeGoalId: SAVING_GOAL_IDS.bike,
-    onboardingCompleted: false,
-    familySetupOpen: false,
-    balances: { [FAMILY_MEMBER_IDS.laura]: 340, [FAMILY_MEMBER_IDS.adam]: 220, [FAMILY_MEMBER_IDS.daniel]: 175 } as Record<FamilyMemberId, number>,
-    familyCurrencyCode: 'CHF' as FamilyCurrency,
-    ladirchenPerCurrencyUnit: 10,
-    perfectRatingBonusPercent: 5,
-    baseSavingsRatePercent: 1,
-    streakBonusRate: 0.5,
-    completionBonusRate: 3.5,
-    ratingBonusRate: 2.5,
-    maxSavingsRatePercent: 8,
-    simulatedEnergy: null as number | null,
-    piggyBankOpen: false,
-    rewardAnimation: { visible: false, value: 0, version: 0 },
-    guardianGiftAnimation: { visible: false, guardianName: '', goalTitle: '', destination: 'goal' as 'balance' | 'goal', amount: 0, version: 0 },
-    pendingGuardianGifts: [] as GuardianGift[],
-    completedWeeklyStreak: 0,
-    currentWeekDays: 4,
-    currentWeekTarget: 7,
-    houseLevel: 0 as HouseStageLevel,
-    houseThemeId: HOUSE_THEMES[0]?.id ?? 'sunny-dollhouse',
-    ownedHouseThemeIds: HOUSE_THEMES.filter(theme => theme.ownedByDefault).map(theme => theme.id),
-    subscriptionTier: 'pro' as SubscriptionTier,
-    houseLayout: createHouseLayoutPlacements(),
-    homeCustomizationHydrated: false,
-    familyAggregatesHydrated: false,
-    revealVersion: 0,
-    snackbar: { visible: false, message: '' },
-    members: normalizeFamilyMembers(createFamilyMembers()),
-    pets: normalizeFamilyPets(createFamilyPets()),
-    contributions: createContributions(),
-    goals: createSavingGoals(),
-    accessories: createHouseAccessories(),
-    promotions: createPromotions(),
-    shopRewards: createShopRewards(),
-  }),
+  state: createFamilyWorldState,
 
   getters: {
     activeChild(state): FamilyMember {
@@ -151,7 +47,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     balanceFor: (state) => (memberId: FamilyMemberId): number => state.balances[memberId] ?? 0,
     displayNameFor: (state) => (memberId: FamilyMemberId): string => {
       const member = state.members.find((item) => item.id === memberId);
-      return member?.nickname?.trim() || member?.name || 'Familienmitglied';
+      return member?.nickname?.trim() || member?.name || '';
     },
     balance(): number {
       return this.balanceFor(this.activeChildId);
@@ -198,8 +94,8 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     },
     familyEnergy(): number {
       if (this.simulatedEnergy !== null) {return this.simulatedEnergy;}
-      const children = this.members.filter((member) => member.role === 'child');
-      return calculateAverageEnergy(children.map((child) => this.contributionProgress(child.id)));
+      const participants = this.members.filter((member) => member.role === 'child' || member.participatesInWeeklyGoal);
+      return calculateAverageEnergy(participants.map((member) => this.contributionProgress(member.id)));
     },
     houseMeetsMinimumEnergy(): boolean {
       return this.familyEnergy >= MINIMUM_HOUSE_ENERGY_PERCENT;
@@ -209,6 +105,9 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     },
     rewardForContribution: (state) => (contributionId: ContributionId): number => {
       const contribution = state.contributions.find((item) => item.id === contributionId);
+      if (contribution?.status === 'approved' && contribution.earnedReward !== undefined) {
+        return contribution.earnedReward;
+      }
       const promotion = state.promotions.find(
         (item) => item.contributionId === contributionId && isPromotionAvailable(item),
       );
@@ -230,8 +129,9 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
         createSavingGoals()[0]!;
     },
     ownSavingGoals(state): SavingGoal[] {
+      const ownerId = state.viewerRole === 'child' ? state.signedInMemberId : state.activeChildId;
       return state.goals.filter(
-        (goal) => goal.ownerId === state.activeChildId && (
+        (goal) => goal.ownerId === ownerId && (
           state.viewerRole === 'child' ||
           goal.visibility === 'family' ||
           (goal.visibility === 'guardians' && resolveFamilyPermissions(state.members.find(member => member.id === state.signedInMemberId)).canViewGuardianGoals)
@@ -243,6 +143,20 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     },
     totalInterestEarned(): number {
       return this.ownSavingGoals.reduce((sum, goal) => sum + (goal.interestEarned ?? 0), 0);
+    },
+    todayEarnedFor: (state) => (memberId: FamilyMemberId): number => {
+      const today = new Date().toDateString();
+      return state.contributions
+        .filter((contribution) => contribution.status === 'approved' &&
+          contribution.assigneeId === memberId &&
+          contribution.approvedAt !== undefined &&
+          new Date(contribution.approvedAt).toDateString() === today)
+        .reduce((sum, contribution) => sum +
+          (contribution.earnedReward ?? contribution.reward) +
+          (contribution.earnedRatingBonus ?? 0), 0);
+    },
+    todayEarned(): number {
+      return this.todayEarnedFor(this.activeChildId);
     },
     withdrawableGoalBalance: () => (goal?: SavingGoal): number => {
       if (!goal) {return 0;}
@@ -296,716 +210,11 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
   },
 
   actions: {
-    async hydrateFamilyAggregates() {
-      if (this.familyAggregatesHydrated) {return;}
-      try {
-        const familyId = familyContext.activeFamilyId;
-        const [profile, contributions, savings, rewardShop, progression] = await Promise.all([
-          familyProfileService.load(familyId),
-          contributionsService.load(familyId),
-          savingsService.load(familyId),
-          rewardShopService.load(familyId),
-          familyProgressionService.load(familyId),
-        ]);
-        if (profile) {
-          this.members = normalizeFamilyMembers([...profile.state.members]);
-          this.pets = normalizeFamilyPets(profile.state.pets);
-          this.onboardingCompleted = profile.state.onboardingCompleted;
-          this.subscriptionTier = profile.state.subscriptionTier;
-        }
-        if (contributions) {
-          this.contributions = [...contributions.state.contributions];
-          this.promotions = [...contributions.state.promotions];
-        }
-        if (savings) {
-          this.balances = { ...savings.state.balances };
-          this.familyCurrencyCode = savings.state.familyCurrencyCode;
-          this.goals = [...savings.state.goals];
-          this.ladirchenPerCurrencyUnit = savings.state.ladirchenPerCurrencyUnit;
-          this.pendingGuardianGifts = [...savings.state.pendingGuardianGifts];
-        }
-        if (rewardShop) {
-          this.shopRewards = [...rewardShop.state.rewards];
-        }
-        if (progression) {
-          this.completedWeeklyStreak = progression.state.completedWeeklyStreak;
-          this.currentWeekDays = progression.state.currentWeekDays;
-          this.currentWeekTarget = progression.state.currentWeekTarget;
-          this.houseLevel = progression.state.houseLevel;
-        }
-        const activeChild = this.members.find(member => member.id === this.activeChildId && member.role === 'child') ??
-          this.members.find(member => member.role === 'child');
-        if (activeChild) {
-          this.activeChildId = activeChild.id;
-        }
-      } catch {
-        this.notify('Die lokalen Familiendaten konnten nicht vollständig geladen werden.');
-      } finally {
-        this.familyAggregatesHydrated = true;
-        this.familySetupOpen = !this.onboardingCompleted;
-      }
-      await this.hydrateHomeCustomization();
-    },
-    async hydrateHomeCustomization() {
-      if (this.homeCustomizationHydrated) {return;}
-      try {
-        const snapshot = await homeCustomizationService.load(familyContext.activeFamilyId);
-        if (snapshot) {
-          const accessoryStateById = new Map(snapshot.state.accessories.map(item => [item.id, item]));
-          this.accessories = createHouseAccessories().map((accessory) => {
-            const saved = accessoryStateById.get(accessory.id);
-            return saved
-              ? { ...accessory, owned: accessory.owned || saved.owned, equipped: accessory.equipped || saved.equipped }
-              : accessory;
-          });
-          this.houseLayout = mergeHouseLayout(snapshot.state.placements);
-          this.ownedHouseThemeIds = snapshot.state.editions.filter(edition => edition.owned).map(edition => edition.id);
-          this.houseThemeId = this.ownedHouseThemeIds.includes(snapshot.state.selectedEditionId)
-            ? snapshot.state.selectedEditionId
-            : 'sunny-dollhouse';
-        }
-      } catch {
-        this.notify('Die lokale Hausgestaltung konnte nicht geladen werden.');
-      } finally {
-        this.homeCustomizationHydrated = true;
-      }
-    },
-    persistHomeCustomization() {
-      homeCustomizationService.scheduleSave({
-        familyId: familyContext.activeFamilyId,
-        updatedBy: this.signedInMemberId,
-        state: {
-          accessories: this.accessories.map(accessory => ({
-            id: accessory.id,
-            equipped: accessory.equipped,
-            owned: accessory.owned,
-          })),
-          editions: HOUSE_THEMES.map(edition => ({
-            id: edition.id,
-            owned: this.ownedHouseThemeIds.includes(edition.id),
-          })),
-          placements: this.houseLayout,
-          selectedEditionId: this.houseThemeId,
-        },
-      }, () => this.notify('Die Hausgestaltung konnte nicht lokal gespeichert werden.'));
-    },
-    persistFamilyProfile() {
-      familyProfileService.scheduleSave({
-        familyId: familyContext.activeFamilyId,
-        state: { members: this.members, onboardingCompleted: this.onboardingCompleted, pets: this.pets, subscriptionTier: this.subscriptionTier },
-        updatedBy: this.signedInMemberId,
-      }, () => this.notify('Die Familienprofile konnten nicht lokal gespeichert werden.'));
-    },
-    persistContributions() {
-      contributionsService.scheduleSave({
-        familyId: familyContext.activeFamilyId,
-        state: { contributions: this.contributions, promotions: this.promotions },
-        updatedBy: this.signedInMemberId,
-      }, () => this.notify('Die Beiträge konnten nicht lokal gespeichert werden.'));
-    },
-    persistSavings() {
-      savingsService.scheduleSave({
-        familyId: familyContext.activeFamilyId,
-        state: {
-          balances: this.balances,
-          familyCurrencyCode: this.familyCurrencyCode,
-          goals: this.goals,
-          ladirchenPerCurrencyUnit: this.ladirchenPerCurrencyUnit,
-          pendingGuardianGifts: this.pendingGuardianGifts,
-        },
-        updatedBy: this.signedInMemberId,
-      }, () => this.notify('Die Spar- und Guthabendaten konnten nicht lokal gespeichert werden.'));
-    },
-    persistRewardShop() {
-      rewardShopService.scheduleSave({
-        familyId: familyContext.activeFamilyId,
-        state: { rewards: this.shopRewards },
-        updatedBy: this.signedInMemberId,
-      }, () => this.notify('Der Familien-Shop konnte nicht lokal gespeichert werden.'));
-    },
-    persistFamilyProgression() {
-      familyProgressionService.scheduleSave({
-        familyId: familyContext.activeFamilyId,
-        state: {
-          completedWeeklyStreak: this.completedWeeklyStreak,
-          currentWeekDays: this.currentWeekDays,
-          currentWeekTarget: this.currentWeekTarget,
-          houseLevel: this.houseLevel,
-        },
-        updatedBy: this.signedInMemberId,
-      }, () => this.notify('Der Familienfortschritt konnte nicht lokal gespeichert werden.'));
-    },
-    notify(message: string) {
-      this.snackbar.message = message;
-      this.snackbar.visible = true;
-    },
-    setFamilyCurrency(currency: FamilyCurrency) {
-      if (!this.permissions.canManageFamily) {return;}
-      if (!supportedFamilyCurrencies.includes(currency)) {return;}
-      this.familyCurrencyCode = currency;
-      this.persistSavings();
-    },
-    setLadirchenExchangeRate(rate: number) {
-      if (!this.permissions.canManageFamily) {return;}
-      if (!Number.isFinite(rate) || rate < 1) {return;}
-      this.ladirchenPerCurrencyUnit = Math.round(rate);
-      this.persistSavings();
-    },
-    switchSession(memberId: FamilyMemberId) {
-      const member = this.members.find((item) => item.id === memberId);
-      if (!member) {return;}
-      this.signedInMemberId = member.id;
-      this.viewerRole = member.role;
-      if (member.role === 'child') {
-        this.activeChildId = member.id;
-        this.revealNextGuardianGift();
-      }
-      this.notify(`Prototyp-Sitzung: Angemeldet als ${member.name}.`);
-    },
-    selectChildForGuardian(memberId: FamilyMemberId) {
-      if (this.viewerRole !== 'guardian') {return;}
-      const child = this.members.find((member) => member.id === memberId && member.role === 'child');
-      if (!child) {return;}
-      this.activeChildId = child.id;
-      this.notify(`${child.name} ist für die Detailansichten ausgewählt.`);
-    },
-    saveOwnAppearance(appearance: AvatarAppearance) {
-      const member = this.members.find(item => item.id === this.signedInMemberId && item.role === this.viewerRole);
-      if (!member || (member.role === 'child' && member.id !== this.activeChildId)) {return;}
-      member.appearance = { ...appearance };
-      this.persistFamilyProfile();
-      this.notify('Dein neues Profil wurde gespeichert.');
-    },
-    setOwnNickname(nickname: string) {
-      if (this.viewerRole !== 'child' || this.signedInMemberId !== this.activeChildId) {return;}
-      const member = this.members.find((item) => item.id === this.activeChildId && item.role === 'child');
-      if (!member) {return;}
-      member.nickname = nickname.trim().slice(0, 18) || undefined;
-      this.persistFamilyProfile();
-      this.notify(member.nickname ? `Dein Spitzname ist jetzt ${member.nickname}.` : 'Dein Spitzname wurde entfernt.');
-    },
-    submitContribution(id: ContributionId) {
-      const contribution = this.contributions.find((item) => item.id === id);
-      if (this.viewerRole !== 'child' || !contribution || contribution.assigneeId !== this.activeChildId || contribution.status !== 'available') {return;}
-      contribution.status = 'pending';
-      this.persistContributions();
-      this.notify('Beitrag eingereicht. Die Welt reagiert nach der Bestätigung.');
-    },
-    claimContribution(id: ContributionId) {
-      const contribution = this.contributions.find((item) => item.id === id);
-      if (this.viewerRole !== 'child' || !contribution || contribution.assigneeId || contribution.status !== 'available') {return;}
-      contribution.assigneeId = this.activeChildId;
-      this.persistContributions();
-      this.notify(`„${contribution.title}“ gehört jetzt zu deinen Beiträgen.`);
-    },
-    assignContribution(id: ContributionId, childId?: FamilyMemberId) {
-      if (!this.permissions.canManageContent) {return;}
-      const contribution = this.contributions.find((item) => item.id === id);
-      if (!contribution || contribution.status !== 'available') {return;}
-      if (childId && !this.members.some((member) => member.id === childId && member.role === 'child')) {return;}
-      contribution.assigneeId = childId || undefined;
-      contribution.invitedChildIds = [];
-      this.persistContributions();
-      const childName = childId ? this.members.find((member) => member.id === childId)?.name : undefined;
-      this.notify(childName ? `„${contribution.title}“ wurde ${childName} zugewiesen.` : `„${contribution.title}“ ist jetzt für alle Kinder offen.`);
-    },
-    approveContribution(id: ContributionId, stars: number) {
-      const contribution = this.contributions.find((item) => item.id === id);
-      if (!this.permissions.canManageContent || !contribution?.assigneeId || contribution.status !== 'pending') {return;}
-      contribution.status = 'approved';
-      contribution.stars = stars;
-      const baseReward = this.rewardForContribution(id);
-      const ratingBonus = stars === 5 && this.perfectRatingBonusPercent > 0
-        ? Math.max(1, Math.round(baseReward * (this.perfectRatingBonusPercent / 100)))
-        : 0;
-      const reward = baseReward + ratingBonus;
-      this.balances[contribution.assigneeId] = this.balanceFor(contribution.assigneeId) + reward;
-      this.persistContributions();
-      this.persistSavings();
-      this.playRewardAnimation(reward);
-      this.notify(
-        ratingBonus > 0
-          ? `${reward} Ladirchen inklusive ${this.perfectRatingBonusPercent} % Sternebonus wurden gutgeschrieben.`
-          : `${reward} Ladirchen wurden gutgeschrieben.`,
-      );
-    },
-    returnContribution(id: ContributionId) {
-      const contribution = this.contributions.find((item) => item.id === id);
-      if (!this.permissions.canManageContent || !contribution || contribution.status !== 'pending') {return;}
-      contribution.status = 'available';
-      this.persistContributions();
-      this.notify('Der Beitrag wurde mit der Bitte um Nachbesserung zurückgegeben.');
-    },
-    addContribution(input: NewContribution) {
-      if (!this.permissions.canManageContent) {return;}
-      this.contributions.push({
-        id: createDomainId.contribution(createUuid()),
-        ...input,
-        area: 'Familie',
-        status: 'available',
-        energy: input.kind === 'basic' ? input.energy : 0,
-        assigneeId: input.assigneeId || undefined,
-        dueLabel: input.kind === 'basic' ? 'Täglich' : 'Freiwillig',
-        worldEffect: input.kind === 'basic' ? 'sparkle' : undefined,
-      });
-      this.persistContributions();
-      this.notify('Beitrag wurde lokal hinzugefügt.');
-    },
-    setContributionPartners(id: ContributionId, childIds: FamilyMemberId[]) {
-      const contribution = this.contributions.find((item) => item.id === id);
-      if (!contribution || contribution.kind !== 'extra') {return;}
-      const allowedIds = new Set(this.members
-        .filter((member) => member.role === 'child' && member.id !== contribution.assigneeId)
-        .map((member) => member.id));
-      contribution.invitedChildIds = childIds.filter((childId) => allowedIds.has(childId));
-      this.persistContributions();
-      const names = this.members
-        .filter((member) => contribution.invitedChildIds?.includes(member.id))
-        .map((member) => member.name);
-      this.notify(names.length > 0 ? `${names.join(' und ')} wurden zur Spezialaufgabe eingeladen.` : 'Die Einladungen wurden entfernt.');
-    },
-    toggleCheer(id: SavingGoalId) {
-      const goal = this.goals.find((item) => item.id === id);
-      if (!goal) {return;}
-      if (this.viewerRole === 'guardian') {
-        const canViewGoal = (goal.visibility === 'family' && (goal.ownerId !== 'family' || this.permissions.canViewFamilyGoals)) ||
-          (goal.visibility === 'guardians' && this.permissions.canViewGuardianGoals);
-        if (!this.permissions.canSupportChildGoals || !canViewGoal) {return;}
-      }
-      goal.cheered = !goal.cheered;
-      this.persistSavings();
-      this.notify(goal.cheered ? 'Deine Unterstützung ist für die Familie sichtbar.' : 'Unterstützung zurückgenommen.');
-    },
-    addGoal(input: NewGoal) {
-      if (this.viewerRole === 'guardian' && !this.permissions.canManageGoals) {return;}
-      const id = createDomainId.savingGoal(createUuid());
-      this.goals.push({ id, ...input, ownerId: this.activeChildId, saved: 5, starterBonus: 5, shared: false, cheered: false });
-      this.activeGoalId = id;
-      this.persistSavings();
-      this.notify('Neues Sparziel angelegt: 5 L geschützter Startbonus wurden gutgeschrieben.');
-    },
-    updateGoal(id: SavingGoalId, input: NewGoal) {
-      if (this.viewerRole === 'guardian' && !this.permissions.canManageGoals) {return;}
-      const goal = this.goals.find((item) => item.id === id && item.ownerId === this.activeChildId);
-      if (!goal) {return;}
-      goal.title = input.title;
-      goal.icon = input.icon;
-      goal.target = Math.max(goal.saved, input.target);
-      goal.visibility = input.visibility;
-      this.persistSavings();
-      this.notify('Sparziel wurde aktualisiert.');
-    },
-    supportGoal(id: SavingGoalId, amount: number) {
-      if (!this.permissions.canSupportChildGoals) {return;}
-      const goal = this.goals.find((item) =>
-        item.id === id &&
-        item.ownerId !== 'family' &&
-        item.visibility !== 'private' &&
-        (this.permissions.canViewGuardianGoals || item.visibility === 'family'),
-      );
-      if (!goal || goal.ownerId === 'family') {return;}
-      const safeAmount = Math.max(0, Math.min(Math.round(amount), goal.target - goal.saved));
-      if (safeAmount === 0) {return;}
-      goal.saved += safeAmount;
-      const childName = this.members.find((member) => member.id === goal.ownerId)?.name ?? 'das Kind';
-      const guardianName = this.signedInMember.name.replace(' (du)', '');
-      this.pendingGuardianGifts.push({
-        id: createDomainId.guardianGift(createUuid()),
-        childId: goal.ownerId,
-        guardianName,
-        goalTitle: goal.title,
-        destination: 'goal',
-        amount: safeAmount,
-      });
-      this.persistSavings();
-      this.notify(`${safeAmount} Ladirchen wurden ${childName}s Sparziel geschenkt.`);
-    },
-    giftLadirchenToGoal(id: SavingGoalId, amount: number) {
-      if (this.viewerRole !== 'child') {return;}
-      const goal = this.goals.find((item) =>
-        item.id === id &&
-        item.ownerId !== this.activeChildId &&
-        item.ownerId !== 'family' &&
-        item.visibility === 'family',
-      );
-      const recipient = goal
-        ? this.members.find((member) => member.id === goal.ownerId && member.role === 'child')
-        : undefined;
-      if (!goal || !recipient) {return;}
-      const safeAmount = Math.max(0, Math.min(
-        Math.round(amount),
-        this.availableBalance,
-        goal.target - goal.saved,
-      ));
-      if (safeAmount === 0) {return;}
-      this.balances[this.activeChildId] = this.balance - safeAmount;
-      goal.saved += safeAmount;
-      this.pendingGuardianGifts.push({
-        id: createDomainId.guardianGift(createUuid()),
-        childId: recipient.id,
-        guardianName: this.signedInMember.name,
-        goalTitle: goal.title,
-        destination: 'goal',
-        amount: safeAmount,
-      });
-      this.persistSavings();
-      this.notify(`${safeAmount} Ladirchen wurden ${recipient.name}s Sparziel geschenkt.`);
-    },
-    giftLadirchenToChild(childId: FamilyMemberId, amount: number, reason: string) {
-      if (!this.permissions.canManageContent) {return;}
-      const child = this.members.find((member) => member.id === childId && member.role === 'child');
-      const safeAmount = Math.max(1, Math.min(10_000, Math.round(amount)));
-      const safeReason = reason.trim();
-      if (!child || !safeReason) {return;}
-      this.balances[child.id] = this.balanceFor(child.id) + safeAmount;
-      this.pendingGuardianGifts.push({
-        id: createDomainId.guardianGift(createUuid()),
-        childId: child.id,
-        guardianName: this.signedInMember.name.replace(' (du)', ''),
-        goalTitle: safeReason,
-        destination: 'balance',
-        amount: safeAmount,
-      });
-      this.persistSavings();
-      this.notify(`${safeAmount} Ladirchen wurden ${child.name} als besonderes Geschenk gutgeschrieben.`);
-    },
-    revealNextGuardianGift() {
-      if (this.viewerRole !== 'child' || this.guardianGiftAnimation.visible) {return;}
-      const giftIndex = this.pendingGuardianGifts.findIndex((gift) => gift.childId === this.activeChildId);
-      if (giftIndex < 0) {return;}
-      const [gift] = this.pendingGuardianGifts.splice(giftIndex, 1);
-      if (!gift) {return;}
-      this.guardianGiftAnimation = {
-        visible: true,
-        guardianName: gift.guardianName,
-        goalTitle: gift.goalTitle,
-        destination: gift.destination ?? 'goal',
-        amount: gift.amount,
-        version: this.guardianGiftAnimation.version + 1,
-      };
-      this.persistSavings();
-    },
-    dismissGuardianGift() {
-      this.guardianGiftAnimation.visible = false;
-      setTimeout(() => this.revealNextGuardianGift(), 250);
-    },
-    inviteGuardian(name: string, email: string, guardianAccess: GuardianAccessLevel = 'supporter') {
-      if (!this.permissions.canInviteMembers) {return;}
-      const normalizedName = name.toLocaleLowerCase('de');
-      const preset = normalizedName.includes('oma') ? 'grandma' : normalizedName.includes('opa') ? 'grandpa' : 'adult';
-      this.members.push({
-        id: createDomainId.familyMember(createUuid()),
-        name,
-        email,
-        avatar: '🧑',
-        color: '#7e8db8',
-        role: 'guardian',
-        guardianAccess,
-        weeklyStreak: 0,
-        invitationPending: true,
-        appearance: createGuardianAvatarAppearance(preset),
-      });
-      this.persistFamilyProfile();
-      this.notify(`Einladung an ${name} wurde im Prototyp vorgemerkt.`);
-    },
-    setGuardianAccess(memberId: FamilyMemberId, guardianAccess: GuardianAccessLevel) {
-      if (!this.permissions.canManageFamily || memberId === this.signedInMemberId) {return;}
-      const member = this.members.find(item => item.id === memberId && item.role === 'guardian');
-      if (!member) {return;}
-      member.guardianAccess = guardianAccess;
-      this.persistFamilyProfile();
-      this.notify(`${member.name} hat jetzt die Berechtigung „${guardianAccess === 'admin' ? 'Administration' : 'Zielbegleitung'}“.`);
-    },
-    addPromotion(input: NewPromotion) {
-      if (!this.permissions.canManageContent) {return;}
-      const contribution = this.contributions.find((item) => item.id === input.contributionId);
-      if (!contribution) {return;}
-      this.promotions.push({
-        id: createDomainId.promotion(createUuid()),
-        ...input,
-        title: `Nur heute: ${input.multiplier}-fache Ladirchen`,
-        active: true,
-      });
-      this.persistContributions();
-      this.notify(`Bonusaktion für „${contribution.title}“ wurde aktiviert.`);
-    },
-    addShopReward(input: NewShopReward) {
-      if (!this.permissions.canManageContent) {return;}
-      this.shopRewards.unshift({ id: createDomainId.shopReward(createUuid()), ...input, status: 'available' });
-      this.persistRewardShop();
-      this.notify(`„${input.title}“ wurde in den Familien-Shop gestellt.`);
-    },
-    requestShopReward(id: ShopRewardId) {
-      const reward = this.shopRewards.find((item) => item.id === id);
-      if (this.viewerRole !== 'child' || !reward || reward.status !== 'available' || reward.quantity < 1 || !shopRewardIsAvailable(reward.availableUntil) || reward.price > this.availableBalance) {return;}
-      if (!shopRedemptionIsOpen()) {
-        this.notify('Einlösungen sind heute geschlossen. Morgen ist der Familien-Shop wieder bis 18:00 Uhr geöffnet.');
-        return;
-      }
-      reward.status = 'requested';
-      reward.requesterId = this.activeChildId;
-      this.persistRewardShop();
-      this.notify(`${reward.price} Ladirchen sind für „${reward.title}“ reserviert.`);
-    },
-    cancelShopRewardRequest(id: ShopRewardId) {
-      const reward = this.shopRewards.find((item) => item.id === id && item.requesterId === this.activeChildId);
-      if (!reward || reward.status !== 'requested') {return;}
-      reward.status = 'available';
-      reward.requesterId = undefined;
-      this.persistRewardShop();
-      this.notify('Die Reservierung wurde aufgehoben.');
-    },
-    decideShopReward(id: ShopRewardId, approved: boolean) {
-      const reward = this.shopRewards.find((item) => item.id === id);
-      if (!this.permissions.canManageContent || !reward || reward.status !== 'requested') {return;}
-      if (approved) {
-        if (!shopRedemptionIsOpen()) {
-          this.notify('Nach 18:00 Uhr können Belohnungen nicht mehr freigegeben werden.');
-          return;
-        }
-        const requesterId = reward.requesterId;
-        if (!requesterId) {return;}
-        this.balances[requesterId] = this.balanceFor(requesterId) - reward.price;
-        reward.quantity = Math.max(0, reward.quantity - 1);
-        reward.status = reward.quantity > 0 ? 'available' : 'redeemed';
-        reward.requesterId = undefined;
-        this.persistSavings();
-        this.notify(`„${reward.title}“ wurde freigegeben.`);
-      } else {
-        reward.status = 'available';
-        reward.requesterId = undefined;
-        this.notify('Die Anfrage wurde zurückgegeben.');
-      }
-      this.persistRewardShop();
-    },
-    playRewardAnimation(value: number) {
-      this.rewardAnimation.value = value;
-      this.rewardAnimation.version += 1;
-      this.rewardAnimation.visible = true;
-      window.setTimeout(() => {
-        this.rewardAnimation.visible = false;
-      }, 1450);
-    },
-    openFamilySetup() {
-      if (this.onboardingCompleted && !this.permissions.canManageFamily) {return;}
-      this.familySetupOpen = true;
-    },
-    completeFamilySetup(members: FamilyMember[], pets: FamilyPet[]) {
-      const normalizedMembers = normalizeFamilyMembers(members);
-      this.members = normalizedMembers;
-      this.pets = pets;
-      const activeChildStillExists = normalizedMembers.some(
-        (member) => member.id === this.activeChildId && member.role === 'child',
-      );
-      if (!activeChildStillExists) {
-        this.activeChildId = normalizedMembers.find((member) => member.role === 'child')?.id ?? this.activeChildId;
-      }
-      this.onboardingCompleted = true;
-      this.familySetupOpen = false;
-      this.persistFamilyProfile();
-      this.notify('Eure Familie ist eingerichtet. Willkommen in eurer Familienwelt!');
-    },
-    saveToGoal(id: SavingGoalId, amount: number) {
-      const goal = this.goals.find((item) => item.id === id);
-      if (!goal) {return;}
-      const remaining = Math.max(0, goal.target - goal.saved);
-      const safeAmount = Math.max(0, Math.min(amount, this.availableBalance, remaining));
-      if (safeAmount === 0) {return;}
-      goal.saved += safeAmount;
-      this.balances[this.activeChildId] = this.balance - safeAmount;
-      this.persistSavings();
-      this.notify(`${safeAmount} Ladirchen wurden dem Ziel zugeordnet.`);
-    },
-    withdrawFromGoal(id: SavingGoalId, amount: number) {
-      const goal = this.goals.find((item) => item.id === id && item.ownerId === this.activeChildId);
-      if (!goal) {return;}
-      const safeAmount = Math.max(0, Math.min(amount, this.withdrawableGoalBalance(goal)));
-      if (safeAmount === 0) {return;}
-      goal.saved -= safeAmount;
-      this.balances[this.activeChildId] = this.balance + safeAmount;
-      this.persistSavings();
-      this.notify(`${safeAmount} Ladirchen sind wieder frei für den Familien-Shop.`);
-    },
-    cancelGoal(id: SavingGoalId) {
-      const goalIndex = this.goals.findIndex((item) => item.id === id && item.ownerId === this.activeChildId);
-      if (goalIndex < 0) {return;}
-      const goal = this.goals[goalIndex];
-      if (!goal) {return;}
-      const completed = goal.saved >= goal.target;
-      const forfeitedBonus = completed ? 0 : Math.min(goal.starterBonus ?? 0, goal.saved);
-      const returned = Math.max(0, goal.saved - forfeitedBonus);
-      this.balances[this.activeChildId] = this.balance + returned;
-      this.goals.splice(goalIndex, 1);
-      if (this.activeGoalId === id) {
-        this.activeGoalId = this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? SAVING_GOAL_IDS.bike;
-      }
-      this.persistSavings();
-      this.notify(forfeitedBonus > 0
-        ? `Sparziel aufgelöst: ${returned} L sind wieder frei, der 5-L-Startbonus ist verfallen.`
-        : `Sparziel aufgelöst: ${returned} L sind wieder frei.`);
-    },
-    creditWeeklyInterestDemo() {
-      let credited = 0;
-      for (const goal of this.goals) {
-        if (goal.ownerId === 'family' || goal.saved <= 0) {continue;}
-        const remaining = Math.max(0, goal.target - goal.saved);
-        const interest = Math.min(
-          remaining,
-          Math.max(1, Math.round(goal.saved * (this.savingsInterestRateFor(goal.ownerId) / 100))),
-        );
-        goal.saved += interest;
-        goal.interestEarned = (goal.interestEarned ?? 0) + interest;
-        credited += interest;
-      }
-      if (credited > 0) {this.persistSavings();}
-      this.notify(`${credited} Ladirchen Wochenzinsen wurden auf die Sparpläne verteilt.`);
-    },
-    creditActiveChildInterestDemo(rate: number): number {
-      if (this.viewerRole !== 'child') {return 0;}
-      const safeRate = Math.max(0, Math.min(this.maxSavingsRatePercent, rate));
-      let credited = 0;
-      for (const goal of this.goals) {
-        if (goal.ownerId !== this.activeChildId || goal.saved <= 0) {continue;}
-        const remaining = Math.max(0, goal.target - goal.saved);
-        const interest = Math.min(remaining, Math.max(1, Math.round(goal.saved * (safeRate / 100))));
-        if (interest <= 0) {continue;}
-        goal.saved += interest;
-        goal.interestEarned = (goal.interestEarned ?? 0) + interest;
-        credited += interest;
-      }
-      if (credited > 0) {
-        this.persistSavings();
-        this.notify(`${credited} Ladirchen Zinsen sind in deinen Sparplänen angekommen.`);
-      } else {
-        this.notify('Für eine Zinsauszahlung brauchst du Ladirchen in einem noch nicht erfüllten Sparplan.');
-      }
-      return credited;
-    },
-    purchaseAccessory(id: HouseAccessory['id']) {
-      const accessory = this.accessories.find((item) => item.id === id);
-      if (this.viewerRole !== 'child' || !accessory || accessory.owned || accessory.price > this.availableBalance) {return;}
-      accessory.owned = true;
-      accessory.equipped = false;
-      this.balances[this.activeChildId] = this.balance - accessory.price;
-      this.persistHomeCustomization();
-      this.persistSavings();
-      this.notify(`${accessory.title} wurde gekauft und liegt jetzt im Möbellager.`);
-    },
-    purchaseFurnitureSet(id: FurnitureSetId) {
-      const set = FURNITURE_SETS.find((item) => item.id === id);
-      if (this.viewerRole !== 'child' || !set || set.minimumHouseLevel > this.houseLevel || this.ownedFurnitureSetIds.includes(id) || set.price > this.availableBalance) {return;}
-      for (const accessory of this.accessories) {
-        if (!set.accessoryIds.includes(accessory.id)) {continue;}
-        accessory.owned = true;
-        accessory.equipped = false;
-      }
-      this.balances[this.activeChildId] = this.balance - set.price;
-      this.persistHomeCustomization();
-      this.persistSavings();
-      this.notify(`${set.name} wurde gekauft und vollständig im Möbellager abgelegt.`);
-    },
-    toggleAccessory(id: HouseAccessory['id']) {
-      const accessory = this.accessories.find((item) => item.id === id);
-      if (!accessory?.owned) {return;}
-      accessory.equipped = !accessory.equipped;
-      this.persistHomeCustomization();
-    },
-    storeHouseAccessory(id: HouseAccessoryId) {
-      const accessory = this.accessories.find(item => item.id === id);
-      if (!accessory?.owned || !accessory.equipped) {return;}
-      accessory.equipped = false;
-      this.persistHomeCustomization();
-    },
-    placeStoredHouseAccessory(id: HouseAccessoryId, requestedZoneId: HouseZoneId) {
-      const accessory = this.accessories.find(item => item.id === id);
-      const placement = this.houseLayout.find(item => item.entityType === 'furniture' && item.entityId === id);
-      if (!accessory?.owned || !placement) {return;}
-      const targetZoneId: HouseZoneId = accessory.placement === 'outside'
-        ? 'garden'
-        : requestedZoneId === 'garden'
-          ? accessory.roomId ?? 'living-room'
-          : requestedZoneId;
-      const targetRoom = HOUSE_ROOMS.find(item => item.id === targetZoneId);
-      if (targetRoom && targetRoom.minimumHouseLevel > this.houseLevel) {return;}
-      if (placement.zoneId !== targetZoneId) {
-        placement.zoneId = targetZoneId;
-        placement.x = 50;
-        placement.y = accessory.visual === 'wall-art' ? 28 : targetZoneId === 'garden' ? 68 : 66;
-      }
-      accessory.equipped = true;
-      this.persistHomeCustomization();
-    },
-    purchaseHouseTheme(id: HouseThemeId) {
-      const edition = HOUSE_THEMES.find(item => item.id === id);
-      if (this.viewerRole !== 'child' || !edition || this.ownedHouseThemeIds.includes(id) || edition.price > this.availableBalance) {return;}
-      this.ownedHouseThemeIds.push(id);
-      this.houseThemeId = id;
-      this.balances[this.activeChildId] = this.balance - edition.price;
-      this.persistHomeCustomization();
-      this.persistSavings();
-      this.notify(`${edition.name} wurde gekauft und am Haus angebracht.`);
-    },
-    selectHouseTheme(id: HouseThemeId) {
-      if (!this.ownedHouseThemeIds.includes(id)) {return;}
-      this.houseThemeId = id;
-      this.persistHomeCustomization();
-      const edition = HOUSE_THEMES.find(item => item.id === id);
-      this.notify(`${edition?.name ?? 'Hausstil'} ist jetzt aktiv.`);
-    },
-    moveHouseEntity(placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) {
-      if (!this.canArrangeHouse) {return;}
-      const room = HOUSE_ROOMS.find((item) => item.id === zoneId);
-      if (room && room.minimumHouseLevel > this.houseLevel) {return;}
-      const placement = this.houseLayout.find((item) => item.id === placementId);
-      if (!placement) {return;}
-      placement.zoneId = zoneId;
-      placement.x = Math.max(4, Math.min(96, Number(x.toFixed(2))));
-      placement.y = Math.max(8, Math.min(94, Number(y.toFixed(2))));
-      this.persistHomeCustomization();
-    },
-    resetHouseEntityPosition(placementId: HouseLayoutPlacementId) {
-      if (!this.canArrangeHouse) {return;}
-      const initialPlacement = createHouseLayoutPlacements().find((item) => item.id === placementId);
-      const placement = this.houseLayout.find((item) => item.id === placementId);
-      if (!initialPlacement || !placement) {return;}
-      placement.zoneId = initialPlacement.zoneId;
-      placement.x = initialPlacement.x;
-      placement.y = initialPlacement.y;
-      placement.scale = initialPlacement.scale;
-      this.persistHomeCustomization();
-    },
-    setSimulatedEnergy(value: number | null) {
-      if (!this.permissions.canManageContent) {return;}
-      this.simulatedEnergy = value === null ? null : Math.max(0, Math.min(100, Math.round(value)));
-    },
-    completeWeekDemo(): boolean {
-      if (!this.permissions.canManageContent) {return false;}
-      if (!this.houseMeetsMinimumEnergy) {
-        this.notify('Die Hausentwicklung wartet: Die gemeinsame Hausenergie muss mindestens 60 % erreichen.');
-        return false;
-      }
-      this.completedWeeklyStreak += 1;
-      this.currentWeekDays = 0;
-      this.houseLevel = HOUSE_STAGES[Math.min(HOUSE_STAGES.length - 1, this.houseLevel + 1)]!.level;
-      this.revealVersion += 1;
-      const member = this.members.find((item) => item.id === this.activeChildId);
-      if (member) {member.weeklyStreak = this.completedWeeklyStreak;}
-      this.persistFamilyProgression();
-      this.persistFamilyProfile();
-      this.notify('Wochenserie geschafft: Eine neue Hausstufe wurde enthüllt!');
-      return true;
-    },
-    failWeekDemo() {
-      if (!this.permissions.canManageContent) {return;}
-      this.completedWeeklyStreak = 0;
-      this.currentWeekDays = 0;
-      this.houseLevel = HOUSE_STAGES[Math.max(0, this.houseLevel - 1)]!.level;
-      this.revealVersion += 1;
-      const member = this.members.find((item) => item.id === this.activeChildId);
-      if (member) {member.weeklyStreak = 0;}
-      this.persistFamilyProgression();
-      this.persistFamilyProfile();
-      this.notify('Das Haus ist eine Stufe zurückgegangen. Alle gekauften Dinge bleiben erhalten.');
-    },
+    ...lifecycleActions,
+    ...familyActions,
+    ...contributionsActions,
+    ...savingsActions,
+    ...shopActions,
+    ...homeActions,
   },
 });
