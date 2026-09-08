@@ -38,6 +38,22 @@
     </div>
 
     <div class="kind-filter">
+      <span class="kind-filter-label">Status</span>
+      <div class="status-options" role="group" aria-label="Aufgabenstatus auswählen">
+        <button
+          v-for="option in statusOptions"
+          :key="option.value"
+          :aria-pressed="status === option.value"
+          :class="{ active: status === option.value }"
+          type="button"
+          @click="selectStatus(option.value)"
+        >
+          <v-icon :icon="option.icon" size="15" />{{ option.title }}
+        </button>
+      </div>
+    </div>
+
+    <div class="kind-filter kind-filter--type">
       <span class="kind-filter-label">Welche Art?</span>
       <div class="kind-options" role="group" aria-label="Aufgabenart auswählen">
         <button
@@ -60,10 +76,12 @@ import type { ContributionKind } from '@/domain/types';
 
 type ContributionScope = 'all' | 'mine' | 'open';
 type KindFilter = 'all' | ContributionKind;
+type StatusFilter = 'open' | 'completed';
 
 defineProps<{ openCount: number }>();
 const scope = defineModel<ContributionScope>('scope', { required: true });
 const kind = defineModel<KindFilter>('kind', { required: true });
+const status = defineModel<StatusFilter>('status', { required: true });
 
 const scopeOptions: Array<{
   description: string;
@@ -81,6 +99,16 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   { value: 'basic', title: 'Hausenergie', icon: '⚡' },
   { value: 'extra', title: 'Extra-Ladirchen', icon: '🪙' },
 ];
+
+const statusOptions: Array<{ icon: string; title: string; value: StatusFilter }> = [
+  { value: 'open', title: 'Noch offen', icon: 'mdi-progress-clock' },
+  { value: 'completed', title: 'Abgeschlossen', icon: 'mdi-check-circle-outline' },
+];
+
+const selectStatus = (value: StatusFilter) => {
+  status.value = value;
+  if (value === 'completed' && scope.value === 'open') {scope.value = 'mine';}
+};
 </script>
 
 <style scoped>
@@ -269,6 +297,9 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.54);
 }
+.kind-filter--type {
+  margin-top: 7px;
+}
 .kind-filter-label {
   flex: 0 0 auto;
   color: var(--lad-muted);
@@ -277,11 +308,13 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   letter-spacing: 0.06em;
   @apply text-uppercase;
 }
-.kind-options {
+.kind-options,
+.status-options {
   @apply d-flex flex-wrap;
   gap: 6px;
 }
-.kind-options button {
+.kind-options button,
+.status-options button {
   padding: 7px 9px;
   @apply d-inline-flex align-center ga-1;
   color: #53645d;
@@ -294,12 +327,18 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   font-size: 8px;
   font-weight: 850;
 }
-.kind-options button.active {
+.kind-options button.active,
+.status-options button.active {
   color: #185f4d;
   transform: translateY(-1px);
   border-color: #79c9a7;
   background: white;
   box-shadow: 0 4px 0 #c3e7d5;
+}
+.status-options button:last-child.active {
+  color: #356b9b;
+  border-color: #8dc2ea;
+  box-shadow: 0 4px 0 #c8e3f4;
 }
 @keyframes filter-wink {
   0%,
