@@ -33,8 +33,8 @@ export const shopActions = {
   },
   requestShopReward(this: FamilyWorldStoreContext, id: ShopRewardId) {
     const reward = this.shopRewards.find((item) => item.id === id);
-    if (this.viewerRole !== 'child' || !reward || reward.status !== 'available' || reward.quantity < 1 || !shopRewardIsPublished(reward) || reward.price > this.availableBalance) {return;}
-    if (!shopRedemptionIsOpen()) {
+    if (this.viewerRole !== 'child' || !reward || reward.status !== 'available' || reward.quantity < 1 || !shopRewardIsPublished(reward, this.familyTimeZone) || reward.price > this.availableBalance) {return;}
+    if (!shopRedemptionIsOpen(this.familyTimeZone)) {
       this.notify('notifications.shop.closed');
       return;
     }
@@ -55,7 +55,7 @@ export const shopActions = {
     const reward = this.shopRewards.find((item) => item.id === id);
     if (!this.permissions.canManageContent || !reward || reward.status !== 'requested') {return;}
     if (approved) {
-      if (!shopRedemptionIsOpen()) {
+      if (!shopRedemptionIsOpen(this.familyTimeZone)) {
         this.notify('notifications.shop.approvalClosed');
         return;
       }

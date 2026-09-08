@@ -228,6 +228,7 @@ import type { ShopReward, ShopRewardCategory } from '@/domain/types';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { FURNITURE_SETS, HOUSE_THEMES } from '@/features/world/data/house-catalog';
 import RoomFurniture from '@/features/world/components/RoomFurniture.vue';
+import { calendarDateInTimeZone, calendarDateIsWithin } from '@/domain/zoned-calendar';
 
 const store = useFamilyWorldStore();
 const route = useRoute();
@@ -257,7 +258,7 @@ const categoryOptions: Array<{ title: string; value: ShopRewardCategory }> = [
 ];
 const createEmptyReward = () => ({ title: '', description: '', icon: '🎁', price: 100, category: 'activity' as ShopRewardCategory, quantity: 1, conditions: '', unlimited: true, availableUntil: '' });
 const newReward = reactive(createEmptyReward());
-const minimumAvailableDate = new Date().toLocaleDateString('sv-SE');
+const minimumAvailableDate = computed(() => calendarDateInTimeZone(currentTime.value, store.familyTimeZone));
 const canAddReward = computed(() => Boolean(
   newReward.icon.trim() && newReward.title.trim() && newReward.description.trim() && newReward.conditions.trim() &&
   newReward.price >= 1 && newReward.quantity >= 1 && (newReward.unlimited || newReward.availableUntil),
@@ -273,8 +274,9 @@ const visibleFurnitureSets = computed(() => FURNITURE_SETS.filter((set) =>
 ));
 const ownsEdition = (id: HouseThemeId) => store.ownedHouseThemeIds.includes(id);
 const ownsSet = (id: FurnitureSetId) => store.ownedFurnitureSetIds.includes(id);
-const redemptionOpen = computed(() => shopRedemptionIsOpen(currentTime.value));
-const rewardHasNotExpired = (reward: ShopReward) => !reward.availableUntil || new Date(`${reward.availableUntil}T23:59:59`).getTime() >= Date.now();
+const redemptionOpen = computed(() => shopRedemptionIsOpen(store.familyTimeZone, currentTime.value));
+const rewardHasNotExpired = (reward: ShopReward) => !reward.availableUntil ||
+  calendarDateIsWithin(minimumAvailableDate.value, undefined, reward.availableUntil);
 const canRequest = (reward: ShopReward) => redemptionOpen.value && reward.price <= store.availableBalance && reward.quantity > 0 && rewardHasNotExpired(reward);
 const addReward = () => {
   store.addShopReward({
