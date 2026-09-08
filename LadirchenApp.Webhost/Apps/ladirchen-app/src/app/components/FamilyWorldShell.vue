@@ -102,7 +102,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { AnimatePresence, motion, useReducedMotion } from 'motion-v';
 import { useI18n } from 'vue-i18n';
 
@@ -117,28 +117,23 @@ import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 import AppNavigationIcon from './AppNavigationIcon.vue';
 import GlobalLadiGuide from './GlobalLadiGuide.vue';
 import { useFamilyWorldStore } from '@/stores/family-world';
+import { isInstantInIsoWeek } from '@/domain/zoned-calendar';
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const appHydrated = ref(false);
 const introFinished = ref(false);
+let clockTimer: ReturnType<typeof window.setInterval> | undefined;
 void store.hydrateFamilyAggregates().finally(() => { appHydrated.value = true; });
 const reducedMotion = useReducedMotion();
 const streakDialog = ref(false);
 const headerBalanceMemberId = computed(() => store.viewerRole === 'guardian' ? store.signedInMemberId : store.activeChildId);
 const headerBalance = computed(() => store.viewerRole === 'guardian' ? store.balanceFor(store.signedInMemberId) : store.availableBalance);
 const childMembers = computed(() => store.members.filter(member => member.role === 'child'));
-const weekStart = computed(() => {
-  const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-  return start;
-});
 const childrenWeekContributions = computed(() => store.contributions.filter(contribution =>
   contribution.status === 'approved' &&
   contribution.approvedAt !== undefined &&
-  new Date(contribution.approvedAt).getTime() >= weekStart.value.getTime() &&
+  isInstantInIsoWeek(contribution.approvedAt, new Date(store.currentTimeMilliseconds), store.familyTimeZone) &&
   childMembers.value.some(child => child.id === contribution.assigneeId),
 ));
 const childrenWeekEarned = computed(() => childrenWeekContributions.value.reduce((sum, contribution) =>
@@ -178,6 +173,13 @@ const handleIntroFinished = () => {
   introFinished.value = true;
   store.revealNextContributionReward();
 };
+onMounted(() => {
+  store.refreshCurrentTime();
+  clockTimer = window.setInterval(() => store.refreshCurrentTime(), 30_000);
+});
+onBeforeUnmount(() => {
+  if (clockTimer !== undefined) {window.clearInterval(clockTimer);}
+});
 
 </script>
 
