@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="680" scrollable @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog :model-value="modelValue" max-width="500" scrollable @update:model-value="emit('update:modelValue', $event)">
     <v-card class="avatar-builder" rounded="xl">
       <header class="studio-header px-5 pt-4">
         <div><p class="eyebrow mb-0">Mein Profil</p><h2>{{ userName }}s Figurenstudio</h2></div>
@@ -58,8 +58,12 @@
       </v-card-text>
 
       <v-card-actions class="builder-actions px-5 py-3">
-        <v-btn rounded="lg" variant="text" @click="close">Abbrechen</v-btn><v-spacer />
-        <v-btn class="raised-button" color="primary" prepend-icon="mdi-check" rounded="lg" variant="flat" @click="save">Profil speichern</v-btn>
+        <v-btn class="studio-save-button" color="primary" rounded="lg" variant="flat" @click="save">
+          <v-icon class="studio-save-icon" icon="mdi-check-circle-outline" />
+          <span>Figur speichern</span>
+          <v-icon class="studio-save-arrow" icon="mdi-arrow-right" />
+          <i class="studio-save-shine" aria-hidden="true" />
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -171,8 +175,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 
 <style scoped>
 .avatar-builder {
-  height: min(850px, 94dvh);
-  max-height: min(850px, 94dvh);
+  height: min(660px, calc(100dvh - 28px));
+  max-height: min(660px, calc(100dvh - 28px));
   @apply d-flex flex-column overflow-hidden;
   background: #fffdf9;
 }
@@ -584,12 +588,56 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     0 0 0 3px var(--lad-mint);
 }
 .builder-actions {
-  @apply position-relative;
+  @apply position-relative justify-center;
   z-index: 3;
   @apply flex-shrink-0;
   border-top: 1px solid var(--lad-border);
   background: #fffdf8;
   box-shadow: 0 -10px 22px rgba(42, 69, 59, 0.06);
+}
+.studio-save-button {
+  min-width: 250px;
+  min-height: 50px !important;
+  padding-inline: 18px !important;
+  @apply position-relative overflow-hidden;
+  border: 2px solid rgba(255, 255, 255, 0.88) !important;
+  border-radius: 17px !important;
+  background: linear-gradient(135deg, #5bb9df, #43aa82) !important;
+  box-shadow:
+    0 4px 0 rgba(39, 120, 100, 0.72),
+    0 9px 18px rgba(45, 125, 104, 0.16) !important;
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.studio-save-button :deep(.v-btn__content) {
+  gap: 10px;
+}
+.studio-save-icon {
+  font-size: 23px;
+}
+.studio-save-arrow {
+  font-size: 19px;
+  transition: transform 0.18s ease;
+}
+.studio-save-button:hover .studio-save-arrow {
+  transform: translateX(4px);
+}
+.studio-save-shine {
+  width: 45px;
+  height: 160%;
+  @apply position-absolute pointer-events-none;
+  top: -30%;
+  left: -65px;
+  transform: rotate(17deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.58),
+    transparent
+  );
+  animation: studio-save-shine 3.8s ease-in-out infinite;
 }
 @keyframes studio-twinkle {
   0%,
@@ -600,6 +648,21 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   50% {
     opacity: 1;
     transform: rotate(90deg) scale(1.18);
+  }
+}
+@keyframes studio-save-shine {
+  0%,
+  55% {
+    left: -65px;
+    opacity: 0;
+  }
+  67% {
+    opacity: 0.8;
+  }
+  82%,
+  100% {
+    left: 115%;
+    opacity: 0;
   }
 }
 @media (max-width: 560px) {
@@ -638,7 +701,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .preview-decoration {
+  .preview-decoration,
+  .studio-save-shine {
     animation: none;
   }
 }

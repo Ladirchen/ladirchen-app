@@ -17,6 +17,7 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   readonly availableBalance: number;
   readonly balance: number;
   readonly canArrangeHouse: boolean;
+  readonly currentWeekDays: number;
   readonly houseMeetsMinimumEnergy: boolean;
   readonly ownedFurnitureSetIds: FurnitureSetId[];
   readonly permissions: FamilyPermissions;
@@ -34,6 +35,7 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   persistRewardShop: () => void;
   persistSavings: () => void;
   playRewardAnimation: (contribution: Contribution) => void;
+  refreshCurrentTime: () => void;
   revealNextContributionReward: () => void;
   revealNextGuardianGift: () => void;
   savingsInterestRateFor: (memberId: FamilyMemberId) => number;

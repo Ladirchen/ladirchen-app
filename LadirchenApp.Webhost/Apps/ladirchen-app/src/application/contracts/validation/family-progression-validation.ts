@@ -12,7 +12,5 @@ const stageLevels = new Set<number>(HOUSE_STAGES.map(item => item.level));
 export const isFamilyProgressionState: StateGuard<FamilyProgressionState> = (value): value is FamilyProgressionState =>
   isRecord(value) &&
   isNonNegativeInteger(value.completedWeeklyStreak) &&
-  isNonNegativeInteger(value.currentWeekDays) &&
   isInteger(value.currentWeekTarget) && value.currentWeekTarget > 0 &&
-  value.currentWeekDays <= value.currentWeekTarget &&
   isInteger(value.houseLevel) && stageLevels.has(value.houseLevel);

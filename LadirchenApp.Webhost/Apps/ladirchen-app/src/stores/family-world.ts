@@ -6,6 +6,8 @@ import type { FurnitureSetId } from '@/domain/house';
 import { resolveFamilyPermissions } from '@/domain/family-permissions';
 import type { FamilyPermissions } from '@/domain/family-permissions';
 import { isPromotionAvailable } from '@/domain/promotions';
+import { isSameCalendarDay } from '@/domain/zoned-calendar';
+import { currentWeekDaysFromContributions } from '@/domain/weekly-progress';
 import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
 import type { Contribution, ContributionId, FamilyMember, FamilyMemberId, SavingGoal, WorldEffect } from '@/domain/types';
 import { createFamilyMembers, createSavingGoals } from '@/infrastructure/fixtures/family-world-fixtures';
@@ -100,6 +102,9 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     houseMeetsMinimumEnergy(): boolean {
       return this.familyEnergy >= MINIMUM_HOUSE_ENERGY_PERCENT;
     },
+    currentWeekDays(state): number {
+      return currentWeekDaysFromContributions(state.contributions, state.familyTimeZone, new Date(state.currentTimeMilliseconds));
+    },
     currentDailyStreak(): number {
       return this.completedWeeklyStreak * this.currentWeekTarget + this.currentWeekDays;
     },
@@ -109,7 +114,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
         return contribution.earnedReward;
       }
       const promotion = state.promotions.find(
-        (item) => item.contributionId === contributionId && isPromotionAvailable(item),
+        (item) => item.contributionId === contributionId && isPromotionAvailable(item, state.familyTimeZone, new Date(state.currentTimeMilliseconds)),
       );
       return (contribution?.reward ?? 0) * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
     },
@@ -145,12 +150,12 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       return this.ownSavingGoals.reduce((sum, goal) => sum + (goal.interestEarned ?? 0), 0);
     },
     todayEarnedFor: (state) => (memberId: FamilyMemberId): number => {
-      const today = new Date().toDateString();
+      const today = new Date(state.currentTimeMilliseconds);
       return state.contributions
         .filter((contribution) => contribution.status === 'approved' &&
           contribution.assigneeId === memberId &&
           contribution.approvedAt !== undefined &&
-          new Date(contribution.approvedAt).toDateString() === today)
+          isSameCalendarDay(contribution.approvedAt, today, state.familyTimeZone))
         .reduce((sum, contribution) => sum +
           (contribution.earnedReward ?? contribution.reward) +
           (contribution.earnedRatingBonus ?? 0), 0);
@@ -181,7 +186,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
         (contribution) => contribution.kind === 'basic' && contribution.assigneeId === memberId,
       );
       const streak = memberId === state.activeChildId
-        ? state.completedWeeklyStreak * state.currentWeekTarget + state.currentWeekDays
+        ? state.completedWeeklyStreak * state.currentWeekTarget + currentWeekDaysFromContributions(state.contributions, state.familyTimeZone, new Date(state.currentTimeMilliseconds))
         : state.members.find((member) => member.id === memberId)?.weeklyStreak ?? 0;
       const ratedContributions = baseContributions.filter((contribution) => contribution.stars);
       const rating = ratedContributions.length === 0

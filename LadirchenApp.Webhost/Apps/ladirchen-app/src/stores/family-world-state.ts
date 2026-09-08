@@ -2,6 +2,7 @@ import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/dom
 import { HOUSE_THEMES } from '@/domain/house-catalog';
 import type { HouseStageLevel } from '@/domain/house';
 import type { ContributionId, FamilyCurrency, FamilyMember, FamilyPet, GuardianGift, HouseLayoutPlacement, SubscriptionTier, ViewerRole } from '@/domain/types';
+import { DEFAULT_FAMILY_TIME_ZONE } from '@/domain/time-zone';
 import { createContributions, createFamilyBalances, createFamilyMembers, createFamilyPets, createHouseAccessories, createHouseLayoutPlacements, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
 
 const AUTH_STATE_KEY = 'ladirchen:auth-state';
@@ -82,6 +83,7 @@ export const createFamilyWorldState = () => {
   const subscriptionTier = initialStateValue<SubscriptionTier>('pro');
   const snackbarParams: Record<string, number | string> = {};
   return {
+    currentTimeMilliseconds: Date.now(),
     isAuthenticated: authIsActive(),
     signedInMemberId: FAMILY_MEMBER_IDS.laura,
     viewerRole,
@@ -91,6 +93,7 @@ export const createFamilyWorldState = () => {
     familySetupOpen: false,
     balances: createFamilyBalances(),
     familyCurrencyCode,
+    familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
     ladirchenPerCurrencyUnit: 10,
     perfectRatingBonusPercent: 5,
     baseSavingsRatePercent: 1,
@@ -104,7 +107,6 @@ export const createFamilyWorldState = () => {
     guardianGiftAnimation,
     pendingGuardianGifts,
     completedWeeklyStreak: 0,
-    currentWeekDays: 4,
     currentWeekTarget: 7,
     houseLevel,
     houseThemeId: HOUSE_THEMES[0]?.id ?? 'sunny-dollhouse',

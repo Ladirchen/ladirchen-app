@@ -1,7 +1,8 @@
 import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
 import type { FamilyMember, FamilyPet, SubscriptionTier } from '@/domain/types';
+import type { IanaTimeZone } from '@/domain/time-zone';
 
-export const FAMILY_PROFILE_SCHEMA_VERSION = 1 as const;
+export const FAMILY_PROFILE_SCHEMA_VERSION = 2 as const;
 export const FAMILY_PROFILE_AGGREGATE_TYPE = 'family-profile' as const;
 
 export interface FamilyProfileState {
@@ -9,6 +10,7 @@ export interface FamilyProfileState {
   readonly onboardingCompleted: boolean;
   readonly pets: ReadonlyArray<FamilyPet>;
   readonly subscriptionTier: SubscriptionTier;
+  readonly timeZone: IanaTimeZone;
 }
 
 export type FamilyProfileSnapshot = VersionedAggregateSnapshot<

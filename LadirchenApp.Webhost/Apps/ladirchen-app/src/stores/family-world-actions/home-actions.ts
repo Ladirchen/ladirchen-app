@@ -109,7 +109,6 @@ export const homeActions = {
       return false;
     }
     this.completedWeeklyStreak += 1;
-    this.currentWeekDays = 0;
     this.houseLevel = HOUSE_STAGES[Math.min(HOUSE_STAGES.length - 1, this.houseLevel + 1)]!.level;
     this.revealVersion += 1;
     this.members
@@ -123,7 +122,6 @@ export const homeActions = {
   failWeekDemo(this: FamilyWorldStoreContext) {
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {return;}
     this.completedWeeklyStreak = 0;
-    this.currentWeekDays = 0;
     this.houseLevel = HOUSE_STAGES[Math.max(0, this.houseLevel - 1)]!.level;
     this.revealVersion += 1;
     this.members

@@ -1,7 +1,7 @@
 <template>
   <div
     class="page-view-switch"
-    :class="[`page-view-switch--${tone}`, { 'page-view-switch--compact': compact, 'page-view-switch--single': options.length === 1 }]"
+    :class="[`page-view-switch--${tone}`, { 'page-view-switch--compact': compact, 'page-view-switch--single': options.length === 1, 'page-view-switch--many': options.length === 3 }]"
     role="tablist"
     :aria-label="label"
   >
@@ -80,6 +80,24 @@ withDefaults(defineProps<{
 }
 .page-view-switch--single {
   grid-template-columns: minmax(0, 1fr);
+}
+.page-view-switch--many {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.page-view-switch--many button {
+  padding-inline: 8px;
+  gap: 6px;
+}
+.page-view-switch--many .page-view-icon {
+  width: 39px;
+  height: 39px;
+  border-radius: 13px;
+}
+.page-view-switch--many .page-view-copy strong {
+  font-size: 10px;
+}
+.page-view-switch--many .page-view-copy small {
+  font-size: 8px;
 }
 .page-view-switch button {
   min-height: 76px;
@@ -218,5 +236,21 @@ withDefaults(defineProps<{
   height: 17px;
   top: 5px;
   right: 5px;
+}
+@media (max-width: 430px) {
+  .page-view-switch--many button {
+    min-height: 82px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 7px 4px;
+    text-align: center;
+  }
+  .page-view-switch--many .page-view-copy small {
+    margin-top: 1px;
+  }
+  .page-view-switch--many .page-view-check {
+    top: 4px;
+    right: 4px;
+  }
 }
 </style>
