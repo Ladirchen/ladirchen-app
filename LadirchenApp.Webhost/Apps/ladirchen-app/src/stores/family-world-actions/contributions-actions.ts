@@ -37,7 +37,8 @@ export const contributionsActions = {
     const canRateChild = this.permissions.canManageContent && assignee?.role === 'child';
     const canRateGuardian = this.viewerRole === 'child' && assignee?.role === 'guardian';
     if ((!canRateChild && !canRateGuardian) || !contribution?.assigneeId || contribution.status !== 'pending') {return;}
-    const promotion = this.promotions.find(item => item.contributionId === id && isPromotionAvailable(item));
+    const approvalTime = new Date();
+    const promotion = this.promotions.find(item => item.contributionId === id && isPromotionAvailable(item, this.familyTimeZone, approvalTime));
     const baseReward = contribution.reward * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
     contribution.status = 'approved';
     contribution.stars = Math.max(1, Math.min(5, Math.round(stars)));
@@ -48,7 +49,7 @@ export const contributionsActions = {
     contribution.earnedReward = baseReward;
     contribution.earnedRatingBonus = ratingBonus;
     contribution.earnedPromotionMultiplier = promotion?.multiplier;
-    contribution.approvedAt = new Date().toISOString();
+    contribution.approvedAt = approvalTime.toISOString();
     contribution.rewardCelebrated = false;
     this.balances[contribution.assigneeId] = this.balanceFor(contribution.assigneeId) + reward;
     this.persistContributions();

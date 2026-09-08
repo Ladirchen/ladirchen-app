@@ -1,11 +1,14 @@
 import type { Promotion } from './types';
+import type { IanaTimeZone } from './time-zone';
+import { secondsSinceStartOfDay } from './zoned-calendar';
 
-export const promotionDeadline = (deadline: string, now = new Date()): Date => {
+const deadlineSeconds = (deadline: string): number => {
   const [hours = 0, minutes = 0] = deadline.split(':').map(Number);
-  const end = new Date(now);
-  end.setHours(hours, minutes, 0, 0);
-  return end;
+  return hours * 3_600 + minutes * 60;
 };
 
-export const isPromotionAvailable = (promotion: Promotion, now = new Date()): boolean =>
-  promotion.active && promotionDeadline(promotion.deadline, now).getTime() > now.getTime();
+export const remainingPromotionMilliseconds = (deadline: string, timeZone: IanaTimeZone, now = new Date()): number =>
+  Math.max(0, (deadlineSeconds(deadline) - secondsSinceStartOfDay(now, timeZone)) * 1_000 - now.getUTCMilliseconds());
+
+export const isPromotionAvailable = (promotion: Promotion, timeZone: IanaTimeZone, now = new Date()): boolean =>
+  promotion.active && remainingPromotionMilliseconds(promotion.deadline, timeZone, now) > 0;
