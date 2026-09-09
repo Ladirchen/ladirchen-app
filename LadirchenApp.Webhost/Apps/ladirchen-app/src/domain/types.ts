@@ -72,7 +72,6 @@ export interface FamilyPet {
   id: FamilyPetId;
   name: string;
   kind: FamilyPetKindId;
-  kindLabel: string;
   avatar: string;
   color: HexColor;
 }
@@ -129,7 +128,7 @@ export interface SavingGoal {
 export interface HouseAccessory {
   id: HouseAccessoryId;
   translationKey?: string;
-  category?: HouseAccessoryCategory;
+  category: HouseAccessoryCategory;
   title: string;
   description: string;
   icon: string;
