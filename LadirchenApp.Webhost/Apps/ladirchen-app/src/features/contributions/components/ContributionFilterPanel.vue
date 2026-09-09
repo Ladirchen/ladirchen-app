@@ -16,12 +16,12 @@
         </svg>
       </div>
       <div>
-        <h2 id="contribution-filter-title">Was möchtest du sehen?</h2>
-        <p>Wähle zuerst, für wen die Aufgaben sind.</p>
+        <h2 id="contribution-filter-title">{{ t('contributions.filter.title') }}</h2>
+        <p>{{ t('contributions.filter.description') }}</p>
       </div>
     </div>
 
-    <div class="scope-options" role="group" aria-label="Aufgaben auswählen">
+    <div class="scope-options" role="group" :aria-label="t('contributions.filter.scopeAria')">
       <button
         v-for="option in scopeOptions"
         :key="option.value"
@@ -38,8 +38,8 @@
     </div>
 
     <div class="kind-filter">
-      <span class="kind-filter-label">Status</span>
-      <div class="status-options" role="group" aria-label="Aufgabenstatus auswählen">
+      <span class="kind-filter-label">{{ t('contributions.filter.status') }}</span>
+      <div class="status-options" role="group" :aria-label="t('contributions.filter.statusAria')">
         <button
           v-for="option in statusOptions"
           :key="option.value"
@@ -54,8 +54,8 @@
     </div>
 
     <div class="kind-filter kind-filter--type">
-      <span class="kind-filter-label">Welche Art?</span>
-      <div class="kind-options" role="group" aria-label="Aufgabenart auswählen">
+      <span class="kind-filter-label">{{ t('contributions.filter.kind') }}</span>
+      <div class="kind-options" role="group" :aria-label="t('contributions.filter.kindAria')">
         <button
           v-for="option in kindOptions"
           :key="option.value"
@@ -72,6 +72,9 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 import type { ContributionKind } from '@/domain/types';
 
 type ContributionScope = 'all' | 'mine' | 'open';
@@ -82,28 +85,29 @@ defineProps<{ openCount: number }>();
 const scope = defineModel<ContributionScope>('scope', { required: true });
 const kind = defineModel<KindFilter>('kind', { required: true });
 const status = defineModel<StatusFilter>('status', { required: true });
+const { t } = useI18n();
 
-const scopeOptions: Array<{
+const scopeOptions = computed<Array<{
   description: string;
   icon: string;
   title: string;
   value: ContributionScope;
-}> = [
-  { value: 'mine', title: 'Meine Aufgaben', description: 'Schon für dich', icon: 'mdi-account-star-outline' },
-  { value: 'open', title: 'Freie Aufgaben', description: 'Such dir eine aus', icon: 'mdi-hand-wave-outline' },
-  { value: 'all', title: 'Alle Aufgaben', description: 'Alles ansehen', icon: 'mdi-view-grid-outline' },
-];
+}>>(() => [
+  { value: 'mine', title: t('contributions.filter.scope.mine.title'), description: t('contributions.filter.scope.mine.description'), icon: 'mdi-account-star-outline' },
+  { value: 'open', title: t('contributions.filter.scope.open.title'), description: t('contributions.filter.scope.open.description'), icon: 'mdi-hand-wave-outline' },
+  { value: 'all', title: t('contributions.filter.scope.all.title'), description: t('contributions.filter.scope.all.description'), icon: 'mdi-view-grid-outline' },
+]);
 
-const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
-  { value: 'all', title: 'Alle', icon: '✨' },
-  { value: 'basic', title: 'Hausenergie', icon: '⚡' },
-  { value: 'extra', title: 'Extra-Ladirchen', icon: '🪙' },
-];
+const kindOptions = computed<Array<{ icon: string; title: string; value: KindFilter }>>(() => [
+  { value: 'all', title: t('contributions.filter.kinds.all'), icon: '✨' },
+  { value: 'basic', title: t('contributions.filter.kinds.energy'), icon: '⚡' },
+  { value: 'extra', title: t('contributions.filter.kinds.extra'), icon: '🪙' },
+]);
 
-const statusOptions: Array<{ icon: string; title: string; value: StatusFilter }> = [
-  { value: 'open', title: 'Noch offen', icon: 'mdi-progress-clock' },
-  { value: 'completed', title: 'Abgeschlossen', icon: 'mdi-check-circle-outline' },
-];
+const statusOptions = computed<Array<{ icon: string; title: string; value: StatusFilter }>>(() => [
+  { value: 'open', title: t('contributions.filter.statuses.open'), icon: 'mdi-progress-clock' },
+  { value: 'completed', title: t('contributions.filter.statuses.completed'), icon: 'mdi-check-circle-outline' },
+]);
 
 const selectStatus = (value: StatusFilter) => {
   status.value = value;
@@ -111,54 +115,69 @@ const selectStatus = (value: StatusFilter) => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .contribution-filter {
   position: relative;
   isolation: isolate;
-  padding: 15px;
+  padding: 0.9375rem;
   overflow: hidden;
-  border: 2px solid rgba(62, 188, 140, 0.25);
-  border-radius: 28px;
+  @include raised-surface(
+    color-mix(in srgb, var(--lad-palette-mint) 25%, transparent),
+    color-mix(in srgb, var(--lad-palette-mint) 12%, transparent),
+    1.75rem,
+    0.4375rem
+  );
   background:
     radial-gradient(
       circle at 92% 7%,
-      rgba(255, 211, 105, 0.2) 0 38px,
-      transparent 39px
+      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent) 0 2.375rem,
+      transparent 2.4375rem
     ),
-    linear-gradient(145deg, #effbf5, #fff8e4);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100)
+    );
   box-shadow:
-    0 7px 0 rgba(62, 188, 140, 0.13),
-    0 14px 24px rgba(45, 104, 81, 0.07);
+    0 0.4375rem 0 color-mix(in srgb, var(--lad-palette-mint) 12%, transparent),
+    0 0.875rem 1.5rem
+      color-mix(in srgb, var(--lad-palette-teal-700) 8%, transparent);
 }
 .filter-heading {
-  margin-bottom: 13px;
+  margin-bottom: 0.8125rem;
   @apply d-flex align-center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 .filter-heading h2 {
   @apply ma-0;
-  font-size: 16px;
+  font-size: 1rem;
   letter-spacing: -0.02em;
 }
 .filter-heading p {
-  margin: 1px 0 0;
+  margin: 0.0625rem 0 0;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .filter-mascot {
-  width: 45px;
-  height: 45px;
-  @apply d-grid place-center;
-  flex: 0 0 45px;
-  border: 3px solid #fff;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #dff7eb, #fff0bf);
-  box-shadow: 0 4px 0 rgba(45, 137, 101, 0.22);
-  transform: rotate(-4deg);
+  @include icon-tile(
+    2.8125rem,
+    1rem,
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-150)
+    ),
+    color-mix(in srgb, var(--lad-palette-mint-strong) 20%, transparent),
+    -4deg,
+    0.1875rem solid var(--lad-palette-white)
+  );
+  flex-basis: 2.8125rem;
 }
 .filter-eyes {
-  width: 32px;
-  height: 25px;
+  width: 2rem;
+  height: 1.5625rem;
   @apply overflow-visible;
 }
 .filter-eye {
@@ -166,12 +185,12 @@ const selectStatus = (value: StatusFilter) => {
   transform-origin: center;
 }
 .filter-eye > ellipse {
-  fill: #fff;
-  stroke: #91a6a0;
+  fill: var(--lad-palette-white);
+  stroke: var(--lad-palette-muted-350);
   stroke-width: 1.2;
 }
 .filter-pupil {
-  fill: #263a42;
+  fill: var(--lad-palette-text);
   transform-box: fill-box;
   transform-origin: center;
   animation: filter-look 8.6s ease-in-out infinite;
@@ -188,22 +207,27 @@ const selectStatus = (value: StatusFilter) => {
 .scope-options {
   @apply d-grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-bottom: 7px;
-  border-bottom: 8px solid rgba(225, 202, 158, 0.35);
-  border-radius: 0 0 22px 22px;
+  gap: 0.5rem;
+  padding-bottom: 0.4375rem;
+  border-bottom: 0.5rem solid
+    color-mix(in srgb, var(--lad-palette-amber-200) 35%, transparent);
+  border-radius: 0 0 1.375rem 1.375rem;
 }
 .scope-options button {
   @apply min-w-0;
-  min-height: 100px;
-  padding: 10px 5px 9px;
+  min-height: 6.25rem;
+  padding: 0.625rem 0.3125rem 0.5625rem;
   @apply position-relative d-flex flex-column align-center justify-center;
-  gap: 3px;
+  gap: 0.1875rem;
   color: var(--lad-text);
-  border: 2px solid #cfe5da;
-  border-radius: 23px 23px 17px 17px;
-  background: linear-gradient(155deg, #fff, #eaf8f0);
-  box-shadow: 0 5px 0 #c5dfd1;
+  border: 0.125rem solid var(--lad-palette-teal-150);
+  border-radius: 1.4375rem 1.4375rem 1.0625rem 1.0625rem;
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
+  box-shadow: 0 0.3125rem 0 var(--lad-palette-teal-150);
   @apply cursor-pointer;
   font: inherit;
   transition:
@@ -213,132 +237,157 @@ const selectStatus = (value: StatusFilter) => {
     box-shadow 150ms ease;
 }
 .scope-options button:nth-child(2) {
-  border-color: #f0d69f;
-  background: linear-gradient(155deg, #fff, #fff1cf);
-  box-shadow: 0 5px 0 #ead2a3;
+  border-color: var(--lad-palette-amber-200);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 0.3125rem 0 var(--lad-palette-amber-200);
 }
 .scope-options button:nth-child(3) {
-  border-color: #d9d3ed;
-  background: linear-gradient(155deg, #fff, #eeeafb);
-  box-shadow: 0 5px 0 #d4cce8;
+  border-color: var(--lad-palette-blue-150);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
+  box-shadow: 0 0.3125rem 0 var(--lad-palette-purple-200);
 }
 .scope-options button:hover {
-  transform: translateY(-3px);
+  transform: translateY(-0.1875rem);
 }
 .scope-options button:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(72, 105, 91, 0.1);
+  transform: translateY(0.125rem);
+  box-shadow: 0 0.125rem 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
 }
 .scope-options button.active {
-  color: #16745a;
-  transform: translateY(-5px) rotate(-1deg);
-  border-color: #42ae82;
-  background: linear-gradient(155deg, #fff, #dff6e9);
+  color: var(--lad-palette-teal-700);
+  transform: translateY(-0.3125rem) rotate(-1deg);
+  border-color: var(--lad-palette-mint);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
   box-shadow:
-    0 8px 0 #a9d8bf,
-    0 12px 16px rgba(45, 107, 82, 0.1);
+    0 0.5rem 0 var(--lad-palette-muted-250),
+    0 0.75rem 1rem
+      color-mix(in srgb, var(--lad-palette-teal-700) 10%, transparent);
 }
 .scope-options button:nth-child(2).active {
-  color: #95600e;
-  transform: translateY(-5px) rotate(1deg);
-  border-color: #eba735;
-  background: linear-gradient(155deg, #fff, #ffebbd);
+  color: var(--lad-palette-amber-650);
+  transform: translateY(-0.3125rem) rotate(1deg);
+  border-color: var(--lad-palette-amber-450);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-amber-150)
+  );
   box-shadow:
-    0 8px 0 #e5bd72,
-    0 12px 16px rgba(145, 99, 30, 0.1);
+    0 0.5rem 0 var(--lad-palette-orange-350),
+    0 0.75rem 1rem
+      color-mix(in srgb, var(--lad-palette-amber-650) 10%, transparent);
 }
 .scope-options button:nth-child(3).active {
-  color: #705296;
-  border-color: #9d7ccc;
-  background: linear-gradient(155deg, #fff, #eee4fb);
+  color: var(--lad-palette-violet-500);
+  border-color: var(--lad-palette-purple-350);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
   box-shadow:
-    0 8px 0 #c8b3e4,
-    0 12px 16px rgba(92, 65, 128, 0.1);
+    0 0.5rem 0 var(--lad-palette-purple-200),
+    0 0.75rem 1rem
+      color-mix(in srgb, var(--lad-palette-violet-650) 10%, transparent);
 }
 .scope-options button :deep(.v-icon) {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 3px;
-  border: 3px solid #fff;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.1875rem;
+  border: 0.1875rem solid var(--lad-palette-white);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.65);
-  box-shadow: 0 4px 0 rgba(88, 127, 110, 0.12);
+  background: color-mix(in srgb, var(--lad-palette-white) 65%, transparent);
+  box-shadow: 0 0.25rem 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
 }
 .scope-options button strong {
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.2;
 }
 .scope-options button span {
   color: var(--lad-muted);
-  font-size: 7px;
+  font-size: 0.4375rem;
   line-height: 1.2;
 }
 .scope-options button b {
-  min-width: 21px;
-  height: 21px;
-  padding: 0 5px;
+  min-width: 1.3125rem;
+  height: 1.3125rem;
+  padding: 0 0.3125rem;
   @apply position-absolute;
-  top: 6px;
-  right: 6px;
+  top: 0.375rem;
+  right: 0.375rem;
   @apply d-grid place-center;
-  color: #8a5908;
-  border: 2px solid #fff;
-  border-radius: 8px;
-  background: #ffe4a8;
-  box-shadow: 0 2px 0 #dab56a;
-  font-size: 9px;
+  color: var(--lad-palette-amber-700);
+  border: 0.125rem solid var(--lad-palette-white);
+  border-radius: 0.5rem;
+  background: var(--lad-palette-amber-150);
+  box-shadow: 0 0.125rem 0 var(--lad-palette-orange-350);
+  font-size: 0.5625rem;
 }
 .kind-filter {
-  margin-top: 13px;
-  padding: 10px;
+  margin-top: 0.8125rem;
+  padding: 0.625rem;
   @apply d-flex align-center;
-  gap: 9px;
-  border: 1px dashed rgba(62, 111, 91, 0.2);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.54);
+  gap: 0.5625rem;
+  border: 0.0625rem dashed
+    color-mix(in srgb, var(--lad-palette-muted-700) 20%, transparent);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
 }
 .kind-filter--type {
-  margin-top: 7px;
+  margin-top: 0.4375rem;
 }
 .kind-filter-label {
   flex: 0 0 auto;
-  color: var(--lad-muted);
-  font-size: 8px;
-  font-weight: 850;
-  letter-spacing: 0.06em;
-  @apply text-uppercase;
+  @include overline(var(--lad-muted), var(--lad-font-size-micro), 0.06em);
+  font-weight: var(--lad-font-weight-strong);
 }
 .kind-options,
 .status-options {
   @apply d-flex flex-wrap;
-  gap: 6px;
+  gap: 0.375rem;
 }
 .kind-options button,
 .status-options button {
-  padding: 7px 9px;
+  padding: 0.4375rem 0.5625rem;
   @apply d-inline-flex align-center ga-1;
-  color: #53645d;
-  border: 1px solid rgba(73, 111, 96, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 2px 0 rgba(72, 105, 91, 0.09);
+  color: var(--lad-palette-muted-700);
+  border: 0.0625rem solid
+    color-mix(in srgb, var(--lad-palette-teal-600) 15%, transparent);
+  border-radius: var(--lad-radius-pill);
+  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  box-shadow: 0 0.125rem 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
   @apply cursor-pointer;
   font: inherit;
-  font-size: 8px;
-  font-weight: 850;
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-strong);
 }
 .kind-options button.active,
 .status-options button.active {
-  color: #185f4d;
-  transform: translateY(-1px);
-  border-color: #79c9a7;
+  color: var(--lad-palette-teal-700);
+  transform: translateY(-0.0625rem);
+  border-color: var(--lad-palette-teal-400);
   background: white;
-  box-shadow: 0 4px 0 #c3e7d5;
+  box-shadow: 0 0.25rem 0 var(--lad-palette-teal-150);
 }
 .status-options button:last-child.active {
-  color: #356b9b;
-  border-color: #8dc2ea;
-  box-shadow: 0 4px 0 #c8e3f4;
+  color: var(--lad-palette-blue-600);
+  border-color: var(--lad-palette-blue-250);
+  box-shadow: 0 0.25rem 0 var(--lad-palette-blue-150);
 }
 @keyframes filter-wink {
   0%,
@@ -372,27 +421,27 @@ const selectStatus = (value: StatusFilter) => {
   }
   28%,
   45% {
-    transform: translateX(-2px);
+    transform: translateX(-0.125rem);
   }
   58%,
   75% {
-    transform: translateX(2px);
+    transform: translateX(0.125rem);
   }
 }
-@media (max-width: 380px) {
+@include respond-down(compact) {
   .scope-options button {
-    min-height: 80px;
-    padding-inline: 3px;
+    min-height: 5rem;
+    padding-inline: 0.1875rem;
   }
   .scope-options button strong {
-    font-size: 10px;
+    font-size: 0.625rem;
   }
   .kind-filter {
     @apply align-start flex-column;
-    gap: 7px;
+    gap: 0.4375rem;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .filter-eye,
   .filter-pupil {
     animation: none;
