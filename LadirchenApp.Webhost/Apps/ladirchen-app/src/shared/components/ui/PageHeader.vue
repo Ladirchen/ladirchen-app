@@ -29,20 +29,26 @@ withDefaults(defineProps<{
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .family-world-page-header {
-  --header-accent: #2e9d75;
-  --header-accent-soft: #dff5e9;
-  min-height: 138px;
+  --header-accent: var(--lad-palette-teal-550);
+  --header-accent-soft: var(--lad-palette-background);
+  min-height: 8.625rem;
   @apply mb-5 pa-5 position-relative overflow-hidden d-flex align-center justify-space-between ga-4;
-  border: 1px solid color-mix(in srgb, var(--header-accent) 18%, white);
-  border-radius: 24px;
+  @include raised-surface(
+    color-mix(in srgb, var(--header-accent) 18%, white),
+    color-mix(in srgb, var(--header-accent) 14%, transparent),
+    var(--lad-radius-large),
+    0.3125rem,
+    0.0625rem
+  );
   background: linear-gradient(
     145deg,
-    #fffdf8 0%,
+    var(--lad-palette-surface) 0%,
     var(--header-accent-soft) 145%
   );
-  box-shadow: 0 5px 0 color-mix(in srgb, var(--header-accent) 14%, transparent);
 }
 .family-world-page-header::before,
 .family-world-page-header::after {
@@ -52,89 +58,82 @@ withDefaults(defineProps<{
   @apply pointer-events-none;
 }
 .family-world-page-header::before {
-  width: 130px;
-  height: 130px;
-  top: -77px;
-  right: -32px;
+  width: 8.125rem;
+  height: 8.125rem;
+  top: -4.8125rem;
+  right: -2rem;
   background: color-mix(in srgb, var(--header-accent-soft) 68%, transparent);
-  box-shadow: 0 0 0 18px
+  box-shadow: 0 0 0 1.125rem
     color-mix(in srgb, var(--header-accent-soft) 35%, transparent);
 }
 .family-world-page-header::after {
-  width: 90px;
-  height: 28px;
-  right: 48px;
-  bottom: -17px;
+  width: 5.625rem;
+  height: 1.75rem;
+  right: 3rem;
+  bottom: -1.0625rem;
   background: color-mix(in srgb, var(--header-accent-soft) 55%, transparent);
 }
 .family-world-page-header--blue {
-  --header-accent: #4e8fdd;
-  --header-accent-soft: #e7f3ff;
+  --header-accent: var(--lad-palette-blue);
+  --header-accent-soft: var(--lad-palette-background);
 }
 .family-world-page-header--amber {
-  --header-accent: #dfa03d;
-  --header-accent-soft: #fff0c9;
+  --header-accent: var(--lad-palette-amber-450);
+  --header-accent-soft: var(--lad-palette-amber-100);
 }
 .family-world-page-header--coral {
-  --header-accent: #e87867;
-  --header-accent-soft: #ffe8e2;
+  --header-accent: var(--lad-palette-coral);
+  --header-accent-soft: var(--lad-palette-amber-100);
 }
 .page-header-copy {
-  max-width: 310px;
+  max-width: 19.375rem;
   @apply position-relative;
   z-index: 1;
 }
 .page-header-kicker {
-  margin: 0 0 5px;
-  color: var(--header-accent);
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  @apply text-uppercase;
+  margin: 0 0 0.3125rem;
+  @include overline(var(--header-accent));
 }
 h1 {
   @apply ma-0;
-  color: var(--lad-text);
-  font-size: 27px;
-  line-height: 1.08;
-  letter-spacing: -0.045em;
+  @include heading(var(--lad-font-size-page), 1.08, -0.045em);
 }
 .page-header-copy > p:last-child {
-  margin: 7px 0 0;
-  color: var(--lad-muted);
-  font-size: 12px;
-  line-height: 1.45;
+  margin: 0.4375rem 0 0;
+  @include body-copy(var(--lad-font-size-body), 1.45);
 }
 .page-header-side {
-  min-width: 54px;
+  min-width: 3.375rem;
   @apply position-relative;
   z-index: 1;
   @apply d-flex align-center ga-2;
 }
 .page-header-icon {
-  width: 54px;
-  height: 54px;
-  @apply d-grid place-center;
+  @include icon-tile(
+    3.375rem,
+    var(--lad-radius-medium),
+    color-mix(in srgb, var(--lad-palette-white) 75%, transparent),
+    color-mix(in srgb, var(--header-accent) 13%, transparent),
+    0deg,
+    0
+  );
   color: var(--header-accent);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--header-accent) 13%, transparent);
 }
-@media (max-width: 390px) {
+@include respond-down(narrow) {
   .family-world-page-header {
-    min-height: 126px;
-    padding: 17px;
+    min-height: 7.875rem;
+    padding: 1.0625rem;
   }
   .page-header-copy {
-    max-width: 245px;
+    max-width: 15.3125rem;
   }
   .page-header-copy > p:last-child {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
   .page-header-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 15px;
+    width: 2.875rem;
+    height: 2.875rem;
+    border-radius: 0.9375rem;
   }
 }
 </style>

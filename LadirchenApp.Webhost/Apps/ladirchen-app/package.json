@@ -8,8 +8,9 @@
     "build": "vue-tsc --build --force && vp build",
     "preview": "vp preview",
     "build-only": "vp build",
+    "colors:check": "node ./scripts/color-palette.mjs",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint",
+    "lint": "node ./scripts/color-palette.mjs && eslint",
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
