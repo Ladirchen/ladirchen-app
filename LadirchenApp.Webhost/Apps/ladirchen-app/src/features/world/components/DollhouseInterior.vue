@@ -1,7 +1,7 @@
 <template>
   <div
     class="dollhouse-layout"
-    :class="[{ compact, editable, 'single-zone': isSingleZone, 'contextual-zone': isContextualZone, 'is-dragging-furniture': draggingFurniture }, `room-count-${visibleZoneIds.length}`]"
+    :class="[{ compact, editable, 'single-zone': isSingleZone, 'contextual-zone': isContextualZone, 'is-dragging-furniture': draggingFurniture }, `room-count-${visibleZoneIds.length}`, energyClass]"
     :style="contextGridStyle"
   >
     <section
@@ -12,11 +12,12 @@
       :data-zone-id="room.id"
       :style="{ '--room-wall': room.wall, '--room-floor': room.floor }"
     >
-      <button v-if="isPreviewZone(room.id)" class="room-navigation-hitbox" type="button" :aria-label="`${room.name} öffnen`" @click="selectPreviewZone(room.id)" />
-      <header v-if="showRoomLabels"><span>{{ room.icon }}</span><strong>{{ room.name }}</strong></header>
+      <button v-if="isPreviewZone(room.id)" class="room-navigation-hitbox" type="button" :aria-label="t('catalog.rooms.open', { room: t(room.nameKey) })" @click="selectPreviewZone(room.id)" />
+      <header v-if="showRoomLabels"><span>{{ room.icon }}</span><strong>{{ t(room.nameKey) }}</strong></header>
       <div class="room-window" aria-hidden="true"><i /><i /><i /><i /></div>
       <div class="room-baseboard" aria-hidden="true" />
       <div class="room-floor" aria-hidden="true" />
+      <div v-if="energy < 70" class="room-wear" aria-hidden="true"><i v-for="mark in 6" :key="mark" /></div>
       <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true" />
       <div v-if="room.id === 'children-room'" class="room-detail bunting" aria-hidden="true"><i v-for="index in 5" :key="index" /></div>
       <div v-if="room.id === 'creative-room'" class="room-detail paint-dots" aria-hidden="true"><i v-for="index in 6" :key="index" /></div>
@@ -40,6 +41,7 @@
         :placement="placement"
         :score="score"
         :speech="placement.entityType === 'ladi' ? ladiSpeech : ''"
+        :viewer-member-id="viewerMemberId"
         @ladi-interact="motivateLadi"
         @lostpointercapture="finishDragAtLastPosition"
         @pointercancel="cancelDrag"
@@ -55,13 +57,18 @@
       :class="{ 'is-focused': selectedZoneId === 'garden', 'is-peek': isContextualZone && selectedZoneId !== 'garden' }"
       data-zone-id="garden"
     >
-      <button v-if="isPreviewZone('garden')" class="room-navigation-hitbox" type="button" aria-label="Garten öffnen" @click="selectPreviewZone('garden')" />
-      <header v-if="showRoomLabels"><span>🌿</span><strong>Garten</strong></header>
+      <button v-if="isPreviewZone('garden')" class="room-navigation-hitbox" type="button" :aria-label="t('catalog.rooms.open', { room: t('catalog.rooms.garden') })" @click="selectPreviewZone('garden')" />
+      <header v-if="showRoomLabels"><span>🌿</span><strong>{{ t('catalog.rooms.garden') }}</strong></header>
       <div class="garden-sky" aria-hidden="true"><i /></div>
       <div class="garden-mountains" aria-hidden="true"><i /><i /><i /></div>
       <div class="garden-hills" aria-hidden="true"><i /><i /></div>
       <div class="garden-hedge" aria-hidden="true" />
       <div class="garden-lawn" aria-hidden="true" />
+      <div v-if="showsTerraceTransition" class="terrace-transition" :class="{ 'opens-to-garden': selectedZoneId === 'garden' }" aria-hidden="true">
+        <span class="terrace-frame"><i class="terrace-glass terrace-glass--fixed" /><i class="terrace-glass terrace-glass--door" /><b class="terrace-handle" /></span>
+        <span class="terrace-threshold" />
+        <span class="terrace-planter"><i /><i /><i /></span>
+      </div>
       <div class="garden-path" aria-hidden="true"><i /><i /><i /><i /></div>
       <div class="garden-flower-bed" aria-hidden="true"><i /><i /><i /><i /><i /></div>
       <HouseLayoutEntity
@@ -76,6 +83,7 @@
         :placement="placement"
         :score="score"
         :speech="placement.entityType === 'ladi' ? ladiSpeech : ''"
+        :viewer-member-id="viewerMemberId"
         @ladi-interact="motivateLadi"
         @lostpointercapture="finishDragAtLastPosition"
         @pointercancel="cancelDrag"
@@ -90,13 +98,17 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
+import { isHouseZoneId } from '@/application/contracts/family-aggregate-validation';
 import type { HouseRoomDefinition, HouseZoneId } from '@/domain/house';
-import type { FamilyMember, FamilyPet, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId } from '@/domain/types';
+import type { FamilyMember, FamilyMemberId, FamilyPet, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId } from '@/domain/types';
 
 import HouseLayoutEntity from './HouseLayoutEntity.vue';
+
+const { t } = useI18n();
 
 interface DragPayload {
   captureTarget: HTMLElement;
@@ -114,6 +126,7 @@ const props = withDefaults(defineProps<{
   accessories: HouseAccessory[];
   compact?: boolean;
   editable?: boolean;
+  energy?: number;
   includeGarden?: boolean;
   contextualNeighbors?: boolean;
   members: FamilyMember[];
@@ -124,7 +137,8 @@ const props = withDefaults(defineProps<{
   selectedZoneId?: HouseZoneId | 'all';
   showRoomLabels?: boolean;
   storageOpen?: boolean;
-}>(), { compact: false, contextualNeighbors: false, editable: false, includeGarden: false, selectedZoneId: 'all', showRoomLabels: true, storageOpen: false });
+  viewerMemberId?: FamilyMemberId;
+}>(), { compact: false, contextualNeighbors: false, editable: false, energy: 100, includeGarden: false, selectedZoneId: 'all', showRoomLabels: true, storageOpen: false });
 const emit = defineEmits<{
   move: [placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number];
   reset: [placementId: HouseLayoutPlacementId];
@@ -162,12 +176,15 @@ const contextualZoneIds = computed<HouseZoneId[]>(() => {
 });
 const displayedRooms = computed(() => props.rooms.filter((room) => contextualZoneIds.value.includes(room.id)));
 const gardenIsVisible = computed(() => props.includeGarden && contextualZoneIds.value.includes('garden'));
+const showsTerraceTransition = computed(() => gardenIsVisible.value && displayedRooms.value.some(room => room.id === 'kitchen'));
 const visibleZoneIds = computed<HouseZoneId[]>(() => orderedZoneIds.value.filter((zoneId) => contextualZoneIds.value.includes(zoneId)));
 const isContextualZone = computed(() => props.contextualNeighbors && props.selectedZoneId !== 'all' && visibleZoneIds.value.length > 1);
 const isSingleZone = computed(() => props.selectedZoneId !== 'all' && !isContextualZone.value);
 const contextGridStyle = computed(() => {
   if (!isContextualZone.value) return undefined;
-  const selectedIndex = visibleZoneIds.value.indexOf(props.selectedZoneId as HouseZoneId);
+  const selectedZoneId = props.selectedZoneId;
+  if (selectedZoneId === 'all') return undefined;
+  const selectedIndex = visibleZoneIds.value.indexOf(selectedZoneId);
   const columns = visibleZoneIds.value.map((_, index) => index === selectedIndex ? 'minmax(0, 3fr)' : 'minmax(52px, 1fr)').join(' ');
   return { '--context-columns': columns };
 });
@@ -210,6 +227,7 @@ const draggingFurniture = computed(() => {
   const placement = props.placements.find(item => item.id === drag.value?.placementId);
   return placement?.entityType === 'furniture';
 });
+const energyClass = computed(() => props.energy < 30 ? 'energy-critical' : props.energy < 55 ? 'energy-low' : props.energy < 70 ? 'energy-tired' : 'energy-bright');
 const dragOffset = (placementId: HouseLayoutPlacementId) => drag.value?.placementId === placementId
   ? { x: drag.value.offsetX, y: drag.value.offsetY }
   : undefined;
@@ -217,7 +235,8 @@ const startDrag = (event: PointerEvent, placement: HouseLayoutPlacement) => {
   if (!props.editable && !(props.storageOpen && placement.entityType === 'furniture')) return;
   event.preventDefault();
   event.stopPropagation();
-  const target = event.currentTarget as HTMLElement;
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLElement)) {return;}
   stopDragTracking();
   drag.value = {
     captureTarget: target,
@@ -268,9 +287,10 @@ const commitDrag = (clientX: number, clientY: number) => {
   }
   const zone = elementsAtDropPoint
     .map((element) => element.closest<HTMLElement>('[data-zone-id]'))
-    .find((element) => element?.dataset.zoneId && unlockedZones.value.includes(element.dataset.zoneId as HouseZoneId));
+    .find((element) => isHouseZoneId(element?.dataset.zoneId) && unlockedZones.value.includes(element.dataset.zoneId));
   try {
-    if (!zone?.dataset.zoneId) {
+    const zoneId = zone?.dataset.zoneId;
+    if (!zone || !isHouseZoneId(zoneId)) {
       emit('reset', activeDrag.placementId);
       return;
     }
@@ -281,7 +301,7 @@ const commitDrag = (clientX: number, clientY: number) => {
     const rawX = ((clientX - bounds.left) / bounds.width) * 100;
     const rawY = ((clientY - bounds.top) / bounds.height) * 100;
     const snapsToLadiPerch = placement?.entityType === 'ladi'
-      && zone.dataset.zoneId === 'living-room'
+      && zoneId === 'living-room'
       && rawX >= 6 && rawX <= 31
       && rawY >= 12 && rawY <= 47;
     const horizontalInset = isFloorEntity ? 7 : 3;
@@ -289,7 +309,7 @@ const commitDrag = (clientX: number, clientY: number) => {
     const maximumY = isWallDecoration ? 46 : 94;
     const x = snapsToLadiPerch ? 18 : Math.min(100 - horizontalInset, Math.max(horizontalInset, rawX));
     const y = snapsToLadiPerch ? 30 : Math.min(maximumY, Math.max(minimumY, rawY));
-    emit('move', activeDrag.placementId, zone.dataset.zoneId as HouseZoneId, x, y);
+    emit('move', activeDrag.placementId, zoneId, x, y);
   } finally {
     drag.value = null;
     emit('drag-state', null);
@@ -323,22 +343,23 @@ const cancelDrag = () => {
 };
 const motivateLadi = () => {
   ladiMotivation.value = props.score < 2.5
-    ? 'Ein kleiner Beitrag, dann bin ich wieder hellwach!'
+    ? t('world.interior.motivation.wakeUp')
     : props.score >= 4.8
-      ? 'Super-Team, auf zur nächsten Familienmission!'
+      ? t('world.interior.motivation.superTeam')
       : props.score >= 4.3
-        ? 'Cool bleiben und gemeinsam das Tagesziel knacken!'
-        : 'Jeder Beitrag macht unser Zuhause ein Stück lebendiger!';
+        ? t('world.interior.motivation.coolTeam')
+        : t('world.interior.motivation.default');
   if (motivationTimer !== undefined) window.clearTimeout(motivationTimer);
-  motivationTimer = window.setTimeout(() => { ladiMotivation.value = ''; }, 2800);
+  motivationTimer = window.setTimeout(() => { ladiMotivation.value = ''; }, 4800);
 };
-const perchMessages = ['Gemeinsam schaffen wir das!', 'Kleine Schritte, große Wirkung!', 'Wer hilft heute mit?', 'Ich glaube an euch!'];
+const perchMessageKeys = ['together', 'smallSteps', 'whoHelps', 'believe'] as const;
+const perchMessages = computed(() => perchMessageKeys.map(key => t(`world.interior.perch.${key}`)));
 const schedulePerchMessage = () => {
   perchScheduleTimer = window.setTimeout(() => {
     if (isLadiOnPerch.value) {
-      perchMessage.value = perchMessages[Math.floor(Math.random() * perchMessages.length)] ?? perchMessages[0]!;
+      perchMessage.value = perchMessages.value[Math.floor(Math.random() * perchMessages.value.length)] ?? perchMessages.value[0]!;
       if (perchMessageTimer !== undefined) window.clearTimeout(perchMessageTimer);
-      perchMessageTimer = window.setTimeout(() => { perchMessage.value = ''; }, 2400);
+      perchMessageTimer = window.setTimeout(() => { perchMessage.value = ''; }, 4200);
     }
     schedulePerchMessage();
   }, 6500 + Math.round(Math.random() * 4500));
@@ -352,19 +373,22 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .dollhouse-layout {
   @apply position-relative d-grid overflow-hidden;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   min-height: 430px;
   padding: 8px 8px 38px;
-  border: 1px solid rgba(83, 68, 55, 0.18);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
   border-radius: 24px;
-  background: #af7656;
+  background: var(--lad-palette-orange-500);
   box-shadow:
-    inset 0 0 0 5px rgba(255, 255, 255, 0.18),
-    0 8px 0 rgba(85, 64, 49, 0.12);
+    inset 0 0 0 5px
+      color-mix(in srgb, var(--lad-palette-white) 18%, transparent),
+    0 8px 0 color-mix(in srgb, var(--lad-palette-orange-750) 12%, transparent);
   touch-action: none;
 }
 .dollhouse-layout.room-count-1:not(:has(.garden-zone)) {
@@ -398,11 +422,12 @@ onUnmounted(() => {
     repeating-linear-gradient(
       100deg,
       transparent 0 32px,
-      rgba(91, 56, 39, 0.11) 33px 35px
+      color-mix(in srgb, var(--lad-palette-orange-750) 10%, transparent) 33px
+        35px
     ),
     linear-gradient(
       var(--room-floor),
-      color-mix(in srgb, var(--room-floor) 68%, #8b5e43)
+      color-mix(in srgb, var(--room-floor) 68%, var(--lad-palette-orange-600))
     );
   clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%);
   pointer-events: none;
@@ -462,7 +487,8 @@ onUnmounted(() => {
 .dollhouse-layout.contextual-zone .room-baseboard {
   bottom: 55%;
   z-index: 2;
-  box-shadow: 0 3px 4px rgba(92, 57, 38, 0.14);
+  box-shadow: 0 3px 4px
+    color-mix(in srgb, var(--lad-palette-orange-750) 15%, transparent);
 }
 .dollhouse-layout.contextual-zone .room-window {
   top: 24px;
@@ -474,12 +500,20 @@ onUnmounted(() => {
   border-width: 7px;
   border-radius: 18px 18px 10px 10px;
   background:
-    radial-gradient(circle at 74% 24%, #ffe481 0 12%, transparent 13%),
-    linear-gradient(155deg, transparent 0 62%, #87c48b 63% 100%),
-    linear-gradient(#9cdef0, #dff5ef);
+    radial-gradient(
+      circle at 74% 24%,
+      var(--lad-palette-amber-250) 0 12%,
+      transparent 13%
+    ),
+    linear-gradient(
+      155deg,
+      transparent 0 62%,
+      var(--lad-palette-teal-400) 63% 100%
+    ),
+    linear-gradient(var(--lad-palette-blue-250), var(--lad-palette-background));
   box-shadow:
-    0 5px 0 rgba(109, 76, 51, 0.15),
-    0 9px 16px rgba(76, 107, 102, 0.13);
+    0 5px 0 color-mix(in srgb, var(--lad-palette-orange-650) 15%, transparent),
+    0 9px 16px color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
 }
 .dollhouse-layout.contextual-zone
   .dollhouse-room.is-focused
@@ -491,8 +525,9 @@ onUnmounted(() => {
   left: -13px;
   height: 10px;
   border-radius: 5px;
-  background: #fff4df;
-  box-shadow: 0 3px 0 rgba(116, 79, 55, 0.14);
+  background: var(--lad-palette-amber-100);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-orange-650) 15%, transparent);
 }
 .dollhouse-layout.contextual-zone .dollhouse-room.is-peek {
   opacity: 0.9;
@@ -505,8 +540,8 @@ onUnmounted(() => {
   z-index: 35;
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.18)
+    color-mix(in srgb, var(--lad-palette-white) 5%, transparent),
+    color-mix(in srgb, var(--lad-palette-white) 18%, transparent)
   );
   pointer-events: none;
   transition: background 0.18s ease;
@@ -514,10 +549,11 @@ onUnmounted(() => {
 .dollhouse-layout.contextual-zone .dollhouse-room.is-peek:hover::before,
 .dollhouse-layout.contextual-zone
   .dollhouse-room.is-peek:focus-visible::before {
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--lad-palette-white) 5%, transparent);
 }
 .dollhouse-layout.contextual-zone .dollhouse-room.is-peek:focus-visible {
-  outline: 4px solid rgba(66, 177, 136, 0.62);
+  outline: 4px solid
+    color-mix(in srgb, var(--lad-palette-mint) 60%, transparent);
   outline-offset: -4px;
 }
 .dollhouse-layout.contextual-zone
@@ -533,7 +569,8 @@ onUnmounted(() => {
   background: transparent;
 }
 .room-navigation-hitbox:focus-visible {
-  outline: 4px solid rgba(66, 177, 136, 0.62);
+  outline: 4px solid
+    color-mix(in srgb, var(--lad-palette-mint) 60%, transparent);
   outline-offset: -4px;
 }
 .dollhouse-layout.room-count-3 .dollhouse-room:first-child,
@@ -544,19 +581,21 @@ onUnmounted(() => {
   grid-column: auto;
 }
 .dollhouse-room {
-  --room-wall: #fff3d2;
-  --room-floor: #d9a574;
+  --room-wall: var(--lad-palette-amber-100);
+  --room-floor: var(--lad-palette-orange-350);
   min-width: 0;
   min-height: 190px;
   @apply position-relative overflow-hidden;
-  border: 3px solid rgba(94, 61, 45, 0.62);
+  border: 3px solid
+    color-mix(in srgb, var(--lad-palette-orange-750) 60%, transparent);
   border-radius: 17px 17px 10px 10px;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--room-wall) 88%, white) 0 64%,
     var(--room-floor) 64% 100%
   );
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 2px 0
+    color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
 }
 .dollhouse-room > header {
   @apply position-absolute d-flex align-center;
@@ -565,15 +604,16 @@ onUnmounted(() => {
   z-index: 40;
   gap: 4px;
   padding: 3px 7px;
-  border: 1px solid rgba(77, 58, 46, 0.11);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #4c433d;
-  font-size: 8px;
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-muted-750) 10%, transparent);
+  border-radius: var(--lad-radius-pill);
+  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  color: var(--lad-palette-muted-750-2);
+  font-size: 0.5rem;
   backdrop-filter: blur(5px);
 }
 .dollhouse-room > header strong {
-  font-weight: 900;
+  font-weight: var(--lad-font-weight-heavy);
 }
 .room-window {
   width: 46px;
@@ -584,13 +624,15 @@ onUnmounted(() => {
   grid-template-columns: 1fr 1fr;
   z-index: 0;
   transform: translateX(-50%);
-  border: 5px solid #fff9eb;
+  border: 5px solid var(--lad-palette-surface);
   border-radius: 9px;
-  background: #9ed8e4;
-  box-shadow: 0 2px 0 rgba(74, 101, 101, 0.13);
+  background: var(--lad-palette-blue-250);
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 12%, transparent);
 }
 .room-window i {
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
 }
 .room-baseboard {
   height: 6px;
@@ -599,7 +641,11 @@ onUnmounted(() => {
   right: 0;
   bottom: 34%;
   z-index: 1;
-  background: color-mix(in srgb, var(--room-floor) 74%, #76513e);
+  background: color-mix(
+    in srgb,
+    var(--room-floor) 74%,
+    var(--lad-palette-orange-650)
+  );
 }
 .room-floor {
   height: 34%;
@@ -611,20 +657,148 @@ onUnmounted(() => {
     repeating-linear-gradient(
       105deg,
       transparent 0 22px,
-      rgba(93, 61, 42, 0.1) 23px 25px
+      color-mix(in srgb, var(--lad-palette-orange-750) 10%, transparent) 23px
+        25px
     ),
     linear-gradient(
       var(--room-floor),
-      color-mix(in srgb, var(--room-floor) 78%, #8f6548)
+      color-mix(in srgb, var(--room-floor) 78%, var(--lad-palette-orange-600))
     );
+}
+.room-wear {
+  @apply position-absolute pointer-events-none;
+  inset: 0;
+  z-index: 3;
+  opacity: 0.18;
+  transition: opacity 0.35s ease;
+}
+.room-wear::before {
+  width: 48px;
+  height: 42px;
+  content: "";
+  @apply position-absolute;
+  top: 0;
+  right: 0;
+  background: repeating-radial-gradient(
+    circle at 100% 0,
+    transparent 0 8px,
+    color-mix(in srgb, var(--lad-palette-orange-650) 35%, transparent) 9px 10px,
+    transparent 11px 15px
+  );
+  clip-path: polygon(28% 0, 100% 0, 100% 74%);
+}
+.room-wear i {
+  width: 22px;
+  height: 7px;
+  @apply position-absolute;
+  bottom: 8%;
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--lad-palette-orange-750) 40%,
+    transparent
+  );
+  filter: blur(0.4px);
+}
+.room-wear i:nth-child(1) {
+  left: 8%;
+  transform: rotate(-8deg);
+}
+.room-wear i:nth-child(2) {
+  left: 33%;
+  bottom: 17%;
+  width: 13px;
+}
+.room-wear i:nth-child(3) {
+  right: 12%;
+  bottom: 9%;
+  width: 29px;
+}
+.room-wear i:nth-child(4) {
+  left: 57%;
+  bottom: 4%;
+  width: 9px;
+}
+.room-wear i:nth-child(5) {
+  right: 31%;
+  bottom: 20%;
+  width: 17px;
+}
+.room-wear i:nth-child(6) {
+  left: 19%;
+  bottom: 3%;
+  width: 8px;
+}
+.energy-low .room-wear {
+  opacity: 0.52;
+}
+.energy-critical .room-wear {
+  opacity: 0.88;
+}
+.energy-low .room-window {
+  filter: saturate(0.72) brightness(0.9);
+}
+.energy-critical .room-window {
+  filter: saturate(0.45) brightness(0.76);
+  box-shadow:
+    inset 0 0 0 2px
+      color-mix(in srgb, var(--lad-palette-orange-650) 15%, transparent),
+    0 2px 0 color-mix(in srgb, var(--lad-palette-muted-700) 12%, transparent);
+}
+.energy-low :deep(.entity-member),
+.energy-low :deep(.entity-pet) {
+  filter: saturate(0.78);
+}
+.energy-critical :deep(.entity-member),
+.energy-critical :deep(.entity-pet) {
+  filter: saturate(0.58) brightness(0.88);
+}
+.energy-low .terrace-planter i,
+.energy-low .garden-flower-bed i {
+  transform: translateY(5px) rotate(18deg);
+  filter: saturate(0.65);
+}
+.energy-critical .terrace-planter i,
+.energy-critical .garden-flower-bed i {
+  transform: translateY(9px) rotate(38deg);
+  filter: saturate(0.35) brightness(0.8);
+}
+.energy-low .garden-lawn {
+  filter: saturate(0.78);
+}
+.energy-critical .garden-lawn,
+.energy-critical .garden-hedge {
+  filter: saturate(0.5) brightness(0.86);
+}
+.energy-low :deep(.plant-leaves),
+.energy-low :deep(.flower-heads) {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transform: rotate(12deg) translateY(4px);
+  filter: saturate(0.62);
+}
+.energy-critical :deep(.plant-leaves),
+.energy-critical :deep(.flower-heads) {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transform: rotate(28deg) translateY(9px) scaleY(0.82);
+  filter: saturate(0.32) brightness(0.78);
 }
 .kitchen-tiles {
   @apply position-absolute;
   inset: 31% 4% 35%;
   opacity: 0.25;
   background:
-    repeating-linear-gradient(0deg, transparent 0 14px, #759485 15px 16px),
-    repeating-linear-gradient(90deg, transparent 0 14px, #759485 15px 16px);
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 14px,
+      var(--lad-palette-muted) 15px 16px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 14px,
+      var(--lad-palette-muted) 15px 16px
+    );
 }
 .bunting {
   @apply position-absolute d-flex;
@@ -636,14 +810,14 @@ onUnmounted(() => {
   height: 0;
   border-top: 0;
   border-right: 6px solid transparent;
-  border-bottom: 12px solid #ef7d82;
+  border-bottom: 12px solid var(--lad-palette-red-300);
   border-left: 6px solid transparent;
 }
 .bunting i:nth-child(2n) {
-  border-bottom-color: #f0c65b;
+  border-bottom-color: var(--lad-palette-yellow);
 }
 .bunting i:nth-child(3n) {
-  border-bottom-color: #6ab99b;
+  border-bottom-color: var(--lad-palette-teal-400);
 }
 .paint-dots {
   @apply position-absolute;
@@ -656,13 +830,13 @@ onUnmounted(() => {
   @apply d-inline-block;
   margin: 2px;
   border-radius: 50%;
-  background: #ef8179;
+  background: var(--lad-palette-red-300);
 }
 .paint-dots i:nth-child(2n) {
-  background: #6bb69b;
+  background: var(--lad-palette-teal-400);
 }
 .paint-dots i:nth-child(3n) {
-  background: #f0c45a;
+  background: var(--lad-palette-yellow);
 }
 .ladi-perch {
   width: 116px;
@@ -681,7 +855,7 @@ onUnmounted(() => {
 }
 .perch-rope {
   fill: none;
-  stroke: #91715a;
+  stroke: var(--lad-palette-muted-600);
   stroke-dasharray: 3 3;
   stroke-linecap: round;
   stroke-width: 2.5;
@@ -689,7 +863,7 @@ onUnmounted(() => {
 .perch-branch,
 .perch-twig {
   fill: none;
-  stroke: #765039;
+  stroke: var(--lad-palette-orange-650);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 8;
@@ -698,8 +872,8 @@ onUnmounted(() => {
   stroke-width: 4;
 }
 .perch-leaf {
-  fill: #71ad70;
-  stroke: #477f52;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-muted-600-2);
   stroke-linejoin: round;
   stroke-width: 2;
 }
@@ -710,7 +884,10 @@ onUnmounted(() => {
   grid-column: span 2;
   min-height: 235px;
   border: 0;
-  background: linear-gradient(#dff5f8 0 54%, #b9dfa4 54% 100%);
+  background: linear-gradient(
+    var(--lad-palette-background) 0 54%,
+    var(--lad-palette-green-250) 54% 100%
+  );
   box-shadow: none;
   isolation: isolate;
 }
@@ -720,7 +897,11 @@ onUnmounted(() => {
 .garden-sky {
   @apply position-absolute inset-0;
   z-index: 0;
-  background: linear-gradient(#d9f3f8, #eef9ef 59%, transparent 60%);
+  background: linear-gradient(
+    var(--lad-palette-background),
+    var(--lad-palette-background) 59%,
+    transparent 60%
+  );
 }
 .garden-sky::before,
 .garden-sky::after {
@@ -731,10 +912,11 @@ onUnmounted(() => {
   top: 18%;
   left: 10%;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.84);
+  background: color-mix(in srgb, var(--lad-palette-white) 85%, transparent);
   box-shadow:
-    20px -9px 0 3px rgba(255, 255, 255, 0.84),
-    38px 0 0 rgba(255, 255, 255, 0.84);
+    20px -9px 0 3px
+      color-mix(in srgb, var(--lad-palette-white) 85%, transparent),
+    38px 0 0 color-mix(in srgb, var(--lad-palette-white) 85%, transparent);
   animation: garden-cloud-drift 9s ease-in-out infinite alternate;
 }
 .garden-sky::after {
@@ -752,10 +934,10 @@ onUnmounted(() => {
   top: 20px;
   right: 12%;
   border-radius: 50%;
-  background: #f8dc78;
+  background: var(--lad-palette-amber-250);
   box-shadow:
-    0 0 0 11px rgba(248, 220, 120, 0.2),
-    0 0 30px rgba(255, 226, 119, 0.28);
+    0 0 0 11px color-mix(in srgb, var(--lad-palette-amber-250) 20%, transparent),
+    0 0 30px color-mix(in srgb, var(--lad-palette-amber-250) 30%, transparent);
   animation: garden-sun-glow 3.6s ease-in-out infinite;
 }
 .garden-sky i::before {
@@ -764,13 +946,13 @@ onUnmounted(() => {
   inset: -24px;
   background: repeating-conic-gradient(
     from 0deg,
-    #f8d86f 0 5deg,
+    var(--lad-palette-amber-250) 0 5deg,
     transparent 5deg 45deg
   );
   mask: radial-gradient(
     circle,
     transparent 0 45%,
-    #000 47% 58%,
+    var(--lad-palette-black) 47% 58%,
     transparent 60%
   );
   animation: garden-sun-rays 3.6s ease-in-out infinite;
@@ -788,7 +970,7 @@ onUnmounted(() => {
 .garden-mountains i {
   @apply position-absolute;
   bottom: 0;
-  background: #b9ced0;
+  background: var(--lad-palette-muted-250);
   clip-path: polygon(0 100%, 48% 3%, 100% 100%);
 }
 .garden-mountains i::after {
@@ -798,7 +980,7 @@ onUnmounted(() => {
   @apply position-absolute;
   top: 4%;
   left: 27%;
-  background: rgba(246, 251, 247, 0.88);
+  background: color-mix(in srgb, var(--lad-palette-surface) 90%, transparent);
   clip-path: polygon(50% 0, 100% 100%, 70% 69%, 54% 87%, 38% 64%, 0 100%);
 }
 .garden-mountains i:first-child {
@@ -834,14 +1016,14 @@ onUnmounted(() => {
   @apply position-absolute;
   bottom: 0;
   border-radius: 50% 50% 0 0 / 76% 76% 0 0;
-  background: #9ed09a;
+  background: var(--lad-palette-green-250);
 }
 .garden-hills i:first-child {
   left: 0;
 }
 .garden-hills i:last-child {
   right: 0;
-  background: #83bd82;
+  background: var(--lad-palette-mint-450);
   transform: translateY(18%);
 }
 .garden-hedge {
@@ -852,9 +1034,13 @@ onUnmounted(() => {
   bottom: 35%;
   z-index: 0;
   background:
-    radial-gradient(circle at 15px 2px, #5fa767 14px, transparent 15px) 0 0/31px
-      28px repeat-x,
-    linear-gradient(transparent 22px, #61a463 23px);
+    radial-gradient(
+        circle at 15px 2px,
+        var(--lad-palette-mint-450) 14px,
+        transparent 15px
+      )
+      0 0/31px 28px repeat-x,
+    linear-gradient(transparent 22px, var(--lad-palette-mint-450) 23px);
   opacity: 0.82;
 }
 .garden-lawn {
@@ -867,15 +1053,158 @@ onUnmounted(() => {
   background:
     radial-gradient(
       ellipse at 22% 4%,
-      rgba(255, 255, 255, 0.2) 0 15%,
+      color-mix(in srgb, var(--lad-palette-white) 20%, transparent) 0 15%,
       transparent 16%
     ),
     repeating-linear-gradient(
       168deg,
       transparent 0 54px,
-      rgba(66, 124, 70, 0.075) 55px 57px
+      color-mix(in srgb, var(--lad-palette-muted-600-2) 8%, transparent) 55px
+        57px
     ),
-    linear-gradient(#b8dfa3, #a8d18e);
+    linear-gradient(var(--lad-palette-green-250), var(--lad-palette-green-250));
+}
+.garden-zone:has(.terrace-transition) {
+  overflow: visible;
+}
+.terrace-transition {
+  width: 98px;
+  height: 178px;
+  @apply position-absolute pointer-events-none;
+  left: -49px;
+  bottom: 5%;
+  z-index: 34;
+  filter: drop-shadow(
+    0 7px 5px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent)
+  );
+}
+.terrace-frame {
+  @apply position-absolute;
+  inset: 0 7px 27px;
+  border: 6px solid var(--lad-palette-amber-100);
+  border-bottom-width: 9px;
+  border-radius: 18px 18px 5px 5px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--lad-palette-blue-250) 70%, transparent),
+    color-mix(in srgb, var(--lad-palette-background) 90%, transparent)
+  );
+  box-shadow:
+    0 0 0 3px var(--lad-palette-orange-500),
+    inset 0 0 0 2px
+      color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  perspective: 170px;
+}
+.terrace-frame::before {
+  width: 5px;
+  content: "";
+  @apply position-absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 2px);
+  z-index: 2;
+  background: var(--lad-palette-amber-100);
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--lad-palette-orange-600) 20%, transparent);
+}
+.terrace-frame::after {
+  height: 4px;
+  content: "";
+  @apply position-absolute;
+  right: 0;
+  bottom: 43%;
+  left: 0;
+  z-index: 2;
+  background: var(--lad-palette-amber-100);
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--lad-palette-orange-600) 18%, transparent);
+}
+.terrace-glass {
+  @apply position-absolute;
+  top: 3px;
+  bottom: 3px;
+  width: calc(50% - 5px);
+  background:
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--lad-palette-white) 60%, transparent) 0 24%,
+      transparent 25% 58%,
+      color-mix(in srgb, var(--lad-palette-blue-350) 18%, transparent) 59%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--lad-palette-blue-150) 70%, transparent),
+      color-mix(in srgb, var(--lad-palette-background) 60%, transparent)
+    );
+}
+.terrace-glass--fixed {
+  left: 3px;
+}
+.terrace-glass--door {
+  right: 3px;
+  transform-origin: right center;
+  transform: rotateY(-20deg);
+  box-shadow: -4px 1px 4px
+    color-mix(in srgb, var(--lad-palette-muted-700) 12%, transparent);
+}
+.opens-to-garden .terrace-glass--door {
+  transform: rotateY(-42deg);
+}
+.terrace-handle {
+  width: 4px;
+  height: 12px;
+  @apply position-absolute;
+  top: 49%;
+  right: 11px;
+  z-index: 4;
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-orange-500);
+  box-shadow: 0 0 0 2px var(--lad-palette-amber-200);
+}
+.terrace-threshold {
+  height: 25px;
+  @apply position-absolute;
+  right: -5px;
+  bottom: 3px;
+  left: -5px;
+  border: 3px solid var(--lad-palette-orange-500);
+  border-radius: 48% 52% 9px 9px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--lad-palette-orange-350) 0 16px,
+    var(--lad-palette-orange-400-2) 17px 19px
+  );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-orange-750) 15%, transparent);
+  transform: perspective(70px) rotateX(43deg);
+}
+.terrace-planter {
+  width: 41px;
+  height: 15px;
+  @apply position-absolute d-flex align-start justify-center;
+  right: -13px;
+  bottom: 30px;
+  gap: 1px;
+  border-radius: 3px 3px 9px 9px;
+  background: var(--lad-palette-orange-500);
+  box-shadow: inset 0 3px 0 var(--lad-palette-orange-350);
+}
+.terrace-planter i {
+  width: 10px;
+  height: 16px;
+  margin-top: -13px;
+  border-radius: 60% 40%;
+  background: var(--lad-palette-mint-450);
+  transform: rotate(-18deg);
+}
+.terrace-planter i:nth-child(2) {
+  height: 20px;
+  background: var(--lad-palette-mint-450);
+  transform: translateY(-4px);
+}
+.terrace-planter i:last-child {
+  transform: rotate(18deg);
 }
 .garden-path {
   @apply position-absolute d-flex align-end;
@@ -889,10 +1218,12 @@ onUnmounted(() => {
 .garden-path i {
   width: 31px;
   height: 13px;
-  border: 2px solid rgba(135, 101, 67, 0.22);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-orange-600) 20%, transparent);
   border-radius: 48%;
-  background: #e7d6a9;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.42);
+  background: var(--lad-palette-amber-200);
+  box-shadow: inset 0 2px 0
+    color-mix(in srgb, var(--lad-palette-white) 40%, transparent);
 }
 .garden-path i:nth-child(2n) {
   transform: translateY(-7px) scale(0.88);
@@ -911,7 +1242,7 @@ onUnmounted(() => {
   left: -8px;
   bottom: -5px;
   border-radius: 50%;
-  background: #846346;
+  background: var(--lad-palette-orange-600);
   opacity: 0.75;
 }
 .garden-flower-bed i {
@@ -919,17 +1250,17 @@ onUnmounted(() => {
   height: 13px;
   z-index: 1;
   margin-inline: 1px;
-  border: 3px solid #fff3a8;
+  border: 3px solid var(--lad-palette-amber-150);
   border-radius: 50%;
-  background: #ee7e80;
-  box-shadow: 0 9px 0 -5px #4f955c;
+  background: var(--lad-palette-red-300);
+  box-shadow: 0 9px 0 -5px var(--lad-palette-teal-600);
 }
 .garden-flower-bed i:nth-child(2n) {
-  background: #9f8bd8;
+  background: var(--lad-palette-purple-350);
   transform: translateY(-6px);
 }
 .garden-flower-bed i:nth-child(3n) {
-  background: #efb84e;
+  background: var(--lad-palette-yellow);
 }
 @keyframes garden-cloud-drift {
   from {
@@ -1006,7 +1337,7 @@ onUnmounted(() => {
   top: 4px;
   left: 4px;
   padding: 2px 5px;
-  font-size: 6px;
+  font-size: 0.375rem;
 }
 .compact .room-window {
   width: 27px;
@@ -1023,7 +1354,7 @@ onUnmounted(() => {
 .compact .ladi-motivation {
   bottom: 8px;
 }
-@media (max-width: 420px) {
+@include respond-down(mobile) {
   .dollhouse-layout:not(.compact) {
     grid-template-columns: 1fr;
   }
@@ -1033,7 +1364,7 @@ onUnmounted(() => {
     min-height: 245px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .garden-sky::before,
   .garden-sky::after,
   .garden-sky i,
