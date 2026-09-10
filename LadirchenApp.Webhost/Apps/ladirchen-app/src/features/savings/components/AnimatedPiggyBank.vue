@@ -4,18 +4,18 @@
     :class="{ receiving, 'play-hop': !receiving && playMode === 'hop', 'play-wiggle': !receiving && playMode === 'wiggle' }"
     :style="piggyStyle"
     role="img"
-    aria-label="Animiertes buntes Ladirchen-Sparschwein"
+    :aria-label="t('savings.piggy.animatedAria')"
   >
     <svg viewBox="0 0 122 104" aria-hidden="true">
       <defs>
         <linearGradient id="piggyBody" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stop-color="#ff91ae" />
-          <stop offset=".55" stop-color="#f56f9a" />
-          <stop offset="1" stop-color="#d95b9d" />
+          <stop offset="0" stop-color="var(--lad-palette-rose-250)" />
+          <stop offset=".55" stop-color="var(--lad-palette-rose-300)" />
+          <stop offset="1" stop-color="var(--lad-palette-rose-300)" />
         </linearGradient>
         <linearGradient id="piggySnout" x1="0" x2="1">
-          <stop offset="0" stop-color="#ffb2bf" />
-          <stop offset="1" stop-color="#f48ca8" />
+          <stop offset="0" stop-color="var(--lad-palette-rose-200)" />
+          <stop offset="1" stop-color="var(--lad-palette-rose-250)" />
         </linearGradient>
       </defs>
       <ellipse class="piggy-shadow" cx="62" cy="96" rx="41" ry="7" />
@@ -47,6 +47,9 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = withDefaults(defineProps<{
   receiving?: boolean;
@@ -80,7 +83,8 @@ const piggyStyle = computed(() => ({
 }));
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .animated-piggy {
   @apply d-inline-grid;
   flex: 0 0 auto;
@@ -101,21 +105,24 @@ const piggyStyle = computed(() => ({
 }
 svg {
   @apply w-100 h-100 overflow-visible;
-  filter: drop-shadow(0 5px 3px rgba(83, 46, 74, 0.18));
+  filter: drop-shadow(
+    0 5px 3px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent)
+  );
 }
 .body,
 .leg {
   fill: url(#piggyBody);
-  stroke: #763c68;
+  stroke: var(--lad-palette-pink-650);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .belly-glow {
-  fill: rgba(255, 255, 255, 0.14);
+  fill: color-mix(in srgb, var(--lad-palette-white) 15%, transparent);
 }
 .ear {
-  fill: #ee6798;
-  stroke: #763c68;
+  fill: var(--lad-palette-rose-300);
+  stroke: var(--lad-palette-pink-650);
   stroke-linejoin: round;
   stroke-width: 3;
   transform-box: fill-box;
@@ -123,16 +130,16 @@ svg {
   animation: piggy-ear 14s ease-in-out infinite;
 }
 .inner-ear {
-  fill: #ffc1c9;
+  fill: var(--lad-palette-red-100);
 }
 .snout {
   fill: url(#piggySnout);
-  stroke: #763c68;
+  stroke: var(--lad-palette-pink-650);
   stroke-width: 3;
 }
 .nostril,
 .eye {
-  fill: #633653;
+  fill: var(--lad-palette-pink-650);
 }
 .eye-shine {
   fill: white;
@@ -144,19 +151,19 @@ svg {
 }
 .coin-slot {
   fill: none;
-  stroke: #6b3a61;
+  stroke: var(--lad-palette-pink-650);
   stroke-linecap: round;
   stroke-width: 5;
 }
 .smile {
   fill: none;
-  stroke: #763c68;
+  stroke: var(--lad-palette-pink-650);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .tail {
   fill: none;
-  stroke: #ed6e9b;
+  stroke: var(--lad-palette-rose-300);
   stroke-linecap: round;
   stroke-width: 6;
   transform-box: fill-box;
@@ -164,8 +171,8 @@ svg {
   animation: piggy-tail 10s ease-in-out infinite;
 }
 .star {
-  fill: #ffd55f;
-  stroke: #a06b25;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 1.5;
   animation: star-glow 7s ease-in-out infinite;
@@ -173,7 +180,7 @@ svg {
   transform-origin: center;
 }
 .piggy-shadow {
-  fill: rgba(67, 48, 59, 0.16);
+  fill: color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent);
   animation: piggy-shadow 8s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
@@ -186,18 +193,18 @@ svg {
   animation: coin-drop 800ms 120ms cubic-bezier(0.3, 0.9, 0.2, 1) both;
 }
 .piggy-coin circle {
-  fill: #ffd55f;
-  stroke: #a06b25;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 3;
 }
 .piggy-coin path {
   fill: none;
-  stroke: #8e5e22;
+  stroke: var(--lad-palette-amber-650);
   stroke-linecap: round;
   stroke-width: 2.5;
 }
 .piggy-coin .coin-shine {
-  stroke: #fff2a8;
+  stroke: var(--lad-palette-amber-150);
 }
 
 @keyframes piggy-breathe {
@@ -324,7 +331,7 @@ svg {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .animated-piggy,
   .animated-piggy.receiving,
   .animated-piggy.play-hop,

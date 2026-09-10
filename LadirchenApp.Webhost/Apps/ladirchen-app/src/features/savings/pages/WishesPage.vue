@@ -1,19 +1,19 @@
 <template>
   <div class="page page-padding wishes-page">
-    <PageViewSwitch v-model="activeTab" class="mb-5" label="Zielansicht auswählen" :options="wishViewOptions" />
+    <PageViewSwitch v-model="activeTab" class="mb-5" :label="t('wishes.viewLabel')" :options="wishViewOptions" />
 
     <template v-if="activeTab !== 'family'">
       <button v-if="canCreatePersonalGoal" class="create-goal-card mb-5" type="button" @click="openGoalDialog(personalGoalOwnerId)">
         <span class="create-goal-icon"><v-icon icon="mdi-plus" /></span>
-        <span><strong>Ziel anlegen</strong><small>Ein neuer Wunsch beginnt mit dem ersten Schritt.</small></span>
+        <span><strong>{{ t('wishes.create.title') }}</strong><small>{{ t('wishes.create.description') }}</small></span>
         <v-icon class="create-goal-arrow" icon="mdi-arrow-right" />
       </button>
 
       <SavingsInterestGuideCard v-if="store.viewerRole === 'child'" />
 
       <SectionHeader
-        :description="activeTab === 'children' ? 'Alle für dich sichtbaren Ziele der Kinder auf einen Blick.' : 'Private Ziele bleiben ausschließlich bei dir.'"
-        :title="activeTab === 'children' ? 'Ziele der Kinder' : 'Meine Ziele'"
+        :description="t(activeTab === 'children' ? 'wishes.sections.childrenDescription' : 'wishes.sections.ownDescription')"
+        :title="t(activeTab === 'children' ? 'wishes.sections.childrenTitle' : 'wishes.sections.ownTitle')"
       />
 
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
@@ -23,23 +23,23 @@
             <div class="flex-grow-1 min-w-0">
               <div class="d-flex align-center justify-space-between ga-2">
                 <div><strong>{{ goal.title }}</strong><p v-if="goal.ownerId !== store.signedInMemberId" class="text-caption text-medium-emphasis">{{ ownerName(goal.ownerId) }}</p></div>
-                <v-chip v-if="goal.ownerId !== store.signedInMemberId" color="primary" size="x-small" variant="tonal">{{ goal.shared ? 'Gemeinsam' : visibilityLabel(goal.visibility) }}</v-chip>
+                <v-chip v-if="goal.ownerId !== store.signedInMemberId" color="primary" size="x-small" variant="tonal">{{ goal.shared ? t('wishes.shared') : visibilityLabel(goal.visibility) }}</v-chip>
               </div>
               <div class="goal-account-stats mt-3">
-                <span><v-icon icon="mdi-wallet-plus-outline" /><i><small>Eingezahlt</small><strong>{{ depositedAmount(goal) }} L</strong></i></span>
-                <span><v-icon icon="mdi-chart-line" /><i><small>Aktueller Zins</small><strong>{{ formatInterestRate(store.savingsInterestRate) }} %</strong></i></span>
-                <span><v-icon icon="mdi-calendar-star" /><i><small>Nächste Woche</small><strong>+{{ weeklyInterestForGoal(goal) }} L</strong></i></span>
-                <span><v-icon icon="mdi-star-four-points" /><i><small>Zinsen bisher</small><strong>+{{ goal.interestEarned ?? 0 }} L</strong></i></span>
+                <span><v-icon icon="mdi-wallet-plus-outline" /><i><small>{{ t('wishes.stats.deposited') }}</small><strong>{{ depositedAmount(goal) }} L</strong></i></span>
+                <span><v-icon icon="mdi-chart-line" /><i><small>{{ t('wishes.stats.interest') }}</small><strong>{{ formatInterestRate(store.savingsInterestRate) }} %</strong></i></span>
+                <span><v-icon icon="mdi-calendar-star" /><i><small>{{ t('wishes.stats.nextWeek') }}</small><strong>+{{ weeklyInterestForGoal(goal) }} L</strong></i></span>
+                <span><v-icon icon="mdi-star-four-points" /><i><small>{{ t('wishes.stats.earned') }}</small><strong>+{{ goal.interestEarned ?? 0 }} L</strong></i></span>
               </div>
               <v-progress-linear class="mt-3" color="primary" height="8" :model-value="progress(goal.saved, goal.target)" rounded />
               <div class="d-flex align-center justify-space-between mt-2">
-                <span class="goal-total"><small>Kontostand</small><strong>{{ goal.saved }} / {{ goal.target }} L</strong></span>
+                <span class="goal-total"><small>{{ t('wishes.stats.balance') }}</small><strong>{{ goal.saved }} / {{ goal.target }} L</strong></span>
                 <v-btn v-if="goal.ownerId === store.signedInMemberId && store.viewerRole === 'child'" class="assign-button" color="info" rounded="lg" size="small" variant="tonal" @click="openSave(goal.id)">
                   <span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span>
-                  <span>Ladirchen zuordnen</span>
+                  <span>{{ t('wishes.assign') }}</span>
                   <i class="assign-spark" aria-hidden="true">✦</i>
                 </v-btn>
-                <v-btn v-else-if="goal.ownerId !== store.signedInMemberId" color="info" prepend-icon="mdi-gift-outline" rounded="lg" size="small" variant="tonal" @click="openSupport(goal.id)">Schenken</v-btn>
+                <v-btn v-else-if="goal.ownerId !== store.signedInMemberId" color="info" prepend-icon="mdi-gift-outline" rounded="lg" size="small" variant="tonal" @click="openSupport(goal.id)">{{ t('wishes.gift') }}</v-btn>
               </div>
             </div>
           </div>
@@ -50,7 +50,7 @@
     <template v-else>
       <button class="create-goal-card create-family-goal-card mb-5" type="button" @click="openGoalDialog('family')">
         <span class="create-goal-icon"><v-icon icon="mdi-account-group-outline" /></span>
-        <span><strong>Familienziel anlegen</strong><small>Alle dürfen dieses Ziel gemeinsam formulieren und füllen.</small></span>
+        <span><strong>{{ t('wishes.createFamily.title') }}</strong><small>{{ t('wishes.createFamily.description') }}</small></span>
         <v-icon class="create-goal-arrow" icon="mdi-plus" />
       </button>
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
@@ -60,7 +60,7 @@
             <div class="flex-grow-1 min-w-0">
               <div class="d-flex align-center justify-space-between ga-2">
                 <div><strong>{{ goal.title }}</strong><p class="text-caption text-medium-emphasis">{{ ownerName(goal.ownerId) }}</p></div>
-                <v-chip v-if="goal.shared" color="primary" size="x-small" variant="tonal">Gemeinsam</v-chip>
+                <v-chip v-if="goal.shared" color="primary" size="x-small" variant="tonal">{{ t('wishes.shared') }}</v-chip>
               </div>
               <v-progress-linear class="mt-3" color="primary" height="8" :model-value="progress(goal.saved, goal.target)" rounded />
               <div class="d-flex align-center justify-space-between flex-wrap ga-2 mt-2">
@@ -69,7 +69,7 @@
                   <button
                     class="cheer-button"
                     :class="{ 'is-cheered': goal.cheered }"
-                    :aria-label="`${goal.title} anfeuern`"
+                    :aria-label="t('wishes.cheerAria', { title: goal.title })"
                     :aria-pressed="goal.cheered"
                     type="button"
                     @click="store.toggleCheer(goal.id)"
@@ -86,7 +86,7 @@
                     size="small"
                     variant="tonal"
                     @click="openSupport(goal.id)"
-                  ><span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span><span>Ladirchen schenken</span><i class="assign-spark" aria-hidden="true">✦</i></v-btn>
+                  ><span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span><span>{{ t('wishes.giftCoins') }}</span><i class="assign-spark" aria-hidden="true">✦</i></v-btn>
                 </div>
               </div>
             </div>
@@ -98,30 +98,30 @@
     <v-dialog v-model="saveDialog" max-width="420">
       <v-card class="save-dialog-card" :class="{ 'is-saving': saveMotion }" rounded="xl">
         <header class="save-dialog-header">
-          <div class="save-goal-icon" aria-hidden="true">{{ store.activeGoal.icon }}</div>
+          <div class="save-goal-icon" aria-hidden="true">{{ activeGoal.icon }}</div>
           <div class="flex-grow-1 min-w-0">
-            <p class="eyebrow mb-1">Ladirchen ins Ziel legen</p>
-            <h2>{{ store.activeGoal.title }}</h2>
-            <span>{{ store.activeGoal.saved }} von {{ store.activeGoal.target }} L geschafft</span>
+            <p class="eyebrow mb-1">{{ t('wishes.save.title') }}</p>
+            <h2>{{ activeGoal.title }}</h2>
+            <span>{{ t('wishes.save.progress', { saved: activeGoal.saved, target: activeGoal.target }) }}</span>
           </div>
-          <v-btn aria-label="Zuordnen schließen" icon="mdi-close" size="small" variant="text" @click="saveDialog = false" />
+          <v-btn :aria-label="t('wishes.save.close')" icon="mdi-close" size="small" variant="text" @click="saveDialog = false" />
         </header>
 
         <div class="save-dialog-content">
           <div class="save-balance">
             <span class="save-balance-coin" aria-hidden="true">L</span>
-            <div><small>Frei verfügbar</small><strong>{{ store.availableBalance }} L</strong></div>
+            <div><small>{{ t('wishes.save.available') }}</small><strong>{{ store.availableBalance }} L</strong></div>
             <span class="save-journey" aria-hidden="true"><i /><i /><i /></span>
             <span class="save-goal-star" aria-hidden="true">★</span>
           </div>
 
           <v-slider v-model="saveAmount" class="save-slider mt-5" color="info" :disabled="maxAssignable <= 0" hide-details :max="Math.max(1, maxAssignable)" min="0" step="5" thumb-label />
-          <div class="save-value"><span aria-hidden="true">L</span><strong>{{ saveAmount }}</strong><small>Ladirchen</small></div>
-          <p v-if="maxAssignable <= 0" class="save-empty-note">Sobald du wieder freie Ladirchen hast, kannst du sie hier in dein Ziel legen.</p>
+          <div class="save-value"><span aria-hidden="true">L</span><strong>{{ saveAmount }}</strong><small>{{ t('wishes.save.currency') }}</small></div>
+          <p v-if="maxAssignable <= 0" class="save-empty-note">{{ t('wishes.save.empty') }}</p>
 
           <button class="save-submit" :disabled="saveAmount <= 0 || saveMotion" type="button" @click="saveToGoal">
             <span class="save-submit-coin" aria-hidden="true">L</span>
-            <strong>{{ saveMotion ? 'Unterwegs zum Ziel …' : 'Ins Ziel legen' }}</strong>
+            <strong>{{ t(saveMotion ? 'wishes.save.sending' : 'wishes.save.submit') }}</strong>
             <span aria-hidden="true">→</span>
             <i aria-hidden="true">✦</i>
           </button>
@@ -136,9 +136,9 @@
         <div class="support-dialog-heading">
           <div class="support-icon">🎁</div>
           <div>
-            <p class="eyebrow mb-1">Gemeinsam ans Ziel</p>
+            <p class="eyebrow mb-1">{{ t('wishes.support.eyebrow') }}</p>
             <h2>{{ supportGoal.title }}</h2>
-            <span>{{ ownerName(supportGoal.ownerId) }} freut sich über deine Hilfe.</span>
+            <span>{{ t('wishes.support.description', { name: ownerName(supportGoal.ownerId) }) }}</span>
           </div>
         </div>
         <div class="support-journey mt-4" aria-hidden="true">
@@ -148,9 +148,9 @@
         <div class="save-value text-center mb-2">{{ supportAmount }} L</div>
         <p class="text-caption text-medium-emphasis text-center mb-4">{{ supportExplanation }}</p>
         <div class="d-grid dialog-actions ga-2">
-          <v-btn :disabled="supportSending" rounded="lg" variant="text" @click="supportDialog = false">Zurück</v-btn>
+          <v-btn :disabled="supportSending" rounded="lg" variant="text" @click="supportDialog = false">{{ t('wishes.back') }}</v-btn>
           <v-btn class="support-submit" color="info" :disabled="supportMaximum <= 0 || supportAmount <= 0 || supportSending" rounded="lg" variant="flat" @click="giveSupport">
-            <span aria-hidden="true">✋</span>{{ supportSending ? 'Geschenk fliegt …' : 'High Five & schenken' }}<span aria-hidden="true">🎁</span>
+            <span aria-hidden="true">✋</span>{{ t(supportSending ? 'wishes.support.sending' : 'wishes.support.submit') }}<span aria-hidden="true">🎁</span>
           </v-btn>
         </div>
       </v-card>
@@ -161,6 +161,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import SavingGoalDialog from '../components/SavingGoalDialog.vue';
 import SavingsInterestGuideCard from '../components/SavingsInterestGuideCard.vue';
@@ -169,10 +170,13 @@ import type { PageViewOption } from '@/shared/components/ui/PageViewSwitch.vue';
 import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
 import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 import type { FamilyMemberId, GoalVisibility, NewGoal, SavingGoal, SavingGoalId, SavingGoalOwnerId } from '@/domain/types';
+import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
 const route = useRoute();
+const { locale, t } = useI18n();
+const localize = useLocalizedDomainContent();
 type WishView = 'own' | 'children' | 'family';
 const activeTab = ref<WishView>('own');
 const saveDialog = ref(false);
@@ -187,18 +191,20 @@ const saveMotion = ref(false);
 let saveTimer: number | undefined;
 let supportTimer: number | undefined;
 
-const activeGoalRemaining = computed(() => Math.max(0, store.activeGoal.target - store.activeGoal.saved));
+const localizedGoals = computed(() => store.goals.map(localize.goal));
+const activeGoal = computed(() => localize.goal(store.activeGoal));
+const activeGoalRemaining = computed(() => Math.max(0, activeGoal.value.target - activeGoal.value.saved));
 const maxAssignable = computed(() => Math.min(store.availableBalance, activeGoalRemaining.value));
 const personalGoalOwnerId = computed<FamilyMemberId>(() => store.signedInMemberId);
-const childrenGoals = computed(() => store.goals.filter((goal) => {
+const childrenGoals = computed(() => localizedGoals.value.filter((goal) => {
   const owner = goal.ownerId === 'family' ? undefined : store.members.find((member) => member.id === goal.ownerId);
   return owner?.role === 'child' && goal.visibility !== 'private';
 }));
 const personalGoals = computed(() => activeTab.value === 'children'
   ? childrenGoals.value
-  : store.goals.filter((goal) => goal.ownerId === store.signedInMemberId));
+  : localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId));
 const canCreatePersonalGoal = computed(() => activeTab.value === 'own');
-const visibleFamilyGoals = computed(() => store.goals.filter((goal) => {
+const visibleFamilyGoals = computed(() => localizedGoals.value.filter((goal) => {
   if (store.viewerRole === 'guardian') {
     if (goal.ownerId === 'family') return true;
     const owner = store.members.find((member) => member.id === goal.ownerId);
@@ -210,40 +216,38 @@ const visibleFamilyGoals = computed(() => store.goals.filter((goal) => {
   return goal.ownerId !== store.signedInMemberId && goal.visibility === 'family';
 }));
 const wishViewOptions = computed<Array<PageViewOption<WishView>>>(() => {
-  const ownGoals = store.goals.filter((goal) => goal.ownerId === store.signedInMemberId);
+  const ownGoals = localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId);
   const options: Array<PageViewOption<WishView>> = [{
     id: 'own',
     icon: 'mdi-account-star-outline',
-    subtitle: `${ownGoals.length} ${ownGoals.length === 1 ? 'Wunsch' : 'Wünsche'}`,
-    title: 'Meine Ziele',
+    subtitle: t('wishes.views.ownCount', { count: ownGoals.length }),
+    title: t('wishes.views.own'),
   }];
   if (store.viewerRole === 'guardian') {
-    options.push({ id: 'children', icon: 'mdi-account-child-outline', subtitle: `${childrenGoals.value.length} sichtbar`, title: 'Kinderziele' });
+    options.push({ id: 'children', icon: 'mdi-account-child-outline', subtitle: t('wishes.views.visibleCount', { count: childrenGoals.value.length }), title: t('wishes.views.children') });
   }
-  if (store.permissions.canViewFamilyGoals) options.push({ id: 'family', icon: 'mdi-account-group-outline', subtitle: `${visibleFamilyGoals.value.length} sichtbar`, title: 'Familienziele' });
+  if (store.permissions.canViewFamilyGoals) options.push({ id: 'family', icon: 'mdi-account-group-outline', subtitle: t('wishes.views.visibleCount', { count: visibleFamilyGoals.value.length }), title: t('wishes.views.family') });
   return options;
 });
-const supportGoal = computed(() => store.goals.find((goal) => goal.id === supportGoalId.value));
+const supportGoal = computed(() => localizedGoals.value.find((goal) => goal.id === supportGoalId.value));
 const supportMaximum = computed(() => {
   if (!supportGoal.value) return 0;
   const remaining = Math.max(0, supportGoal.value.target - supportGoal.value.saved);
   return store.viewerRole === 'child' ? Math.min(store.availableBalance, remaining) : remaining;
 });
 const supportExplanation = computed(() => store.viewerRole === 'child'
-  ? 'Das Geschenk wird direkt von deinem freien Guthaben abgezogen und kann nicht zurückgeholt werden.'
-  : 'Das Geschenk wird nicht vom Guthaben des Kindes abgezogen.');
+  ? t('wishes.support.childExplanation')
+  : t('wishes.support.guardianExplanation'));
 
 const progress = (saved: number, target: number) => Math.min(100, (saved / target) * 100);
 const depositedAmount = (goal: SavingGoal) => Math.max(0, goal.saved - (goal.interestEarned ?? 0));
 const weeklyInterestForGoal = (goal: SavingGoal) => goal.saved <= 0 || goal.saved >= goal.target
   ? 0
   : Math.min(goal.target - goal.saved, Math.max(1, Math.round(goal.saved * (store.savingsInterestRate / 100))));
-const formatInterestRate = (value: number) => value.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-const ownerName = (ownerId: SavingGoalOwnerId) => ownerId === 'family' ? 'Meine Familie' : store.members.find((member) => member.id === ownerId)?.name ?? 'Familie';
+const formatInterestRate = (value: number) => value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+const ownerName = (ownerId: SavingGoalOwnerId) => ownerId === 'family' ? t('wishes.owner.myFamily') : store.members.find((member) => member.id === ownerId)?.name ?? t('wishes.owner.family');
 const visibilityLabel = (visibility: GoalVisibility) => {
-  if (visibility === 'private') return 'Nur für mich';
-  if (visibility === 'guardians') return 'Mit Bezugspersonen';
-  return 'Familie';
+  return t(`wishes.visibility.${visibility}`);
 };
 const saveToGoal = () => {
   if (saveAmount.value <= 0 || saveMotion.value) return;
@@ -272,11 +276,11 @@ const giveSupport = () => {
   if (!supportGoalId.value || supportSending.value) {return;}
   const goalId = supportGoalId.value;
   const amount = supportAmount.value;
-  const recipient = supportGoal.value ? ownerName(supportGoal.value.ownerId) : 'deiner Familie';
+  const recipient = supportGoal.value ? ownerName(supportGoal.value.ownerId) : t('wishes.owner.yourFamily');
   supportSending.value = true;
   window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
-    heading: 'High Five!',
-    message: `Tolle Idee! Ladi schickt dein Geschenk jetzt zu ${recipient}.`,
+    heading: t('wishes.support.guideTitle'),
+    message: t('wishes.support.guideMessage', { recipient }),
     celebration: 'gift',
   } }));
   supportTimer = window.setTimeout(() => {
@@ -312,15 +316,15 @@ watch(() => store.permissions.canViewFamilyGoals, canViewFamilyGoals => {
 watch(activeTab, (tab) => {
   if (tab !== 'family' || store.viewerRole !== 'child') return;
   window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
-    heading: 'Gemeinsam motivieren',
-    message: 'Hier siehst du nur Ziele, die deine Familie für dich freigegeben hat. Mit einem Anfeuern machst du jemandem Mut.',
+    heading: t('wishes.guide.familyTitle'),
+    message: t('wishes.guide.familyMessage'),
   } }));
 });
 onMounted(() => {
   if (store.viewerRole !== 'child') return;
   window.setTimeout(() => window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
-    heading: 'Clever sparen',
-    message: 'Hier sammelst du Ladirchen für deine Wünsche oder hilfst bei sichtbaren Zielen deiner Familie mit.',
+    heading: t('guide.pages.wishes.heading'),
+    message: t('guide.pages.wishes.message'),
     pageIntro: true,
   } })), 350);
 });
@@ -330,7 +334,8 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .create-goal-card {
   width: 100%;
   min-height: 66px;
@@ -338,18 +343,22 @@ onUnmounted(() => {
   @apply d-flex align-center text-left cursor-pointer;
   gap: 10px;
   color: var(--lad-text);
-  border: 2px solid rgba(78, 143, 221, 0.26);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 25%, transparent);
   border-radius: 20px;
   background:
     radial-gradient(
       circle at 91% 10%,
-      rgba(255, 220, 118, 0.25),
+      color-mix(in srgb, var(--lad-palette-amber-250) 25%, transparent),
       transparent 29%
     ),
-    linear-gradient(145deg, #eef8ff, #fff9e3);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100)
+    );
   box-shadow:
-    0 5px 0 rgba(67, 127, 190, 0.15),
-    0 10px 19px rgba(62, 108, 153, 0.07);
+    0 5px 0 color-mix(in srgb, var(--lad-palette-blue-strong) 15%, transparent),
+    0 10px 19px color-mix(in srgb, var(--lad-palette-blue-600) 8%, transparent);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
@@ -357,22 +366,27 @@ onUnmounted(() => {
 .create-goal-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 7px 0 rgba(67, 127, 190, 0.15),
-    0 13px 22px rgba(62, 108, 153, 0.09);
+    0 7px 0 color-mix(in srgb, var(--lad-palette-blue-strong) 15%, transparent),
+    0 13px 22px color-mix(in srgb, var(--lad-palette-blue-600) 8%, transparent);
 }
 .create-goal-card:active {
   transform: translateY(3px);
-  box-shadow: 0 2px 0 rgba(67, 127, 190, 0.15);
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 15%, transparent);
 }
 .create-goal-icon {
   width: 43px;
   height: 43px;
   @apply d-grid place-center flex-shrink-0;
   color: white;
-  border: 3px solid #fff;
+  border: 3px solid var(--lad-palette-white);
   border-radius: 15px;
-  background: linear-gradient(145deg, #65b8f2, #3f82d5);
-  box-shadow: 0 4px 0 #326fb7;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-blue)
+  );
+  box-shadow: 0 4px 0 var(--lad-palette-blue-strong);
 }
 .create-goal-card > span:nth-child(2) {
   @apply flex-grow-1 min-w-0;
@@ -382,12 +396,12 @@ onUnmounted(() => {
   @apply d-block;
 }
 .create-goal-card strong {
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 .create-goal-card small {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .create-goal-arrow {
   color: var(--lad-blue-dark);
@@ -399,7 +413,11 @@ onUnmounted(() => {
 .family-goal {
   padding: 12px !important;
   border: 2px solid color-mix(in srgb, var(--lad-blue) 16%, white);
-  background: linear-gradient(145deg, #fff, #f4faff);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-white)
+  );
   box-shadow: 0 5px 0 color-mix(in srgb, var(--lad-blue) 13%, transparent) !important;
 }
 .goal-account-stats {
@@ -413,39 +431,53 @@ onUnmounted(() => {
   padding: 5px 6px;
   @apply d-flex align-center text-left;
   gap: 5px;
-  border: 1px solid rgba(73, 143, 196, 0.14);
+  border: 1px solid color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
   border-radius: 12px;
-  background: linear-gradient(145deg, #eef8ff, #fff);
-  box-shadow: 0 3px 0 rgba(58, 121, 166, 0.08);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-white)
+  );
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 8%, transparent);
 }
 .goal-account-stats > span:nth-child(2) {
-  background: linear-gradient(145deg, #effbf5, #fff7d2);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
 }
 .goal-account-stats > span:nth-child(3),
 .goal-account-stats > span:nth-child(4) {
-  background: linear-gradient(145deg, #fffaf0, #ffefb8);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-amber-150)
+  );
 }
 .goal-account-stats :deep(.v-icon) {
   width: 27px;
   height: 27px;
   @apply d-grid place-center flex-shrink-0;
-  color: #3d86c2;
-  border: 2px solid #fff;
+  color: var(--lad-palette-blue-strong);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 9px;
-  background: #dff1ff;
-  box-shadow: 0 2px 0 rgba(49, 115, 168, 0.13);
-  font-size: 16px;
+  background: var(--lad-palette-background);
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent);
+  font-size: 1rem;
   animation: account-stat-float 3s ease-in-out infinite;
 }
 .goal-account-stats > span:nth-child(2) :deep(.v-icon) {
-  color: #27795e;
-  background: #dff5e9;
+  color: var(--lad-palette-teal-700);
+  background: var(--lad-palette-background);
   animation-delay: -0.7s;
 }
 .goal-account-stats > span:nth-child(3) :deep(.v-icon),
 .goal-account-stats > span:nth-child(4) :deep(.v-icon) {
-  color: #a66b08;
-  background: #ffe8a3;
+  color: var(--lad-palette-amber-600);
+  background: var(--lad-palette-amber-150);
   animation-delay: -1.4s;
 }
 .goal-account-stats > span:nth-child(4) :deep(.v-icon) {
@@ -461,19 +493,19 @@ onUnmounted(() => {
 }
 .goal-account-stats small {
   color: var(--lad-muted);
-  font-size: 7px;
+  font-size: 0.4375rem;
   font-weight: 800;
   line-height: 1.15;
 }
 .goal-account-stats strong {
   margin-top: 2px;
-  color: #2b745a;
-  font-size: 11px;
+  color: var(--lad-palette-teal-700);
+  font-size: 0.6875rem;
   line-height: 1.1;
 }
 .goal-account-stats > span:nth-child(3) strong,
 .goal-account-stats > span:nth-child(4) strong {
-  color: #956008;
+  color: var(--lad-palette-amber-650);
 }
 .goal-total small,
 .goal-total strong {
@@ -481,14 +513,14 @@ onUnmounted(() => {
 }
 .goal-total small {
   color: var(--lad-muted);
-  font-size: 7px;
+  font-size: 0.4375rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .goal-total strong {
   margin-top: 1px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 @keyframes account-stat-float {
   0%,
@@ -503,14 +535,19 @@ onUnmounted(() => {
   width: 45px;
   height: 45px;
   @apply d-grid place-center flex-shrink-0;
-  border: 3px solid #fff;
+  border: 3px solid var(--lad-palette-white);
   border-radius: 15px;
-  background: linear-gradient(145deg, #e6f4ff, #fff0c6);
-  box-shadow: 0 4px 0 rgba(78, 143, 221, 0.16);
-  font-size: 24px;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+  font-size: 1.5rem;
   transform: rotate(-4deg);
 }
-@media (min-width: 560px) {
+@include respond-up(studio) {
   .goal-account-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -522,7 +559,7 @@ onUnmounted(() => {
   .goal-account-stats :deep(.v-icon) {
     width: 24px;
     height: 24px;
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
 }
 .child-selector {
@@ -532,11 +569,16 @@ onUnmounted(() => {
   width: 48px;
   height: 42px;
   @apply position-relative d-grid place-center flex-shrink-0;
-  border: 2px solid rgba(88, 156, 215, 0.18);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
   border-radius: 15px;
-  color: #396f9d;
-  background: linear-gradient(145deg, #eff8ff, #dceeff);
-  box-shadow: 0 4px 0 rgba(65, 122, 173, 0.17);
+  color: var(--lad-palette-blue-600);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-background)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 18%, transparent);
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -545,22 +587,31 @@ onUnmounted(() => {
 }
 .cheer-button:hover {
   transform: translateY(-2px) rotate(-2deg);
-  box-shadow: 0 6px 0 rgba(65, 122, 173, 0.17);
+  box-shadow: 0 6px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 18%, transparent);
 }
 .cheer-button:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(65, 122, 173, 0.17);
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 18%, transparent);
 }
 .cheer-button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--lad-blue) 42%, transparent);
-  outline-offset: 2px;
+  @include focus-ring(color-mix(in srgb, var(--lad-blue) 42%, transparent));
 }
 .cheer-button.is-cheered {
-  border-color: rgba(232, 161, 39, 0.35);
-  background: linear-gradient(145deg, #fff8cf, #ffe39c);
+  border-color: color-mix(
+    in srgb,
+    var(--lad-palette-amber-500) 35%,
+    transparent
+  );
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-amber-100),
+    var(--lad-palette-amber-150)
+  );
   box-shadow:
-    0 4px 0 rgba(204, 133, 26, 0.2),
-    0 0 18px rgba(255, 194, 66, 0.28);
+    0 4px 0 color-mix(in srgb, var(--lad-palette-amber-550) 20%, transparent),
+    0 0 18px color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent);
 }
 .cheer-hands {
   @apply d-flex align-center justify-center;
@@ -569,7 +620,7 @@ onUnmounted(() => {
 }
 .cheer-hands i {
   font-style: normal;
-  font-size: 18px;
+  font-size: 1.125rem;
   transform-origin: bottom center;
 }
 .cheer-hands i:first-child {
@@ -586,9 +637,9 @@ onUnmounted(() => {
 }
 .cheer-spark {
   @apply position-absolute pointer-events-none;
-  color: #e7a222;
+  color: var(--lad-palette-amber-500);
   opacity: 0.45;
-  font-size: 9px;
+  font-size: 0.5625rem;
   animation: cheer-spark 1.8s ease-in-out infinite;
 }
 .cheer-spark--one {
@@ -609,8 +660,8 @@ onUnmounted(() => {
   height: 58px;
   @apply d-grid place-center;
   border-radius: 19px;
-  background: #eaf6ff;
-  font-size: 31px;
+  background: var(--lad-palette-background);
+  font-size: 1.9375rem;
   animation: goal-float 2.8s ease-in-out infinite;
 }
 .family-gift-button {
@@ -618,17 +669,22 @@ onUnmounted(() => {
 }
 .support-dialog-card {
   @apply position-relative overflow-hidden;
-  border: 2px solid rgba(78, 143, 221, 0.18);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
   background:
     radial-gradient(
       circle at 88% 5%,
-      rgba(255, 216, 92, 0.28),
+      color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent),
       transparent 27%
     ),
-    linear-gradient(155deg, #fffdf2, #edf9f5 64%, #edf6ff) !important;
+    linear-gradient(
+      155deg,
+      var(--lad-palette-surface),
+      var(--lad-palette-background) 64%,
+      var(--lad-palette-background)
+    ) !important;
   box-shadow:
-    0 9px 0 rgba(45, 109, 81, 0.13),
-    0 24px 54px rgba(38, 67, 55, 0.23) !important;
+    0 9px 0 color-mix(in srgb, var(--lad-palette-teal-700) 12%, transparent),
+    0 24px 54px color-mix(in srgb, var(--lad-palette-text) 25%, transparent) !important;
 }
 .support-dialog-heading {
   @apply d-flex align-center;
@@ -636,28 +692,29 @@ onUnmounted(() => {
 }
 .support-dialog-heading h2 {
   @apply ma-0;
-  font-size: 20px;
+  font-size: 1.25rem;
   line-height: 1.15;
 }
 .support-dialog-heading span {
   @apply d-block;
   margin-top: 4px;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .support-journey {
   height: 54px;
   padding-inline: 8px;
   @apply position-relative d-flex align-center justify-space-between;
-  border: 2px solid rgba(65, 151, 116, 0.12);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 12%, transparent);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
 }
 .support-journey > i {
   width: 10px;
   height: 5px;
-  border-radius: 999px;
-  background: #b9dece;
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-muted-250);
 }
 .support-coin,
 .support-present {
@@ -665,23 +722,24 @@ onUnmounted(() => {
   height: 36px;
   @apply d-grid place-center;
   z-index: 2;
-  border: 3px solid #fff;
-  box-shadow: 0 3px 0 rgba(95, 78, 41, 0.13);
+  border: 3px solid var(--lad-palette-white);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-orange-750) 12%, transparent);
 }
 .support-coin {
-  color: #80530d;
+  color: var(--lad-palette-amber-700);
   border-radius: 50%;
-  background: #ffd25a;
-  font-size: 12px;
-  font-weight: 950;
+  background: var(--lad-palette-yellow);
+  font-size: 0.75rem;
+  font-weight: var(--lad-font-weight-black);
 }
 .support-present {
   border-radius: 12px;
-  background: #dff5eb;
-  font-size: 20px;
+  background: var(--lad-palette-background);
+  font-size: 1.25rem;
 }
 .support-high-five {
-  font-size: 25px;
+  font-size: 1.5625rem;
 }
 .support-dialog-card.is-sending .support-coin {
   animation: support-coin-flight 0.85s ease-in forwards;
@@ -694,10 +752,14 @@ onUnmounted(() => {
 }
 .support-submit {
   min-height: 43px !important;
-  background: linear-gradient(145deg, #55c59a, #2f9770) !important;
-  box-shadow: 0 4px 0 #267456 !important;
-  font-size: 10px;
-  font-weight: 900;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  ) !important;
+  box-shadow: 0 4px 0 var(--lad-palette-teal-700) !important;
+  font-size: 0.625rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -768,7 +830,7 @@ onUnmounted(() => {
     transform: rotate(-18deg) scale(1.25);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .cheer-hands i,
   .cheer-spark,
   .support-dialog-card.is-sending .support-coin,
@@ -785,13 +847,19 @@ onUnmounted(() => {
   min-height: 38px !important;
   padding-inline: 8px !important;
   @apply position-relative overflow-visible;
-  border: 2px solid rgba(255, 255, 255, 0.82) !important;
-  background: linear-gradient(145deg, #eaf6ff, #cfe8ff) !important;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent) !important;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-blue-150)
+  ) !important;
   box-shadow:
-    0 4px 0 rgba(57, 121, 184, 0.2),
-    0 8px 14px rgba(57, 121, 184, 0.1) !important;
-  font-size: 9px;
-  font-weight: 900;
+    0 4px 0 color-mix(in srgb, var(--lad-palette-blue-strong) 20%, transparent),
+    0 8px 14px
+      color-mix(in srgb, var(--lad-palette-blue-strong) 10%, transparent) !important;
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -812,52 +880,67 @@ onUnmounted(() => {
   @apply position-absolute pointer-events-none;
   top: -7px;
   right: 5px;
-  color: #e8a629;
-  font-size: 10px;
+  color: var(--lad-palette-amber-450);
+  font-size: 0.625rem;
   font-style: normal;
   animation: assign-spark 2.3s ease-in-out infinite;
 }
 .save-dialog-card {
   @apply overflow-hidden;
-  border: 2px solid rgba(78, 143, 221, 0.2);
-  background: linear-gradient(180deg, #fffdf8, #f5fbff) !important;
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 20%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-white)
+  ) !important;
   box-shadow:
-    0 9px 0 rgba(55, 103, 148, 0.15),
-    0 25px 55px rgba(34, 62, 86, 0.24) !important;
+    0 9px 0 color-mix(in srgb, var(--lad-palette-blue-600) 15%, transparent),
+    0 25px 55px
+      color-mix(in srgb, var(--lad-palette-indigo-750) 25%, transparent) !important;
 }
 .save-dialog-header {
   padding: 16px 14px;
   @apply d-flex align-center;
   gap: 11px;
-  border-bottom: 2px solid rgba(78, 143, 221, 0.12);
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
   background:
     radial-gradient(
       circle at 88% 4%,
-      rgba(255, 220, 103, 0.28),
+      color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent),
       transparent 28%
     ),
-    linear-gradient(145deg, #eaf7ff, #fff8dd);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100)
+    );
 }
 .save-dialog-header h2 {
   @apply ma-0;
-  font-size: 20px;
+  font-size: 1.25rem;
   letter-spacing: -0.035em;
 }
 .save-dialog-header div > span {
   @apply d-block;
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .save-goal-icon {
   width: 54px;
   height: 54px;
   @apply d-grid place-center flex-shrink-0;
-  border: 3px solid #fff;
+  border: 3px solid var(--lad-palette-white);
   border-radius: 18px;
-  background: linear-gradient(145deg, #e6f5ff, #fff0bd);
-  box-shadow: 0 4px 0 rgba(64, 124, 182, 0.16);
-  font-size: 29px;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-150)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 15%, transparent);
+  font-size: 1.8125rem;
   transform: rotate(-5deg);
 }
 .save-dialog-content {
@@ -868,29 +951,41 @@ onUnmounted(() => {
   padding: 10px 12px;
   @apply d-flex align-center;
   gap: 9px;
-  border: 2px solid rgba(67, 151, 117, 0.14);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.75);
-  box-shadow: 0 4px 0 rgba(56, 133, 99, 0.09);
+  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
 }
 .save-balance-coin,
 .save-goal-star {
   width: 38px;
   height: 38px;
   @apply d-grid place-center flex-shrink-0;
-  border: 3px solid #fff;
-  box-shadow: 0 3px 0 rgba(119, 84, 31, 0.13);
-  font-weight: 950;
+  border: 3px solid var(--lad-palette-white);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-amber-700) 12%, transparent);
+  font-weight: var(--lad-font-weight-black);
 }
 .save-balance-coin {
-  color: #81540b;
+  color: var(--lad-palette-amber-700);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 28%, #fff5a3, #ffd25b 48%, #e7a027);
+  background: radial-gradient(
+    circle at 35% 28%,
+    var(--lad-palette-amber-150),
+    var(--lad-palette-yellow) 48%,
+    var(--lad-palette-amber-500)
+  );
 }
 .save-goal-star {
-  color: #fff3a3;
+  color: var(--lad-palette-amber-150);
   border-radius: 13px;
-  background: linear-gradient(145deg, #58bb94, #2d8869);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  );
 }
 .save-balance > div {
   min-width: 70px;
@@ -901,18 +996,18 @@ onUnmounted(() => {
 }
 .save-balance small {
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .save-balance strong {
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 .save-journey {
   height: 8px;
   @apply position-relative flex-grow-1;
-  border-radius: 999px;
+  border-radius: var(--lad-radius-pill);
   background: repeating-linear-gradient(
     90deg,
-    #b5d9e9 0 7px,
+    var(--lad-palette-blue-150) 0 7px,
     transparent 7px 12px
   );
 }
@@ -923,7 +1018,7 @@ onUnmounted(() => {
   top: 0;
   left: 2px;
   border-radius: 50%;
-  background: #ffd05b;
+  background: var(--lad-palette-yellow);
   opacity: 0;
 }
 .save-journey i:nth-child(2) {
@@ -935,8 +1030,9 @@ onUnmounted(() => {
 .save-slider :deep(.v-slider-thumb__surface) {
   width: 28px;
   height: 28px;
-  border: 3px solid #fff;
-  box-shadow: 0 3px 0 rgba(50, 111, 173, 0.18);
+  border: 3px solid var(--lad-palette-white);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 18%, transparent);
 }
 .save-value {
   margin: 12px auto 15px;
@@ -948,28 +1044,28 @@ onUnmounted(() => {
   width: 31px;
   height: 31px;
   @apply d-grid place-center;
-  color: #81540b;
-  border: 2px solid #fff3b3;
+  color: var(--lad-palette-amber-700);
+  border: 2px solid var(--lad-palette-amber-150);
   border-radius: 50%;
-  background: #ffd15a;
-  box-shadow: 0 3px 0 #bd791c;
-  font-size: 12px;
-  font-weight: 950;
+  background: var(--lad-palette-yellow);
+  box-shadow: 0 3px 0 var(--lad-palette-amber-550);
+  font-size: 0.75rem;
+  font-weight: var(--lad-font-weight-black);
 }
 .save-value strong {
-  font-size: 34px;
+  font-size: 2.125rem;
   line-height: 1;
 }
 .save-value small {
   color: var(--lad-muted);
-  font-size: 9px;
-  font-weight: 850;
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-strong);
 }
 .save-empty-note {
   margin: -3px 8px 14px;
   color: var(--lad-muted);
   @apply text-center;
-  font-size: 9px;
+  font-size: 0.5625rem;
   line-height: 1.4;
 }
 .save-submit {
@@ -978,13 +1074,19 @@ onUnmounted(() => {
   padding: 8px 13px;
   @apply position-relative d-flex align-center justify-center overflow-hidden cursor-pointer;
   gap: 8px;
-  color: #fff;
-  border: 3px solid rgba(255, 255, 255, 0.82);
+  color: var(--lad-palette-white);
+  border: 3px solid
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
   border-radius: 17px;
-  background: linear-gradient(145deg, #5db9ef, #397fd2);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-blue-strong)
+  );
   box-shadow:
-    0 5px 0 #2e6db5,
-    0 10px 17px rgba(48, 116, 185, 0.17);
+    0 5px 0 var(--lad-palette-blue-strong),
+    0 10px 17px
+      color-mix(in srgb, var(--lad-palette-blue-strong) 18%, transparent);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
@@ -992,12 +1094,13 @@ onUnmounted(() => {
 .save-submit:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
-    0 7px 0 #2e6db5,
-    0 13px 20px rgba(48, 116, 185, 0.2);
+    0 7px 0 var(--lad-palette-blue-strong),
+    0 13px 20px
+      color-mix(in srgb, var(--lad-palette-blue-strong) 20%, transparent);
 }
 .save-submit:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 2px 0 #2e6db5;
+  box-shadow: 0 2px 0 var(--lad-palette-blue-strong);
 }
 .save-submit:disabled {
   cursor: default;
@@ -1008,23 +1111,23 @@ onUnmounted(() => {
   width: 27px;
   height: 27px;
   @apply d-grid place-center;
-  color: #7c5008;
-  border: 2px solid #fff3b0;
+  color: var(--lad-palette-amber-700);
+  border: 2px solid var(--lad-palette-amber-150);
   border-radius: 50%;
-  background: #ffd15a;
-  font-size: 10px;
-  font-weight: 950;
+  background: var(--lad-palette-yellow);
+  font-size: 0.625rem;
+  font-weight: var(--lad-font-weight-black);
   animation: save-button-coin 2.2s ease-in-out infinite;
 }
 .save-submit > span:nth-of-type(2) {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .save-submit > i {
   @apply position-absolute;
   top: 4px;
   right: 9px;
-  color: #fff2a5;
-  font-size: 11px;
+  color: var(--lad-palette-amber-150);
+  font-size: 0.6875rem;
   font-style: normal;
   animation: save-button-spark 1.7s ease-in-out infinite;
 }
@@ -1143,7 +1246,7 @@ onUnmounted(() => {
     opacity: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .assign-coin,
   .assign-spark,
   .save-submit > span:first-child,

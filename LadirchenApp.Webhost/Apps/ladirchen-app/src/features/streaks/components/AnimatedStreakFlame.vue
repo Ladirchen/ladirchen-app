@@ -29,7 +29,8 @@ const flameStyle = computed(() => ({
 }));
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .animated-streak-flame {
   @apply d-inline-grid;
   flex: 0 0 auto;
@@ -39,28 +40,30 @@ const flameStyle = computed(() => ({
 }
 svg {
   @apply w-100 h-100 overflow-visible;
-  filter: drop-shadow(0 3px 2px rgba(142, 83, 20, 0.2));
+  filter: drop-shadow(
+    0 3px 2px color-mix(in srgb, var(--lad-palette-amber-700) 20%, transparent)
+  );
 }
 .flame-shadow {
-  fill: rgba(94, 67, 39, 0.15);
+  fill: color-mix(in srgb, var(--lad-palette-orange-750) 15%, transparent);
   transform-box: fill-box;
   transform-origin: center;
   animation: shadow-pulse 3.4s ease-in-out infinite;
 }
 .flame-body {
-  fill: #f3a52e;
-  stroke: #a96018;
+  fill: var(--lad-palette-amber-450);
+  stroke: var(--lad-palette-amber-600);
   stroke-linejoin: round;
   stroke-width: 4;
 }
 .flame-heart {
-  fill: #ffd85d;
+  fill: var(--lad-palette-yellow);
   transform-box: fill-box;
   transform-origin: center bottom;
   animation: heart-flicker 2.1s ease-in-out infinite;
 }
 .flame-face ellipse {
-  fill: #704218;
+  fill: var(--lad-palette-amber-700);
   transform-box: fill-box;
   transform-origin: center;
   animation: flame-blink 7s ease-in-out infinite;
@@ -70,12 +73,12 @@ svg {
 }
 .flame-face path {
   fill: none;
-  stroke: #704218;
+  stroke: var(--lad-palette-amber-700);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .flame-sparks {
-  fill: #ffd85d;
+  fill: var(--lad-palette-yellow);
 }
 .flame-sparks path {
   transform-box: fill-box;
@@ -135,7 +138,7 @@ svg {
     transform: scale(1.1) rotate(20deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .animated-streak-flame,
   .flame-shadow,
   .flame-heart,

@@ -4,26 +4,26 @@
       <div class="streak-header pa-4">
         <div class="streak-title-row">
           <div>
-            <p class="dialog-kicker">Gemeinsam dranbleiben</p>
-            <h2>Tagesserie</h2>
-            <p class="streak-subtitle mt-1">Sammelt gemeinsam Feuer für euer Zuhause.</p>
+            <p class="dialog-kicker">{{ t('streaks.weekly.eyebrow') }}</p>
+            <h2>{{ t('streaks.weekly.title') }}</h2>
+            <p class="streak-subtitle mt-1">{{ t('streaks.weekly.description') }}</p>
           </div>
           <div class="streak-hero" aria-hidden="true">
             <span class="hero-spark hero-spark--one">✦</span>
             <span class="hero-spark hero-spark--two">✦</span>
             <AnimatedStreakFlame :size="80" />
           </div>
-          <button class="close-button" aria-label="Wochenübersicht schließen" type="button" @click="close"><v-icon icon="mdi-close" /></button>
+          <button class="close-button" :aria-label="t('streaks.weekly.close')" type="button" @click="close"><v-icon icon="mdi-close" /></button>
         </div>
 
         <div class="summary-grid mt-4">
           <div class="summary-tile summary-tile--streak">
             <div class="summary-icon" aria-hidden="true"><v-icon size="25">mdi-fire</v-icon></div>
-            <div><span>Eure Serie</span><strong>{{ store.currentDailyStreak }} {{ store.currentDailyStreak === 1 ? 'Tag' : 'Tage' }}</strong></div>
+            <div><span>{{ t('streaks.weekly.summary.streak') }}</span><strong>{{ t('streaks.weekly.summary.days', { count: store.currentDailyStreak }) }}</strong></div>
           </div>
           <div class="summary-tile summary-tile--week">
             <div class="summary-icon" aria-hidden="true"><v-icon size="23">mdi-calendar-heart</v-icon></div>
-            <div><span>Diese Woche</span><strong>{{ store.currentWeekDays }} von {{ store.currentWeekTarget }}</strong></div>
+            <div><span>{{ t('streaks.weekly.summary.thisWeek') }}</span><strong>{{ t('streaks.weekly.summary.progress', { current: store.currentWeekDays, target: store.currentWeekTarget }) }}</strong></div>
           </div>
         </div>
       </div>
@@ -32,29 +32,29 @@
         <div v-if="store.viewerRole === 'child'" class="ladi-level">
           <LadiMascot :score="store.averageTaskRating" :show-score="false" :size="88" />
           <div>
-            <p class="section-kicker">MEIN LADI-LEVEL</p>
-            <strong>{{ ladiStage.name }}</strong>
-            <span>{{ ladiStage.description }}</span>
+            <p class="section-kicker">{{ t('streaks.weekly.ladiLevel') }}</p>
+            <strong>{{ t(ladiStage.nameKey) }}</strong>
+            <span>{{ t(ladiStage.descriptionKey) }}</span>
           </div>
         </div>
 
         <div class="week-heading" :class="{ 'mt-4': store.viewerRole === 'child' }">
-          <div><span class="section-kicker">EUER WOCHENWEG</span><strong>Ein Tag nach dem anderen</strong></div>
+          <div><span class="section-kicker">{{ t('streaks.weekly.path.eyebrow') }}</span><strong>{{ t('streaks.weekly.path.title') }}</strong></div>
         </div>
 
-        <div aria-label="Fortschritt dieser Woche" class="week-days mt-3">
-          <div v-for="(day, index) in weekDays" :key="day.label" :class="['week-day', `week-day--${day.status}`]" :style="{ '--day-index': index }" :aria-label="`${day.fullLabel}: ${statusLabel(day.status)}`">
+        <div :aria-label="t('streaks.weekly.path.progressAria')" class="week-days mt-3">
+          <div v-for="(day, index) in weekDays" :key="day.fullLabel" :class="['week-day', `week-day--${day.status}`]" :style="{ '--day-index': index }" :aria-label="t('streaks.weekly.path.dayAria', { day: day.fullLabel, status: statusLabel(day.status) })">
             <span>{{ day.label }}</span>
             <div class="day-symbol">
-              <v-icon v-if="day.status === 'done'" size="19">mdi-check-bold</v-icon>
-              <v-icon v-else-if="day.status === 'today'" size="18">mdi-star-four-points</v-icon>
+              <v-icon v-if="day.status === DayStatus.Done" size="19">mdi-check-bold</v-icon>
+              <v-icon v-else-if="day.status === DayStatus.Today" size="18">mdi-star-four-points</v-icon>
               <v-icon v-else size="14">mdi-circle-small</v-icon>
             </div>
             <small>{{ statusLabel(day.status) }}</small>
           </div>
           <div class="week-motivation">
             <AnimatedStreakFlame :size="27" />
-            <span><strong>{{ weekMessage }}</strong><small>Jeder geschaffte Tag bringt neue Energie in euer Zuhause.</small></span>
+            <span><strong>{{ weekMessage }}</strong><small>{{ t('streaks.weekly.motivation.description') }}</small></span>
           </div>
         </div>
 
@@ -65,6 +65,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
@@ -73,73 +74,72 @@ import { approvedContributionDatesInCurrentWeek } from '@/domain/weekly-progress
 import { addCalendarDays, calendarDateInTimeZone, startOfIsoWeek } from '@/domain/zoned-calendar';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
-type DayStatus = 'done' | 'today' | 'upcoming';
+enum DayStatus {
+  Done = 'done',
+  Today = 'today',
+  Upcoming = 'upcoming',
+}
 
 defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const store = useFamilyWorldStore();
+const { locale, t } = useI18n();
 const labels = computed(() => {
   const monday = startOfIsoWeek(new Date(store.currentTimeMilliseconds), store.familyTimeZone);
-  const shortFormatter = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', weekday: 'short' });
-  const longFormatter = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', weekday: 'long' });
+  const shortFormatter = new Intl.DateTimeFormat(locale.value, { timeZone: 'UTC', weekday: 'short' });
+  const longFormatter = new Intl.DateTimeFormat(locale.value, { timeZone: 'UTC', weekday: 'long' });
   return Array.from({ length: 7 }, (_, index) => {
     const calendarDate = addCalendarDays(monday, index);
     const date = new Date(`${calendarDate}T12:00:00.000Z`);
     return { calendarDate, label: shortFormatter.format(date), fullLabel: longFormatter.format(date) };
   });
 });
+
 const completedDates = computed(() => approvedContributionDatesInCurrentWeek(
   store.contributions,
   store.familyTimeZone,
   new Date(store.currentTimeMilliseconds),
 ));
 const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
+const dayStatus = (calendarDate: string): DayStatus => completedDates.value.has(calendarDate)
+  ? DayStatus.Done
+  : calendarDate === today.value
+    ? DayStatus.Today
+    : DayStatus.Upcoming;
 const weekDays = computed(() => labels.value.map(day => ({
   ...day,
-  status: (completedDates.value.has(day.calendarDate)
-    ? 'done'
-    : day.calendarDate === today.value
-      ? 'today'
-      : 'upcoming') as DayStatus,
+  status: dayStatus(day.calendarDate),
 })));
 const ladiStage = computed(() => getLadiStage(store.averageTaskRating));
 const weekMessage = computed(() => store.currentWeekDays >= store.currentWeekTarget
-  ? 'Starke Woche – ihr habt gemeinsam durchgehalten!'
-  : 'Heute zählt für eure gemeinsame Serie!');
+  ? t('streaks.weekly.motivation.complete')
+  : t('streaks.weekly.motivation.active'));
 
 const statusLabel = (status: DayStatus) => {
-  if (status === 'done') return 'Geschafft';
-  if (status === 'today') return 'Heute';
-  return 'Kommt noch';
+  return t(`streaks.weekly.status.${status}`);
 };
 const close = () => emit('update:modelValue', false);
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .streak-dialog {
   max-height: calc(100dvh - 28px);
   @apply d-flex flex-column overflow-hidden;
-  color: #253843;
-  border: 2px solid rgba(78, 143, 221, 0.16);
-  background: #fffdf8 !important;
-  box-shadow:
-    0 10px 0 rgba(58, 127, 174, 0.12),
-    0 28px 70px rgba(62, 85, 75, 0.22) !important;
+  @include dialog-frame;
 }
 .streak-header {
   @apply position-relative;
   flex: 0 0 auto;
-  background: #fffdf8;
+  background: var(--lad-surface);
 }
 .streak-title-row {
   min-height: 126px;
   padding: 18px;
-  @apply position-relative d-flex align-center overflow-hidden;
+  @apply d-flex align-center;
   z-index: 1;
-  border: 2px solid rgba(78, 143, 221, 0.15);
-  border-radius: 23px;
-  background: linear-gradient(145deg, #fffdf8, #e7f3ff);
-  box-shadow: 0 5px 0 rgba(78, 143, 221, 0.12);
+  @include dialog-title-panel;
 }
 .streak-title-row::before,
 .streak-title-row::after {
@@ -152,15 +152,16 @@ const close = () => emit('update:modelValue', false);
   height: 120px;
   top: -72px;
   right: -28px;
-  background: rgba(214, 235, 255, 0.62);
-  box-shadow: 0 0 0 17px rgba(226, 240, 255, 0.45);
+  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+  box-shadow: 0 0 0 17px
+    color-mix(in srgb, var(--lad-palette-background) 40%, transparent);
 }
 .streak-title-row::after {
   width: 84px;
   height: 26px;
   right: 44px;
   bottom: -16px;
-  background: rgba(213, 234, 255, 0.55);
+  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
 }
 .streak-title-row > div:first-child {
   max-width: 245px;
@@ -169,46 +170,22 @@ const close = () => emit('update:modelValue', false);
 }
 .dialog-kicker {
   margin: 0 0 5px;
-  color: #4e8fdd;
-  font-size: 9px;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  @include overline(var(--lad-blue), 0.5625rem);
 }
 .streak-dialog h2 {
   @apply ma-0;
-  font-size: 25px;
-  letter-spacing: -0.04em;
+  @include heading(1.5625rem, 1.1, -0.04em);
 }
 .streak-subtitle {
   max-width: 225px;
-  color: #65766f;
-  font-size: 11px;
-  line-height: 1.4;
+  @include body-copy(0.6875rem);
 }
 .close-button {
-  width: 36px;
-  height: 36px;
-  @apply position-absolute d-grid place-center cursor-pointer;
+  @apply position-absolute;
   top: 8px;
   right: 8px;
   z-index: 5;
-  color: #35574f;
-  border: 2px solid #fff;
-  border-radius: 13px;
-  background: #f4f8f6;
-  box-shadow: 0 4px 0 rgba(82, 123, 106, 0.13);
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease;
-}
-.close-button:hover {
-  transform: translateY(-2px) rotate(4deg);
-  box-shadow: 0 6px 0 rgba(82, 123, 106, 0.13);
-}
-.close-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(82, 123, 106, 0.13);
+  @include dialog-close-button;
 }
 .streak-hero {
   width: 82px;
@@ -218,14 +195,15 @@ const close = () => emit('update:modelValue', false);
   right: 44px;
   z-index: 2;
   border-radius: 25px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 4px 0 rgba(78, 143, 221, 0.12);
+  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
 }
 .hero-spark {
   @apply position-absolute;
   z-index: 2;
-  color: #df8b2a;
-  font-size: 16px;
+  color: var(--lad-palette-amber-500);
+  font-size: 1rem;
   animation: spark-pulse 1.8s ease-in-out infinite;
 }
 .hero-spark--one {
@@ -247,33 +225,69 @@ const close = () => emit('update:modelValue', false);
   min-height: 68px;
   @apply min-w-0 pa-2 d-flex align-center;
   gap: 8px;
-  border: 2px solid rgba(73, 151, 198, 0.18);
-  border-radius: 18px;
+  @include raised-surface(
+    color-mix(in srgb, var(--lad-palette-blue) 18%, transparent),
+    color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent),
+    var(--lad-radius-medium),
+    0.3125rem
+  );
   background:
-    radial-gradient(circle at 90% 8%, rgba(255, 215, 88, 0.2), transparent 27%),
-    linear-gradient(145deg, #eaf7ff, #edf9f3 62%, #fff4cf);
-  box-shadow: 0 5px 0 rgba(58, 127, 174, 0.12);
+    radial-gradient(
+      circle at 90% 8%,
+      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
+      transparent 27%
+    ),
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-background) 62%,
+      var(--lad-palette-amber-100)
+    );
 }
 .summary-tile--week {
-  border-color: rgba(167, 118, 194, 0.17);
-  background: linear-gradient(145deg, #fff1f8, #f1f0ff 58%, #fff6d8);
-  box-shadow: 0 5px 0 rgba(143, 98, 157, 0.11);
+  border-color: color-mix(
+    in srgb,
+    var(--lad-palette-purple-350) 18%,
+    transparent
+  );
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background) 58%,
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-muted-500) 10%, transparent);
 }
 .summary-icon {
-  width: 40px;
-  height: 40px;
-  @apply d-grid place-center;
-  flex: 0 0 40px;
-  color: #fff !important;
-  border: 3px solid #fff;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #6bc3a0, #4387d2) !important;
-  box-shadow: 0 4px 0 #3574aa !important;
-  transform: rotate(-5deg);
+  @include icon-tile(
+    2.5rem,
+    0.875rem,
+    linear-gradient(
+      145deg,
+      var(--lad-palette-teal-400),
+      var(--lad-palette-blue)
+    ),
+    var(--lad-palette-blue-strong),
+    -5deg,
+    0.1875rem solid var(--lad-palette-white)
+  );
+  flex-basis: 40px;
+  color: var(--lad-palette-white) !important;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-blue)
+  ) !important;
+  box-shadow: 0 4px 0 var(--lad-palette-blue-strong) !important;
 }
 .summary-tile--week .summary-icon {
-  background: linear-gradient(145deg, #d589c7, #826ec5) !important;
-  box-shadow: 0 4px 0 #6d58a8 !important;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-pink-300),
+    var(--lad-palette-violet-400)
+  ) !important;
+  box-shadow: 0 4px 0 var(--lad-palette-violet-500) !important;
 }
 .summary-tile span,
 .summary-tile strong {
@@ -281,11 +295,11 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile span {
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .summary-tile strong {
   margin-top: 1px;
-  font-size: 17px;
+  font-size: 1.0625rem;
   @apply text-no-wrap;
 }
 .streak-content {
@@ -293,7 +307,11 @@ const close = () => emit('update:modelValue', false);
   flex: 1 1 auto;
   @apply d-flex flex-column overflow-hidden;
   gap: 12px;
-  background: linear-gradient(180deg, #fffdf8, #f4faf7);
+  background: linear-gradient(
+    180deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
 }
 .week-heading {
   @apply d-flex align-end justify-space-between;
@@ -305,31 +323,36 @@ const close = () => emit('update:modelValue', false);
 }
 .week-heading > div strong {
   margin-top: 3px;
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .section-kicker {
-  color: #278568;
-  font-size: 8px;
-  font-weight: 950;
-  letter-spacing: 0.11em;
+  @include overline(
+    var(--lad-palette-mint-strong),
+    var(--lad-font-size-micro),
+    0.11em
+  );
 }
 .week-days {
   padding: 18px 11px 12px;
   @apply d-grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   @apply ga-1;
-  border: 2px solid rgba(78, 143, 221, 0.17);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
   border-radius: 23px;
   background:
     radial-gradient(
       circle at 88% 2%,
-      rgba(255, 218, 90, 0.24),
+      color-mix(in srgb, var(--lad-palette-yellow) 25%, transparent),
       transparent 30%
     ),
-    linear-gradient(145deg, #f8fcff, #eef9f5);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-white),
+      var(--lad-palette-background)
+    );
   box-shadow:
-    0 7px 0 rgba(78, 143, 221, 0.1),
-    0 14px 24px rgba(61, 112, 89, 0.07);
+    0 7px 0 color-mix(in srgb, var(--lad-palette-blue) 10%, transparent),
+    0 14px 24px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
 }
 .week-day {
   @apply min-w-0 position-relative text-center;
@@ -342,15 +365,15 @@ const close = () => emit('update:modelValue', false);
   top: 34px;
   left: calc(50% + 20px);
   z-index: 0;
-  border-radius: 999px;
-  background: #e4ede8;
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-background);
 }
 .week-day--done:not(:nth-child(7))::after {
-  background: #80cfaf;
+  background: var(--lad-palette-teal-400);
 }
 .week-day > span {
-  color: #40524b;
-  font-size: 10px;
+  color: var(--lad-palette-muted-700);
+  font-size: 0.625rem;
   @apply font-weight-black;
 }
 .day-symbol {
@@ -360,25 +383,29 @@ const close = () => emit('update:modelValue', false);
   @apply position-relative;
   z-index: 1;
   @apply d-grid place-center;
-  color: #9aa8a2;
-  border: 2px solid #dfe9e4;
+  color: var(--lad-palette-muted-350);
+  border: 2px solid var(--lad-palette-teal-150);
   border-radius: 50%;
-  background: #f5f8f6;
+  background: var(--lad-palette-background);
 }
 .week-day small {
   @apply d-block overflow-hidden;
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 0.5rem;
   text-overflow: ellipsis;
   @apply text-no-wrap;
 }
 .week-day--done .day-symbol {
   color: white;
-  border: 3px solid #eafff6;
-  background: linear-gradient(145deg, #4dcca0, #218461);
+  border: 3px solid var(--lad-palette-background);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  );
   box-shadow:
-    0 4px 0 #145b45,
-    0 8px 13px rgba(28, 119, 87, 0.16);
+    0 4px 0 var(--lad-palette-teal-700),
+    0 8px 13px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent);
   animation: day-done-arrive 0.65s cubic-bezier(0.2, 0.8, 0.3, 1) both;
   animation-delay: calc(var(--day-index) * 70ms);
 }
@@ -387,20 +414,24 @@ const close = () => emit('update:modelValue', false);
   opacity: 1;
 }
 .week-day--today .day-symbol {
-  color: #99600c;
-  border: 3px solid #fff9dc;
-  background: linear-gradient(145deg, #fff5c8, #ffd46a);
+  color: var(--lad-palette-amber-650);
+  border: 3px solid var(--lad-palette-amber-100);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-amber-100),
+    var(--lad-palette-yellow)
+  );
   box-shadow:
-    0 0 0 6px rgba(255, 201, 92, 0.18),
-    0 4px 0 #cc8726;
+    0 0 0 6px color-mix(in srgb, var(--lad-palette-yellow) 18%, transparent),
+    0 4px 0 var(--lad-palette-amber-550);
   animation: day-today-pulse 2.2s ease-in-out infinite;
 }
 .week-day--done small {
-  color: #164f3e;
-  font-weight: 950;
+  color: var(--lad-palette-text);
+  font-weight: var(--lad-font-weight-black);
 }
 .week-day--today small {
-  color: #99600c;
+  color: var(--lad-palette-amber-650);
   @apply font-weight-black;
 }
 .week-motivation {
@@ -410,11 +441,17 @@ const close = () => emit('update:modelValue', false);
   grid-column: 1 / -1;
   gap: 9px;
   margin-top: 8px;
-  color: #275d4d;
-  border: 1px solid rgba(62, 170, 127, 0.17);
+  color: var(--lad-palette-teal-700);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 18%, transparent);
   border-radius: 16px;
-  background: linear-gradient(145deg, #e7f8f0, #fff5cf);
-  box-shadow: 0 3px 0 rgba(47, 139, 103, 0.09);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-mint-strong) 8%, transparent);
 }
 .week-motivation span,
 .week-motivation strong,
@@ -422,12 +459,12 @@ const close = () => emit('update:modelValue', false);
   @apply d-block;
 }
 .week-motivation strong {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .week-motivation small {
   margin-top: 2px;
-  color: #647971;
-  font-size: 8px;
+  color: var(--lad-palette-muted);
+  font-size: 0.5rem;
   line-height: 1.3;
 }
 .ladi-level {
@@ -435,17 +472,22 @@ const close = () => emit('update:modelValue', false);
   padding: 13px 17px;
   @apply position-relative d-flex align-center overflow-hidden;
   gap: 16px;
-  border: 2px solid rgba(78, 143, 221, 0.16);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
   border-radius: 22px;
-  background: linear-gradient(145deg, #fff, #eef7ff);
-  box-shadow: 0 7px 0 rgba(78, 143, 221, 0.11);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
+  box-shadow: 0 7px 0
+    color-mix(in srgb, var(--lad-palette-blue) 10%, transparent);
 }
 .ladi-level::after {
   content: "✦";
   @apply position-absolute;
   top: 9px;
   right: 12px;
-  color: #e6a52d;
+  color: var(--lad-palette-amber-450);
 }
 .ladi-level > div:last-child {
   @apply min-w-0;
@@ -456,12 +498,12 @@ const close = () => emit('update:modelValue', false);
 }
 .ladi-level strong {
   margin-top: 2px;
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 .ladi-level span {
   margin-top: 4px;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.45;
 }
 @keyframes spark-pulse {
@@ -493,17 +535,17 @@ const close = () => emit('update:modelValue', false);
   100% {
     transform: translateY(0) rotate(-2deg);
     box-shadow:
-      0 0 0 5px rgba(255, 201, 92, 0.15),
-      0 4px 0 #cc8726;
+      0 0 0 5px color-mix(in srgb, var(--lad-palette-yellow) 15%, transparent),
+      0 4px 0 var(--lad-palette-amber-550);
   }
   50% {
     transform: translateY(-3px) rotate(3deg);
     box-shadow:
-      0 0 0 9px rgba(255, 201, 92, 0.09),
-      0 6px 0 #cc8726;
+      0 0 0 9px color-mix(in srgb, var(--lad-palette-yellow) 8%, transparent),
+      0 6px 0 var(--lad-palette-amber-550);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .hero-spark,
   .week-day--done .day-symbol,
   .week-day--today .day-symbol {
