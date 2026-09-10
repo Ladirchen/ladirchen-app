@@ -1,6 +1,6 @@
 <template>
-  <aside class="global-ladi-guide" :class="[`mood-${mood}`, { hidden: isHidden, 'gift-celebration': giftCelebration }]" aria-label="Ladi-Begleiter">
-    <button v-if="isHidden" class="guide-branch" type="button" aria-label="Ladi wieder hervorholen" @click="revealGuide">
+  <aside class="global-ladi-guide" :class="[`mood-${mood}`, { hidden: isHidden, 'gift-celebration': giftCelebration }]" :aria-label="t('guide.aria')">
+    <button v-if="isHidden" class="guide-branch" type="button" :aria-label="t('guide.reveal')" @click="revealGuide">
       <svg aria-hidden="true" viewBox="0 0 58 68">
         <path class="branch-vine" d="M64 11C48 10 43 17 36 23c-6 6-12 8-20 8" />
         <ellipse class="branch-leaf branch-leaf--top" cx="36" cy="20" rx="10" ry="6" />
@@ -16,7 +16,7 @@
     <template v-else>
       <Transition name="guide-speech">
         <div v-if="speech" class="guide-speech" role="status">
-          <button v-if="!moodPromptPending" aria-label="Sprechblase schließen" class="guide-close" type="button" @click="closeSpeech">×</button>
+          <button v-if="!moodPromptPending" :aria-label="t('guide.close')" class="guide-close" type="button" @click="closeSpeech">×</button>
           <strong>{{ speechHeading }}</strong>
           <span>{{ speech }}</span>
           <div v-if="speechProgress || speechActionLabel" class="speech-actions">
@@ -26,7 +26,7 @@
               <span aria-hidden="true">→</span>
             </button>
           </div>
-          <div v-if="choosingMood" class="mood-picker" aria-label="Stimmung auswählen">
+          <div v-if="choosingMood" class="mood-picker" :aria-label="t('guide.mood.choose')">
             <button
               v-for="option in moodOptions"
               :key="option.id"
@@ -39,10 +39,10 @@
         </div>
       </Transition>
 
-      <button class="guide-hide" type="button" aria-label="Ladi am Bildschirmrand verstecken" @click="hideGuide">›</button>
+      <button class="guide-hide" type="button" :aria-label="t('guide.hide')" @click="hideGuide">›</button>
       <span v-if="giftCelebration" class="guide-high-five" aria-hidden="true">✋</span>
       <span v-if="giftCelebration" class="guide-flying-gift" aria-hidden="true">🎁</span>
-      <button class="guide-ladi" :class="randomMotion" type="button" :aria-expanded="Boolean(speech)" aria-label="Seitenerklärung von Ladi öffnen" @click="speakCurrentPageIntro">
+      <button class="guide-ladi" :class="randomMotion" type="button" :aria-expanded="Boolean(speech)" :aria-label="t('guide.openExplanation')" @click="speakCurrentPageIntro">
         <LadiMascot :score="ladiScore" :show-coin="false" :show-scene-base="false" :show-score="false" :smart="store.piggyBankOpen || isSmart" :size="80" />
       </button>
     </template>
@@ -52,6 +52,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 import { useFamilyWorldStore } from '@/stores/family-world';
@@ -69,8 +70,23 @@ interface LadiGuideEventDetail {
   celebration?: 'gift';
 }
 
+const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === 'string';
+const isOptionalBoolean = (value: unknown): boolean => value === undefined || typeof value === 'boolean';
+const isLadiGuideEventDetail = (value: unknown): value is LadiGuideEventDetail => {
+  if (typeof value !== 'object' || value === null || !('message' in value)) {return false;}
+  return typeof value.message === 'string' && value.message.trim().length > 0 &&
+    isOptionalString('heading' in value ? value.heading : undefined) &&
+    isOptionalBoolean('pageIntro' in value ? value.pageIntro : undefined) &&
+    isOptionalBoolean('smart' in value ? value.smart : undefined) &&
+    isOptionalString('progress' in value ? value.progress : undefined) &&
+    isOptionalString('actionLabel' in value ? value.actionLabel : undefined) &&
+    isOptionalString('actionEvent' in value ? value.actionEvent : undefined) &&
+    (!('celebration' in value) || value.celebration === undefined || value.celebration === 'gift');
+};
+
 const store = useFamilyWorldStore();
 const route = useRoute();
+const { t } = useI18n();
 const speech = ref('');
 const customHeading = ref('');
 const choosingMood = ref(false);
@@ -83,29 +99,30 @@ const speechActionLabel = ref('');
 const speechActionEvent = ref('');
 const giftCelebration = ref(false);
 const moodPromptPending = ref(true);
-const pageIntroHeading = ref('Ladi sagt');
-const pageIntroMessage = ref('Ich bin da, wenn du einen Tipp brauchst.');
+const pageIntroHeading = ref(t('guide.defaultHeading'));
+const pageIntroMessage = ref(t('guide.defaultMessage'));
 let speechTimer: number | undefined;
 let motionTimer: number | undefined;
 let initialMoodTimer: number | undefined;
 let celebrationTimer: number | undefined;
 
-const moodOptions: ReadonlyArray<{ id: GuideMood; icon: string; label: string }> = [
-  { id: 'gentle', icon: '😌', label: 'Ruhig' },
-  { id: 'calm', icon: '🙂', label: 'Okay' },
-  { id: 'happy', icon: '😄', label: 'Fröhlich' },
-];
-const pageMessages: Record<string, { heading: string; message: string }> = {
-  '/': { heading: 'Eure Familienwelt', message: 'Hier lebt eure Familienwelt. Tippe auf Haus, Garten oder eine Anzeige, wenn du mehr wissen möchtest.' },
-  '/beitraege': { heading: 'Beiträge', message: 'Grundbeiträge versorgen eure Familienwelt. Freiwillige Zusatzbeiträge bringen dir zusätzliche Ladirchen.' },
-  '/wuensche': { heading: 'Clever sparen', message: 'Hier sammelst du Ladirchen für deine Wünsche oder hilfst bei sichtbaren Zielen deiner Familie mit. Unter Ladis Fleiß-Bonus zeige ich dir, wie dein Einsatz zusätzliche Ladirchen für deine Ziele bringt.' },
-  '/shop': { heading: 'Shop', message: 'Im Familien-Shop findest du echte Belohnungen, im Hauskatalog virtuelle Dekorationen.' },
-  '/familie': { heading: 'Meine Familie', message: 'Hier siehst du Beiträge, Tagesserien und sichtbare Ziele deiner ganzen Familie auf einen Blick.' },
-  '/ich': { heading: 'Ich', message: 'Das ist dein Bereich. Hier kannst du dein Profil, deine Einstellungen und deinen Ladi-Fortschritt ansehen.' },
-};
+const moodOptions = computed<ReadonlyArray<{ id: GuideMood; icon: string; label: string }>>(() => [
+  { id: 'gentle', icon: '😌', label: t('guide.mood.gentle') },
+  { id: 'calm', icon: '🙂', label: t('guide.mood.calm') },
+  { id: 'happy', icon: '😄', label: t('guide.mood.happy') },
+]);
+const pageMessages = computed<Record<string, { heading: string; message: string }>>(() => ({
+  '/': { heading: t('guide.pages.world.heading'), message: t('guide.pages.world.message') },
+  '/beitraege': { heading: t('guide.pages.contributions.heading'), message: t('guide.pages.contributions.message') },
+  '/wuensche': { heading: t('guide.pages.wishes.heading'), message: t('guide.pages.wishes.message') },
+  '/shop': { heading: t('guide.pages.shop.heading'), message: t('guide.pages.shop.message') },
+  '/familie': { heading: t('guide.pages.family.heading'), message: t('guide.pages.family.message') },
+  '/ich': { heading: t('guide.pages.profile.heading'), message: t('guide.pages.profile.message') },
+}));
+const fallbackPageMessage = () => ({ heading: t('guide.defaultHeading'), message: t('guide.defaultMessage') });
 
 const ladiScore = computed(() => mood.value === 'gentle' ? 2.8 : mood.value === 'happy' ? 4.6 : 3.7);
-const speechHeading = computed(() => customHeading.value || (mood.value === 'gentle' ? 'Ganz in Ruhe' : 'Ladi sagt'));
+const speechHeading = computed(() => customHeading.value || (mood.value === 'gentle' ? t('guide.gentleHeading') : t('guide.defaultHeading')));
 const moodStorageKey = computed(() => `ladirchen:guide-mood:${store.activeChildId}`);
 const hiddenStorageKey = computed(() => `ladirchen:guide-hidden:${store.activeChildId}`);
 
@@ -147,16 +164,16 @@ const triggerSpeechAction = () => {
 const speakCurrentPageIntro = () => {
   if (choosingMood.value) return;
   if (store.piggyBankOpen) {
-    showSpeech('Hier siehst du, welche Ladirchen frei sind, welche schon für Wünsche sparen und wie du sie verschieben oder verschenken kannst.', 'Dein Guthaben', true);
+    showSpeech(t('guide.balance.message'), t('guide.balance.heading'), true);
     return;
   }
-  const fallback = pageMessages[route.path] ?? { heading: 'Ladi sagt', message: 'Ich bin da, wenn du einen Tipp brauchst.' };
+  const fallback = pageMessages.value[route.path] ?? fallbackPageMessage();
   if (route.path === '/wuensche') {
     showSpeech(
       pageIntroMessage.value || fallback.message,
       pageIntroHeading.value || fallback.heading,
       true,
-      { progress: '1 / 6', actionLabel: 'Weiter', actionEvent: 'savings-interest:start' },
+      { progress: '1 / 6', actionLabel: t('common.next'), actionEvent: 'savings-interest:start' },
     );
     return;
   }
@@ -167,20 +184,20 @@ const selectMood = (nextMood: GuideMood) => {
   localStorage.setItem(moodStorageKey.value, nextMood);
   choosingMood.value = false;
   moodPromptPending.value = false;
-  customHeading.value = nextMood === 'happy' ? 'Juhu!' : nextMood === 'gentle' ? 'Ganz in Ruhe' : 'Alles klar';
+  customHeading.value = nextMood === 'happy' ? t('guide.mood.happyHeading') : nextMood === 'gentle' ? t('guide.gentleHeading') : t('guide.mood.calmHeading');
   speech.value = nextMood === 'happy'
-    ? 'Deine gute Laune steckt mich an! Wir schaffen das zusammen.'
+    ? t('guide.mood.happyMessage')
     : nextMood === 'gentle'
-      ? 'Heute machen wir alles Schritt für Schritt. Du musst dich nicht beeilen.'
-      : 'Ich bleibe an deiner Seite und helfe dir bei den nächsten Schritten.';
+      ? t('guide.mood.gentleMessage')
+      : t('guide.mood.calmMessage');
   clearSpeechTimer();
   speechTimer = window.setTimeout(speakCurrentPageIntro, 1700);
 };
 const handleGuideEvent = (event: Event) => {
-  const detail = (event as CustomEvent<LadiGuideEventDetail>).detail;
-  if (!detail?.message) return;
+  if (!(event instanceof CustomEvent) || !isLadiGuideEventDetail(event.detail)) {return;}
+  const detail = event.detail;
   if (detail.pageIntro) {
-    pageIntroHeading.value = detail.heading || 'Ladi sagt';
+    pageIntroHeading.value = detail.heading || t('guide.defaultHeading');
     pageIntroMessage.value = detail.message;
     if (choosingMood.value) return;
   }
@@ -208,8 +225,8 @@ const revealGuide = () => {
   isHidden.value = false;
   localStorage.removeItem(hiddenStorageKey.value);
   randomMotion.value = 'does-emerge';
-  customHeading.value = 'Da bin ich!';
-  speech.value = mood.value === 'gentle' ? 'Ganz langsam – ich bin wieder bei dir.' : 'Hallo! Ich helfe dir gern weiter.';
+  customHeading.value = t('guide.welcomeBack.heading');
+  speech.value = mood.value === 'gentle' ? t('guide.welcomeBack.gentle') : t('guide.welcomeBack.message');
   if (motionTimer !== undefined) window.clearTimeout(motionTimer);
   motionTimer = window.setTimeout(() => {
     randomMotion.value = '';
@@ -234,7 +251,7 @@ watch(() => store.activeChildId, () => {
 watch(() => route.path, () => {
   closeSpeech();
   if (!moodPromptPending.value) choosingMood.value = false;
-  const intro = pageMessages[route.path] ?? { heading: 'Ladi sagt', message: 'Ich bin da, wenn du einen Tipp brauchst.' };
+  const intro = pageMessages.value[route.path] ?? fallbackPageMessage();
   pageIntroHeading.value = intro.heading;
   pageIntroMessage.value = intro.message;
 });
@@ -247,13 +264,13 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   closeSpeech();
   choosingMood.value = false;
   if (isOpen) {
-    showSpeech('Hier siehst du, welche Ladirchen frei sind, welche bereits sparen und wohin du sie schicken kannst.', 'Dein Guthaben', true);
+    showSpeech(t('guide.balance.openMessage'), t('guide.balance.heading'), true);
   }
 });
 onMounted(() => {
   loadMood();
   isHidden.value = localStorage.getItem(hiddenStorageKey.value) === 'true';
-  const intro = pageMessages[route.path] ?? { heading: 'Ladi sagt', message: 'Ich bin da, wenn du einen Tipp brauchst.' };
+  const intro = pageMessages.value[route.path] ?? fallbackPageMessage();
   pageIntroHeading.value = intro.heading;
   pageIntroMessage.value = intro.message;
   window.addEventListener('ladi-guide:say', handleGuideEvent);
@@ -264,8 +281,8 @@ onMounted(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     initialMoodTimer = window.setTimeout(() => {
       clearSpeechTimer();
-      customHeading.value = 'Wie geht es dir?';
-      speech.value = 'Wähle einmal aus, wie du dich heute fühlst. Ich passe mich dann an deine Stimmung an.';
+      customHeading.value = t('guide.mood.promptHeading');
+      speech.value = t('guide.mood.promptMessage');
       initialMoodTimer = undefined;
     }, reduceMotion ? 650 : 2650);
   } else {
@@ -282,7 +299,8 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .global-ladi-guide {
   @apply position-fixed pointer-events-none;
   right: max(4px, calc((100vw - 500px) / 2 + 4px));
@@ -301,11 +319,14 @@ onUnmounted(() => {
   border-radius: 28px;
   background: radial-gradient(
     circle,
-    rgba(255, 255, 255, 0.86),
-    rgba(255, 255, 255, 0.28) 60%,
+    color-mix(in srgb, var(--lad-palette-white) 85%, transparent),
+    color-mix(in srgb, var(--lad-palette-white) 30%, transparent) 60%,
     transparent 61%
   );
-  filter: drop-shadow(0 7px 6px rgba(50, 71, 61, 0.16));
+  filter: drop-shadow(
+    0 7px 6px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent)
+  );
   transition: transform 0.18s ease;
 }
 .guide-ladi:hover,
@@ -314,7 +335,8 @@ onUnmounted(() => {
   transform: translateY(-5px) rotate(-3deg);
 }
 .guide-ladi:focus-visible {
-  box-shadow: 0 0 0 4px rgba(64, 166, 128, 0.22);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
 }
 .guide-ladi :deep(.ladi-wrap) {
   grid-area: 1 / 1;
@@ -326,13 +348,14 @@ onUnmounted(() => {
   right: -1px;
   top: 25px;
   z-index: 5;
-  color: #53746a;
-  border: 2px solid #fff;
+  color: var(--lad-palette-teal-600);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 12px 0 0 12px;
-  background: #e8f7f0;
-  box-shadow: 0 4px 0 rgba(49, 139, 105, 0.15);
-  font-size: 23px;
-  font-weight: 900;
+  background: var(--lad-palette-background);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
+  font-size: 1.4375rem;
+  font-weight: var(--lad-font-weight-heavy);
   line-height: 1;
 }
 .guide-branch {
@@ -340,20 +363,26 @@ onUnmounted(() => {
   height: 68px;
   padding: 0;
   @apply position-relative d-grid place-center pointer-events-auto cursor-pointer overflow-hidden;
-  color: #286f59;
-  border: 2px solid rgba(64, 164, 126, 0.2);
+  color: var(--lad-palette-teal-700);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
   border-right: 0;
   border-radius: 24px 0 0 24px;
   background:
     radial-gradient(
       circle at 18% 20%,
-      rgba(255, 220, 103, 0.4),
+      color-mix(in srgb, var(--lad-palette-yellow) 40%, transparent),
       transparent 29%
     ),
-    linear-gradient(145deg, #f9fffc, #dcf5e9);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-white),
+      var(--lad-palette-background)
+    );
   box-shadow:
-    0 5px 0 rgba(49, 139, 105, 0.14),
-    0 10px 20px rgba(49, 93, 76, 0.14);
+    0 5px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent),
+    0 10px 20px
+      color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   transition:
     width 0.18s ease,
     background 0.18s ease;
@@ -365,10 +394,14 @@ onUnmounted(() => {
   background:
     radial-gradient(
       circle at 18% 20%,
-      rgba(255, 220, 103, 0.55),
+      color-mix(in srgb, var(--lad-palette-yellow) 60%, transparent),
       transparent 30%
     ),
-    linear-gradient(145deg, #fff, #cef0df);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-white),
+      var(--lad-palette-teal-150)
+    );
 }
 .guide-branch svg {
   width: 58px;
@@ -377,13 +410,13 @@ onUnmounted(() => {
 }
 .branch-vine {
   fill: none;
-  stroke: #3d8d69;
+  stroke: var(--lad-palette-teal-600);
   stroke-linecap: round;
   stroke-width: 5;
 }
 .branch-leaf {
-  fill: #62bd83;
-  stroke: #fff;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-white);
   stroke-width: 2;
   transform-box: fill-box;
   transform-origin: center;
@@ -392,7 +425,7 @@ onUnmounted(() => {
   transform: rotate(-31deg);
 }
 .branch-leaf--side {
-  fill: #8bce8e;
+  fill: var(--lad-palette-green-250);
   transform: rotate(24deg);
 }
 .branch-charm {
@@ -402,24 +435,26 @@ onUnmounted(() => {
 }
 .branch-charm path {
   fill: none;
-  stroke: #377f62;
+  stroke: var(--lad-palette-teal-600);
   stroke-linecap: round;
   stroke-width: 2.5;
 }
 .branch-charm circle {
-  fill: #ffd257;
-  stroke: #fff5bd;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-150);
   stroke-width: 3;
-  filter: drop-shadow(0 3px 1px rgba(159, 103, 20, 0.25));
+  filter: drop-shadow(
+    0 3px 1px color-mix(in srgb, var(--lad-palette-amber-650) 25%, transparent)
+  );
 }
 .branch-charm text {
-  fill: #82540b;
-  font-size: 14px;
-  font-weight: 950;
+  fill: var(--lad-palette-amber-700);
+  font-size: 0.875rem;
+  font-weight: var(--lad-font-weight-black);
   text-anchor: middle;
 }
 .branch-spark {
-  fill: #f0b43b;
+  fill: var(--lad-palette-amber-450);
   transform-box: fill-box;
   transform-origin: center;
   animation: branch-spark-pop 2.2s ease-in-out infinite;
@@ -431,14 +466,20 @@ onUnmounted(() => {
   @apply position-absolute pointer-events-auto;
   right: 70px;
   bottom: 64px;
-  color: #405d55;
-  border: 2px solid rgba(61, 157, 121, 0.24);
+  color: var(--lad-palette-muted-700);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 25%, transparent);
   border-radius: 22px 22px 6px 22px;
-  background: linear-gradient(145deg, #fff, #eefaf5);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
   box-shadow:
-    0 6px 0 rgba(49, 139, 105, 0.13),
-    0 14px 28px rgba(52, 91, 77, 0.15);
-  font-size: 13px;
+    0 6px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
+    0 14px 28px
+      color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
+  font-size: 0.8125rem;
   line-height: 1.52;
 }
 .guide-speech::after {
@@ -449,9 +490,11 @@ onUnmounted(() => {
   right: -7px;
   bottom: 12px;
   transform: rotate(45deg);
-  border-top: 2px solid rgba(61, 157, 121, 0.22);
-  border-right: 2px solid rgba(61, 157, 121, 0.22);
-  background: #f1faf6;
+  border-top: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
+  border-right: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
+  background: var(--lad-palette-background);
 }
 .guide-speech strong,
 .guide-speech > span {
@@ -460,8 +503,8 @@ onUnmounted(() => {
 .guide-speech strong {
   padding-right: 24px;
   margin-bottom: 5px;
-  color: #237257;
-  font-size: 15px;
+  color: var(--lad-palette-teal-700);
+  font-size: 0.9375rem;
   line-height: 1.25;
 }
 .guide-close {
@@ -470,11 +513,11 @@ onUnmounted(() => {
   @apply position-absolute d-grid place-center cursor-pointer;
   top: 7px;
   right: 8px;
-  color: #59726a;
+  color: var(--lad-palette-teal-600);
   border: 0;
   border-radius: 10px;
-  background: rgba(83, 145, 122, 0.09);
-  font-size: 18px;
+  background: color-mix(in srgb, var(--lad-palette-teal-550) 8%, transparent);
+  font-size: 1.125rem;
   line-height: 1;
 }
 .speech-actions {
@@ -482,40 +525,45 @@ onUnmounted(() => {
   padding-top: 10px;
   @apply d-flex align-center justify-space-between;
   gap: 10px;
-  border-top: 1px solid rgba(48, 142, 105, 0.14);
+  border-top: 1px solid
+    color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
 }
 .speech-progress {
   min-width: 42px;
   padding: 6px 9px;
   @apply text-center;
-  color: #806019;
-  border-radius: 999px;
-  background: #fff0b9;
-  font-size: 11px;
-  font-weight: 950;
+  color: var(--lad-palette-amber-700);
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-amber-150);
+  font-size: 0.6875rem;
+  font-weight: var(--lad-font-weight-black);
 }
 .speech-next {
   min-height: 35px;
   padding: 7px 13px;
   @apply d-flex align-center justify-center cursor-pointer;
   gap: 8px;
-  color: #fff;
+  color: var(--lad-palette-white);
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(145deg, #45c397, #279a73);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-mint),
+    var(--lad-palette-mint-strong)
+  );
   box-shadow:
-    0 3px 0 #1e7558,
-    0 7px 13px rgba(35, 125, 93, 0.16);
-  font-size: 12px;
-  font-weight: 900;
+    0 3px 0 var(--lad-palette-teal-700),
+    0 7px 13px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent);
+  font-size: 0.75rem;
+  font-weight: var(--lad-font-weight-heavy);
 }
 .speech-next:hover,
 .speech-next:focus-visible {
   transform: translateY(-2px);
   outline: 0;
   box-shadow:
-    0 5px 0 #1e7558,
-    0 10px 16px rgba(35, 125, 93, 0.18);
+    0 5px 0 var(--lad-palette-teal-700),
+    0 10px 16px color-mix(in srgb, var(--lad-palette-teal-700) 18%, transparent);
 }
 .mood-picker {
   margin-top: 9px;
@@ -528,33 +576,47 @@ onUnmounted(() => {
   padding: 5px 2px;
   @apply d-flex flex-column align-center cursor-pointer;
   gap: 2px;
-  color: #64766f;
-  border: 1px solid rgba(68, 145, 116, 0.15);
+  color: var(--lad-palette-muted);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.75);
-  font-size: 8px;
-  font-weight: 850;
+  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-strong);
 }
 .mood-picker button > span {
-  font-size: 16px;
+  font-size: 1rem;
 }
 .mood-picker button.active {
-  color: #237257;
-  border-color: rgba(48, 159, 116, 0.35);
-  background: #e6f8ef;
-  box-shadow: 0 3px 0 rgba(48, 142, 105, 0.12);
+  color: var(--lad-palette-teal-700);
+  border-color: color-mix(
+    in srgb,
+    var(--lad-palette-teal-550) 35%,
+    transparent
+  );
+  background: var(--lad-palette-background);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
 }
 .mood-happy .guide-speech {
-  background: linear-gradient(145deg, #fffdf0, #fff1bf);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-amber-150)
+  );
 }
 .mood-happy .guide-speech::after {
-  background: #fff6d2;
+  background: var(--lad-palette-amber-100);
 }
 .mood-gentle .guide-speech {
-  background: linear-gradient(145deg, #f7fbff, #eef5ff);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
 }
 .mood-gentle .guide-speech::after {
-  background: #f0f7ff;
+  background: var(--lad-palette-background);
 }
 .guide-speech-enter-active,
 .guide-speech-leave-active {
@@ -590,15 +652,17 @@ onUnmounted(() => {
 .guide-high-five {
   top: -5px;
   left: 4px;
-  font-size: 32px;
+  font-size: 2rem;
   transform-origin: bottom right;
   animation: high-five-pop 1.25s ease-out 2;
 }
 .guide-flying-gift {
   top: 28px;
   left: 20px;
-  font-size: 28px;
-  filter: drop-shadow(0 5px 5px rgba(91, 70, 35, 0.2));
+  font-size: 1.75rem;
+  filter: drop-shadow(
+    0 5px 5px color-mix(in srgb, var(--lad-palette-orange-750) 20%, transparent)
+  );
   animation: gift-flight 2.3s cubic-bezier(0.18, 0.78, 0.22, 1) both;
 }
 @keyframes guide-wave {
@@ -717,7 +781,7 @@ onUnmounted(() => {
     transform: scale(1.12) rotate(24deg);
   }
 }
-@media (max-width: 532px) {
+@include respond-down(guide) {
   .global-ladi-guide {
     right: 2px;
     bottom: 80px;
@@ -726,13 +790,13 @@ onUnmounted(() => {
     right: -1px;
   }
 }
-@media (max-width: 380px) {
+@include respond-down(compact) {
   .guide-speech {
     width: 240px;
     right: 60px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .guide-ladi,
   .guide-ladi.does-wave,
   .guide-ladi.does-hop,
