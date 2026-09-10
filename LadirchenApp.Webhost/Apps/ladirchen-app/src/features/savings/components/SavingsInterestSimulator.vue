@@ -2,38 +2,38 @@
   <v-card class="interest-simulator pa-4 mb-5" elevation="0" rounded="xl">
     <div class="d-flex align-start justify-space-between ga-3">
       <div>
-        <p class="eyebrow mb-1">Kinder-Simulator</p>
-        <h3>Zins &amp; Ladi ausprobieren</h3>
-        <p class="text-caption text-medium-emphasis mt-1">Die Regler sind nur eine Vorschau und verändern deine echten Aufgaben nicht.</p>
+        <p class="eyebrow mb-1">{{ t('savings.simulator.eyebrow') }}</p>
+        <h3>{{ t('savings.simulator.title') }}</h3>
+        <p class="text-caption text-medium-emphasis mt-1">{{ t('savings.simulator.description') }}</p>
       </div>
-      <v-chip color="info" size="x-small" variant="tonal">Demo</v-chip>
+      <v-chip color="info" size="x-small" variant="tonal">{{ t('savings.simulator.demo') }}</v-chip>
     </div>
 
     <div class="simulator-preview mt-4">
       <LadiMascot :score="simulatedRating" :show-score="false" :size="68" />
       <div class="flex-grow-1">
-        <span>Wenn deine Woche so endet</span>
-        <strong>{{ simulatedLadiStage.name }}</strong>
-        <small>{{ simulatedLadiStage.description }}</small>
+        <span>{{ t('savings.simulator.preview') }}</span>
+        <strong>{{ t(simulatedLadiStage.nameKey) }}</strong>
+        <small>{{ t(simulatedLadiStage.descriptionKey) }}</small>
       </div>
-      <div class="simulator-rate"><strong>{{ formatRate(simulatedInterestRate) }} %</strong><span>Wochenzins</span></div>
+      <div class="simulator-rate"><strong>{{ formatRate(simulatedInterestRate) }} %</strong><span>{{ t('savings.simulator.weeklyRate') }}</span></div>
     </div>
 
-    <label class="simulator-label mt-4">Aufgaben erledigt <strong>{{ simulatedCompletion }} %</strong></label>
+    <label class="simulator-label mt-4">{{ t('savings.simulator.completion') }} <strong>{{ simulatedCompletion }} %</strong></label>
     <v-slider v-model="simulatedCompletion" color="primary" hide-details max="100" min="0" step="10" />
-    <label class="simulator-label">Durchschnittliche Bewertung <strong>{{ formatRate(simulatedRating) }} / 5</strong></label>
+    <label class="simulator-label">{{ t('savings.simulator.rating') }} <strong>{{ formatRate(simulatedRating) }} / 5</strong></label>
     <v-slider v-model="simulatedRating" color="warning" hide-details max="5" min="0" step="0.1" />
-    <label class="simulator-label">Tagesserie <strong>{{ simulatedStreak }} Tage</strong></label>
+    <label class="simulator-label">{{ t('savings.simulator.streak') }} <strong>{{ t('savings.simulator.days', { count: simulatedStreak }) }}</strong></label>
     <v-slider v-model="simulatedStreak" color="info" hide-details max="30" min="0" step="1" />
 
     <div class="payout-estimate mt-4">
-      <div><span>Deine nächste Demo-Auszahlung</span><strong>+{{ simulatedWeeklyInterest }} L</strong></div>
-      <small>Berechnet aus {{ store.totalSaved }} L in deinen Sparplänen. Jeder Klick simuliert eine weitere Woche.</small>
+      <div><span>{{ t('savings.simulator.nextPayout') }}</span><strong>+{{ simulatedWeeklyInterest }} L</strong></div>
+      <small>{{ t('savings.simulator.calculation', { saved: store.totalSaved }) }}</small>
     </div>
 
     <div class="simulator-actions mt-3">
-      <v-btn rounded="lg" size="small" variant="text" @click="resetSimulation">Zurücksetzen</v-btn>
-      <v-btn color="primary" :disabled="simulatedWeeklyInterest <= 0" rounded="lg" size="small" variant="flat" @click="simulatePayout">Zinsauszahlung simulieren</v-btn>
+      <v-btn rounded="lg" size="small" variant="text" @click="resetSimulation">{{ t('common.reset') }}</v-btn>
+      <v-btn color="primary" :disabled="simulatedWeeklyInterest <= 0" rounded="lg" size="small" variant="flat" @click="simulatePayout">{{ t('savings.simulator.simulate') }}</v-btn>
     </div>
 
     <AnimatePresence>
@@ -56,7 +56,7 @@
           ><LadirchenCoin /></motion.div>
           <AnimatedPiggyBank receiving :size="65" />
         </div>
-        <div><strong>+{{ lastPayout }} L Zinsen!</strong><span>Deine Sparpläne und dein Zinsertrag wurden aktualisiert.</span></div>
+        <div><strong>{{ t('savings.simulator.payout', { amount: lastPayout }) }}</strong><span>{{ t('savings.simulator.payoutDescription') }}</span></div>
       </motion.div>
     </AnimatePresence>
   </v-card>
@@ -65,6 +65,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { AnimatePresence, motion } from 'motion-v';
+import { useI18n } from 'vue-i18n';
 
 import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
@@ -75,6 +76,7 @@ import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
+const { locale, t } = useI18n();
 const simulatedCompletion = ref(0);
 const simulatedRating = ref(0);
 const simulatedStreak = ref(0);
@@ -107,7 +109,7 @@ const simulatedWeeklyInterest = computed(() => store.ownSavingGoals.reduce(
   0,
 ));
 
-const formatRate = (value: number) => value.toLocaleString('de-DE', {
+const formatRate = (value: number) => value.toLocaleString(locale.value, {
   maximumFractionDigits: 2,
   minimumFractionDigits: 1,
 });
@@ -136,23 +138,24 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .interest-simulator {
-  border: 1px solid rgba(78, 143, 221, 0.22);
-  background: linear-gradient(155deg, #eef7ff, #f1fbf6 62%, #fff8db) !important;
+  border: 1px solid var(--lad-border-info);
+  background: var(--lad-gradient-info) !important;
 }
 h3 {
   @apply ma-0;
-  font-size: 18px;
+  font-size: 1.125rem;
   letter-spacing: -0.025em;
 }
 .simulator-preview {
   padding: 11px 12px;
   @apply d-flex align-center;
   gap: 10px;
-  border: 1px solid rgba(62, 137, 116, 0.15);
+  border: 1px solid var(--lad-border-subtle);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--lad-surface) 72%, transparent);
 }
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) strong,
@@ -162,11 +165,11 @@ h3 {
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) small {
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .simulator-preview > div:nth-child(2) strong {
   margin: 1px 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .simulator-rate {
   min-width: 70px;
@@ -177,18 +180,18 @@ h3 {
   @apply d-block;
 }
 .simulator-rate strong {
-  color: var(--lad-blue-dark);
-  font-size: 20px;
+  color: var(--lad-color-info-strong);
+  font-size: 1.25rem;
 }
 .simulator-rate span {
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .simulator-label {
   margin-top: 9px;
   @apply d-flex align-center justify-space-between;
   color: var(--lad-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .simulator-label strong {
   color: var(--lad-text);
@@ -196,7 +199,7 @@ h3 {
 .payout-estimate {
   padding: 11px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.76);
+  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
 }
 .payout-estimate > div {
   @apply d-flex align-center justify-space-between ga-3;
@@ -204,11 +207,11 @@ h3 {
 .payout-estimate span,
 .payout-estimate small {
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .payout-estimate strong {
   color: var(--lad-mint-dark);
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 .payout-estimate small {
   @apply d-block;
@@ -221,23 +224,23 @@ h3 {
 }
 .payout-success {
   @apply pa-3 d-flex align-center ga-3 overflow-hidden;
-  border: 1px solid rgba(62, 188, 140, 0.25);
+  border: 1px solid var(--lad-border-success);
   border-radius: 17px;
-  background: linear-gradient(145deg, #e2f8ec, #fff4c9);
-  box-shadow: 0 5px 0 rgba(62, 188, 140, 0.12);
+  background: var(--lad-gradient-success);
+  box-shadow: 0 5px 0 var(--lad-shadow-raised-success);
 }
 .payout-success > div:last-child strong,
 .payout-success > div:last-child span {
   @apply d-block;
 }
 .payout-success > div:last-child strong {
-  color: #247b5d;
-  font-size: 18px;
+  color: var(--lad-color-success-strong);
+  font-size: 1.125rem;
 }
 .payout-success > div:last-child span {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.35;
 }
 .payout-visual {
@@ -254,7 +257,7 @@ h3 {
   z-index: 2;
   left: 9px;
 }
-@media (max-width: 400px) {
+@include respond-down(small) {
   .simulator-preview {
     @apply align-start flex-wrap;
   }

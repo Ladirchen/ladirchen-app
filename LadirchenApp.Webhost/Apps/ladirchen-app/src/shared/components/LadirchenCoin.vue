@@ -10,26 +10,29 @@
 withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: false, animated: false });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .ladirchen-coin {
   width: 66px;
   height: 66px;
   @apply position-relative d-inline-grid place-center overflow-hidden flex-shrink-0;
-  color: #69460a;
-  border: 4px solid #ffc84f;
+  color: var(--lad-palette-amber-700);
+  border: 4px solid var(--lad-palette-yellow);
   border-radius: 50%;
   background: radial-gradient(
     circle at 34% 27%,
-    #fff4b5 0 8%,
-    #ffd76c 25%,
-    #f4a91f 72%,
-    #c8780a 100%
+    var(--lad-palette-amber-150) 0 8%,
+    var(--lad-palette-amber-250) 25%,
+    var(--lad-palette-amber-450) 72%,
+    var(--lad-palette-amber-600) 100%
   );
   box-shadow:
-    inset 0 0 0 3px rgba(255, 246, 182, 0.65),
-    inset 0 -6px 7px rgba(128, 70, 0, 0.18),
-    0 5px 0 #b76b08,
-    0 9px 18px rgba(116, 74, 9, 0.24);
+    inset 0 0 0 3px
+      color-mix(in srgb, var(--lad-palette-amber-150) 65%, transparent),
+    inset 0 -6px 7px
+      color-mix(in srgb, var(--lad-palette-amber-700) 18%, transparent),
+    0 5px 0 var(--lad-palette-amber-600),
+    0 9px 18px color-mix(in srgb, var(--lad-palette-amber-700) 25%, transparent);
   @apply font-weight-950;
 }
 .ladirchen-coin.small {
@@ -37,9 +40,11 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   height: 25px;
   border-width: 2px;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 246, 182, 0.65),
-    inset 0 -2px 3px rgba(128, 70, 0, 0.18),
-    0 2px 0 #b76b08;
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--lad-palette-amber-150) 65%, transparent),
+    inset 0 -2px 3px
+      color-mix(in srgb, var(--lad-palette-amber-700) 18%, transparent),
+    0 2px 0 var(--lad-palette-amber-600);
 }
 .ladirchen-coin.animated {
   transform-origin: center;
@@ -58,7 +63,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.96),
+    color-mix(in srgb, var(--lad-palette-white) 95%, transparent),
     transparent
   );
   filter: blur(0.4px);
@@ -70,7 +75,8 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   z-index: 2;
   font-size: 29px;
   line-height: 1;
-  text-shadow: 0 2px 0 rgba(255, 245, 178, 0.8);
+  text-shadow: 0 2px 0
+    color-mix(in srgb, var(--lad-palette-amber-150) 80%, transparent);
 }
 .small .coin-letter {
   font-size: 12px;
@@ -79,9 +85,9 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   @apply position-absolute;
   top: 5px;
   right: 8px;
-  color: #fff2a2;
+  color: var(--lad-palette-amber-150);
   font-size: 11px;
-  text-shadow: 0 1px 1px #ba7307;
+  text-shadow: 0 1px 1px var(--lad-palette-amber-600);
 }
 .small .coin-star {
   top: 1px;
@@ -96,7 +102,7 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   left: 8px;
   transform: rotate(-35deg);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.62);
+  background: color-mix(in srgb, var(--lad-palette-white) 60%, transparent);
   filter: blur(1px);
 }
 .small .coin-shine {
@@ -162,13 +168,15 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
   0%,
   25%,
   100% {
-    filter: drop-shadow(0 0 0 rgba(255, 210, 64, 0));
+    filter: drop-shadow(0 0 0 transparent);
   }
   52% {
-    filter: drop-shadow(0 0 7px rgba(255, 205, 54, 0.78));
+    filter: drop-shadow(
+      0 0 7px color-mix(in srgb, var(--lad-palette-amber-450) 80%, transparent)
+    );
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .ladirchen-coin.animated,
   .ladirchen-coin.animated::after,
   .animated .coin-shine,
