@@ -38,7 +38,8 @@ const props = withDefaults(defineProps<{ size?: number }>(), { size: 82 });
 const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.round(props.size * .89)}px` }));
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .animated-house-energy {
   @apply d-inline-grid;
   flex: 0 0 auto;
@@ -48,7 +49,7 @@ svg {
   @apply w-100 h-100 d-block overflow-visible;
 }
 .soft-glow {
-  fill: #ffe8a0;
+  fill: var(--lad-palette-amber-150);
   opacity: 0.48;
   filter: blur(7px);
   transform-box: fill-box;
@@ -56,66 +57,68 @@ svg {
   animation: glow-breathe 4.2s ease-in-out infinite;
 }
 .house-shadow {
-  fill: rgba(78, 68, 48, 0.14);
+  fill: color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
   transform-box: fill-box;
   transform-origin: center;
   animation: shadow-breathe 4.2s ease-in-out infinite;
 }
 .house-illustration {
-  filter: drop-shadow(0 3px 2px rgba(91, 64, 39, 0.18));
+  filter: drop-shadow(
+    0 3px 2px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent)
+  );
 }
 .house-body {
-  fill: #fff8dc;
-  stroke: #9c6a4b;
+  fill: var(--lad-palette-amber-100);
+  stroke: var(--lad-palette-orange-600);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .roof {
-  fill: #dc6d68;
-  stroke: #a84e4d;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-500);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .roof-highlight {
   fill: none;
-  stroke: #f08b80;
+  stroke: var(--lad-palette-red-300);
   stroke-linecap: round;
   stroke-width: 2.2;
 }
 .door {
-  fill: #65a27f;
-  stroke: #39715a;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-700);
   stroke-width: 2.3;
 }
 .door-knob {
-  fill: #ffd165;
-  stroke: #9a6828;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1;
 }
 .window rect {
-  fill: #82cfdd;
-  stroke: #f9fcf4;
+  fill: var(--lad-palette-blue-250);
+  stroke: var(--lad-palette-surface);
   stroke-width: 2;
   animation: window-light 4.2s ease-in-out infinite;
 }
 .window path {
   fill: none;
-  stroke: #eefcfc;
+  stroke: var(--lad-palette-background);
   stroke-width: 1.5;
 }
 .window--right rect {
   animation-delay: -0.35s;
 }
 .heart {
-  fill: #ffd257;
-  stroke: #d48b28;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-500);
   stroke-width: 1.4;
   transform-box: fill-box;
   transform-origin: center;
   animation: heart-light 4.2s ease-in-out infinite;
 }
 .spark {
-  fill: #f2a73a;
+  fill: var(--lad-palette-amber-450);
   transform-box: fill-box;
   transform-origin: center;
   animation: sparkle 4.2s ease-in-out infinite;
@@ -124,7 +127,7 @@ svg {
   animation-delay: -2.1s;
 }
 .spark-dot {
-  fill: #54bf94;
+  fill: var(--lad-palette-teal-400);
   transform-box: fill-box;
   transform-origin: center;
   animation: dot-rise 4.2s ease-in-out infinite;
@@ -160,12 +163,12 @@ svg {
   0%,
   28%,
   100% {
-    fill: #82cfdd;
+    fill: var(--lad-palette-blue-250);
   }
   48%,
   66% {
-    fill: #c9f2dc;
-    filter: drop-shadow(0 0 5px #ffe99e);
+    fill: var(--lad-palette-teal-150);
+    filter: drop-shadow(0 0 5px var(--lad-palette-amber-150));
   }
 }
 @keyframes heart-light {
@@ -174,11 +177,13 @@ svg {
   58%,
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 204, 72, 0));
+    filter: drop-shadow(0 0 0 transparent);
   }
   43% {
     transform: scale(1.24);
-    filter: drop-shadow(0 0 5px rgba(255, 204, 72, 0.9));
+    filter: drop-shadow(
+      0 0 5px color-mix(in srgb, var(--lad-palette-yellow) 90%, transparent)
+    );
   }
   50% {
     transform: scale(1.06);
@@ -214,7 +219,7 @@ svg {
     transform: translateY(-9px) scale(0.65);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .soft-glow,
   .house-shadow,
   .window rect,
