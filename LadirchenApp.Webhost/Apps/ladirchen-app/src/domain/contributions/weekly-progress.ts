@@ -1,6 +1,6 @@
+import type { IanaTimeZone } from '../family/time-zone';
+import { calendarDateInTimeZone, isInstantInIsoWeek } from '../shared/zoned-calendar';
 import type { Contribution } from './types';
-import type { IanaTimeZone } from './time-zone';
-import { calendarDateInTimeZone, isInstantInIsoWeek } from './zoned-calendar';
 
 export const approvedContributionDatesInCurrentWeek = (
   contributions: ReadonlyArray<Contribution>,

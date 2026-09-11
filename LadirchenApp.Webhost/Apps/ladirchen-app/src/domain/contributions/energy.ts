@@ -1,4 +1,5 @@
-import type { Contribution, FamilyMemberId } from './types';
+import type { FamilyMemberId } from '../shared/identifiers';
+import type { Contribution } from './types';
 
 export const DEFAULT_ENERGY_PERCENT = 60;
 export const MINIMUM_HOUSE_ENERGY_PERCENT = 60;

@@ -1,6 +1,6 @@
 <template>
   <div class="active-contribution-bonus">
-    <span class="bonus-rocket" aria-hidden="true"><v-icon icon="mdi-rocket-launch" size="19" /></span>
+    <span class="bonus-rocket" aria-hidden="true"><v-icon icon="i-mdi:rocket-launch" size="19" /></span>
     <span class="bonus-copy"><small>{{ t('contributions.activeBonus.label') }}</small><strong>{{ t('contributions.activeBonus.multiplier', { value: multiplier }) }}</strong></span>
     <span class="bonus-factor">×{{ multiplier }}</span>
     <PromotionCountdown class="bonus-countdown" :deadline="deadline" />
@@ -27,32 +27,32 @@ defineProps<{
   padding: 6px 8px;
   @apply position-relative d-flex align-center overflow-hidden;
   gap: 7px;
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-blue-450) 30%, transparent);
+    color-mix(in srgb, var(--lad-color-info-muted) 30%, transparent);
   border-radius: 16px;
   background:
     radial-gradient(
       circle at 88% 10%,
-      color-mix(in srgb, var(--lad-palette-white) 90%, transparent),
+      color-mix(in srgb, var(--lad-surface-raised) 90%, transparent),
       transparent 25%
     ),
     linear-gradient(
       125deg,
-      var(--lad-palette-background),
-      var(--lad-palette-background) 50%,
-      var(--lad-palette-amber-150)
+      var(--lad-surface-soft),
+      var(--lad-surface-soft) 50%,
+      var(--lad-color-reward-pale)
     );
   box-shadow:
-    0 4px 0 color-mix(in srgb, var(--lad-palette-blue-550) 20%, transparent),
-    0 9px 18px color-mix(in srgb, var(--lad-palette-blue-600) 12%, transparent);
+    0 4px 0 color-mix(in srgb, var(--lad-color-info-shadow) 20%, transparent),
+    0 9px 18px color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
 }
 .active-contribution-bonus::after {
   content: "✦";
   @apply position-absolute pointer-events-none;
   top: 3px;
   right: 7px;
-  color: var(--lad-palette-amber-500);
+  color: var(--lad-color-reward-accent);
   font-size: 0.625rem;
   animation: bonus-spark 1.7s ease-in-out infinite;
 }
@@ -60,16 +60,16 @@ defineProps<{
   width: 36px;
   height: 36px;
   @apply d-grid place-center flex-shrink-0;
-  color: var(--lad-palette-amber-150);
-  border: 2px solid var(--lad-palette-white);
+  color: var(--lad-color-reward-pale);
+  border: 2px solid var(--lad-border-on-accent);
   border-radius: 12px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-blue-350),
-    var(--lad-palette-indigo-350) 65%,
-    var(--lad-palette-purple-350)
+    var(--lad-color-info-subtle),
+    var(--lad-color-bonus-info) 65%,
+    var(--lad-color-bonus-highlight)
   );
-  box-shadow: 0 3px 0 var(--lad-palette-blue-550);
+  box-shadow: 0 3px 0 var(--lad-color-info-shadow);
   animation: bonus-launch 1.9s ease-in-out infinite;
 }
 .bonus-copy {
@@ -80,7 +80,7 @@ defineProps<{
   @apply d-block;
 }
 .bonus-copy small {
-  color: var(--lad-palette-teal-600);
+  color: var(--lad-color-primary-supporting);
   font-size: 0.4375rem;
   font-weight: var(--lad-font-weight-heavy);
   text-transform: uppercase;
@@ -95,16 +95,16 @@ defineProps<{
   min-width: 45px;
   padding: 5px 7px;
   @apply d-grid place-center flex-shrink-0;
-  color: var(--lad-palette-white);
+  color: var(--lad-text-inverse);
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
+    color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
   border-radius: 13px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-mint),
-    var(--lad-palette-blue-550)
+    var(--lad-color-primary),
+    var(--lad-color-info-shadow)
   );
-  box-shadow: 0 3px 0 var(--lad-palette-blue-600);
+  box-shadow: 0 3px 0 var(--lad-color-info-deep);
   font-size: 1.125rem;
   font-weight: var(--lad-font-weight-black);
   line-height: 1;
