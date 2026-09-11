@@ -36,18 +36,16 @@
         <path class="smile" d="M94 72q7 8 15 1" />
         <path class="star" d="m46 50 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" />
       </g>
-      <g class="piggy-coin">
-        <circle cx="65" cy="12" r="10" />
-        <path d="M63 7v10h6" />
-        <path class="coin-shine" d="m58 8 2-2" />
-      </g>
     </svg>
+    <LadirchenCoin v-if="receiving" class="piggy-coin" small />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+
+import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 
 const { t } = useI18n();
 
@@ -142,7 +140,7 @@ svg {
   fill: var(--lad-palette-pink-650);
 }
 .eye-shine {
-  fill: white;
+  fill: var(--lad-palette-white);
 }
 .eye {
   transform-box: fill-box;
@@ -186,25 +184,14 @@ svg {
   transform-origin: center;
 }
 .piggy-coin {
+  @apply position-absolute;
+  top: -0.25rem;
+  left: calc(50% - 0.78125rem);
+  z-index: 3;
   opacity: 0;
-  transform: translateY(-12px);
 }
 .receiving .piggy-coin {
   animation: coin-drop 800ms 120ms cubic-bezier(0.3, 0.9, 0.2, 1) both;
-}
-.piggy-coin circle {
-  fill: var(--lad-palette-yellow);
-  stroke: var(--lad-palette-amber-650);
-  stroke-width: 3;
-}
-.piggy-coin path {
-  fill: none;
-  stroke: var(--lad-palette-amber-650);
-  stroke-linecap: round;
-  stroke-width: 2.5;
-}
-.piggy-coin .coin-shine {
-  stroke: var(--lad-palette-amber-150);
 }
 
 @keyframes piggy-breathe {

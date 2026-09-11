@@ -51,13 +51,13 @@ svg {
   animation: shadow-pulse 3.4s ease-in-out infinite;
 }
 .flame-body {
-  fill: var(--lad-palette-amber-450);
-  stroke: var(--lad-palette-amber-600);
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-500);
   stroke-linejoin: round;
   stroke-width: 4;
 }
 .flame-heart {
-  fill: var(--lad-palette-yellow);
+  fill: var(--lad-palette-amber-150);
   transform-box: fill-box;
   transform-origin: center bottom;
   animation: heart-flicker 2.1s ease-in-out infinite;
@@ -69,7 +69,7 @@ svg {
   animation: flame-blink 7s ease-in-out infinite;
 }
 .flame-face circle {
-  fill: white;
+  fill: var(--lad-palette-white);
 }
 .flame-face path {
   fill: none;
@@ -78,7 +78,7 @@ svg {
   stroke-width: 3;
 }
 .flame-sparks {
-  fill: var(--lad-palette-yellow);
+  fill: var(--lad-palette-amber-250);
 }
 .flame-sparks path {
   transform-box: fill-box;
