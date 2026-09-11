@@ -1,7 +1,7 @@
 <template>
   <section class="development-tools mt-5" aria-labelledby="development-tools-title">
     <div class="development-heading">
-      <div class="development-icon" aria-hidden="true"><v-icon icon="mdi-test-tube" /></div>
+      <div class="development-icon" aria-hidden="true"><v-icon icon="i-mdi:test-tube" /></div>
       <div>
         <p class="eyebrow mb-1">{{ t('profile.development.eyebrow') }}</p>
         <h2 id="development-tools-title">{{ t('profile.development.title') }}</h2>
@@ -12,7 +12,7 @@
     <v-expansion-panels class="development-panels mt-4" variant="accordion">
       <v-expansion-panel rounded="xl">
         <v-expansion-panel-title>
-          <div class="panel-title"><v-icon icon="mdi-account-switch-outline" /><span><strong>{{ t('profile.development.session.title') }}</strong><small>{{ t('profile.development.session.current', { name: store.signedInMember.name }) }}</small></span></div>
+          <div class="panel-title"><v-icon icon="i-mdi:account-switch-outline" /><span><strong>{{ t('profile.development.session.title') }}</strong><small>{{ t('profile.development.session.current', { name: store.signedInMember.name }) }}</small></span></div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <div class="session-grid">
@@ -26,7 +26,7 @@
             >
               <span>{{ member.avatar }}</span>
               <span><strong>{{ member.name }}</strong><small>{{ t(member.role === 'guardian' ? 'profile.development.session.guardian' : 'profile.development.session.child') }}</small></span>
-              <v-icon v-if="member.id === store.signedInMemberId" icon="mdi-check-circle" size="19" />
+              <v-icon v-if="member.id === store.signedInMemberId" icon="i-mdi:check-circle" size="19" />
             </button>
           </div>
         </v-expansion-panel-text>
@@ -34,7 +34,7 @@
 
       <v-expansion-panel rounded="xl">
         <v-expansion-panel-title>
-          <div class="panel-title"><v-icon icon="mdi-home-lightning-bolt-outline" /><span><strong>{{ t('profile.development.energy.title') }}</strong><small>{{ store.familyEnergy }} %</small></span></div>
+          <div class="panel-title"><v-icon icon="i-mdi:home-lightning-bolt-outline" /><span><strong>{{ t('profile.development.energy.title') }}</strong><small>{{ store.familyEnergy }} %</small></span></div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <v-slider
@@ -54,7 +54,7 @@
 
       <v-expansion-panel rounded="xl">
         <v-expansion-panel-title>
-          <div class="panel-title"><v-icon icon="mdi-piggy-bank-outline" /><span><strong>{{ t('profile.development.interest.title') }}</strong><small>{{ t('profile.development.interest.description') }}</small></span></div>
+          <div class="panel-title"><v-icon icon="i-mdi:piggy-bank-outline" /><span><strong>{{ t('profile.development.interest.title') }}</strong><small>{{ t('profile.development.interest.description') }}</small></span></div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <SavingsInterestSimulator class="embedded-simulator" />
@@ -63,7 +63,7 @@
 
       <v-expansion-panel rounded="xl">
         <v-expansion-panel-title>
-          <div class="panel-title"><v-icon icon="mdi-calendar-refresh-outline" /><span><strong>{{ t('profile.development.week.title') }}</strong><small>{{ t('profile.development.week.description') }}</small></span></div>
+          <div class="panel-title"><v-icon icon="i-mdi:calendar-refresh-outline" /><span><strong>{{ t('profile.development.week.title') }}</strong><small>{{ t('profile.development.week.description') }}</small></span></div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <v-alert class="mb-3" :color="store.houseMeetsMinimumEnergy ? 'success' : 'warning'" density="compact" variant="tonal">
@@ -96,8 +96,8 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import SavingsInterestSimulator from '@/features/savings/components/SavingsInterestSimulator.vue';
-import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house-catalog';
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
+import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house/catalog';
+import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
@@ -160,10 +160,10 @@ const finishWeek = (successful: boolean) => {
 }
 .development-panels :deep(.v-expansion-panel) {
   border: 0.0625rem solid
-    color-mix(in srgb, var(--lad-palette-violet-500) 15%, transparent);
-  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
+    color-mix(in srgb, var(--lad-color-bonus-muted) 15%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
   box-shadow: 0 0.25rem 0
-    color-mix(in srgb, var(--lad-palette-violet-650) 8%, transparent) !important;
+    color-mix(in srgb, var(--lad-color-bonus-strong) 8%, transparent);
 }
 .development-panels :deep(.v-expansion-panel-title) {
   min-height: 3.875rem;
@@ -179,9 +179,9 @@ const finishWeek = (successful: boolean) => {
 .panel-title > .v-icon {
   width: 2.25rem;
   height: 2.25rem;
-  color: var(--lad-palette-muted);
+  color: var(--lad-muted);
   border-radius: 0.75rem;
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
 }
 .panel-title span,
 .panel-title strong,
@@ -208,13 +208,13 @@ const finishWeek = (successful: boolean) => {
   gap: 0.5rem;
   color: var(--lad-text);
   border: 0.125rem solid
-    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
   border-radius: 0.9375rem;
-  background: var(--lad-palette-white);
+  background: var(--lad-surface-raised);
 }
 .session-option.active {
-  border-color: color-mix(in srgb, var(--lad-palette-mint) 50%, transparent);
-  background: var(--lad-palette-background);
+  border-color: color-mix(in srgb, var(--lad-color-primary) 50%, transparent);
+  background: var(--lad-surface-soft);
 }
 .session-option > span:first-child {
   font-size: 1.375rem;
@@ -243,9 +243,9 @@ const finishWeek = (successful: boolean) => {
   font-size: 0.5625rem;
 }
 .embedded-simulator {
-  margin: 0 !important;
+  margin: 0;
   border: 0;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 .week-actions {
   @apply d-grid;
@@ -256,14 +256,14 @@ const finishWeek = (successful: boolean) => {
   background:
     radial-gradient(
       circle at 50% 30%,
-      color-mix(in srgb, var(--lad-palette-amber-250) 30%, transparent),
+      color-mix(in srgb, var(--lad-color-reward-highlight) 30%, transparent),
       transparent 34%
     ),
     linear-gradient(
       145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-amber-100)
-    ) !important;
+      var(--lad-surface-soft),
+      var(--lad-color-reward-soft)
+    );
 }
 .development-result h2 {
   @apply ma-0;

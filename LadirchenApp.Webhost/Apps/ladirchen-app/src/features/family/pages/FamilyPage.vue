@@ -1,6 +1,7 @@
 <template>
   <div class="page page-padding family-page">
     <section class="family-hero mb-5">
+      <HeaderDecoration tone="family" />
       <div class="family-hero-copy">
         <p class="family-hero-kicker">{{ t('family.hero.eyebrow') }}</p>
         <h1>{{ t('family.hero.title') }}</h1>
@@ -14,7 +15,7 @@
       </div>
     </section>
 
-    <v-card v-if="store.permissions.canManageFamily" class="family-admin pa-4 mb-5" color="blue-lighten-5" elevation="0" rounded="xl">
+    <BrandedCard v-if="store.permissions.canManageFamily" class="family-admin pa-4 mb-5" tone="family">
       <div class="d-flex align-center ga-3">
         <v-avatar color="info" variant="tonal">⚙️</v-avatar>
         <div class="flex-grow-1">
@@ -23,15 +24,15 @@
         </div>
         <v-btn color="info" rounded="lg" size="small" variant="flat" @click="store.openFamilySetup">{{ t('family.admin.edit') }}</v-btn>
       </div>
-    </v-card>
+    </BrandedCard>
 
-    <section class="family-roster mb-6">
+    <BrandedCard class="family-roster mb-6" tag="section" tone="family">
       <div class="family-section-heading">
         <div><p>{{ t('family.roster.eyebrow') }}</p><h2>{{ t('family.roster.title') }}</h2><span>{{ t('family.roster.count', { count: store.members.length }) }}</span></div>
-        <v-btn v-if="store.permissions.canInviteMembers" color="primary" prepend-icon="mdi-account-plus-outline" rounded="lg" size="small" variant="tonal" @click="inviteDialog = true">{{ t('family.roster.invite') }}</v-btn>
+        <v-btn v-if="store.permissions.canInviteMembers" color="primary" prepend-icon="i-mdi:account-plus-outline" rounded="lg" size="small" variant="tonal" @click="inviteDialog = true">{{ t('family.roster.invite') }}</v-btn>
       </div>
       <div class="member-grid">
-        <v-card v-for="(member, memberIndex) in store.members" :key="member.id" class="member-card pa-4" elevation="0" rounded="xl">
+        <BrandedCard v-for="(member, memberIndex) in store.members" :key="member.id" class="member-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
             <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="46" />
             <div class="flex-grow-1 min-w-0">
@@ -80,23 +81,23 @@
               rounded
             />
           </div>
-        </v-card>
+        </BrandedCard>
       </div>
-    </section>
+    </BrandedCard>
 
-    <section class="family-pets mb-6">
+    <BrandedCard class="family-pets mb-6" tag="section" tone="family">
       <div class="family-section-heading family-section-heading--pets">
         <div><p>{{ t('family.pets.eyebrow') }}</p><h2>{{ t('family.pets.title') }}</h2><span>{{ t('family.pets.description') }}</span></div>
       </div>
       <div class="pet-grid">
-        <v-card v-for="pet in store.pets" :key="pet.id" class="pet-card pa-4" elevation="0" rounded="xl">
+        <BrandedCard v-for="pet in store.pets" :key="pet.id" class="pet-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
             <AnimatedPet :pet="pet" :size="58" />
             <div><strong>{{ pet.name }}</strong><p class="text-caption text-medium-emphasis">{{ t(`familyPets.kinds.${pet.kind}`) }}</p></div>
           </div>
-        </v-card>
+        </BrandedCard>
       </div>
-    </section>
+    </BrandedCard>
 
     <v-dialog v-model="inviteDialog" max-width="420">
       <v-card class="pa-5" rounded="xl">
@@ -121,13 +122,17 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
 import AnimatedPet from '@/features/world/components/AnimatedPet.vue';
-import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
+import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember, FamilyMemberId, GuardianAccessLevel } from '@/domain/types';
+import type { FamilyMember, GuardianAccessLevel } from '@/domain/family/types';
+import type { FamilyMemberId } from '@/domain/shared/identifiers';
 import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { isGuardianAccessLevel } from '@/application/contracts/family-aggregate-validation';
+import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
+import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
@@ -139,16 +144,8 @@ const guardianAccessOptions = computed<Array<{ title: string; value: GuardianAcc
   { title: t('family.permissions.admin'), value: 'admin' },
 ]);
 const canInvite = computed(() => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email));
-const appearanceFor = (member: FamilyMember, index: number): AvatarAppearance => {
-  if (member.appearance) return member.appearance;
-  if (member.role === 'guardian') return createGuardianAvatarAppearance(index % 2 === 0 ? 'grandma' : 'grandpa');
-  const appearance = createDefaultAvatarAppearance();
-  const variants: Array<Partial<AvatarAppearance>> = [
-    { hair: 'ponytail', outfitColorId: 'outfit-blue' },
-    { hair: 'short', hairColorId: 'hair-black', outfit: 'overalls', outfitColorId: 'outfit-gold' },
-    { hair: 'curls', hairColorId: 'hair-brown', outfit: 'space', outfitColorId: 'outfit-ocean' },
-  ];
-  return { ...appearance, ...(variants[index % variants.length] ?? {}) };
+const appearanceFor = (member: FamilyMember, _index: number): AvatarAppearance => {
+  return resolveFamilyMemberAvatarAppearance(member, store.members);
 };
 const accessLabel = (access?: GuardianAccessLevel) => t(access === 'admin' ? 'family.permissions.admin' : 'family.permissions.supporter');
 const goalTitle = (memberId: FamilyMemberId) => {
@@ -168,11 +165,11 @@ const inviteGuardian = () => {
 };
 onMounted(() => {
   if (store.viewerRole !== 'child') return;
-  window.setTimeout(() => window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
+  window.setTimeout(() => ladiGuideController.say({
     heading: t('family.guide.title'),
     message: t('family.guide.message'),
     pageIntro: true,
-  } })), 350);
+  }), 350);
 });
 </script>
 
@@ -183,35 +180,35 @@ onMounted(() => {
   padding: 23px 22px;
   @apply position-relative d-flex align-center justify-space-between overflow-hidden;
   gap: 16px;
-  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 27px;
   background:
     radial-gradient(
       circle at 88% 8%,
-      color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent),
+      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
       transparent 26%
     ),
     radial-gradient(
       circle at 76% 92%,
-      color-mix(in srgb, var(--lad-palette-teal-400) 18%, transparent),
+      color-mix(in srgb, var(--lad-color-primary-highlight) 18%, transparent),
       transparent 31%
     ),
     linear-gradient(
       145deg,
-      var(--lad-palette-white),
-      var(--lad-palette-background) 58%,
-      var(--lad-palette-background)
+      var(--lad-surface-raised),
+      var(--lad-surface-soft) 58%,
+      var(--lad-surface-soft)
     );
   box-shadow:
-    0 7px 0 color-mix(in srgb, var(--lad-palette-blue) 10%, transparent),
-    0 16px 28px color-mix(in srgb, var(--lad-palette-blue-600) 8%, transparent);
+    0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent),
+    0 16px 28px color-mix(in srgb, var(--lad-color-info-deep) 8%, transparent);
 }
 .family-hero::after {
   content: "✦";
   @apply position-absolute;
   top: 15px;
   right: 18px;
-  color: var(--lad-palette-amber-450);
+  color: var(--lad-color-reward-border);
   font-size: 0.8125rem;
   animation: family-spark 2.2s ease-in-out infinite;
 }
@@ -221,15 +218,15 @@ onMounted(() => {
 }
 .family-hero-kicker {
   margin: 0 0 5px;
-  color: var(--lad-palette-blue);
+  color: var(--lad-color-info);
   font-size: 0.625rem;
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .family-hero h1 {
-  margin: 0;
-  color: var(--lad-palette-text);
+  @apply ma-0;
+  color: var(--lad-text);
   font-size: 1.8125rem;
   line-height: 1;
   letter-spacing: -0.05em;
@@ -252,16 +249,17 @@ onMounted(() => {
   height: 67px;
   @apply d-grid place-center overflow-hidden;
   margin-left: -17px;
-  border: 3px solid var(--lad-palette-white);
+  border: 3px solid var(--lad-border-on-accent);
   border-radius: 19px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-soft)
   );
   box-shadow:
-    0 5px 0 color-mix(in srgb, var(--lad-palette-teal-600) 15%, transparent),
-    0 9px 15px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+    0 5px 0
+      color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent),
+    0 9px 15px color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   animation: family-avatar-bob 3.2s ease-in-out infinite;
 }
 .family-hero-avatars > span:first-child {
@@ -282,11 +280,11 @@ onMounted(() => {
   @apply position-absolute d-grid place-center;
   right: -3px;
   bottom: 1px;
-  color: var(--lad-palette-white);
-  border: 3px solid var(--lad-palette-white);
+  color: var(--lad-text-inverse);
+  border: 3px solid var(--lad-border-on-accent);
   border-radius: 10px;
-  background: var(--lad-palette-mint);
-  box-shadow: 0 3px 0 var(--lad-palette-teal-600);
+  background: var(--lad-color-primary);
+  box-shadow: 0 3px 0 var(--lad-color-primary-supporting);
   font-size: 0.5625rem;
   font-style: normal;
   font-weight: var(--lad-font-weight-black);
@@ -295,43 +293,6 @@ onMounted(() => {
 .family-pets {
   padding: 17px;
   @apply position-relative overflow-hidden;
-  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
-  border-radius: 27px;
-  background:
-    radial-gradient(
-      circle at 94% 3%,
-      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
-      transparent 22%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-surface),
-      var(--lad-palette-background)
-    );
-  box-shadow:
-    0 7px 0 color-mix(in srgb, var(--lad-palette-blue) 10%, transparent),
-    0 15px 24px color-mix(in srgb, var(--lad-palette-blue-600) 5%, transparent);
-}
-.family-pets {
-  border-color: color-mix(
-    in srgb,
-    var(--lad-palette-teal-550) 15%,
-    transparent
-  );
-  background:
-    radial-gradient(
-      circle at 92% 4%,
-      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
-      transparent 23%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-surface),
-      var(--lad-palette-background)
-    );
-  box-shadow:
-    0 7px 0 color-mix(in srgb, var(--lad-palette-teal-550) 10%, transparent),
-    0 15px 24px color-mix(in srgb, var(--lad-palette-muted-700) 5%, transparent);
 }
 .family-section-heading {
   margin-bottom: 14px;
@@ -340,14 +301,14 @@ onMounted(() => {
 }
 .family-section-heading p {
   margin: 0 0 3px;
-  color: var(--lad-palette-blue);
+  color: var(--lad-color-bonus-muted);
   font-size: 0.5625rem;
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 .family-section-heading h2 {
-  margin: 0;
+  @apply ma-0;
   font-size: 1.25rem;
   letter-spacing: -0.035em;
 }
@@ -356,9 +317,6 @@ onMounted(() => {
   margin-top: 3px;
   color: var(--lad-muted);
   font-size: 0.5625rem;
-}
-.family-section-heading--pets p {
-  color: var(--lad-mint-dark);
 }
 .member-grid {
   @apply d-grid;
@@ -371,16 +329,7 @@ onMounted(() => {
 }
 .member-card,
 .pet-card {
-  border: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
-  );
-  box-shadow:
-    0 6px 0 color-mix(in srgb, var(--lad-palette-teal-550) 12%, transparent),
-    0 12px 20px color-mix(in srgb, var(--lad-palette-muted-700) 5%, transparent) !important;
+  @apply position-relative overflow-hidden;
 }
 .permission-editor {
   padding-top: 10px;
@@ -391,13 +340,9 @@ onMounted(() => {
   @apply d-flex align-center justify-space-between;
   gap: 10px;
   border: 1px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 13px;
-  background: color-mix(
-    in srgb,
-    var(--lad-palette-background) 80%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--lad-surface-soft) 80%, transparent);
 }
 .weekly-participation strong,
 .weekly-participation span {
@@ -410,22 +355,6 @@ onMounted(() => {
   margin-top: 2px;
   color: var(--lad-muted);
   font-size: 0.5rem;
-}
-.family-admin {
-  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 20%, transparent);
-  background:
-    radial-gradient(
-      circle at 92% 10%,
-      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent) 0 34px,
-      transparent 35px
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-surface)
-    ) !important;
-  box-shadow: 0 7px 0
-    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent) !important;
 }
 .invite-actions {
   grid-template-columns: 1fr 1.4fr;
@@ -474,8 +403,8 @@ onMounted(() => {
     padding: 14px;
   }
   .family-section-heading {
-    align-items: flex-start;
-    flex-direction: column;
+    @apply align-start;
+    @apply flex-column;
   }
 }
 </style>

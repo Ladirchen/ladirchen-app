@@ -10,7 +10,7 @@
           <v-btn
             v-if="store.onboardingCompleted"
             :aria-label="t('family.setup.close')"
-            icon="mdi-close"
+            icon="i-mdi:close"
             size="small"
             variant="text"
             @click="store.familySetupOpen = false"
@@ -31,11 +31,11 @@
                 <div class="d-flex align-center ga-3">
                   <div class="setup-avatar" :style="{ background: `${child.color}24` }">{{ child.avatar }}</div>
                   <v-text-field v-model="child.name" density="compact" hide-details :label="t('family.setup.children.name')" variant="outlined" />
-                  <v-btn :aria-label="t('family.setup.children.remove')" :disabled="children.length === 1" icon="mdi-delete-outline" size="small" variant="text" @click="children.splice(index, 1)" />
+                  <v-btn :aria-label="t('family.setup.children.remove')" :disabled="children.length === 1" icon="i-mdi:delete-outline" size="small" variant="text" @click="children.splice(index, 1)" />
                 </div>
               </v-card>
             </div>
-            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addChild">{{ t('family.setup.children.add') }}</v-btn>
+            <v-btn class="mt-4" color="primary" prepend-icon="i-mdi:plus" rounded="lg" variant="tonal" @click="addChild">{{ t('family.setup.children.add') }}</v-btn>
           </v-window-item>
 
           <v-window-item :value="2">
@@ -48,11 +48,11 @@
                     <v-text-field v-model="pet.name" density="compact" hide-details :label="t('family.setup.name')" variant="outlined" />
                     <v-select v-model="pet.kind" density="compact" hide-details item-title="title" item-value="value" :items="petKinds" :label="t('family.setup.pets.kind')" variant="outlined" @update:model-value="updatePetAvatar(pet)" />
                   </div>
-                  <v-btn :aria-label="t('family.setup.pets.remove')" icon="mdi-delete-outline" size="small" variant="text" @click="pets.splice(index, 1)" />
+                  <v-btn :aria-label="t('family.setup.pets.remove')" icon="i-mdi:delete-outline" size="small" variant="text" @click="pets.splice(index, 1)" />
                 </div>
               </v-card>
             </div>
-            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addPet">{{ t('family.setup.pets.add') }}</v-btn>
+            <v-btn class="mt-4" color="primary" prepend-icon="i-mdi:plus" rounded="lg" variant="tonal" @click="addPet">{{ t('family.setup.pets.add') }}</v-btn>
           </v-window-item>
 
           <v-window-item :value="3">
@@ -62,11 +62,11 @@
                 <div class="d-flex align-center ga-3">
                   <div class="setup-avatar" :style="{ background: `${guardian.color}24` }">{{ guardian.avatar }}</div>
                   <v-text-field v-model="guardian.name" density="compact" hide-details :label="t('family.setup.guardians.name')" variant="outlined" />
-                  <v-btn :aria-label="t('family.setup.guardians.remove')" :disabled="guardians.length === 1" icon="mdi-delete-outline" size="small" variant="text" @click="guardians.splice(index, 1)" />
+                  <v-btn :aria-label="t('family.setup.guardians.remove')" :disabled="guardians.length === 1" icon="i-mdi:delete-outline" size="small" variant="text" @click="guardians.splice(index, 1)" />
                 </div>
               </v-card>
             </div>
-            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addGuardian">{{ t('family.setup.guardians.add') }}</v-btn>
+            <v-btn class="mt-4" color="primary" prepend-icon="i-mdi:plus" rounded="lg" variant="tonal" @click="addGuardian">{{ t('family.setup.guardians.add') }}</v-btn>
           </v-window-item>
         </v-window>
       </v-card-text>
@@ -86,8 +86,8 @@ import { computed, defineComponent, h, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { createDefaultAvatarAppearance } from '@/domain/avatar';
-import { createDomainId } from '@/domain/types';
-import type { FamilyMember, FamilyPet, FamilyPetKindId } from '@/domain/types';
+import type { FamilyMember, FamilyPet, FamilyPetKindId } from '@/domain/family/types';
+import { createDomainId } from '@/domain/shared/identifiers';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { familyMemberColorPalette } from '@/theme/color-palette';
 
@@ -154,8 +154,8 @@ watch(() => store.familySetupOpen, (isOpen) => {
 .setup-header {
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background),
-    var(--lad-palette-background)
+    var(--lad-surface-soft),
+    var(--lad-surface-soft)
   );
   border-bottom: 0.0625rem solid var(--lad-border);
 }
