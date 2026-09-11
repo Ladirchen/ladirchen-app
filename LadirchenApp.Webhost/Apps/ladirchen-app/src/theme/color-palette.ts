@@ -140,14 +140,32 @@ export const familyMemberColorPalette = defineHexPalette({
 });
 
 export const houseRoomColorPalette = {
+  bathroom: defineHexPalette({ floor: '#b5cec8', wall: '#e8f7f7' }),
   bedroom: defineHexPalette({ floor: '#c89b7c', wall: '#f4eaff' }),
   childrenRoom: defineHexPalette({ floor: '#d9b982', wall: '#e9f3ff' }),
   creativeRoom: defineHexPalette({ floor: '#d2a477', wall: '#fff0e8' }),
+  gamerRoom: defineHexPalette({ floor: '#8794ad', wall: '#e8edff' }),
   kitchen: defineHexPalette({ floor: '#c9b394', wall: '#edf7e8' }),
   livingRoom: defineHexPalette({ floor: '#d9a574', wall: '#fff3d2' }),
+  makeupRoom: defineHexPalette({ floor: '#d8aaad', wall: '#fff0f5' }),
+  nursery: defineHexPalette({ floor: '#d5b68e', wall: '#fff8dc' }),
+  petRoom: defineHexPalette({ floor: '#bfa77f', wall: '#eff8e7' }),
+  playRoom: defineHexPalette({ floor: '#d9b37e', wall: '#fff3e6' }),
+  wardrobeRoom: defineHexPalette({ floor: '#b99582', wall: '#f8eef6' }),
 } as const;
 
 export const houseThemeColorPalette = {
+  christmasWonderland: defineHexPalette({
+    door: '#2f765d',
+    floor: '#d9b275',
+    landscapeAccent: '#7da9c8',
+    roof: '#b94b4b',
+    roofShade: '#7f3038',
+    trim: '#c89a46',
+    wall: '#fff7e4',
+    wallUpper: '#dfefff',
+    window: '#ffe6a3',
+  }),
   cottonCandyDream: defineHexPalette({
     door: '#74c7bc',
     floor: '#f1c6a8',
@@ -192,4 +210,5 @@ export const houseThemeColorPalette = {
     wallUpper: '#f2dcf2',
     window: '#8ed5e6',
   }),
+  // design-generator:house-theme-palette
 } as const;

@@ -1,12 +1,17 @@
+import type { TranslationKey } from '@/locales/translation-keys';
+
+/** Typed progression stages for the Ladi mascot. */
+
 export type LadiTier = 'spark' | 'garden' | 'sun' | 'aurora' | 'super';
 export type LadiStageId = 'idle-ladi' | 'starter-ladi' | 'garden-ladi' | 'sun-ladi' | 'aurora-ladi' | 'super-ladi';
+export type LadiSpriteId = LadiStageId | 'perched-ladi' | 'smart-ladi';
 
 export interface LadiStage {
   readonly id: LadiStageId;
   readonly tier: LadiTier;
   readonly minimumScore: number;
-  readonly nameKey: string;
-  readonly descriptionKey: string;
+  readonly nameKey: TranslationKey;
+  readonly descriptionKey: TranslationKey;
 }
 
 export const LADI_STAGES: readonly LadiStage[] = [

@@ -19,7 +19,7 @@
         <strong>{{ option.title }}</strong>
         <small>{{ option.subtitle }}</small>
       </span>
-      <span class="page-view-check"><v-icon icon="mdi-check" size="14" /></span>
+      <span class="page-view-check"><v-icon icon="i-mdi:check" size="14" /></span>
     </button>
   </div>
 </template>
@@ -49,18 +49,19 @@ withDefaults(defineProps<{
 @use "@/styles/mixins" as *;
 
 .page-view-switch {
-  --switch-accent: var(--lad-palette-blue);
-  --switch-accent-dark: var(--lad-palette-blue-strong);
-  --switch-alt: var(--lad-palette-mint-strong);
-  --switch-alt-dark: var(--lad-palette-teal-700);
-  --switch-bg: var(--lad-palette-background);
-  position: relative;
+  --switch-accent: var(--lad-color-info);
+  --switch-accent-dark: var(--lad-color-info-strong);
+  --switch-alt: var(--lad-color-primary-strong);
+  --switch-alt-dark: var(--lad-color-primary-deep);
+  --switch-bg: var(--lad-surface-soft);
+  @apply position-relative;
   isolation: isolate;
   padding: 0.5rem;
   @apply d-grid overflow-hidden;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5625rem;
-  border: 0.125rem solid color-mix(in srgb, var(--switch-accent) 20%, white);
+  border: 0.125rem solid
+    color-mix(in srgb, var(--switch-accent) 20%, var(--lad-border-on-accent));
   border-radius: 1.6875rem;
   background:
     radial-gradient(
@@ -68,17 +69,17 @@ withDefaults(defineProps<{
       color-mix(in srgb, var(--switch-alt) 10%, transparent) 0 2.125rem,
       transparent 2.1875rem
     ),
-    linear-gradient(145deg, var(--switch-bg), var(--lad-palette-surface));
+    linear-gradient(145deg, var(--switch-bg), var(--lad-surface));
   box-shadow:
     0 0.375rem 0 color-mix(in srgb, var(--switch-accent) 14%, transparent),
     0 0.75rem 1.5rem color-mix(in srgb, var(--switch-accent) 7%, transparent);
 }
 .page-view-switch--amber {
-  --switch-accent: var(--lad-palette-amber-500);
-  --switch-accent-dark: var(--lad-palette-amber-600);
-  --switch-alt: var(--lad-palette-mint);
-  --switch-alt-dark: var(--lad-palette-teal-700);
-  --switch-bg: var(--lad-palette-amber-100);
+  --switch-accent: var(--lad-color-reward-accent);
+  --switch-accent-dark: var(--lad-color-reward-deep);
+  --switch-alt: var(--lad-color-primary);
+  --switch-alt-dark: var(--lad-color-primary-deep);
+  --switch-bg: var(--lad-color-reward-soft);
 }
 .page-view-switch--single {
   grid-template-columns: minmax(0, 1fr);
@@ -106,9 +107,10 @@ withDefaults(defineProps<{
   padding: 0.6875rem 0.75rem;
   @apply position-relative d-flex align-center ga-2 text-left cursor-pointer overflow-hidden;
   color: var(--lad-muted);
-  border: 0.0625rem solid color-mix(in srgb, var(--switch-accent) 9%, white);
+  border: 0.0625rem solid
+    color-mix(in srgb, var(--switch-accent) 9%, var(--lad-border-on-accent));
   border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--lad-palette-white) 40%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 40%, transparent);
   font: inherit;
   transition:
     color 180ms ease,
@@ -122,11 +124,15 @@ withDefaults(defineProps<{
 .page-view-switch button.active {
   color: var(--switch-accent-dark);
   transform: translateY(-0.125rem);
-  border-color: color-mix(in srgb, var(--switch-accent) 30%, white);
+  border-color: color-mix(
+    in srgb,
+    var(--switch-accent) 30%,
+    var(--lad-border-on-accent)
+  );
   background: linear-gradient(
     145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-white)
+    var(--lad-surface-raised),
+    var(--lad-surface-raised)
   );
   box-shadow:
     0 0.375rem 0 color-mix(in srgb, var(--switch-accent) 19%, transparent),
@@ -134,7 +140,11 @@ withDefaults(defineProps<{
       color-mix(in srgb, var(--switch-accent) 12%, transparent);
 }
 .page-view-switch button:nth-child(2).active {
-  border-color: color-mix(in srgb, var(--switch-alt) 30%, white);
+  border-color: color-mix(
+    in srgb,
+    var(--switch-alt) 30%,
+    var(--lad-border-on-accent)
+  );
   box-shadow:
     0 0.375rem 0 color-mix(in srgb, var(--switch-alt) 19%, transparent),
     0 0.6875rem 1.0625rem color-mix(in srgb, var(--switch-alt) 11%, transparent);
@@ -148,7 +158,7 @@ withDefaults(defineProps<{
   @include icon-tile(
     2.875rem,
     1rem,
-    color-mix(in srgb, var(--switch-accent) 11%, white),
+    color-mix(in srgb, var(--switch-accent) 11%, var(--lad-surface-raised)),
     color-mix(in srgb, var(--switch-accent) 13%, transparent),
     -3deg
   );
@@ -158,14 +168,24 @@ withDefaults(defineProps<{
     transform var(--lad-motion-normal) ease,
     background var(--lad-motion-normal) ease;
 }
+.page-view-icon :deep(.v-icon) {
+  @apply d-block;
+  @apply ma-auto;
+  color: inherit;
+  opacity: 1;
+}
 .page-view-switch button:nth-child(2) .page-view-icon {
-  background: color-mix(in srgb, var(--switch-alt) 11%, white);
+  background: color-mix(
+    in srgb,
+    var(--switch-alt) 11%,
+    var(--lad-surface-raised)
+  );
 }
 .active .page-view-icon {
-  color: white;
+  color: var(--lad-text-inverse);
   background: linear-gradient(
     145deg,
-    color-mix(in srgb, var(--switch-accent) 78%, white),
+    color-mix(in srgb, var(--switch-accent) 78%, var(--lad-surface-raised)),
     var(--switch-accent)
   );
   box-shadow: 0 0.25rem 0 var(--switch-accent-dark);
@@ -174,7 +194,7 @@ withDefaults(defineProps<{
 .page-view-switch button:nth-child(2).active .page-view-icon {
   background: linear-gradient(
     145deg,
-    color-mix(in srgb, var(--switch-alt) 78%, white),
+    color-mix(in srgb, var(--switch-alt) 78%, var(--lad-surface-raised)),
     var(--switch-alt)
   );
   box-shadow: 0 0.1875rem 0 var(--switch-alt-dark);
@@ -201,8 +221,8 @@ withDefaults(defineProps<{
   @apply position-absolute d-grid place-center;
   top: 0.4375rem;
   right: 0.4375rem;
-  color: white;
-  border: 0.125rem solid var(--lad-palette-white);
+  color: var(--lad-text-inverse);
+  border: 0.125rem solid var(--lad-border-on-accent);
   border-radius: 0.4375rem;
   background: var(--switch-accent);
   box-shadow: 0 0.125rem 0
@@ -249,8 +269,8 @@ withDefaults(defineProps<{
 @include respond-down(phone) {
   .page-view-switch--many button {
     min-height: 5.125rem;
-    flex-direction: column;
-    justify-content: center;
+    @apply flex-column;
+    @apply justify-center;
     padding: 0.4375rem 0.25rem;
     text-align: center;
   }
