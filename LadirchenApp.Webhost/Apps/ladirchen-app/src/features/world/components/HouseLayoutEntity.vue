@@ -2,51 +2,55 @@
   <button
     :aria-label="accessibleLabel"
     class="layout-entity"
-    :class="[`entity-${placement.entityType}`, { editable, dragging: Boolean(dragOffset) }]"
+    :class="[`entity-${placement.entityType}`, { editable, dragging: Boolean(dragOffset), interactive: Boolean(accessory?.interaction) }]"
     :style="entityStyle"
     type="button"
-    @click="interactWithLadi"
+    @click="interact"
     @lostpointercapture="forwardLostPointerCapture"
     @pointercancel="forwardPointerCancel"
     @pointerdown="forwardPointerDown"
     @pointermove="forwardPointerMove"
     @pointerup="forwardPointerUp"
   >
-    <RoomFurniture v-if="placement.entityType === 'furniture' && accessory" :item="accessory" />
+    <RoomFurniture v-if="placement.entityType === 'furniture' && accessory" :item="accessory" :open="doorOpen" />
     <AvatarFigure
       v-else-if="placement.entityType === 'member' && member"
       :appearance="member.resolvedAppearance"
       :calm="true"
       full-body
-      :size="62"
+      :size="ENTITY_VISUAL_CONFIG.avatarSize"
     />
     <AnimatedPet
       v-else-if="placement.entityType === 'pet' && pet"
       :pet="pet"
-      :size="54"
+      :size="ENTITY_VISUAL_CONFIG.petSize"
     />
     <span v-else-if="placement.entityType === 'ladi'" class="ladi-on-perch" :class="{ perched }">
       <LadiMascot
+        :perched="perched"
         :score="score"
-        :show-scene-base="!perched"
         :show-score="false"
-        :size="74"
+        :size="ENTITY_VISUAL_CONFIG.ladiSize"
       />
       <Transition name="ladi-speech">
-        <span v-if="speech" class="ladi-speech" :class="{ 'opens-left': placement.x > 70 }" role="status">{{ speech }}</span>
+        <span v-if="speech" class="ladi-speech" :class="{ 'opens-left': placement.x > ENTITY_VISUAL_CONFIG.speechFlipThreshold }" role="status">{{ speech }}</span>
       </Transition>
     </span>
   </button>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import type { AvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember, FamilyMemberId, FamilyPet, HouseAccessory, HouseLayoutPlacement } from '@/domain/types';
+import { ENTITY_LAYER_BASE, furnitureVisualDefinitionFor } from '@/domain/house';
+import type { HouseAccessory, HouseLayoutPlacement } from '@/domain/house';
+import type { FamilyMember, FamilyPet } from '@/domain/family/types';
+import type { FamilyMemberId } from '@/domain/shared/identifiers';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import { ENTITY_VISUAL_CONFIG } from '../entity-visual-config';
 
 import AnimatedPet from './AnimatedPet.vue';
 import RoomFurniture from './RoomFurniture.vue';
@@ -73,6 +77,7 @@ const emit = defineEmits<{
   pointermove: [event: PointerEvent];
   pointerup: [event: PointerEvent];
 }>();
+const doorOpen = ref(false);
 
 const entityName = computed(() => {
   if (props.placement.entityType === 'furniture') {return props.accessory?.title ?? t('world.scene.entity.furniture');}
@@ -86,17 +91,24 @@ const entityName = computed(() => {
 });
 const accessibleLabel = computed(() => props.editable
   ? t('world.scene.moveEntity', { name: entityName.value })
-  : entityName.value);
-const displayY = computed(() => props.accessory?.visual === 'string-lights' ? Math.max(58, props.placement.y) : props.placement.y);
+  : props.accessory?.interaction === 'toggle-door'
+    ? t(doorOpen.value ? 'world.scene.fridge.close' : 'world.scene.fridge.open')
+    : entityName.value);
+const visualDefinition = computed(() => props.accessory?.visual ? furnitureVisualDefinitionFor(props.accessory.visual) : undefined);
+const displayY = computed(() => Math.max(visualDefinition.value?.minimumY ?? 0, props.placement.y));
+const layerY = computed(() => props.accessory?.mobility === 'fixed' ? 0 : displayY.value);
 const entityStyle = computed(() => ({
   left: `${props.placement.x}%`,
   top: `${displayY.value}%`,
   transform: `translate(-50%, -70%) translate(${props.dragOffset?.x ?? 0}px, ${props.dragOffset?.y ?? 0}px) scale(${props.placement.scale})`,
-  zIndex: props.dragOffset ? 1000 : (props.placement.entityType === 'furniture' ? 10 : 300) + Math.round(displayY.value),
+  zIndex: props.dragOffset ? ENTITY_VISUAL_CONFIG.draggingLayer : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
 }));
-const interactWithLadi = () => {
+const interact = () => {
   if (props.placement.entityType === 'ladi') {
     emit('ladi-interact');
+  }
+  if (props.accessory?.interaction === 'toggle-door') {
+    doorOpen.value = !doorOpen.value;
   }
 };
 const forwardPointerDown = (event: PointerEvent) => {
@@ -125,6 +137,10 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   width: 86px;
   height: 86px;
   pointer-events: none;
+}
+.layout-entity.entity-furniture.interactive {
+  cursor: pointer;
+  pointer-events: auto;
 }
 .layout-entity.entity-member {
   width: 56px;
@@ -173,6 +189,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   transform-origin: center bottom;
 }
 .ladi-on-perch.perched {
+  transform: translateY(9px);
   animation: ladi-perch-hello 5.4s ease-in-out infinite;
 }
 .ladi-speech {
@@ -236,16 +253,16 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   0%,
   68%,
   100% {
-    transform: translateY(0) rotate(0);
+    transform: translateY(9px) rotate(0);
   }
   73% {
-    transform: translateY(-5px) rotate(-4deg);
+    transform: translateY(4px) rotate(-4deg);
   }
   79% {
-    transform: translateY(0) rotate(4deg);
+    transform: translateY(9px) rotate(4deg);
   }
   85% {
-    transform: translateY(-2px) rotate(0);
+    transform: translateY(7px) rotate(0);
   }
 }
 @include reduced-motion {
