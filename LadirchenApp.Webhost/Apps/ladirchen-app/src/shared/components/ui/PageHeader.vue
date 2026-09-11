@@ -1,5 +1,6 @@
 <template>
   <header class="family-world-page-header" :class="`family-world-page-header--${tone}`">
+    <HeaderDecoration :tone="tone === 'profile' ? 'profile' : 'world'" />
     <div class="page-header-copy">
       <p class="page-header-kicker">{{ eyebrow }}</p>
       <h1>{{ title }}</h1>
@@ -17,12 +18,14 @@
 </template>
 
 <script lang="ts" setup>
+import HeaderDecoration from './HeaderDecoration.vue';
+
 withDefaults(defineProps<{
   description: string;
   eyebrow: string;
   icon?: string;
   title: string;
-  tone?: 'mint' | 'blue' | 'amber' | 'coral';
+  tone?: 'mint' | 'blue' | 'amber' | 'coral' | 'profile';
 }>(), {
   icon: undefined,
   tone: 'mint',
@@ -33,12 +36,12 @@ withDefaults(defineProps<{
 @use "@/styles/mixins" as *;
 
 .family-world-page-header {
-  --header-accent: var(--lad-palette-teal-550);
-  --header-accent-soft: var(--lad-palette-background);
+  --header-accent: var(--lad-color-primary-muted);
+  --header-accent-soft: var(--lad-surface-soft);
   min-height: 8.625rem;
   @apply mb-5 pa-5 position-relative overflow-hidden d-flex align-center justify-space-between ga-4;
   @include raised-surface(
-    color-mix(in srgb, var(--header-accent) 18%, white),
+    color-mix(in srgb, var(--header-accent) 18%, var(--lad-surface-raised)),
     color-mix(in srgb, var(--header-accent) 14%, transparent),
     var(--lad-radius-large),
     0.3125rem,
@@ -46,44 +49,25 @@ withDefaults(defineProps<{
   );
   background: linear-gradient(
     145deg,
-    var(--lad-palette-surface) 0%,
+    var(--lad-surface) 0%,
     var(--header-accent-soft) 145%
   );
 }
-.family-world-page-header::before,
-.family-world-page-header::after {
-  content: "";
-  @apply position-absolute;
-  border-radius: 50%;
-  @apply pointer-events-none;
-}
-.family-world-page-header::before {
-  width: 8.125rem;
-  height: 8.125rem;
-  top: -4.8125rem;
-  right: -2rem;
-  background: color-mix(in srgb, var(--header-accent-soft) 68%, transparent);
-  box-shadow: 0 0 0 1.125rem
-    color-mix(in srgb, var(--header-accent-soft) 35%, transparent);
-}
-.family-world-page-header::after {
-  width: 5.625rem;
-  height: 1.75rem;
-  right: 3rem;
-  bottom: -1.0625rem;
-  background: color-mix(in srgb, var(--header-accent-soft) 55%, transparent);
-}
 .family-world-page-header--blue {
-  --header-accent: var(--lad-palette-blue);
-  --header-accent-soft: var(--lad-palette-background);
+  --header-accent: var(--lad-color-info);
+  --header-accent-soft: var(--lad-surface-soft);
 }
 .family-world-page-header--amber {
-  --header-accent: var(--lad-palette-amber-450);
-  --header-accent-soft: var(--lad-palette-amber-100);
+  --header-accent: var(--lad-color-reward-border);
+  --header-accent-soft: var(--lad-color-reward-soft);
 }
 .family-world-page-header--coral {
-  --header-accent: var(--lad-palette-coral);
-  --header-accent-soft: var(--lad-palette-amber-100);
+  --header-accent: var(--lad-color-accent-coral);
+  --header-accent-soft: var(--lad-color-reward-soft);
+}
+.family-world-page-header--profile {
+  --header-accent: var(--lad-tone-profile-accent);
+  --header-accent-soft: var(--lad-tone-profile-tint);
 }
 .page-header-copy {
   max-width: 19.375rem;
@@ -112,7 +96,7 @@ h1 {
   @include icon-tile(
     3.375rem,
     var(--lad-radius-medium),
-    color-mix(in srgb, var(--lad-palette-white) 75%, transparent),
+    color-mix(in srgb, var(--lad-surface-raised) 75%, transparent),
     color-mix(in srgb, var(--header-accent) 13%, transparent),
     0deg,
     0
