@@ -27,7 +27,7 @@
 
     <div v-if="showEvolution !== false" class="house-evolution">
       <div class="evolution-heading">
-        <div class="evolution-icon" aria-hidden="true"><v-icon size="22">mdi-home-switch</v-icon></div>
+        <div class="evolution-icon" aria-hidden="true"><v-icon size="22">i-mdi:home-switch</v-icon></div>
         <div><span class="section-kicker">{{ t('world.progress.weeklyReview') }}</span><strong>{{ t('world.progress.evolutionTitle') }}</strong></div>
       </div>
       <div class="evolution-steps mt-3">
@@ -44,8 +44,8 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house-catalog';
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
+import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house/catalog';
+import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
 import type { HouseStageLevel } from '@/domain/house';
 
 const props = defineProps<{
@@ -71,17 +71,17 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   gap: 13px;
   @apply overflow-hidden;
   @include raised-surface(
-    color-mix(in srgb, var(--lad-palette-amber-450) 20%, transparent),
-    color-mix(in srgb, var(--lad-palette-amber-550) 8%, transparent),
+    color-mix(in srgb, var(--lad-color-reward-border) 20%, transparent),
+    color-mix(in srgb, var(--lad-color-reward-shadow) 8%, transparent),
     1.25rem,
     0.25rem,
     0.0625rem
   );
   background: linear-gradient(
     135deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-amber-100) 58%,
-    var(--lad-palette-background)
+    var(--lad-surface),
+    var(--lad-color-reward-soft) 58%,
+    var(--lad-surface-soft)
   );
 }
 .house-stage-visual {
@@ -97,7 +97,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   border-radius: 50%;
   background: repeating-conic-gradient(
     from 0deg,
-    color-mix(in srgb, var(--lad-palette-amber-450) 30%, transparent) 0 12deg,
+    color-mix(in srgb, var(--lad-color-reward-border) 30%, transparent) 0 12deg,
     transparent 12deg 25deg
   );
   animation: house-halo-spin 12s linear infinite;
@@ -108,14 +108,15 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   font-size: 3.25rem;
   line-height: 1;
   filter: drop-shadow(
-    0 6px 5px color-mix(in srgb, var(--lad-palette-orange-650) 18%, transparent)
+    0 6px 5px
+      color-mix(in srgb, var(--lad-color-accent-warm-deep) 18%, transparent)
   );
   animation: house-stage-bounce 3.2s ease-in-out infinite;
 }
 .house-spark {
   @apply position-absolute;
   z-index: 3;
-  color: var(--lad-palette-amber-500);
+  color: var(--lad-color-reward-accent);
   font-size: 0.875rem;
   animation: house-spark 1.8s ease-in-out infinite;
 }
@@ -133,7 +134,10 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   flex: 1;
 }
 .section-kicker {
-  @include overline(var(--lad-palette-mint-strong), var(--lad-font-size-micro));
+  @include overline(
+    var(--lad-color-primary-strong),
+    var(--lad-font-size-micro)
+  );
 }
 .house-stage-title {
   margin: 2px 0;
@@ -145,9 +149,9 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 }
 .house-stage-title span {
   padding: 3px 7px;
-  color: var(--lad-palette-amber-700);
+  color: var(--lad-color-reward-strong);
   border-radius: var(--lad-radius-pill);
-  background: var(--lad-palette-amber-150);
+  background: var(--lad-color-reward-pale);
   font-size: 0.5rem;
   @apply font-weight-black;
 }
@@ -158,7 +162,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 .house-stage-copy > b {
   @apply d-block;
   margin-top: 5px;
-  color: var(--lad-palette-amber-700);
+  color: var(--lad-color-reward-strong);
   font-size: 0.5rem;
 }
 .stage-track {
@@ -169,22 +173,26 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 .stage-track span {
   height: 6px;
   border-radius: var(--lad-radius-pill);
-  background: color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--lad-color-primary-supporting) 12%,
+    transparent
+  );
 }
 .stage-track span.reached {
-  background: var(--lad-palette-mint);
+  background: var(--lad-color-primary);
 }
 .stage-track span.current {
   box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--lad-palette-mint) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-primary) 15%, transparent);
   animation: stage-pulse 1.8s ease-in-out infinite;
 }
 .house-evolution {
   padding: 14px;
   border: 1px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 18%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
   border-radius: 20px;
-  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
 }
 .evolution-heading {
   @apply d-flex align-center;
@@ -203,9 +211,9 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   height: 40px;
   @apply d-grid place-center;
   flex: 0 0 40px;
-  color: var(--lad-palette-mint-strong);
+  color: var(--lad-color-primary-strong);
   border-radius: 13px;
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
 }
 .evolution-steps {
   @apply d-grid;
@@ -215,16 +223,16 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 .evolution-steps > div {
   @apply pa-2;
   border-radius: 12px;
-  background: var(--lad-palette-surface);
+  background: var(--lad-surface);
 }
 .evolution-steps span {
-  color: var(--lad-palette-mint-strong);
+  color: var(--lad-color-primary-strong);
   font-size: 0.5625rem;
   font-weight: var(--lad-font-weight-black);
 }
 .evolution-steps p {
   margin: 3px 0 0;
-  color: var(--lad-palette-muted-600-2);
+  color: var(--lad-neutral-success);
   font-size: 0.46875rem;
   line-height: 1.35;
 }

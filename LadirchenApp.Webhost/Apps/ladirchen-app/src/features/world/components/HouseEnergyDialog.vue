@@ -9,11 +9,11 @@
             <p class="energy-subtitle mt-1">{{ t('world.energy.description') }}</p>
           </div>
           <AnimatedHouseEnergy class="energy-mascot" :size="86" />
-          <button class="close-button" :aria-label="t('world.energy.close')" type="button" @click="close"><v-icon icon="mdi-close" /></button>
+          <button class="close-button" :aria-label="t('world.energy.close')" type="button" @click="close"><v-icon icon="i-mdi:close" /></button>
         </div>
 
         <div class="summary-grid mt-4">
-          <div class="summary-tile summary-tile--energy" :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }">
+          <MetricCard class="summary-tile summary-tile--energy" :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }" tone="energy">
             <div class="energy-orb" :style="{ '--energy': `${store.familyEnergy * 3.6}deg` }">
               <span>{{ store.familyEnergy }}<small>%</small></span>
             </div>
@@ -22,18 +22,18 @@
               <strong class="energy-state-title">{{ energyState.title }}<span v-if="store.houseMeetsMinimumEnergy" class="energy-state-spark" aria-hidden="true">✦</span></strong>
               <small>{{ energyState.copy }}</small>
             </div>
-          </div>
-          <div class="summary-tile summary-tile--goal">
+          </MetricCard>
+          <MetricCard class="summary-tile summary-tile--goal" tone="bonus">
             <div class="summary-icon" :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }" aria-hidden="true">
               <AnimatedEnergyStar v-if="store.houseMeetsMinimumEnergy" :size="38" />
-              <v-icon v-else size="25">mdi-progress-clock</v-icon>
+              <v-icon v-else size="25">i-mdi:progress-clock</v-icon>
             </div>
             <div>
               <span>{{ t('world.energy.dailyGoal') }}</span>
               <strong>{{ store.houseMeetsMinimumEnergy ? t('world.energy.reached') : t('world.energy.remaining', { value: 60 - store.familyEnergy }) }}</strong>
               <small>{{ t('world.energy.threshold') }}</small>
             </div>
-          </div>
+          </MetricCard>
         </div>
       </div>
 
@@ -70,12 +70,15 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
 
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
-import { createDefaultAvatarAppearance } from '@/domain/avatar';
+import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember, FamilyMemberId } from '@/domain/types';
+import type { FamilyMember } from '@/domain/family/types';
+import type { FamilyMemberId } from '@/domain/shared/identifiers';
 import { useFamilyWorldStore } from '@/stores/family-world';
+import MetricCard from '@/shared/components/ui/MetricCard.vue';
 
 import AnimatedEnergyStar from './AnimatedEnergyStar.vue';
 import AnimatedHouseEnergy from './AnimatedHouseEnergy.vue';
@@ -96,15 +99,8 @@ const energyState = computed(() => {
 const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === 'basic' && item.assigneeId === childId);
 const baseCount = (childId: FamilyMemberId) => baseContributions(childId).length;
 const approvedCount = (childId: FamilyMemberId) => baseContributions(childId).filter((item) => item.status === 'approved').length;
-const childAppearance = (child: FamilyMember, index: number): AvatarAppearance => {
-  if (child.appearance) return child.appearance;
-  const appearance = createDefaultAvatarAppearance();
-  const variants: ReadonlyArray<Partial<AvatarAppearance>> = [
-    { hair: 'ponytail', outfitColorId: 'outfit-blue' },
-    { hair: 'short', hairColorId: 'hair-black', outfit: 'overalls', outfitColorId: 'outfit-gold' },
-    { hair: 'curls', hairColorId: 'hair-brown', outfit: 'space', outfitColorId: 'outfit-ocean' },
-  ];
-  return { ...appearance, ...(variants[index % variants.length] ?? {}) };
+const childAppearance = (child: FamilyMember, _index: number): AvatarAppearance => {
+  return resolveFamilyMemberAvatarAppearance(child, store.members);
 };
 const guideSteps = computed(() => [
   {
@@ -128,14 +124,14 @@ const startEnergyGuide = () => {
   guideStep.value = guideStep.value >= guideSteps.value.length - 1 ? 0 : guideStep.value + 1;
   const step = guideSteps.value[guideStep.value];
   if (!step) return;
-  window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
+  ladiGuideController.say({
     heading: step.heading,
     message: step.message,
     smart: true,
     progress: `${guideStep.value + 1} / ${guideSteps.value.length}`,
     actionLabel: t(guideStep.value === guideSteps.value.length - 1 ? 'world.energy.guide.again' : 'common.next'),
-    actionEvent: 'house-energy-guide:next',
-  } }));
+    actionId: 'house-energy:next',
+  });
 };
 watch(() => props.modelValue, (isOpen) => {
   if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
@@ -146,10 +142,11 @@ watch(() => props.modelValue, (isOpen) => {
     guideStartTimer = undefined;
   }, 280);
 });
-onMounted(() => window.addEventListener('house-energy-guide:next', startEnergyGuide));
+let unregisterGuideAction: (() => void) | undefined;
+onMounted(() => { unregisterGuideAction = ladiGuideController.registerAction('house-energy:next', startEnergyGuide); });
 onUnmounted(() => {
   if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
-  window.removeEventListener('house-energy-guide:next', startEnergyGuide);
+  unregisterGuideAction?.();
 });
 const close = () => emit('update:modelValue', false);
 </script>
@@ -161,20 +158,20 @@ const close = () => emit('update:modelValue', false);
   max-height: min(820px, 94dvh);
   @apply overflow-hidden;
   @include dialog-frame(
-    color-mix(in srgb, var(--lad-palette-orange-400-2) 20%, transparent),
-    color-mix(in srgb, var(--lad-palette-orange-650) 12%, transparent)
+    color-mix(in srgb, var(--lad-color-accent-warm-muted) 20%, transparent),
+    color-mix(in srgb, var(--lad-color-accent-warm-deep) 12%, transparent)
   );
 }
 .energy-dialog-header {
   @apply position-relative overflow-hidden;
   flex: 0 0 auto;
   border-bottom: 1px solid
-    color-mix(in srgb, var(--lad-palette-orange-500) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-accent-warm-supporting) 15%, transparent);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background) 0%,
-    var(--lad-palette-amber-100) 48%,
-    var(--lad-palette-amber-100) 100%
+    var(--lad-surface-soft) 0%,
+    var(--lad-color-reward-soft) 48%,
+    var(--lad-color-reward-soft) 100%
   );
 }
 .energy-dialog-header::before,
@@ -189,16 +186,16 @@ const close = () => emit('update:modelValue', false);
   height: 190px;
   top: -113px;
   right: -34px;
-  background: color-mix(in srgb, var(--lad-palette-white) 35%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 35%, transparent);
   box-shadow: 0 0 0 22px
-    color-mix(in srgb, var(--lad-palette-white) 15%, transparent);
+    color-mix(in srgb, var(--lad-surface-raised) 15%, transparent);
 }
 .energy-dialog-header::after {
   width: 105px;
   height: 35px;
   right: 76px;
   bottom: -21px;
-  background: color-mix(in srgb, var(--lad-palette-white) 30%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 30%, transparent);
   filter: blur(2px);
 }
 .energy-title-row {
@@ -239,18 +236,7 @@ const close = () => emit('update:modelValue', false);
 .summary-tile {
   @apply min-w-0;
   padding: 11px;
-  @apply d-flex align-center;
   gap: 10px;
-  @include raised-surface(
-    color-mix(in srgb, var(--lad-palette-orange-650) 10%, transparent),
-    color-mix(in srgb, var(--lad-palette-orange-600) 8%, transparent),
-    var(--lad-radius-medium),
-    0.3125rem
-  );
-  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
-  box-shadow:
-    0 5px 0 color-mix(in srgb, var(--lad-palette-orange-600) 8%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
 }
 .summary-tile--energy {
   @apply position-relative overflow-hidden;
@@ -265,7 +251,7 @@ const close = () => emit('update:modelValue', false);
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--lad-palette-white) 80%, transparent),
+    color-mix(in srgb, var(--lad-surface-raised) 80%, transparent),
     transparent
   );
   transform: skewX(-18deg);
@@ -293,7 +279,7 @@ const close = () => emit('update:modelValue', false);
 .summary-tile small {
   margin-top: 3px;
   @apply overflow-hidden;
-  color: var(--lad-palette-muted-600);
+  color: var(--lad-text-supporting);
   font-size: 0.5rem;
   line-height: 1.3;
 }
@@ -302,8 +288,8 @@ const close = () => emit('update:modelValue', false);
   gap: 4px;
 }
 .energy-state-spark {
-  color: var(--lad-palette-amber-450) !important;
-  font-size: 0.75rem !important;
+  color: var(--lad-color-reward-border);
+  font-size: 0.75rem;
   animation: energy-state-spark 2.4s ease-in-out infinite;
 }
 .energy-orb {
@@ -314,11 +300,11 @@ const close = () => emit('update:modelValue', false);
   border-radius: 50%;
   background: conic-gradient(
     var(--lad-mint) var(--energy),
-    color-mix(in srgb, var(--lad-palette-teal-550) 12%, transparent) 0
+    color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent) 0
   );
   box-shadow:
-    0 4px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
-    0 0 0 5px color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
+    0 4px 0 color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--lad-surface-raised) 50%, transparent);
   animation: energy-orb-breathe 2.9s ease-in-out infinite;
 }
 .energy-orb::before {
@@ -327,7 +313,7 @@ const close = () => emit('update:modelValue', false);
   content: "";
   grid-area: 1 / 1;
   border-radius: 50%;
-  background: var(--lad-palette-surface);
+  background: var(--lad-surface);
 }
 .energy-orb span {
   z-index: 1;
@@ -344,21 +330,21 @@ const close = () => emit('update:modelValue', false);
   @include icon-tile(
     2.75rem,
     0.875rem,
-    var(--lad-palette-amber-150),
-    color-mix(in srgb, var(--lad-palette-amber-600) 12%, transparent),
+    var(--lad-color-reward-pale),
+    color-mix(in srgb, var(--lad-color-reward-deep) 12%, transparent),
     -4deg
   );
   flex-basis: 44px;
-  color: var(--lad-palette-amber-600);
+  color: var(--lad-color-reward-deep);
 }
 .summary-icon.is-achieved {
   background: linear-gradient(
     145deg,
-    var(--lad-palette-amber-100),
-    var(--lad-palette-amber-150)
+    var(--lad-color-reward-soft),
+    var(--lad-color-reward-pale)
   );
   box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-amber-600) 12%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-deep) 12%, transparent);
 }
 .energy-content {
   min-height: 0;
@@ -366,12 +352,15 @@ const close = () => emit('update:modelValue', false);
   @apply overflow-y-auto;
   background: linear-gradient(
     180deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background)
+    var(--lad-surface),
+    var(--lad-surface-soft)
   );
 }
 .section-kicker {
-  @include overline(var(--lad-palette-mint-strong), var(--lad-font-size-micro));
+  @include overline(
+    var(--lad-color-primary-strong),
+    var(--lad-font-size-micro)
+  );
 }
 .children-heading {
   @apply d-flex align-end justify-space-between ga-3;
@@ -395,26 +384,27 @@ const close = () => emit('update:modelValue', false);
   @apply d-flex align-center;
   gap: 12px;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 18px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--lad-palette-white) 95%, transparent),
+    color-mix(in srgb, var(--lad-surface-raised) 95%, transparent),
     color-mix(
       in srgb,
-      var(--avatar-color, var(--lad-palette-indigo-350)) 7%,
-      white
+      var(--avatar-color, var(--lad-color-bonus-info)) 7%,
+      var(--lad-surface-raised)
     )
   );
   box-shadow:
-    0 5px 0 color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent),
-    0 10px 20px color-mix(in srgb, var(--lad-palette-muted-700) 5%, transparent);
+    0 5px 0
+      color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent),
+    0 10px 20px color-mix(in srgb, var(--lad-text-strong) 5%, transparent);
   transition:
     transform 0.2s ease,
     border-color 0.2s ease;
 }
 .child-energy-row:hover {
-  border-color: color-mix(in srgb, var(--lad-palette-mint) 35%, transparent);
+  border-color: color-mix(in srgb, var(--lad-color-primary) 35%, transparent);
   transform: translateY(-2px);
 }
 .child-avatar {
@@ -423,17 +413,17 @@ const close = () => emit('update:modelValue', false);
   @apply d-grid place-center overflow-hidden;
   flex: 0 0 58px;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
+    color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
   border-radius: 19px;
   background: color-mix(
     in srgb,
-    var(--avatar-color, var(--lad-palette-indigo-350)) 18%,
-    white
+    var(--avatar-color, var(--lad-color-bonus-info)) 18%,
+    var(--lad-surface-raised)
   );
   box-shadow: 0 4px 0
     color-mix(
       in srgb,
-      var(--avatar-color, var(--lad-palette-indigo-350)) 18%,
+      var(--avatar-color, var(--lad-color-bonus-info)) 18%,
       transparent
     );
   transform: rotate(-2deg);
@@ -452,19 +442,19 @@ const close = () => emit('update:modelValue', false);
   padding: 4px 8px;
   color: var(--lad-mint-dark);
   border-radius: var(--lad-radius-pill);
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
   font-size: 0.6875rem;
 }
 .child-energy-description {
   @apply ma-0 mt-2;
-  color: var(--lad-palette-teal-600);
+  color: var(--lad-color-primary-supporting);
   font-size: 0.625rem;
   font-weight: 650;
   line-height: 1.35;
 }
 .child-energy-description span {
   @apply d-inline;
-  color: var(--lad-palette-mint-strong);
+  color: var(--lad-color-primary-strong);
   font-weight: var(--lad-font-weight-heavy);
 }
 @keyframes energy-orb-breathe {
@@ -507,7 +497,7 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-dialog-header {
   border: 0;
-  background: var(--lad-palette-surface);
+  background: var(--lad-surface);
 }
 .energy-dialog-header::before,
 .energy-dialog-header::after {
@@ -530,16 +520,16 @@ const close = () => emit('update:modelValue', false);
   height: 120px;
   top: -72px;
   right: -28px;
-  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+  background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
   box-shadow: 0 0 0 17px
-    color-mix(in srgb, var(--lad-palette-background) 40%, transparent);
+    color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
 }
 .energy-title-row::after {
   width: 84px;
   height: 26px;
   right: 44px;
   bottom: -16px;
-  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+  background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
 }
 .energy-title-row > div:first-child {
   max-width: 245px;
@@ -558,16 +548,15 @@ const close = () => emit('update:modelValue', false);
   font-size: 0.6875rem;
 }
 .energy-mascot {
-  width: 78px !important;
-  height: 78px !important;
+  width: 78px;
+  height: 78px;
   @apply d-grid place-center;
   top: 24px;
   right: 45px;
   z-index: 2;
   border-radius: 24px;
-  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info) 12%, transparent);
 }
 .close-button {
   top: 8px;
@@ -582,36 +571,6 @@ const close = () => emit('update:modelValue', false);
   min-height: 72px;
   padding: 8px;
   gap: 8px;
-  border-color: color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
-  background:
-    radial-gradient(
-      circle at 90% 8%,
-      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
-      transparent 27%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-background) 62%,
-      var(--lad-palette-amber-100)
-    );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent);
-}
-.summary-tile--goal {
-  border-color: color-mix(
-    in srgb,
-    var(--lad-palette-purple-350) 18%,
-    transparent
-  );
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background) 58%,
-    var(--lad-palette-amber-100)
-  );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-palette-muted-500) 10%, transparent);
 }
 .energy-orb {
   width: 48px;
@@ -629,39 +588,38 @@ const close = () => emit('update:modelValue', false);
   width: 40px;
   height: 40px;
   flex-basis: 40px;
-  color: var(--lad-palette-white);
-  border: 3px solid var(--lad-palette-white);
+  color: var(--lad-text-inverse);
+  border: 3px solid var(--lad-border-on-accent);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-pink-300),
-    var(--lad-palette-violet-400)
+    var(--lad-color-accent-pink),
+    var(--lad-color-bonus)
   );
-  box-shadow: 0 4px 0 var(--lad-palette-violet-500);
+  box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
 }
 .summary-icon.is-achieved {
   background: linear-gradient(
     145deg,
-    var(--lad-palette-pink-300),
-    var(--lad-palette-violet-400)
+    var(--lad-color-accent-pink),
+    var(--lad-color-bonus)
   );
-  box-shadow: 0 4px 0 var(--lad-palette-violet-500);
+  box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
 }
 .energy-content {
   background: linear-gradient(
     180deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background)
+    var(--lad-surface),
+    var(--lad-surface-soft)
   );
 }
 .energy-content :deep(.house-progress-panel) {
-  border-color: color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+  border-color: color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
+    var(--lad-surface-raised),
+    var(--lad-surface-soft)
   );
-  box-shadow: 0 7px 0
-    color-mix(in srgb, var(--lad-palette-blue) 10%, transparent);
+  box-shadow: 0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent);
 }
 :global(.energy-summary-dialog-frame) {
   width: min(460px, calc(100vw - 32px));
