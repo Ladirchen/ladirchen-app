@@ -1,3 +1,4 @@
+/** Inputs used by a savings-interest policy. */
 export interface SavingsInterestContext {
   baseRate: number;
   completionBonusRate: number;

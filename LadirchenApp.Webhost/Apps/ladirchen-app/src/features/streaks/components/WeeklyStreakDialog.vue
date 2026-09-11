@@ -3,6 +3,7 @@
     <v-card class="streak-dialog" rounded="xl">
       <div class="streak-header pa-4">
         <div class="streak-title-row">
+          <HeaderDecoration tone="streak" />
           <div>
             <p class="dialog-kicker">{{ t('streaks.weekly.eyebrow') }}</p>
             <h2>{{ t('streaks.weekly.title') }}</h2>
@@ -13,18 +14,18 @@
             <span class="hero-spark hero-spark--two">✦</span>
             <AnimatedStreakFlame :size="80" />
           </div>
-          <button class="close-button" :aria-label="t('streaks.weekly.close')" type="button" @click="close"><v-icon icon="mdi-close" /></button>
+          <button class="close-button" :aria-label="t('streaks.weekly.close')" type="button" @click="close"><v-icon icon="i-mdi:close" /></button>
         </div>
 
         <div class="summary-grid mt-4">
-          <div class="summary-tile summary-tile--streak">
-            <div class="summary-icon" aria-hidden="true"><v-icon size="25">mdi-fire</v-icon></div>
+          <MetricCard class="summary-tile summary-tile--streak" tone="streak">
+            <div class="summary-icon" aria-hidden="true"><v-icon icon="i-mdi:fire" size="25" /></div>
             <div><span>{{ t('streaks.weekly.summary.streak') }}</span><strong>{{ t('streaks.weekly.summary.days', { count: store.currentDailyStreak }) }}</strong></div>
-          </div>
-          <div class="summary-tile summary-tile--week">
-            <div class="summary-icon" aria-hidden="true"><v-icon size="23">mdi-calendar-heart</v-icon></div>
+          </MetricCard>
+          <MetricCard class="summary-tile summary-tile--week" tone="bonus">
+            <div class="summary-icon" aria-hidden="true"><v-icon icon="i-mdi:calendar-heart" size="23" /></div>
             <div><span>{{ t('streaks.weekly.summary.thisWeek') }}</span><strong>{{ t('streaks.weekly.summary.progress', { current: store.currentWeekDays, target: store.currentWeekTarget }) }}</strong></div>
-          </div>
+          </MetricCard>
         </div>
       </div>
 
@@ -46,9 +47,9 @@
           <div v-for="(day, index) in weekDays" :key="day.fullLabel" :class="['week-day', `week-day--${day.status}`]" :style="{ '--day-index': index }" :aria-label="t('streaks.weekly.path.dayAria', { day: day.fullLabel, status: statusLabel(day.status) })">
             <span>{{ day.label }}</span>
             <div class="day-symbol">
-              <v-icon v-if="day.status === DayStatus.Done" size="19">mdi-check-bold</v-icon>
-              <v-icon v-else-if="day.status === DayStatus.Today" size="18">mdi-star-four-points</v-icon>
-              <v-icon v-else size="14">mdi-circle-small</v-icon>
+              <v-icon v-if="day.status === DayStatus.Done" size="19">i-mdi:check-bold</v-icon>
+              <v-icon v-else-if="day.status === DayStatus.Today" size="18">i-mdi:star-four-points</v-icon>
+              <v-icon v-else size="14">i-mdi:circle-small</v-icon>
             </div>
             <small>{{ statusLabel(day.status) }}</small>
           </div>
@@ -69,9 +70,11 @@ import { useI18n } from 'vue-i18n';
 
 import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
+import MetricCard from '@/shared/components/ui/MetricCard.vue';
+import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
 import { getLadiStage } from '@/domain/ladi';
-import { approvedContributionDatesInCurrentWeek } from '@/domain/weekly-progress';
-import { addCalendarDays, calendarDateInTimeZone, startOfIsoWeek } from '@/domain/zoned-calendar';
+import { approvedContributionDatesInCurrentWeek } from '@/domain/contributions/weekly-progress';
+import { addCalendarDays, calendarDateInTimeZone, startOfIsoWeek } from '@/domain/shared/zoned-calendar';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 enum DayStatus {
@@ -85,7 +88,8 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const labels = computed(() => {
-  const monday = startOfIsoWeek(new Date(store.currentTimeMilliseconds), store.familyTimeZone);
+  const now = new Date(store.currentTimeMilliseconds);
+  const monday = startOfIsoWeek(now, store.familyTimeZone);
   const shortFormatter = new Intl.DateTimeFormat(locale.value, { timeZone: 'UTC', weekday: 'short' });
   const longFormatter = new Intl.DateTimeFormat(locale.value, { timeZone: 'UTC', weekday: 'long' });
   return Array.from({ length: 7 }, (_, index) => {
@@ -152,16 +156,16 @@ const close = () => emit('update:modelValue', false);
   height: 120px;
   top: -72px;
   right: -28px;
-  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+  background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
   box-shadow: 0 0 0 17px
-    color-mix(in srgb, var(--lad-palette-background) 40%, transparent);
+    color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
 }
 .streak-title-row::after {
   width: 84px;
   height: 26px;
   right: 44px;
   bottom: -16px;
-  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+  background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
 }
 .streak-title-row > div:first-child {
   max-width: 245px;
@@ -195,14 +199,13 @@ const close = () => emit('update:modelValue', false);
   right: 44px;
   z-index: 2;
   border-radius: 25px;
-  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info) 12%, transparent);
 }
 .hero-spark {
   @apply position-absolute;
   z-index: 2;
-  color: var(--lad-palette-amber-500);
+  color: var(--lad-color-reward-accent);
   font-size: 1rem;
   animation: spark-pulse 1.8s ease-in-out infinite;
 }
@@ -215,6 +218,10 @@ const close = () => emit('update:modelValue', false);
   bottom: 14px;
   animation-delay: -0.8s;
 }
+.streak-title-row::before,
+.streak-title-row::after {
+  content: none;
+}
 .summary-grid {
   @apply position-relative d-grid;
   z-index: 1;
@@ -222,42 +229,7 @@ const close = () => emit('update:modelValue', false);
   gap: 9px;
 }
 .summary-tile {
-  min-height: 68px;
-  @apply min-w-0 pa-2 d-flex align-center;
-  gap: 8px;
-  @include raised-surface(
-    color-mix(in srgb, var(--lad-palette-blue) 18%, transparent),
-    color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent),
-    var(--lad-radius-medium),
-    0.3125rem
-  );
-  background:
-    radial-gradient(
-      circle at 90% 8%,
-      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
-      transparent 27%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-background) 62%,
-      var(--lad-palette-amber-100)
-    );
-}
-.summary-tile--week {
-  border-color: color-mix(
-    in srgb,
-    var(--lad-palette-purple-350) 18%,
-    transparent
-  );
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background) 58%,
-    var(--lad-palette-amber-100)
-  );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-palette-muted-500) 10%, transparent);
+  @apply min-w-0;
 }
 .summary-icon {
   @include icon-tile(
@@ -265,29 +237,33 @@ const close = () => emit('update:modelValue', false);
     0.875rem,
     linear-gradient(
       145deg,
-      var(--lad-palette-teal-400),
-      var(--lad-palette-blue)
+      var(--lad-color-primary-highlight),
+      var(--lad-color-info)
     ),
-    var(--lad-palette-blue-strong),
+    var(--lad-color-info-strong),
     -5deg,
-    0.1875rem solid var(--lad-palette-white)
+    0.1875rem solid var(--lad-surface-raised)
   );
   flex-basis: 40px;
-  color: var(--lad-palette-white) !important;
+  color: var(--lad-text-inverse);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-blue)
-  ) !important;
-  box-shadow: 0 4px 0 var(--lad-palette-blue-strong) !important;
+    var(--lad-color-primary-highlight),
+    var(--lad-color-info)
+  );
+  box-shadow: 0 4px 0 var(--lad-color-info-strong);
 }
 .summary-tile--week .summary-icon {
   background: linear-gradient(
     145deg,
-    var(--lad-palette-pink-300),
-    var(--lad-palette-violet-400)
-  ) !important;
-  box-shadow: 0 4px 0 var(--lad-palette-violet-500) !important;
+    var(--lad-color-accent-pink),
+    var(--lad-color-bonus)
+  );
+  box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
+}
+.summary-icon :deep(.v-icon) {
+  color: currentColor;
+  opacity: 1;
 }
 .summary-tile span,
 .summary-tile strong {
@@ -309,8 +285,8 @@ const close = () => emit('update:modelValue', false);
   gap: 12px;
   background: linear-gradient(
     180deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background)
+    var(--lad-surface),
+    var(--lad-surface-soft)
   );
 }
 .week-heading {
@@ -327,7 +303,7 @@ const close = () => emit('update:modelValue', false);
 }
 .section-kicker {
   @include overline(
-    var(--lad-palette-mint-strong),
+    var(--lad-color-primary-strong),
     var(--lad-font-size-micro),
     0.11em
   );
@@ -337,22 +313,18 @@ const close = () => emit('update:modelValue', false);
   @apply d-grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   @apply ga-1;
-  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   border-radius: 23px;
   background:
     radial-gradient(
       circle at 88% 2%,
-      color-mix(in srgb, var(--lad-palette-yellow) 25%, transparent),
+      color-mix(in srgb, var(--lad-color-reward) 25%, transparent),
       transparent 30%
     ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-white),
-      var(--lad-palette-background)
-    );
+    linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow:
-    0 7px 0 color-mix(in srgb, var(--lad-palette-blue) 10%, transparent),
-    0 14px 24px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+    0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent),
+    0 14px 24px color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
 }
 .week-day {
   @apply min-w-0 position-relative text-center;
@@ -366,13 +338,13 @@ const close = () => emit('update:modelValue', false);
   left: calc(50% + 20px);
   z-index: 0;
   border-radius: var(--lad-radius-pill);
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
 }
 .week-day--done:not(:nth-child(7))::after {
-  background: var(--lad-palette-teal-400);
+  background: var(--lad-color-primary-highlight);
 }
 .week-day > span {
-  color: var(--lad-palette-muted-700);
+  color: var(--lad-text-strong);
   font-size: 0.625rem;
   @apply font-weight-black;
 }
@@ -383,10 +355,10 @@ const close = () => emit('update:modelValue', false);
   @apply position-relative;
   z-index: 1;
   @apply d-grid place-center;
-  color: var(--lad-palette-muted-350);
-  border: 2px solid var(--lad-palette-teal-150);
+  color: var(--lad-text-subtle);
+  border: 2px solid var(--lad-color-primary-soft);
   border-radius: 50%;
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
 }
 .week-day small {
   @apply d-block overflow-hidden;
@@ -396,42 +368,43 @@ const close = () => emit('update:modelValue', false);
   @apply text-no-wrap;
 }
 .week-day--done .day-symbol {
-  color: white;
-  border: 3px solid var(--lad-palette-background);
+  color: var(--lad-text-inverse);
+  border: 3px solid var(--lad-surface-soft);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-mint-strong)
+    var(--lad-color-primary-highlight),
+    var(--lad-color-primary-strong)
   );
   box-shadow:
-    0 4px 0 var(--lad-palette-teal-700),
-    0 8px 13px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent);
+    0 4px 0 var(--lad-color-primary-deep),
+    0 8px 13px
+      color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
   animation: day-done-arrive 0.65s cubic-bezier(0.2, 0.8, 0.3, 1) both;
   animation-delay: calc(var(--day-index) * 70ms);
 }
 .week-day--done .day-symbol :deep(.v-icon) {
-  color: white !important;
+  color: var(--lad-text-inverse);
   opacity: 1;
 }
 .week-day--today .day-symbol {
-  color: var(--lad-palette-amber-650);
-  border: 3px solid var(--lad-palette-amber-100);
+  color: var(--lad-color-reward-ink);
+  border: 3px solid var(--lad-color-reward-soft);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-amber-100),
-    var(--lad-palette-yellow)
+    var(--lad-color-reward-soft),
+    var(--lad-color-reward)
   );
   box-shadow:
-    0 0 0 6px color-mix(in srgb, var(--lad-palette-yellow) 18%, transparent),
-    0 4px 0 var(--lad-palette-amber-550);
+    0 0 0 6px color-mix(in srgb, var(--lad-color-reward) 18%, transparent),
+    0 4px 0 var(--lad-color-reward-shadow);
   animation: day-today-pulse 2.2s ease-in-out infinite;
 }
 .week-day--done small {
-  color: var(--lad-palette-text);
+  color: var(--lad-text);
   font-weight: var(--lad-font-weight-black);
 }
 .week-day--today small {
-  color: var(--lad-palette-amber-650);
+  color: var(--lad-color-reward-ink);
   @apply font-weight-black;
 }
 .week-motivation {
@@ -441,17 +414,17 @@ const close = () => emit('update:modelValue', false);
   grid-column: 1 / -1;
   gap: 9px;
   margin-top: 8px;
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
   border: 1px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 18%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
   border-radius: 16px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-soft)
   );
   box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-palette-mint-strong) 8%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-strong) 8%, transparent);
 }
 .week-motivation span,
 .week-motivation strong,
@@ -463,7 +436,7 @@ const close = () => emit('update:modelValue', false);
 }
 .week-motivation small {
   margin-top: 2px;
-  color: var(--lad-palette-muted);
+  color: var(--lad-muted);
   font-size: 0.5rem;
   line-height: 1.3;
 }
@@ -472,22 +445,21 @@ const close = () => emit('update:modelValue', false);
   padding: 13px 17px;
   @apply position-relative d-flex align-center overflow-hidden;
   gap: 16px;
-  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 22px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
+    var(--lad-surface-raised),
+    var(--lad-surface-soft)
   );
-  box-shadow: 0 7px 0
-    color-mix(in srgb, var(--lad-palette-blue) 10%, transparent);
+  box-shadow: 0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent);
 }
 .ladi-level::after {
   content: "✦";
   @apply position-absolute;
   top: 9px;
   right: 12px;
-  color: var(--lad-palette-amber-450);
+  color: var(--lad-color-reward-border);
 }
 .ladi-level > div:last-child {
   @apply min-w-0;
@@ -535,14 +507,14 @@ const close = () => emit('update:modelValue', false);
   100% {
     transform: translateY(0) rotate(-2deg);
     box-shadow:
-      0 0 0 5px color-mix(in srgb, var(--lad-palette-yellow) 15%, transparent),
-      0 4px 0 var(--lad-palette-amber-550);
+      0 0 0 5px color-mix(in srgb, var(--lad-color-reward) 15%, transparent),
+      0 4px 0 var(--lad-color-reward-shadow);
   }
   50% {
     transform: translateY(-3px) rotate(3deg);
     box-shadow:
-      0 0 0 9px color-mix(in srgb, var(--lad-palette-yellow) 8%, transparent),
-      0 6px 0 var(--lad-palette-amber-550);
+      0 0 0 9px color-mix(in srgb, var(--lad-color-reward) 8%, transparent),
+      0 6px 0 var(--lad-color-reward-shadow);
   }
 }
 @include reduced-motion {
