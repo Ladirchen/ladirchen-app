@@ -3,7 +3,7 @@
     <v-card class="avatar-builder" rounded="xl">
       <header class="studio-header px-5 pt-4">
         <div><p class="eyebrow mb-0">{{ t('avatar.builder.eyebrow') }}</p><h2>{{ t('avatar.builder.title', { name: userName }) }}</h2></div>
-        <v-btn :aria-label="t('avatar.builder.close')" icon="mdi-close" size="small" variant="text" @click="close" />
+        <v-btn :aria-label="t('avatar.builder.close')" icon="i-mdi:close" size="small" variant="text" @click="close" />
       </header>
 
       <section class="studio-preview mx-5 mt-3" :aria-label="t('avatar.builder.previewAria')">
@@ -59,9 +59,9 @@
 
       <v-card-actions class="builder-actions px-5 py-3">
         <v-btn class="studio-save-button" color="primary" rounded="lg" variant="flat" @click="save">
-          <v-icon class="studio-save-icon" icon="mdi-check-circle-outline" />
+          <v-icon class="studio-save-icon" icon="i-mdi:check-circle-outline" />
           <span>{{ t('avatar.builder.save') }}</span>
-          <v-icon class="studio-save-arrow" icon="mdi-arrow-right" />
+          <v-icon class="studio-save-arrow" icon="i-mdi:arrow-right" />
           <i class="studio-save-shine" aria-hidden="true" />
         </v-btn>
       </v-card-actions>
@@ -72,14 +72,13 @@
 <script lang="ts" setup>
 import { computed, defineComponent, h, nextTick, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { motion } from 'motion-v';
 
 import AvatarCategoryIcon from './AvatarCategoryIcon.vue';
 import AvatarFigure from './AvatarFigure.vue';
 import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from '../data/avatar-options';
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance, GuardianAvatarPreset } from '@/domain/avatar';
-import type { ViewerRole } from '@/domain/types';
+import type { ViewerRole } from '@/domain/family/types';
 import type { AvatarCatalogItemId, AvatarColorOption } from '../data/avatar-options';
 
 type Section = 'base' | 'face' | 'hair' | 'outfit' | 'extras' | 'fun' | 'season';
@@ -130,8 +129,8 @@ const OptionGrid = defineComponent({
   setup: (gridProps, { emit: gridEmit }) => () => h(
     'div',
     { class: 'option-grid mt-4' },
-    gridProps.options.map((option, index) => h(
-      motion.button,
+    gridProps.options.map((option) => h(
+      'button',
       {
         class: ['option-choice', { active: gridProps.modelValue === option.value }],
         type: 'button',
@@ -139,11 +138,6 @@ const OptionGrid = defineComponent({
         'data-preview-kind': gridProps.previewKind,
         'aria-label': t('avatar.builder.selectAria', { label: t(option.id) }),
         'aria-pressed': gridProps.modelValue === option.value,
-        initial: { opacity: 0, y: 10, scale: .95 },
-        animate: { opacity: 1, y: 0, scale: 1 },
-        transition: { type: 'spring', stiffness: 430, damping: 30, delay: index * .022 },
-        whileHover: { y: -3, scale: 1.02 },
-        whilePress: { scale: .96 },
         onClick: () => gridEmit('update:modelValue', option.value),
       },
       {
@@ -185,7 +179,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   height: min(660px, calc(100dvh - 28px));
   max-height: min(660px, calc(100dvh - 28px));
   @apply d-flex flex-column overflow-hidden;
-  background: var(--lad-palette-surface);
+  background: var(--lad-surface);
 }
 .studio-header {
   @apply d-flex flex-shrink-0 align-center justify-space-between;
@@ -201,23 +195,24 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   grid-template-columns: 210px 1fr;
   @apply align-center overflow-hidden;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 28px;
   background:
     radial-gradient(
       circle at 20% 18%,
-      color-mix(in srgb, var(--lad-palette-white) 95%, transparent) 0 42px,
+      color-mix(in srgb, var(--lad-surface-raised) 95%, transparent) 0 42px,
       transparent 43px
     ),
     linear-gradient(
       145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-amber-100)
+      var(--lad-surface-soft),
+      var(--lad-color-reward-soft)
     );
   box-shadow:
     inset 0 -10px 0
-      color-mix(in srgb, var(--lad-palette-orange-650) 5%, transparent),
-    0 5px 0 color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
+      color-mix(in srgb, var(--lad-color-accent-warm-deep) 5%, transparent),
+    0 5px 0
+      color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .studio-preview::after {
   content: "";
@@ -225,7 +220,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply position-absolute right-0 bottom-0 left-0;
   background: color-mix(
     in srgb,
-    var(--lad-palette-orange-350) 25%,
+    var(--lad-color-accent-warm-soft) 25%,
     transparent
   );
   clip-path: polygon(
@@ -243,7 +238,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   z-index: 2;
   @apply justify-self-center;
   filter: drop-shadow(
-    0 9px 7px color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent)
+    0 9px 7px color-mix(in srgb, var(--lad-text-strong) 15%, transparent)
   );
 }
 .preview-tools {
@@ -269,27 +264,26 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .random-actions button {
   min-height: 36px;
   padding: 0 13px;
-  color: var(--lad-palette-muted-700);
-  border: 1px solid
-    color-mix(in srgb, var(--lad-palette-muted-700) 18%, transparent);
+  color: var(--lad-text-strong);
+  border: 1px solid color-mix(in srgb, var(--lad-text-strong) 18%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
   box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
+    color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
   font: inherit;
   font-size: 0.6875rem;
   @apply font-weight-black cursor-pointer;
 }
 .random-actions .fun-random {
-  color: var(--lad-palette-pink-650);
-  background: var(--lad-palette-background);
+  color: var(--lad-color-accent-pink-strong);
+  background: var(--lad-surface-soft);
 }
 .preview-decoration {
   width: 12px;
   height: 12px;
   @apply position-absolute;
   z-index: 1;
-  background: var(--lad-palette-yellow);
+  background: var(--lad-color-reward);
   clip-path: polygon(
     50% 0,
     61% 38%,
@@ -342,17 +336,17 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .category-rail button:hover {
   transform: translateY(-2px);
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
 }
 .category-rail button.active {
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-soft)
   );
   box-shadow: inset 0 0 0 2px
-    color-mix(in srgb, var(--lad-palette-mint) 20%, transparent);
+    color-mix(in srgb, var(--lad-color-primary) 20%, transparent);
 }
 .category-rail button.active::after {
   content: "";
@@ -371,7 +365,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   min-height: 0;
   flex: 1 1 auto;
   @apply overflow-y-auto;
-  padding-bottom: 34px !important;
+  padding-bottom: 34px;
   scroll-padding-bottom: 34px;
 }
 .section-intro {
@@ -381,7 +375,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .section-intro p {
   margin: 0 0 1px;
-  color: var(--lad-palette-mint-strong);
+  color: var(--lad-color-primary-strong);
   font-size: 0.5625rem;
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.11em;
@@ -398,7 +392,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .mini-section-label {
   margin-bottom: -8px;
-  color: var(--lad-palette-muted-700);
+  color: var(--lad-text-strong);
   font-size: 0.625rem;
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.06em;
@@ -417,9 +411,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 18px;
-  background: var(--lad-palette-surface);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+  background: var(--lad-surface);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
 }
@@ -427,8 +420,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 2px solid var(--lad-mint);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-soft)
   );
 }
 .guardian-preset-grid strong {
@@ -453,13 +446,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 22px;
-  background: linear-gradient(
-    155deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-surface)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+  background: linear-gradient(155deg, var(--lad-surface), var(--lad-surface));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
 }
@@ -467,11 +455,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   width: 68px;
   height: 72px;
   @apply position-relative;
-  border: 3px solid white;
+  border: 3px solid var(--lad-border-on-accent);
   border-radius: 48% 48% 44% 44%;
   background: var(--swatch-color);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-text-warm) 15%, transparent);
 }
 .skin-choice > span::before {
   content: "";
@@ -481,7 +468,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   top: 12px;
   left: 12px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lad-palette-white) 30%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 30%, transparent);
   transform: rotate(-25deg);
 }
 .skin-choice strong {
@@ -491,11 +478,11 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 2px solid var(--lad-mint);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-soft)
   );
   box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
+    color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
   transform: translateY(-2px);
 }
 :deep(.option-grid) {
@@ -513,37 +500,36 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border-radius: 21px;
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-surface)
+    var(--lad-surface-raised),
+    var(--lad-surface)
   );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
 }
 :deep(.option-choice:nth-child(3n + 2)) {
   background: linear-gradient(
     155deg,
-    var(--lad-palette-background),
-    var(--lad-palette-surface)
+    var(--lad-surface-soft),
+    var(--lad-surface)
   );
 }
 :deep(.option-choice:nth-child(3n + 3)) {
   background: linear-gradient(
     155deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background)
+    var(--lad-surface),
+    var(--lad-surface-soft)
   );
 }
 :deep(.option-choice.active) {
   border: 2px solid var(--lad-mint);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-soft)
   );
   box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
+    color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
 }
 :deep(.option-choice strong) {
   max-width: 100%;
@@ -556,16 +542,16 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   height: 78px;
   @apply d-grid place-center overflow-hidden;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 85%, transparent);
+    color-mix(in srgb, var(--lad-border-on-accent) 85%, transparent);
   border-radius: 40% 40% 34% 34%;
   background: radial-gradient(
     circle at 50% 37%,
-    var(--lad-palette-surface) 0 42%,
-    var(--lad-palette-background) 43% 69%,
-    var(--lad-palette-amber-200) 70%
+    var(--lad-surface) 0 42%,
+    var(--lad-surface-soft) 43% 69%,
+    var(--lad-color-reward-muted) 70%
   );
   filter: drop-shadow(
-    0 4px 3px color-mix(in srgb, var(--lad-palette-text) 12%, transparent)
+    0 4px 3px color-mix(in srgb, var(--lad-text) 12%, transparent)
   );
 }
 :deep(.option-art .avatar-figure) {
@@ -575,7 +561,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   box-shadow: none;
 }
 :deep(.option-art .avatar-figure *) {
-  animation: none !important;
+  animation: none;
 }
 :deep(.option-choice[data-preview-kind="face"] .avatar-figure),
 :deep(.option-choice[data-preview-kind="faceShape"] .avatar-figure),
@@ -600,12 +586,12 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   top: 5px;
   right: 5px;
   @apply d-grid place-center;
-  color: white;
-  border: 2px solid white;
+  color: var(--lad-text-inverse);
+  border: 2px solid var(--lad-border-on-accent);
   border-radius: 50%;
   background: var(--lad-mint);
   box-shadow: 0 2px 5px
-    color-mix(in srgb, var(--lad-palette-teal-700) 20%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
   font-size: 0.6875rem;
   font-weight: var(--lad-font-weight-black);
 }
@@ -615,7 +601,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply d-flex align-center justify-space-between ga-3;
   border: 1px solid var(--lad-border);
   border-radius: 18px;
-  background: var(--lad-palette-surface);
+  background: var(--lad-surface);
 }
 :deep(.compact-colors > strong) {
   font-size: 0.6875rem;
@@ -627,10 +613,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   width: 34px;
   height: 34px;
   @apply position-relative;
-  border: 3px solid white;
+  border: 3px solid var(--lad-border-on-accent);
   border-radius: 43% 43% 48% 48%;
   box-shadow:
-    0 2px 0 color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent),
+    0 2px 0 color-mix(in srgb, var(--lad-text-warm) 15%, transparent),
     0 0 0 1px var(--lad-border);
   @apply cursor-pointer;
 }
@@ -642,13 +628,13 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   top: 5px;
   left: 6px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lad-palette-white) 35%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 35%, transparent);
   transform: rotate(-28deg);
 }
 :deep(.color-choice.active) {
   transform: translateY(-2px) scale(1.08);
   box-shadow:
-    0 4px 0 color-mix(in srgb, var(--lad-palette-mint) 20%, transparent),
+    0 4px 0 color-mix(in srgb, var(--lad-color-primary) 20%, transparent),
     0 0 0 3px var(--lad-mint);
 }
 .builder-actions {
@@ -656,26 +642,26 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   z-index: 3;
   @apply flex-shrink-0;
   border-top: 1px solid var(--lad-border);
-  background: var(--lad-palette-surface);
-  box-shadow: 0 -10px 22px
-    color-mix(in srgb, var(--lad-palette-text) 5%, transparent);
+  background: var(--lad-surface);
+  box-shadow: 0 -10px 22px color-mix(in srgb, var(--lad-text) 5%, transparent);
 }
 .studio-save-button {
   min-width: 250px;
-  min-height: 50px !important;
-  padding-inline: 18px !important;
+  min-height: 50px;
+  padding-inline: 18px;
   @apply position-relative overflow-hidden;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 90%, transparent) !important;
-  border-radius: 17px !important;
+    color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
+  border-radius: 17px;
   background: linear-gradient(
     135deg,
-    var(--lad-palette-blue-350),
-    var(--lad-palette-teal-550)
-  ) !important;
+    var(--lad-color-info-subtle),
+    var(--lad-color-primary-muted)
+  );
   box-shadow:
-    0 4px 0 color-mix(in srgb, var(--lad-palette-teal-700) 70%, transparent),
-    0 9px 18px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent) !important;
+    0 4px 0 color-mix(in srgb, var(--lad-color-primary-deep) 70%, transparent),
+    0 9px 18px
+      color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
   font-size: 0.875rem;
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
@@ -704,7 +690,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--lad-palette-white) 60%, transparent),
+    color-mix(in srgb, var(--lad-surface-raised) 60%, transparent),
     transparent
   );
   animation: studio-save-shine 3.8s ease-in-out infinite;
@@ -741,8 +727,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     grid-template-columns: 170px 1fr;
   }
   .studio-preview :deep(.avatar-figure) {
-    width: 158px !important;
-    height: 158px !important;
+    width: 158px;
+    height: 158px;
   }
   .preview-tools > strong {
     font-size: 1.125rem;
@@ -763,8 +749,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     @apply pa-2;
   }
   .studio-preview :deep(.avatar-figure) {
-    width: 140px !important;
-    height: 140px !important;
+    width: 140px;
+    height: 140px;
   }
   .preview-tools {
     @apply d-none;

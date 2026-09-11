@@ -120,14 +120,15 @@ onUnmounted(() => {
 }
 .intro-mascot {
   width: 185px;
-  height: 155px;
+  height: 164px;
   @apply position-relative;
-  margin: -16px auto 3px;
+  margin: -5px auto 3px;
   @apply d-grid place-center;
 }
 .intro-mascot :deep(.ladi-wrap) {
   width: var(--ladi-size);
   justify-content: center;
+  transform: translate(-12px, 16px);
 }
 .intro-logo-row {
   @apply d-flex align-end justify-center;
@@ -138,7 +139,7 @@ onUnmounted(() => {
   height: 40px;
   @apply position-relative overflow-hidden;
   border-radius: 11px;
-  background: white;
+  background: var(--lad-palette-white);
 }
 .intro-logo img {
   width: 72px;
