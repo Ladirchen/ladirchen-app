@@ -1,5 +1,5 @@
 import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
-import type { ShopReward } from '@/domain/types';
+import type { ShopReward } from '@/domain/shop/types';
 
 export const REWARD_SHOP_SCHEMA_VERSION = 1 as const;
 export const REWARD_SHOP_AGGREGATE_TYPE = 'reward-shop' as const;

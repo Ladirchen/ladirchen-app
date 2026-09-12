@@ -1,8 +1,8 @@
-import { familyContext } from '@/app/composition-root';
 import { createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import { createDomainId } from '@/domain/types';
-import type { FamilyId, FamilyMember, FamilyMemberId, FamilyPet, GuardianAccessLevel } from '@/domain/types';
+import type { FamilyMember, FamilyPet, GuardianAccessLevel } from '@/domain/family/types';
+import { createDomainId } from '@/domain/shared/identifiers';
+import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
 import { normalizeFamilyMembers } from '@/stores/family-world-state';
 import { AUTH_STATE_KEY, createUuid } from './family-world-store-utils';
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-world-store-context';
@@ -23,7 +23,7 @@ export const familyActions = {
       this.revealNextGuardianGift();
     }
     if (revealRewards && this.isAuthenticated) {
-      window.setTimeout(() => this.revealNextContributionReward(), 50);
+      this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), 50);
     }
     this.notify('notifications.session.switched', { name: member.name });
   },
@@ -32,19 +32,19 @@ export const familyActions = {
     this.familySetupOpen = false;
     this.piggyBankOpen = false;
     this.rewardAnimation.visible = false;
-    localStorage.setItem(AUTH_STATE_KEY, 'signed-out');
+    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, 'signed-out');
   },
   signInCurrentFamily(this: FamilyWorldStoreContext, memberId: FamilyMemberId): boolean {
     const member = this.members.find(item => item.id === memberId);
     if (!member) {return false;}
     this.switchSession(member.id, false);
     this.isAuthenticated = true;
-    localStorage.setItem(AUTH_STATE_KEY, 'authenticated');
-    window.setTimeout(() => this.revealNextContributionReward(), 50);
+    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, 'authenticated');
+    this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), 50);
     return true;
   },
   async signInToFamily(this: FamilyWorldStoreContext, familyId: FamilyId, memberId: FamilyMemberId): Promise<boolean> {
-    familyContext.setActiveFamilyId(familyId);
+    this.$familyWorld.familyContext.setActiveFamilyId(familyId);
     this.$reset();
     this.isAuthenticated = true;
     this.familyAggregatesHydrated = false;
@@ -53,18 +53,18 @@ export const familyActions = {
     const member = this.members.find(item => item.id === memberId);
     if (!member) {
       this.isAuthenticated = false;
-      localStorage.setItem(AUTH_STATE_KEY, 'signed-out');
+      this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, 'signed-out');
       return false;
     }
     this.signedInMemberId = member.id;
     this.viewerRole = member.role;
     if (member.role === 'child') {this.activeChildId = member.id;}
-    localStorage.setItem(AUTH_STATE_KEY, 'authenticated');
-    window.setTimeout(() => this.revealNextContributionReward(), 50);
+    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, 'authenticated');
+    this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), 50);
     return true;
   },
   createRegisteredFamily(this: FamilyWorldStoreContext, familyId: FamilyId, guardianId: FamilyMemberId, guardianName: string) {
-    familyContext.setActiveFamilyId(familyId);
+    this.$familyWorld.familyContext.setActiveFamilyId(familyId);
     this.$reset();
     this.isAuthenticated = true;
     this.signedInMemberId = guardianId;
@@ -89,7 +89,7 @@ export const familyActions = {
     this.familySetupOpen = true;
     this.familyAggregatesHydrated = true;
     this.homeCustomizationHydrated = true;
-    localStorage.setItem(AUTH_STATE_KEY, 'authenticated');
+    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, 'authenticated');
     this.persistFamilyProfile();
     this.persistContributions();
     this.persistSavings();

@@ -1,5 +1,6 @@
 import type { RewardShopState } from '../reward-shop-contract';
-import type { ShopReward, ShopRewardCategory, ShopRewardStatus } from '@/domain/types';
+import { SHOP_REWARD_STATUSES } from '@/domain/shop/types';
+import type { ShopReward, ShopRewardCategory, ShopRewardStatus } from '@/domain/shop/types';
 import {
   exhaustiveValues,
   hasLocalizedValue,
@@ -16,9 +17,10 @@ import {
   isOptionalString,
   isRecord,
   type StateGuard,
+  values,
 } from './runtime-validation';
 
-const statuses = exhaustiveValues<ShopRewardStatus>({ available: true, redeemed: true, requested: true });
+const statuses = values<ShopRewardStatus>(SHOP_REWARD_STATUSES);
 const categories = exhaustiveValues<ShopRewardCategory>({ activity: true, allowance: true, custom: true, gift: true, privilege: true, time: true });
 
 const isShopReward = (value: unknown): value is ShopReward =>

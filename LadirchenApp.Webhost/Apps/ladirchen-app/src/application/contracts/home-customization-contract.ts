@@ -1,8 +1,8 @@
-import type { HouseAccessoryId, HouseThemeId } from '@/domain/house';
-import type { HouseLayoutPlacement } from '@/domain/types';
+import type { HouseAccessoryId, HouseThemeId, RoomDesignId, SelectedRoomDesignState } from '@/domain/house';
+import type { HouseLayoutPlacement } from '@/domain/house/entities';
 import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
 
-export const HOME_CUSTOMIZATION_SCHEMA_VERSION = 2 as const;
+export const HOME_CUSTOMIZATION_SCHEMA_VERSION = 3 as const;
 export const HOME_CUSTOMIZATION_AGGREGATE_TYPE = 'home-customization' as const;
 
 export interface HouseAccessoryState {
@@ -16,10 +16,17 @@ export interface HouseEditionState {
   readonly owned: boolean;
 }
 
+export interface RoomDesignState {
+  readonly id: RoomDesignId;
+  readonly owned: boolean;
+}
+
 export interface HomeCustomizationState {
   readonly accessories: ReadonlyArray<HouseAccessoryState>;
   readonly editions: ReadonlyArray<HouseEditionState>;
   readonly placements: ReadonlyArray<HouseLayoutPlacement>;
+  readonly roomDesigns: ReadonlyArray<RoomDesignState>;
+  readonly selectedRoomDesigns: ReadonlyArray<SelectedRoomDesignState>;
   readonly selectedEditionId: HouseThemeId;
 }
 

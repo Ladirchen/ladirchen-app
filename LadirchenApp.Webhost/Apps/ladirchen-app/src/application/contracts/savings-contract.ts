@@ -1,5 +1,6 @@
 import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
-import type { FamilyCurrency, FamilyMemberId, GuardianGift, SavingGoal } from '@/domain/types';
+import type { FamilyCurrency, GuardianGift, SavingGoal } from '@/domain/savings/types';
+import type { FamilyMemberId } from '@/domain/shared/identifiers';
 
 export const SAVINGS_SCHEMA_VERSION = 1 as const;
 export const SAVINGS_AGGREGATE_TYPE = 'savings' as const;

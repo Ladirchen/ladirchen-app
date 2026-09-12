@@ -1,4 +1,4 @@
-import type { IanaTimeZone } from './time-zone';
+import type { IanaTimeZone } from '../family/time-zone';
 
 export interface ZonedCalendarParts {
   readonly date: string;
