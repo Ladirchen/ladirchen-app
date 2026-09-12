@@ -1,8 +1,12 @@
 import type { AggregateDraft, FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
+import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
 import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
-import type { FamilyId } from '@/domain/types';
+import type { FamilyId } from '@/domain/shared/identifiers';
+import { mergeSerializableAggregateState } from './three-way-aggregate-merge';
+import type { AggregateConflictResolver } from './three-way-aggregate-merge';
 
 interface AggregateSaveState<TState> {
+  baseState: TState | null;
   pendingDraft: AggregateDraft<TState> | null;
   revision: number;
   saveQueue: Promise<void>;
@@ -10,13 +14,7 @@ interface AggregateSaveState<TState> {
 }
 
 const cloneSerializableDraft = <TState>(draft: AggregateDraft<TState>): AggregateDraft<TState> => {
-  // JSON serialization is intentional at this boundary: Pinia exposes nested
-  // state through reactive proxies, which structuredClone cannot clone. The
-  // aggregate contracts contain JSON data only, matching both persistence
-  // adapters and the future HTTP transport.
-  const serialized = JSON.stringify(draft);
-  const clone: unknown = JSON.parse(serialized);
-  return clone as AggregateDraft<TState>;
+  return JSON.parse(JSON.stringify(draft)) as AggregateDraft<TState>;
 };
 
 export class VersionedAggregateService<
@@ -30,11 +28,15 @@ export class VersionedAggregateService<
     private readonly aggregateType: TAggregateType,
     private readonly repository: VersionedAggregateRepository<TAggregateType, TSchemaVersion, TState>,
     private readonly debounceMilliseconds = 180,
+    private readonly resolveConflict: AggregateConflictResolver<TState> = mergeSerializableAggregateState,
+    private readonly maximumConflictRetries = 2,
   ) {}
 
   public async load(familyId: FamilyId): Promise<VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState> | null> {
     const snapshot = await this.repository.load(familyId);
-    this.saveStateFor(familyId).revision = snapshot?.revision ?? 0;
+    const saveState = this.saveStateFor(familyId);
+    saveState.revision = snapshot?.revision ?? 0;
+    saveState.baseState = snapshot ? structuredClone(snapshot.state) : null;
     return snapshot;
   }
 
@@ -60,19 +62,42 @@ export class VersionedAggregateService<
   private async flushPendingSave(familyId: FamilyId): Promise<void> {
     const saveState = this.saveStateFor(familyId);
     while (saveState.pendingDraft !== null) {
-      const draft = saveState.pendingDraft;
+      let draft = saveState.pendingDraft;
       saveState.pendingDraft = null;
-      const command: SaveVersionedAggregateCommand<TAggregateType, TState> = {
-        ...draft,
-        aggregateType: this.aggregateType,
-        expectedRevision: saveState.revision,
-      };
-      try {
-        const saved = await this.repository.save(command);
-        saveState.revision = saved.revision;
-      } catch (error) {
-        saveState.pendingDraft ??= draft;
-        throw error;
+      let conflictAttempts = 0;
+      while (true) {
+        const command: SaveVersionedAggregateCommand<TAggregateType, TState> = {
+          ...draft,
+          aggregateType: this.aggregateType,
+          expectedRevision: saveState.revision,
+        };
+        try {
+          const saved = await this.repository.save(command);
+          saveState.revision = saved.revision;
+          saveState.baseState = structuredClone(saved.state);
+          break;
+        } catch (error) {
+          if (error instanceof AggregateConflictError && conflictAttempts < this.maximumConflictRetries) {
+            try {
+              const remote = await this.repository.load(familyId);
+              conflictAttempts += 1;
+              saveState.revision = remote?.revision ?? 0;
+              if (remote && saveState.baseState) {
+                draft = {
+                  ...draft,
+                  state: this.resolveConflict(saveState.baseState, draft.state, remote.state),
+                };
+              }
+              saveState.baseState = remote ? structuredClone(remote.state) : null;
+            } catch (reloadError) {
+              saveState.pendingDraft ??= draft;
+              throw reloadError;
+            }
+            continue;
+          }
+          saveState.pendingDraft ??= draft;
+          throw error;
+        }
       }
     }
   }
@@ -83,6 +108,7 @@ export class VersionedAggregateService<
       return current;
     }
     const created: AggregateSaveState<TState> = {
+      baseState: null,
       pendingDraft: null,
       revision: 0,
       saveQueue: Promise.resolve(),

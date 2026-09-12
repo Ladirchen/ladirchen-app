@@ -1,5 +1,7 @@
 import type { FamilyMember } from './types';
 
+/** Capabilities derived from the signed-in family member. */
+
 export interface FamilyPermissions {
   canInviteMembers: boolean;
   canManageContent: boolean;

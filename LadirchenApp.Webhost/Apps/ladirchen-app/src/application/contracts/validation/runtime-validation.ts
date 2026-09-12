@@ -1,5 +1,5 @@
-import type { FamilyId, FamilyMemberId } from '@/domain/types';
-import { isDomainIdValue, isUuidValue } from '@/domain/types';
+import { isDomainIdValue, isUuidValue } from '@/domain/shared/identifiers';
+import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
 
 export type StateGuard<TState> = (value: unknown) => value is TState;
 

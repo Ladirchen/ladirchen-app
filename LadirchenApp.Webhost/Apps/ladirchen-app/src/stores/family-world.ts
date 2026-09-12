@@ -1,16 +1,18 @@
 import { defineStore } from 'pinia';
 
-import { FURNITURE_SETS, HOUSE_ROOMS } from '@/domain/house-catalog';
-import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/energy';
+import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
+import { FURNITURE_SETS, HOUSE_ROOMS } from '@/domain/house/catalog';
 import type { FurnitureSetId } from '@/domain/house';
-import { resolveFamilyPermissions } from '@/domain/family-permissions';
-import type { FamilyPermissions } from '@/domain/family-permissions';
-import { isPromotionAvailable } from '@/domain/promotions';
-import { isSameCalendarDay } from '@/domain/zoned-calendar';
-import { currentWeekDaysFromContributions } from '@/domain/weekly-progress';
-import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
-import type { Contribution, ContributionId, FamilyMember, FamilyMemberId, SavingGoal, WorldEffect } from '@/domain/types';
-import { createFamilyMembers, createSavingGoals } from '@/infrastructure/fixtures/family-world-fixtures';
+import { resolveFamilyPermissions } from '@/domain/family/permissions';
+import type { FamilyPermissions } from '@/domain/family/permissions';
+import { isPromotionAvailable } from '@/domain/contributions/promotions';
+import { familyParticipationInterestStrategy } from '@/domain/savings/interest';
+import type { Contribution, WorldEffect } from '@/domain/contributions/types';
+import type { FamilyMember } from '@/domain/family/types';
+import type { SavingGoal } from '@/domain/savings/types';
+import type { ContributionId, FamilyMemberId } from '@/domain/shared/identifiers';
+import { isSameCalendarDay } from '@/domain/shared/zoned-calendar';
+import { currentWeekDaysFromContributions } from '@/domain/contributions/weekly-progress';
 import { contributionsActions } from './family-world-actions/contributions-actions';
 import { familyActions } from './family-world-actions/family-actions';
 import { homeActions } from './family-world-actions/home-actions';
@@ -24,10 +26,10 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
 
   getters: {
     activeChild(state): FamilyMember {
-      return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0] ?? createFamilyMembers()[0]!;
+      return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0]!;
     },
     signedInMember(state): FamilyMember {
-      return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0] ?? createFamilyMembers()[0]!;
+      return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0]!;
     },
     permissions(): FamilyPermissions {
       return resolveFamilyPermissions(this.signedInMember);
@@ -130,8 +132,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
       return visibleGoals.find((goal) => goal.id === state.activeGoalId) ??
         visibleGoals.find((goal) => goal.ownerId === state.activeChildId) ??
         visibleGoals[0] ??
-        state.goals[0] ??
-        createSavingGoals()[0]!;
+        state.goals[0]!;
     },
     ownSavingGoals(state): SavingGoal[] {
       const ownerId = state.viewerRole === 'child' ? state.signedInMemberId : state.activeChildId;

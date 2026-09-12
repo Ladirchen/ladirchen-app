@@ -1,6 +1,7 @@
-import { isPromotionAvailable } from '@/domain/promotions';
-import { createDomainId } from '@/domain/types';
-import type { Contribution, ContributionId, FamilyMemberId, NewContribution, NewPromotion, PromotionId } from '@/domain/types';
+import { isPromotionAvailable } from '@/domain/contributions/promotions';
+import type { Contribution, NewContribution, NewPromotion } from '@/domain/contributions/types';
+import { createDomainId } from '@/domain/shared/identifiers';
+import type { ContributionId, FamilyMemberId, PromotionId } from '@/domain/shared/identifiers';
 import { createUuid } from './family-world-store-utils';
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-world-store-context';
 
@@ -161,6 +162,6 @@ export const contributionsActions = {
     }
     this.rewardAnimation.visible = false;
     this.rewardAnimation.contributionId = undefined;
-    window.setTimeout(() => this.revealNextContributionReward(), 250);
+    this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), 250);
   },
 } satisfies FamilyWorldActionGroup;
