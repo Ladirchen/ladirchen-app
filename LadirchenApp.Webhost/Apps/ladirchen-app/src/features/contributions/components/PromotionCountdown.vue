@@ -8,14 +8,16 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
-import { promotionDeadline } from '@/domain/promotions';
+import { remainingPromotionMilliseconds } from '@/domain/promotions';
+import { useFamilyWorldStore } from '@/stores/family-world';
 
 const props = defineProps<{ deadline: string }>();
+const store = useFamilyWorldStore();
 const now = ref(new Date());
 let timer: ReturnType<typeof window.setInterval> | undefined;
 
 const remainingMilliseconds = computed(() =>
-  Math.max(0, promotionDeadline(props.deadline, now.value).getTime() - now.value.getTime()),
+  remainingPromotionMilliseconds(props.deadline, store.familyTimeZone, now.value),
 );
 const label = computed(() => {
   if (remainingMilliseconds.value <= 0) return 'Abgelaufen';
