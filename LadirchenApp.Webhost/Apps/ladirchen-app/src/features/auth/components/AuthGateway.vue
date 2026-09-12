@@ -7,8 +7,8 @@
       </div>
 
       <div class="auth-switch mt-5" role="tablist" :aria-label="t('auth.accessAria')">
-        <button :aria-selected="mode === 'login'" :class="{ active: mode === 'login' }" role="tab" type="button" @click="setMode('login')"><v-icon icon="mdi-login-variant" />{{ t('auth.loginTab') }}</button>
-        <button :aria-selected="mode === 'register'" :class="{ active: mode === 'register' }" role="tab" type="button" @click="setMode('register')"><v-icon icon="mdi-home-heart" />{{ t('auth.registerTab') }}</button>
+        <button :aria-selected="mode === 'login'" :class="{ active: mode === 'login' }" role="tab" type="button" @click="setMode('login')"><v-icon icon="i-mdi:login-variant" />{{ t('auth.loginTab') }}</button>
+        <button :aria-selected="mode === 'register'" :class="{ active: mode === 'register' }" role="tab" type="button" @click="setMode('register')"><v-icon icon="i-mdi:home-heart" />{{ t('auth.registerTab') }}</button>
       </div>
 
       <form v-if="mode === 'login'" class="auth-form mt-5" @submit.prevent="login">
@@ -17,11 +17,11 @@
           <h1 id="auth-title">{{ t('auth.login.title') }}</h1>
           <span>{{ t('auth.login.description') }}</span>
         </div>
-        <v-text-field v-model="loginUsername" autocomplete="username" density="comfortable" :label="t('auth.login.username')" prepend-inner-icon="mdi-account-outline" variant="outlined" />
-        <v-text-field v-model="loginPassword" :append-inner-icon="showLoginPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'" autocomplete="current-password" density="comfortable" :label="t('auth.login.password')" prepend-inner-icon="mdi-lock-outline" :type="showLoginPassword ? 'text' : 'password'" variant="outlined" @click:append-inner="showLoginPassword = !showLoginPassword" />
+        <v-text-field v-model="loginUsername" autocomplete="username" density="comfortable" :label="t('auth.login.username')" prepend-inner-icon="i-mdi:account-outline" variant="outlined" />
+        <v-text-field v-model="loginPassword" :append-inner-icon="showLoginPassword ? 'i-mdi:eye-off-outline' : 'i-mdi:eye-outline'" autocomplete="current-password" density="comfortable" :label="t('auth.login.password')" prepend-inner-icon="i-mdi:lock-outline" :type="showLoginPassword ? 'text' : 'password'" variant="outlined" @click:append-inner="showLoginPassword = !showLoginPassword" />
         <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
-        <button class="auth-submit" :disabled="submitting || !loginUsername.trim() || !loginPassword" type="button" @click="login"><v-icon icon="mdi-door-open" /><span>{{ submitting ? t('auth.login.pending') : t('auth.login.submit') }}</span><i aria-hidden="true">→</i></button>
-        <div class="demo-login"><v-icon icon="mdi-flask-outline" /><span><strong>{{ t('auth.login.demoTitle') }}</strong><small>{{ t('auth.login.demoHint', { users: demoAccessLabel }) }}</small></span></div>
+        <button class="auth-submit" :disabled="submitting || !loginUsername.trim() || !loginPassword" type="submit"><v-icon icon="i-mdi:door-open" /><span>{{ submitting ? t('auth.login.pending') : t('auth.login.submit') }}</span><i aria-hidden="true">→</i></button>
+        <div class="demo-login"><v-icon icon="i-mdi:flask-outline" /><span><strong>{{ t('auth.login.demoTitle') }}</strong><small>{{ t('auth.login.demoHint', { users: demoAccessLabel }) }}</small></span></div>
       </form>
 
       <form v-else class="auth-form mt-5" @submit.prevent="register">
@@ -31,14 +31,14 @@
           <span>{{ t('auth.register.description') }}</span>
         </div>
         <div class="register-grid">
-          <v-text-field v-model="familyName" autocomplete="organization" density="comfortable" :label="t('auth.register.familyName')" prepend-inner-icon="mdi-home-heart" variant="outlined" />
-          <v-text-field v-model="guardianName" autocomplete="name" density="comfortable" :label="t('auth.register.guardianName')" prepend-inner-icon="mdi-account-heart-outline" variant="outlined" />
+          <v-text-field v-model="familyName" autocomplete="organization" density="comfortable" :label="t('auth.register.familyName')" prepend-inner-icon="i-mdi:home-heart" variant="outlined" />
+          <v-text-field v-model="guardianName" autocomplete="name" density="comfortable" :label="t('auth.register.guardianName')" prepend-inner-icon="i-mdi:account-heart-outline" variant="outlined" />
         </div>
-        <v-text-field v-model="registerUsername" autocomplete="username" density="comfortable" :label="t('auth.login.username')" prepend-inner-icon="mdi-account-outline" variant="outlined" />
-        <v-text-field v-model="registerPassword" :append-inner-icon="showRegisterPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'" autocomplete="new-password" density="comfortable" :hint="t('auth.register.passwordHint')" :label="t('auth.login.password')" persistent-hint prepend-inner-icon="mdi-lock-plus-outline" :type="showRegisterPassword ? 'text' : 'password'" variant="outlined" @click:append-inner="showRegisterPassword = !showRegisterPassword" />
-        <v-text-field v-model="passwordConfirmation" autocomplete="new-password" density="comfortable" :label="t('auth.register.passwordConfirmation')" prepend-inner-icon="mdi-lock-check-outline" type="password" variant="outlined" />
+        <v-text-field v-model="registerUsername" autocomplete="username" density="comfortable" :label="t('auth.login.username')" prepend-inner-icon="i-mdi:account-outline" variant="outlined" />
+        <v-text-field v-model="registerPassword" :append-inner-icon="showRegisterPassword ? 'i-mdi:eye-off-outline' : 'i-mdi:eye-outline'" autocomplete="new-password" density="comfortable" :hint="t('auth.register.passwordHint')" :label="t('auth.login.password')" persistent-hint prepend-inner-icon="i-mdi:lock-plus-outline" :type="showRegisterPassword ? 'text' : 'password'" variant="outlined" @click:append-inner="showRegisterPassword = !showRegisterPassword" />
+        <v-text-field v-model="passwordConfirmation" autocomplete="new-password" density="comfortable" :label="t('auth.register.passwordConfirmation')" prepend-inner-icon="i-mdi:lock-check-outline" type="password" variant="outlined" />
         <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
-        <button class="auth-submit auth-submit--register" :disabled="submitting || !registrationIsValid" type="button" @click="register"><v-icon icon="mdi-home-plus-outline" /><span>{{ submitting ? t('auth.register.pending') : t('auth.register.submit') }}</span><i aria-hidden="true">✦</i></button>
+        <button class="auth-submit auth-submit--register" :disabled="submitting || !registrationIsValid" type="submit"><v-icon icon="i-mdi:home-plus-outline" /><span>{{ submitting ? t('auth.register.pending') : t('auth.register.submit') }}</span><i aria-hidden="true">✦</i></button>
       </form>
     </section>
   </main>
@@ -48,8 +48,9 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { authenticateLocalAccount, localUsernameExists, registerLocalAccount } from '../local-auth';
-import { createDomainId } from '@/domain/types';
+import { authenticationGateway } from '@/app/composition-root';
+import { createDomainId } from '@/domain/shared/identifiers';
+import { DEMO_CREDENTIALS } from '@/features/auth/auth-config';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 type AuthMode = 'login' | 'register';
@@ -94,7 +95,7 @@ const login = async () => {
   submitting.value = true;
   errorMessage.value = '';
   try {
-    const localAccount = await authenticateLocalAccount(loginUsername.value, loginPassword.value);
+    const localAccount = await authenticationGateway.authenticate(loginUsername.value, loginPassword.value);
     if (localAccount) {
       const signedIn = await store.signInToFamily(localAccount.familyId, localAccount.memberId);
       if (!signedIn) errorMessage.value = t('auth.login.loadError');
@@ -105,7 +106,7 @@ const login = async () => {
       member.name.trim().toLocaleLowerCase('de') === normalizedUsername
       || member.nickname?.trim().toLocaleLowerCase('de') === normalizedUsername,
     );
-    if (loginPassword.value === 'demo' && demoMember && store.signInCurrentFamily(demoMember.id)) return;
+    if (loginPassword.value === DEMO_CREDENTIALS.password && demoMember && store.signInCurrentFamily(demoMember.id)) return;
     errorMessage.value = t('auth.login.credentialsError');
   } finally {
     submitting.value = false;
@@ -114,7 +115,7 @@ const login = async () => {
 
 const register = async () => {
   if (submitting.value || !registrationIsValid.value) return;
-  if (localUsernameExists(registerUsername.value)) {
+  if (await authenticationGateway.usernameExists(registerUsername.value)) {
     errorMessage.value = t('auth.register.usernameExists');
     return;
   }
@@ -123,7 +124,13 @@ const register = async () => {
   try {
     const familyId = createDomainId.family(crypto.randomUUID());
     const guardianId = createDomainId.familyMember(crypto.randomUUID());
-    await registerLocalAccount(registerUsername.value, registerPassword.value, familyName.value, familyId, guardianId);
+    await authenticationGateway.register({
+      familyId,
+      familyName: familyName.value,
+      memberId: guardianId,
+      password: registerPassword.value,
+      username: registerUsername.value,
+    });
     store.createRegisteredFamily(familyId, guardianId, guardianName.value);
   } catch {
     errorMessage.value = t('auth.register.createError');
@@ -145,25 +152,25 @@ const register = async () => {
   padding: 1.5rem;
   @apply overflow-auto position-relative;
   border: 0.125rem solid
-    color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 1.875rem;
   background:
     radial-gradient(
       circle at 92% 5%,
-      color-mix(in srgb, var(--lad-palette-yellow) 25%, transparent),
+      color-mix(in srgb, var(--lad-color-reward) 25%, transparent),
       transparent 26%
     ),
     linear-gradient(
       155deg,
-      var(--lad-palette-surface),
-      var(--lad-palette-background) 55%,
-      var(--lad-palette-background)
+      var(--lad-surface),
+      var(--lad-surface-soft) 55%,
+      var(--lad-surface-soft)
     );
   box-shadow:
     0 0.625rem 0
-      color-mix(in srgb, var(--lad-palette-blue-strong) 10%, transparent),
+      color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent),
     0 1.875rem 4.375rem
-      color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
+      color-mix(in srgb, var(--lad-text-warm) 18%, transparent);
 }
 .auth-brand {
   @apply d-flex align-center;
@@ -173,11 +180,11 @@ const register = async () => {
   width: 3.625rem;
   height: 3.625rem;
   @apply position-relative flex-shrink-0 overflow-hidden;
-  border: 0.125rem solid var(--lad-palette-white);
+  border: 0.125rem solid var(--lad-border-on-accent);
   border-radius: 1.1875rem;
-  background: var(--lad-palette-white);
+  background: var(--lad-surface-raised);
   box-shadow: 0 0.3125rem 0
-    color-mix(in srgb, var(--lad-palette-teal-700) 12%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
 }
 .auth-logo img {
   width: 6.75rem;
@@ -192,7 +199,7 @@ const register = async () => {
   @apply d-block;
 }
 .auth-brand strong {
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
   font-size: 1.4375rem;
   letter-spacing: -0.04em;
 }
@@ -207,16 +214,16 @@ const register = async () => {
   grid-template-columns: 1fr 1fr;
   gap: 0.3125rem;
   border: 0.0625rem solid
-    color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 1.125rem;
-  background: color-mix(in srgb, var(--lad-palette-white) 65%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
 }
 .auth-switch button {
   min-height: 2.8125rem;
   padding: 0.5rem 0.625rem;
   @apply d-flex align-center justify-center cursor-pointer;
   gap: 0.4375rem;
-  color: var(--lad-palette-muted);
+  color: var(--lad-muted);
   border: 0;
   border-radius: 0.875rem;
   background: transparent;
@@ -225,13 +232,13 @@ const register = async () => {
   font-weight: var(--lad-font-weight-heavy);
 }
 .auth-switch button.active {
-  color: var(--lad-palette-white);
+  color: var(--lad-text-inverse);
   background: linear-gradient(
     145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-mint-strong)
+    var(--lad-color-primary-highlight),
+    var(--lad-color-primary-strong)
   );
-  box-shadow: 0 0.25rem 0 var(--lad-palette-teal-700);
+  box-shadow: 0 0.25rem 0 var(--lad-color-primary-deep);
 }
 .auth-switch button :deep(.v-icon) {
   font-size: 1.1875rem;
@@ -244,15 +251,15 @@ const register = async () => {
 }
 .auth-heading p {
   margin: 0 0 0.25rem;
-  color: var(--lad-palette-blue);
+  color: var(--lad-color-info);
   font-size: 0.5625rem;
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .auth-heading h1 {
-  margin: 0;
-  color: var(--lad-palette-text);
+  @apply ma-0;
+  color: var(--lad-text);
   font-size: 1.625rem;
   line-height: 1.1;
   letter-spacing: -0.04em;
@@ -275,11 +282,11 @@ const register = async () => {
 .auth-error {
   margin: 0 0 0.6875rem;
   padding: 0.5625rem 0.6875rem;
-  color: var(--lad-palette-red-600);
+  color: var(--lad-color-danger-strong);
   border: 0.0625rem solid
-    color-mix(in srgb, var(--lad-palette-red-500) 18%, transparent);
+    color-mix(in srgb, var(--lad-color-danger-muted) 18%, transparent);
   border-radius: 0.75rem;
-  background: var(--lad-palette-surface);
+  background: var(--lad-surface);
   font-size: 0.625rem;
   font-weight: 750;
 }
@@ -289,19 +296,19 @@ const register = async () => {
   padding: 0.5625rem 0.875rem;
   @apply d-flex align-center justify-center cursor-pointer;
   gap: 0.5625rem;
-  color: var(--lad-palette-white);
+  color: var(--lad-text-inverse);
   border: 0.1875rem solid
-    color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+    color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
   border-radius: 1.0625rem;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-blue-350),
-    var(--lad-palette-blue-strong)
+    var(--lad-color-info-subtle),
+    var(--lad-color-info-strong)
   );
   box-shadow:
-    0 0.3125rem 0 var(--lad-palette-blue-strong),
+    0 0.3125rem 0 var(--lad-color-info-strong),
     0 0.625rem 1.125rem
-      color-mix(in srgb, var(--lad-palette-blue-strong) 18%, transparent);
+      color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
   font: inherit;
   font-size: 0.75rem;
   font-weight: var(--lad-font-weight-black);
@@ -310,20 +317,20 @@ const register = async () => {
     box-shadow 0.16s ease;
 }
 .auth-submit i {
-  margin-left: auto;
+  @apply ml-auto;
   font-size: 1rem;
   font-style: normal;
 }
 .auth-submit:hover:not(:disabled) {
   transform: translateY(-0.125rem);
   box-shadow:
-    0 0.4375rem 0 var(--lad-palette-blue-strong),
+    0 0.4375rem 0 var(--lad-color-info-strong),
     0 0.8125rem 1.25rem
-      color-mix(in srgb, var(--lad-palette-blue-strong) 20%, transparent);
+      color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
 }
 .auth-submit:active:not(:disabled) {
   transform: translateY(0.125rem);
-  box-shadow: 0 0.125rem 0 var(--lad-palette-blue-strong);
+  box-shadow: 0 0.125rem 0 var(--lad-color-info-strong);
 }
 .auth-submit:disabled {
   cursor: default;
@@ -333,27 +340,27 @@ const register = async () => {
 .auth-submit--register {
   background: linear-gradient(
     145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-mint-strong)
+    var(--lad-color-primary-highlight),
+    var(--lad-color-primary-strong)
   );
   box-shadow:
-    0 0.3125rem 0 var(--lad-palette-teal-700),
+    0 0.3125rem 0 var(--lad-color-primary-deep),
     0 0.625rem 1.125rem
-      color-mix(in srgb, var(--lad-palette-teal-700) 18%, transparent);
+      color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
 }
 .demo-login {
   margin-top: 0.875rem;
   padding: 0.625rem 0.6875rem;
   @apply d-flex align-center;
   gap: 0.5625rem;
-  color: var(--lad-palette-orange-650);
+  color: var(--lad-color-accent-warm-deep);
   border: 0.0625rem solid
-    color-mix(in srgb, var(--lad-palette-amber-500) 18%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-accent) 18%, transparent);
   border-radius: 0.875rem;
-  background: var(--lad-palette-amber-100);
+  background: var(--lad-color-reward-soft);
 }
 .demo-login > :deep(.v-icon) {
-  color: var(--lad-palette-amber-550);
+  color: var(--lad-color-reward-shadow);
 }
 .demo-login strong,
 .demo-login small {

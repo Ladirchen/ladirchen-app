@@ -6,6 +6,12 @@ The frontend uses three complementary styling layers:
 - **SCSS tokens and mixins** for repeated visual rules that need parameters, such as typography, raised surfaces, icon tiles, dialog chrome, and responsive breakpoints.
 - **Scoped component styles** for feature-specific composition, gradients, and illustrations.
 
+## Product-area tones
+
+The eight persistent areas use semantic tones rather than page-local color choices: `world`, `contributions`, `wishes`, `shop`, `family`, `profile`, `streak`, and `balance`. Their accent, tint, and lift tokens are defined once in `main.scss` as `--lad-tone-<area>-*` properties.
+
+Use `BrandedCard` for repeated application cards and select the area with its required `tone` prop. Keep card padding and layout in UnoCSS classes; do not recreate the border, gradient, radius, or lift shadow in page SCSS. Navigation and compact header surfaces consume the same area-tone tokens directly.
+
 ## Shared tokens
 
 `src/theme/color-palette.ts` is the single source of truth for every application and illustration colour. It contains the consolidated visual palette, semantic application colours, and typed domain palettes. Application startup installs the visual colours as `--lad-palette-*` CSS custom properties, so SCSS and Vue styles consume the same values without maintaining a second palette.

@@ -1,4 +1,4 @@
-import type { FamilyId, FamilyMemberId } from '@/domain/types';
+import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
 
 export type FamilyAggregateType =
   | 'contributions'

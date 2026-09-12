@@ -1,6 +1,7 @@
 import { shopRedemptionIsOpen, shopRewardIsPublished } from '@/domain/shop';
-import { createDomainId } from '@/domain/types';
-import type { NewShopReward, ShopRewardId } from '@/domain/types';
+import { createDomainId } from '@/domain/shared/identifiers';
+import type { ShopRewardId } from '@/domain/shared/identifiers';
+import type { NewShopReward } from '@/domain/shop/types';
 import { createUuid } from './family-world-store-utils';
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-world-store-context';
 

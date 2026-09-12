@@ -2,7 +2,7 @@
   <div class="completion-mark" :style="{ '--completion-size': `${size}px` }" aria-hidden="true">
     <span class="completion-orbit completion-orbit--one" />
     <span class="completion-orbit completion-orbit--two" />
-    <span class="completion-core"><v-icon icon="mdi-check-bold" /></span>
+    <span class="completion-core"><v-icon icon="i-mdi:check-bold" /></span>
     <i class="completion-spark completion-spark--one">✦</i>
     <i class="completion-spark completion-spark--two">✦</i>
     <i class="completion-spark completion-spark--three">●</i>

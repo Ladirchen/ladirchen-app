@@ -1,6 +1,6 @@
 <template>
   <div class="family-world-background">
-    <AuthGateway v-if="!store.isAuthenticated" />
+    <AsyncAuthGateway v-if="!store.isAuthenticated" />
     <template v-else>
       <LadirchenIntro @finished="handleIntroFinished" />
 
@@ -21,7 +21,7 @@
               </button>
               <button class="header-stat header-balance d-flex align-center justify-center cursor-pointer" :aria-label="t('shell.balance.aria', { name: store.displayNameFor(headerBalanceMemberId), balance: headerBalance })" aria-haspopup="dialog" :data-ladi-heading="t('shell.balance.heading')" :data-ladi-tip="t('shell.balance.tip', { balance: headerBalance })" type="button" @click="store.piggyBankOpen = true">
                 <span class="header-stat-symbol"><LadirchenCoin animated small /></span>
-                <strong>{{ headerBalance }} L</strong>
+                <strong>{{ headerBalance }}</strong>
               </button>
             </template>
           </div>
@@ -29,40 +29,36 @@
 
         <main class="family-world-content flex-grow-1 overflow-auto">
           <RouterView v-slot="{ Component, route }">
-            <AnimatePresence :initial="false" mode="wait">
-              <motion.div
+            <Transition name="family-world-page" mode="out-in">
+              <div
                 :key="route.path"
                 class="family-world-route"
-                :initial="pageMotion.initial"
-                :animate="pageMotion.animate"
-                :exit="pageMotion.exit"
-                :transition="pageMotion.transition"
               >
                 <component :is="Component" />
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </Transition>
           </RouterView>
         </main>
 
         <nav :aria-label="t('common.mainNavigation')" class="family-world-navigation position-absolute d-grid">
-          <RouterLink v-for="item in navigation" :key="item.to" class="d-flex flex-column align-center justify-center text-decoration-none" :data-ladi-tip="item.tip" :to="item.to">
+          <RouterLink v-for="item in navigation" :key="item.to" class="d-flex flex-column align-center justify-center text-decoration-none" :class="`navigation-tone--${item.icon}`" :data-ladi-tip="item.tip" :to="item.to">
             <AppNavigationIcon :name="item.icon" />
             <span>{{ item.label }}</span>
           </RouterLink>
         </nav>
 
-        <GlobalLadiGuide v-if="appHydrated && introFinished && store.viewerRole === 'child'" />
+        <AsyncGlobalLadiGuide v-if="appHydrated && introFinished && store.viewerRole === 'child'" />
       </div>
 
       <v-snackbar v-model="store.snackbar.visible" color="secondary" location="bottom" rounded="lg" :timeout="2600">
-        {{ t(store.snackbar.messageKey, store.snackbar.params) }}
+        {{ store.snackbar.messageKey ? t(store.snackbar.messageKey, store.snackbar.params) : '' }}
       </v-snackbar>
 
       <v-dialog :model-value="store.rewardAnimation.visible" max-width="390" persistent>
         <v-card :key="store.rewardAnimation.version" class="contribution-reward-card pa-6 text-center" rounded="xl">
           <div class="reward-confetti" aria-hidden="true"><span>✦</span><span>★</span><span>●</span><span>◆</span><span>✧</span><span>★</span></div>
           <div class="reward-hero" :class="{ 'reward-hero--double': store.rewardAnimation.multiplier > 1 }" aria-hidden="true">
-            <v-icon v-if="store.rewardAnimation.multiplier > 1" class="reward-rocket" icon="mdi-rocket-launch" />
+            <v-icon v-if="store.rewardAnimation.multiplier > 1" class="reward-rocket" icon="i-mdi:rocket-launch" />
             <LadirchenCoin animated />
             <strong v-if="store.rewardAnimation.multiplier > 1">×{{ store.rewardAnimation.multiplier }}</strong>
           </div>
@@ -74,9 +70,9 @@
             <span v-if="store.rewardAnimation.energy > 0" class="reward-result reward-result--energy"><small>{{ t('shell.reward.house') }}</small><strong>{{ t('shell.reward.energy', { value: store.rewardAnimation.energy }) }}</strong></span>
           </div>
           <div v-if="store.rewardAnimation.stars > 0" class="reward-stars mt-4" :aria-label="t('shell.reward.stars', { value: store.rewardAnimation.stars })">
-            <v-icon v-for="star in 5" :key="star" :class="{ active: star <= store.rewardAnimation.stars }" icon="mdi-star" />
+            <v-icon v-for="star in 5" :key="star" :class="{ active: star <= store.rewardAnimation.stars }" icon="i-mdi:star" />
           </div>
-          <p v-if="store.rewardAnimation.multiplier > 1" class="reward-double-copy mt-3"><v-icon icon="mdi-creation" size="16" />{{ t('shell.reward.double') }}</p>
+          <p v-if="store.rewardAnimation.multiplier > 1" class="reward-double-copy mt-3"><v-icon icon="i-mdi:creation" size="16" />{{ t('shell.reward.double') }}</p>
           <v-btn class="reward-dismiss mt-5" color="primary" rounded="lg" variant="flat" width="100%" @click="store.dismissRewardAnimation">{{ t('shell.reward.dismiss') }}</v-btn>
         </v-card>
       </v-dialog>
@@ -87,7 +83,7 @@
           <div class="gift-coin"><LadirchenCoin /></div>
           <p class="eyebrow mt-4 mb-1">{{ t('shell.gift.eyebrow') }}</p>
           <h2>{{ t('shell.gift.title', { guardian: store.guardianGiftAnimation.guardianName }) }}</h2>
-          <strong class="gift-amount">+{{ store.guardianGiftAnimation.amount }} L</strong>
+          <strong class="gift-amount">+{{ store.guardianGiftAnimation.amount }}</strong>
           <p v-if="store.guardianGiftAnimation.destination === 'goal'" class="text-body-small text-medium-emphasis mt-2">{{ t('shell.gift.goal', { goal: store.guardianGiftAnimation.goalTitle }) }}</p>
           <p v-else class="text-body-small text-medium-emphasis mt-2">{{ store.guardianGiftAnimation.goalTitle
             ? t('shell.gift.balance', { goal: store.guardianGiftAnimation.goalTitle })
@@ -96,38 +92,37 @@
         </v-card>
       </v-dialog>
 
-      <FamilySetupDialog />
-      <SavingsPiggyDialog />
-      <WeeklyStreakDialog v-model="streakDialog" />
+      <AsyncFamilySetupDialog v-if="store.familySetupOpen" />
+      <AsyncSavingsPiggyDialog v-if="store.piggyBankOpen" />
+      <AsyncWeeklyStreakDialog v-if="streakDialog" v-model="streakDialog" />
     </template>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { AnimatePresence, motion, useReducedMotion } from 'motion-v';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import AuthGateway from '@/features/auth/components/AuthGateway.vue';
-import FamilySetupDialog from '@/features/family/components/FamilySetupDialog.vue';
 import LadirchenIntro from '@/features/onboarding/components/LadirchenIntro.vue';
-import SavingsPiggyDialog from '@/features/savings/components/SavingsPiggyDialog.vue';
 import AnimatedStreakFlame from '@/features/streaks/components/AnimatedStreakFlame.vue';
-import WeeklyStreakDialog from '@/features/streaks/components/WeeklyStreakDialog.vue';
 import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 
 import AppNavigationIcon from './AppNavigationIcon.vue';
-import GlobalLadiGuide from './GlobalLadiGuide.vue';
 import { useFamilyWorldStore } from '@/stores/family-world';
-import { isInstantInIsoWeek } from '@/domain/zoned-calendar';
+import { isInstantInIsoWeek } from '@/domain/shared/zoned-calendar';
+
+const AsyncAuthGateway = defineAsyncComponent(() => import('@/features/auth/components/AuthGateway.vue'));
+const AsyncFamilySetupDialog = defineAsyncComponent(() => import('@/features/family/components/FamilySetupDialog.vue'));
+const AsyncGlobalLadiGuide = defineAsyncComponent(() => import('./GlobalLadiGuide.vue'));
+const AsyncSavingsPiggyDialog = defineAsyncComponent(() => import('@/features/savings/components/SavingsPiggyDialog.vue'));
+const AsyncWeeklyStreakDialog = defineAsyncComponent(() => import('@/features/streaks/components/WeeklyStreakDialog.vue'));
 
 const store = useFamilyWorldStore();
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const appHydrated = ref(false);
 const introFinished = ref(false);
 let clockTimer: ReturnType<typeof window.setInterval> | undefined;
 void store.hydrateFamilyAggregates().finally(() => { appHydrated.value = true; });
-const reducedMotion = useReducedMotion();
 const streakDialog = ref(false);
 const headerBalanceMemberId = computed(() => store.viewerRole === 'guardian' ? store.signedInMemberId : store.activeChildId);
 const headerBalance = computed(() => store.viewerRole === 'guardian' ? store.balanceFor(store.signedInMemberId) : store.availableBalance);
@@ -144,21 +139,13 @@ const childrenWeekCompleted = computed(() => childrenWeekContributions.value.len
 const childrenTotalAssets = computed(() => childMembers.value.reduce((sum, child) => sum +
   store.balanceFor(child.id) +
   store.goals.filter(goal => goal.ownerId === child.id).reduce((goalSum, goal) => goalSum + goal.saved, 0), 0));
-const childrenFamilyCurrency = computed(() => new Intl.NumberFormat('de-CH', {
+const childrenFamilyCurrency = computed(() => new Intl.NumberFormat(locale.value, {
   style: 'currency',
   currency: store.familyCurrencyCode,
   maximumFractionDigits: 2,
 }).format(store.familyCurrencyValue(childrenTotalAssets.value)));
 const guardianWeekAriaLabel = computed(() => t('shell.week.aria', { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value, assets: childrenFamilyCurrency.value, balance: headerBalance.value }));
 const guardianWeekTip = computed(() => t('shell.week.tip', { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value }));
-const pageMotion = computed(() => reducedMotion.value ? {
-  initial: { opacity: 1 }, animate: { opacity: 1 }, exit: { opacity: 1 }, transition: { duration: 0 },
-} : {
-  initial: { opacity: 0, y: 14, scale: .992 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -8, scale: .996 },
-  transition: { duration: .22, ease: [.22, .8, .26, 1] },
-});
 type NavigationIcon = 'family' | 'contributions' | 'profile' | 'world' | 'wishes' | 'shop';
 interface NavigationItem { to: string; icon: NavigationIcon; label: string; tip: string }
 
@@ -192,34 +179,48 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
+.family-world-page-enter-active,
+.family-world-page-leave-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s cubic-bezier(0.22, 0.8, 0.26, 1);
+}
+.family-world-page-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.992);
+}
+.family-world-page-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.996);
+}
 .contribution-reward-card {
   @apply position-relative overflow-hidden;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-blue-450) 20%, transparent);
+    color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
   background:
     radial-gradient(
       circle at 88% 5%,
-      color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent),
+      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
       transparent 27%
     ),
     linear-gradient(
       155deg,
-      var(--lad-palette-background),
-      var(--lad-palette-background) 58%,
-      var(--lad-palette-amber-100)
-    ) !important;
+      var(--lad-surface-soft),
+      var(--lad-surface-soft) 58%,
+      var(--lad-color-reward-soft)
+    );
   box-shadow:
-    0 9px 0 color-mix(in srgb, var(--lad-palette-blue-550) 15%, transparent),
-    0 28px 60px color-mix(in srgb, var(--lad-palette-text) 25%, transparent) !important;
+    0 9px 0 color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent),
+    0 28px 60px color-mix(in srgb, var(--lad-text) 25%, transparent);
 }
 .contribution-reward-card h2 {
   @apply position-relative ma-0;
-  color: var(--lad-palette-text);
+  color: var(--lad-text);
   font-size: 1.625rem;
   letter-spacing: -0.04em;
 }
 .reward-eyebrow {
-  color: var(--lad-palette-mint-strong);
+  color: var(--lad-color-primary-strong);
 }
 .reward-task-title {
   margin: 4px 0 0;
@@ -232,16 +233,16 @@ onBeforeUnmount(() => {
   height: 100px;
   margin: 14px auto 0;
   @apply position-relative d-grid place-center;
-  border: 4px solid var(--lad-palette-white);
+  border: 4px solid var(--lad-border-on-accent);
   border-radius: 32px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-150)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-pale)
   );
   box-shadow:
-    0 7px 0 color-mix(in srgb, var(--lad-palette-blue-550) 15%, transparent),
-    0 15px 28px color-mix(in srgb, var(--lad-palette-blue-600) 12%, transparent);
+    0 7px 0 color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent),
+    0 15px 28px color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
   animation: reward-hero-arrive 0.75s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 .reward-hero :deep(.ladirchen-coin) {
@@ -252,18 +253,18 @@ onBeforeUnmount(() => {
   background:
     radial-gradient(
       circle at 25% 18%,
-      var(--lad-palette-amber-100),
+      var(--lad-color-reward-soft),
       transparent 30%
     ),
     linear-gradient(
       145deg,
-      var(--lad-palette-blue-350),
-      var(--lad-palette-indigo-350) 60%,
-      var(--lad-palette-purple-350)
+      var(--lad-color-info-subtle),
+      var(--lad-color-bonus-info) 60%,
+      var(--lad-color-bonus-highlight)
     );
   box-shadow:
-    0 7px 0 var(--lad-palette-violet-500),
-    0 16px 30px color-mix(in srgb, var(--lad-palette-blue-600) 20%, transparent);
+    0 7px 0 var(--lad-color-bonus-muted),
+    0 16px 30px color-mix(in srgb, var(--lad-color-info-deep) 20%, transparent);
 }
 .reward-hero > strong {
   min-width: 45px;
@@ -272,15 +273,15 @@ onBeforeUnmount(() => {
   @apply position-absolute d-grid place-center;
   right: -17px;
   bottom: -10px;
-  color: var(--lad-palette-white);
-  border: 3px solid var(--lad-palette-white);
+  color: var(--lad-text-inverse);
+  border: 3px solid var(--lad-border-on-accent);
   border-radius: 13px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-blue-550)
+    var(--lad-color-primary-highlight),
+    var(--lad-color-info-shadow)
   );
-  box-shadow: 0 3px 0 var(--lad-palette-blue-600);
+  box-shadow: 0 3px 0 var(--lad-color-info-deep);
   font-size: 1.1875rem;
   animation: reward-double-pop 0.7s 0.65s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
@@ -289,10 +290,11 @@ onBeforeUnmount(() => {
   top: -17px;
   left: -16px;
   z-index: 2;
-  color: var(--lad-palette-amber-150);
+  color: var(--lad-color-reward-pale);
   font-size: 2.125rem;
   filter: drop-shadow(
-    0 3px 1px color-mix(in srgb, var(--lad-palette-indigo-650) 30%, transparent)
+    0 3px 1px
+      color-mix(in srgb, var(--lad-color-bonus-info-strong) 30%, transparent)
   );
   animation: reward-rocket-flight 1.8s 0.35s ease-in-out infinite;
 }
@@ -306,36 +308,36 @@ onBeforeUnmount(() => {
   padding: 9px;
   @apply d-grid place-center;
   border: 2px solid
-    color-mix(in srgb, var(--lad-palette-amber-500) 20%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-accent) 20%, transparent);
   border-radius: 17px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-amber-100),
-    var(--lad-palette-amber-150)
+    var(--lad-color-reward-soft),
+    var(--lad-color-reward-pale)
   );
   box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-amber-600) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-deep) 15%, transparent);
 }
 .reward-result--energy {
   border-color: color-mix(
     in srgb,
-    var(--lad-palette-teal-550) 20%,
+    var(--lad-color-primary-muted) 20%,
     transparent
   );
   background: linear-gradient(
     145deg,
-    var(--lad-palette-background),
-    var(--lad-palette-amber-150)
+    var(--lad-surface-soft),
+    var(--lad-color-reward-pale)
   );
   box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-teal-700) 12%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
 }
 .reward-result small,
 .reward-result strong {
   @apply d-block;
 }
 .reward-result small {
-  color: var(--lad-palette-orange-600);
+  color: var(--lad-color-accent-warm-strong);
   font-size: 0.5rem;
   font-weight: var(--lad-font-weight-heavy);
   text-transform: uppercase;
@@ -343,47 +345,48 @@ onBeforeUnmount(() => {
 }
 .reward-result strong {
   margin-top: 3px;
-  color: var(--lad-palette-amber-700);
+  color: var(--lad-color-reward-strong);
   font-size: 1.0625rem;
   font-weight: var(--lad-font-weight-black);
   line-height: 1.08;
 }
 .reward-result--energy strong {
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
 }
 .reward-stars {
   @apply d-flex justify-center;
   gap: 2px;
 }
 .reward-stars :deep(.v-icon) {
-  color: var(--lad-palette-teal-150);
+  color: var(--lad-color-primary-soft);
   opacity: 0.58;
 }
 .reward-stars :deep(.v-icon.active) {
-  color: var(--lad-palette-amber-450);
+  color: var(--lad-color-reward-border);
   opacity: 1;
   filter: drop-shadow(
-    0 2px 2px color-mix(in srgb, var(--lad-palette-amber-600) 25%, transparent)
+    0 2px 2px color-mix(in srgb, var(--lad-color-reward-deep) 25%, transparent)
   );
   animation: reward-star-pop 1.7s ease-in-out infinite;
 }
 .reward-double-copy {
   @apply d-flex align-center justify-center;
   gap: 5px;
-  color: var(--lad-palette-blue-600);
+  color: var(--lad-color-info-deep);
   font-size: 0.6875rem;
   font-weight: var(--lad-font-weight-black);
 }
 .reward-dismiss {
-  min-height: 49px !important;
+  min-height: 49px;
   background: linear-gradient(
     145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-mint-strong)
-  ) !important;
+    var(--lad-color-primary-highlight),
+    var(--lad-color-primary-strong)
+  );
   box-shadow:
-    0 5px 0 var(--lad-palette-teal-700),
-    0 10px 18px color-mix(in srgb, var(--lad-palette-teal-700) 18%, transparent) !important;
+    0 5px 0 var(--lad-color-primary-deep),
+    0 10px 18px
+      color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
   font-weight: var(--lad-font-weight-black);
   text-transform: none;
   letter-spacing: 0;
@@ -391,7 +394,7 @@ onBeforeUnmount(() => {
 .reward-confetti span {
   @apply position-absolute;
   z-index: 0;
-  color: var(--lad-palette-amber-450);
+  color: var(--lad-color-reward-border);
   font-size: 1rem;
   animation: reward-confetti 1.7s ease-in-out infinite;
 }
@@ -402,19 +405,19 @@ onBeforeUnmount(() => {
 .reward-confetti span:nth-child(2) {
   top: 21%;
   right: 10%;
-  color: var(--lad-palette-indigo-350);
+  color: var(--lad-color-bonus-info);
   animation-delay: -0.3s;
 }
 .reward-confetti span:nth-child(3) {
   top: 37%;
   left: 7%;
-  color: var(--lad-palette-teal-400);
+  color: var(--lad-color-primary-highlight);
   animation-delay: -0.6s;
 }
 .reward-confetti span:nth-child(4) {
   top: 48%;
   right: 6%;
-  color: var(--lad-palette-purple-350);
+  color: var(--lad-color-bonus-highlight);
   animation-delay: -0.9s;
 }
 .reward-confetti span:nth-child(5) {
@@ -425,17 +428,18 @@ onBeforeUnmount(() => {
 .reward-confetti span:nth-child(6) {
   top: 74%;
   right: 12%;
-  color: var(--lad-palette-blue-450);
+  color: var(--lad-color-info-muted);
   animation-delay: -1.45s;
 }
 .guardian-gift-card {
   @apply position-relative overflow-hidden;
   background: linear-gradient(
     160deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-amber-100) 72%
-  ) !important;
-  border: 1px solid color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
+    var(--lad-surface),
+    var(--lad-color-reward-soft) 72%
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
 }
 .guardian-gift-card h2 {
   @apply position-relative ma-0;
@@ -450,9 +454,9 @@ onBeforeUnmount(() => {
   margin: 15px auto 0;
   @apply d-grid place-center;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
   box-shadow: 0 10px 28px
-    color-mix(in srgb, var(--lad-palette-amber-550) 20%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
   animation: gift-coin-arrive 850ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 .gift-coin :deep(.ladirchen-coin) {
@@ -461,14 +465,14 @@ onBeforeUnmount(() => {
 }
 .gift-amount {
   @apply d-block position-relative mt-3;
-  color: var(--lad-palette-mint-strong);
+  color: var(--lad-color-primary-strong);
   font-size: 2.1875rem;
   animation: gift-amount-pop 700ms 500ms both cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 .gift-confetti span {
   @apply position-absolute;
   z-index: 1;
-  color: var(--lad-palette-amber-450);
+  color: var(--lad-color-reward-border);
   font-size: 1.125rem;
   animation: gift-confetti 1.8s infinite ease-in-out;
 }
@@ -479,19 +483,19 @@ onBeforeUnmount(() => {
 .gift-confetti span:nth-child(2) {
   top: 25%;
   right: 12%;
-  color: var(--lad-palette-indigo-350);
+  color: var(--lad-color-bonus-info);
   animation-delay: 0.2s;
 }
 .gift-confetti span:nth-child(3) {
   top: 8%;
   right: 30%;
-  color: var(--lad-palette-red-300);
+  color: var(--lad-color-danger-soft);
   animation-delay: 0.45s;
 }
 .gift-confetti span:nth-child(4) {
   top: 41%;
   left: 8%;
-  color: var(--lad-palette-mint);
+  color: var(--lad-color-primary);
   animation-delay: 0.7s;
 }
 .gift-confetti span:nth-child(5) {
@@ -605,6 +609,10 @@ onBeforeUnmount(() => {
   }
 }
 @include reduced-motion {
+  .family-world-page-enter-active,
+  .family-world-page-leave-active {
+    transition: none;
+  }
   .gift-coin,
   .gift-coin :deep(.ladirchen-coin),
   .gift-amount,

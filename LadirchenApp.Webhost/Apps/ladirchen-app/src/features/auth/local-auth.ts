@@ -1,6 +1,8 @@
-import { createDomainId, isUuidValue } from '@/domain/types';
-import type { FamilyId, FamilyMemberId } from '@/domain/types';
+import { createDomainId, isUuidValue } from '@/domain/shared/identifiers';
+import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
 import { isDomainId, isRecord } from '@/application/contracts/family-aggregate-validation';
+import type { AuthenticationGateway, AuthenticationSession } from '@/application/ports/authentication-gateway';
+import type { ClientStorage } from '@/application/ports/client-storage';
 
 const ACCOUNT_STORAGE_KEY = 'ladirchen:local-accounts:v1';
 
@@ -11,12 +13,6 @@ interface StoredLocalAccount {
   familyId: string;
   familyName: string;
   memberId: string;
-}
-
-export interface LocalAccountSession {
-  familyId: FamilyId;
-  familyName: string;
-  memberId: FamilyMemberId;
 }
 
 const normalizeUsername = (username: string) => username.trim().toLocaleLowerCase('de');
@@ -30,9 +26,9 @@ const isStoredLocalAccount = (value: unknown): value is StoredLocalAccount =>
   typeof value.familyName === 'string' && value.familyName.trim().length > 0 &&
   isDomainId(value.memberId);
 
-const loadAccounts = (): StoredLocalAccount[] => {
+const loadAccounts = (storage: ClientStorage): StoredLocalAccount[] => {
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(ACCOUNT_STORAGE_KEY) ?? '[]');
+    const parsed: unknown = JSON.parse(storage.getItem(ACCOUNT_STORAGE_KEY) ?? '[]');
     if (!Array.isArray(parsed)) {return [];}
     return parsed.filter(isStoredLocalAccount);
   } catch {
@@ -46,10 +42,11 @@ const digestPassword = async (password: string, salt: string): Promise<string> =
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 };
 
-export const localUsernameExists = (username: string): boolean =>
-  loadAccounts().some(account => account.username === normalizeUsername(username));
+const localUsernameExists = (storage: ClientStorage, username: string): boolean =>
+  loadAccounts(storage).some(account => account.username === normalizeUsername(username));
 
-export const registerLocalAccount = async (
+const registerLocalAccount = async (
+  storage: ClientStorage,
   username: string,
   password: string,
   familyName: string,
@@ -57,7 +54,7 @@ export const registerLocalAccount = async (
   memberId: FamilyMemberId,
 ): Promise<void> => {
   const normalizedUsername = normalizeUsername(username);
-  const accounts = loadAccounts();
+  const accounts = loadAccounts(storage);
   if (accounts.some(account => account.username === normalizedUsername)) {throw new Error('USERNAME_EXISTS');}
   const salt = crypto.randomUUID();
   accounts.push({
@@ -68,11 +65,11 @@ export const registerLocalAccount = async (
     familyName: familyName.trim(),
     memberId,
   });
-  localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accounts));
+  storage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accounts));
 };
 
-export const authenticateLocalAccount = async (username: string, password: string): Promise<LocalAccountSession | null> => {
-  const account = loadAccounts().find(item => item.username === normalizeUsername(username));
+const authenticateLocalAccount = async (storage: ClientStorage, username: string, password: string): Promise<AuthenticationSession | null> => {
+  const account = loadAccounts(storage).find(item => item.username === normalizeUsername(username));
   if (!account || account.passwordHash !== await digestPassword(password, account.salt)) {return null;}
   return {
     familyId: createDomainId.family(account.familyId),
@@ -80,3 +77,16 @@ export const authenticateLocalAccount = async (username: string, password: strin
     memberId: createDomainId.familyMember(account.memberId),
   };
 };
+
+export const createLocalAuthenticationGateway = (storage: ClientStorage): AuthenticationGateway => ({
+  authenticate: (username, password) => authenticateLocalAccount(storage, username, password),
+  register: command => registerLocalAccount(
+    storage,
+    command.username,
+    command.password,
+    command.familyName,
+    command.familyId,
+    command.memberId,
+  ),
+  usernameExists: async username => localUsernameExists(storage, username),
+});

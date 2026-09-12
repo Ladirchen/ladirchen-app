@@ -1,5 +1,5 @@
 import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
-import type { FamilyId } from '@/domain/types';
+import type { FamilyId } from '@/domain/shared/identifiers';
 
 export class AggregateConflictError extends Error {
   public constructor(aggregateType: FamilyAggregateType) {

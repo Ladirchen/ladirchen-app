@@ -1,18 +1,21 @@
-import type { FamilyPermissions } from '@/domain/family-permissions';
+import type { FamilyPermissions } from '@/domain/family/permissions';
 import type { FurnitureSetId } from '@/domain/house';
-import type {
-  Contribution,
-  FamilyMember,
-  FamilyMemberId,
-  SavingGoal,
-} from '@/domain/types';
+import type { Contribution } from '@/domain/contributions/types';
+import type { FamilyMember } from '@/domain/family/types';
+import type { SavingGoal } from '@/domain/savings/types';
+import type { FamilyMemberId } from '@/domain/shared/identifiers';
+import type { TranslationKey } from '@/locales/translation-keys';
 import type { FamilyWorldState } from './family-world-state';
+import type { FamilyWorldDependencies } from '@/application/ports/family-world-dependencies';
 
-/**
- * Shared contract for domain action modules. It deliberately contains only
- * state plus the cross-domain getters/actions that an action may call.
- */
+declare module 'pinia' {
+  export interface PiniaCustomProperties {
+    readonly $familyWorld: FamilyWorldDependencies;
+  }
+}
+
 export type FamilyWorldStoreContext = FamilyWorldState & {
+  readonly $familyWorld: FamilyWorldDependencies;
   readonly activeChild: FamilyMember;
   readonly availableBalance: number;
   readonly balance: number;
@@ -27,7 +30,7 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   contributionProgress: (memberId: FamilyMemberId) => number;
   hydrateFamilyAggregates: () => Promise<void>;
   hydrateHomeCustomization: () => Promise<void>;
-  notify: (messageKey: string, params?: Record<string, number | string>) => void;
+  notify: (messageKey: TranslationKey, params?: Record<string, number | string>) => void;
   persistContributions: () => void;
   persistFamilyProfile: () => void;
   persistFamilyProgression: () => void;

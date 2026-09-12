@@ -1,5 +1,5 @@
 import type { FamilyProgressionState } from '../family-progression-contract';
-import { HOUSE_STAGES } from '@/domain/house-catalog';
+import { HOUSE_STAGES } from '@/domain/house/catalog';
 import {
   isInteger,
   isNonNegativeInteger,

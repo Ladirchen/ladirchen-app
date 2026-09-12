@@ -12,10 +12,13 @@ import type { App } from "vue";
 
 // Plugins
 import vuetify from "./vuetify";
+import { familyWorldDependencies } from '@/app/composition-root';
 
 export function registerPlugins(app: App) {
   app.use(vuetify);
-  app.use(createPinia());
+  const pinia = createPinia();
+  pinia.use(() => ({ $familyWorld: familyWorldDependencies }));
+  app.use(pinia);
   app.use(i18n);
   app.use(router);
 }

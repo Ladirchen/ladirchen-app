@@ -1,6 +1,6 @@
 <template>
   <span class="countdown" :class="{ expired: remainingMilliseconds <= 0, urgent: remainingMilliseconds > 0 && remainingMilliseconds < 3_600_000 }">
-    <v-icon aria-hidden="true" size="14">mdi-timer-sand</v-icon>
+    <v-icon aria-hidden="true" size="14">i-mdi:timer-sand</v-icon>
     <span>{{ label }}</span>
   </span>
 </template>
@@ -9,7 +9,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { remainingPromotionMilliseconds } from '@/domain/promotions';
+import { remainingPromotionMilliseconds } from '@/domain/contributions/promotions';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const props = defineProps<{ deadline: string }>();
@@ -45,29 +45,29 @@ onBeforeUnmount(() => {
   width: fit-content;
   padding: 5px 8px;
   @apply d-inline-flex align-center ga-1;
-  color: var(--lad-palette-amber-700);
+  color: var(--lad-color-reward-strong);
   border: 1px solid
-    color-mix(in srgb, var(--lad-palette-amber-550) 20%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--lad-palette-amber-100) 90%, transparent);
+  background: color-mix(in srgb, var(--lad-color-reward-soft) 90%, transparent);
   font-size: 0.625rem;
   font-variant-numeric: tabular-nums;
   @apply font-weight-black;
   letter-spacing: 0.01em;
 }
 .countdown.urgent {
-  color: var(--lad-palette-red-600);
-  background: var(--lad-palette-amber-100);
+  color: var(--lad-color-danger-strong);
+  background: var(--lad-color-reward-soft);
   animation: countdown-pulse 1.6s ease-in-out infinite;
 }
 .countdown.expired {
   color: var(--lad-muted);
-  background: var(--lad-palette-background);
+  background: var(--lad-surface-soft);
 }
 @keyframes countdown-pulse {
   50% {
     box-shadow: 0 0 0 4px
-      color-mix(in srgb, var(--lad-palette-orange-400) 10%, transparent);
+      color-mix(in srgb, var(--lad-color-accent-warm) 10%, transparent);
   }
 }
 @include reduced-motion {
