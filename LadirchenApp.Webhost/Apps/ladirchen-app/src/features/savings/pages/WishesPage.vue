@@ -90,7 +90,18 @@
               <div class="d-flex align-center justify-space-between flex-wrap ga-2 mt-2">
                 <span class="text-caption font-weight-bold">{{ goal.saved }} / {{ goal.target }} L</span>
                 <div class="family-goal-actions">
-                  <v-btn :aria-label="`${goal.title} anfeuern`" :color="goal.cheered ? 'warning' : undefined" icon="mdi-hand-clap" size="x-small" variant="tonal" @click="store.toggleCheer(goal.id)" />
+                  <button
+                    class="cheer-button"
+                    :class="{ 'is-cheered': goal.cheered }"
+                    :aria-label="`${goal.title} anfeuern`"
+                    :aria-pressed="goal.cheered"
+                    type="button"
+                    @click="store.toggleCheer(goal.id)"
+                  >
+                    <span class="cheer-hands" aria-hidden="true"><i>🤚</i><i>✋</i></span>
+                    <span class="cheer-spark cheer-spark--one" aria-hidden="true">✦</span>
+                    <span class="cheer-spark cheer-spark--two" aria-hidden="true">✧</span>
+                  </button>
                   <v-btn
                     v-if="store.viewerRole === 'child' && goal.ownerId !== 'family'"
                     color="info"
@@ -247,7 +258,18 @@ watch(() => store.permissions.canViewFamilyGoals, canViewFamilyGoals => {
 
 <style scoped>
 .active-goal {
-  border: 1px solid rgba(78, 143, 221, 0.18);
+  @apply position-relative overflow-hidden;
+  border: 2px solid rgba(78, 143, 221, 0.24);
+  background:
+    radial-gradient(
+      circle at 91% 12%,
+      rgba(255, 214, 104, 0.2) 0 42px,
+      transparent 43px
+    ),
+    linear-gradient(145deg, #edf7ff, #fff7df) !important;
+  box-shadow:
+    0 7px 0 rgba(78, 143, 221, 0.15),
+    0 14px 24px rgba(64, 108, 155, 0.08) !important;
 }
 .active-goal h2 {
   @apply ma-0;
@@ -272,25 +294,107 @@ watch(() => store.permissions.canViewFamilyGoals, canViewFamilyGoals => {
   gap: 11px;
 }
 .family-goal {
-  border: 1px solid var(--lad-border);
-  box-shadow: 0 4px 0 var(--lad-border) !important;
+  border: 2px solid color-mix(in srgb, var(--lad-blue) 16%, white);
+  background: linear-gradient(145deg, #fff, #f4faff);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--lad-blue) 13%, transparent) !important;
 }
 .goal-icon {
-  width: 47px;
-  height: 47px;
+  width: 51px;
+  height: 51px;
   @apply d-grid place-center flex-shrink-0;
-  border-radius: 14px;
-  background: var(--lad-surface-soft);
-  font-size: 25px;
+  border: 3px solid #fff;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #e6f4ff, #fff0c6);
+  box-shadow: 0 4px 0 rgba(78, 143, 221, 0.16);
+  font-size: 27px;
+  transform: rotate(-4deg);
 }
 .interest-hint {
   color: var(--lad-blue-dark);
 }
 .family-goals-intro {
-  border: 1px solid rgba(62, 188, 140, 0.2);
+  border: 2px solid rgba(62, 188, 140, 0.2);
+  background: linear-gradient(145deg, #e9f9f1, #fff8dc) !important;
+  box-shadow: 0 6px 0 rgba(62, 188, 140, 0.12) !important;
 }
 .child-selector {
   margin-inline: -4px;
+}
+.cheer-button {
+  width: 48px;
+  height: 42px;
+  @apply position-relative d-grid place-center flex-shrink-0;
+  border: 2px solid rgba(88, 156, 215, 0.18);
+  border-radius: 15px;
+  color: #396f9d;
+  background: linear-gradient(145deg, #eff8ff, #dceeff);
+  box-shadow: 0 4px 0 rgba(65, 122, 173, 0.17);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+.cheer-button:hover {
+  transform: translateY(-2px) rotate(-2deg);
+  box-shadow: 0 6px 0 rgba(65, 122, 173, 0.17);
+}
+.cheer-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(65, 122, 173, 0.17);
+}
+.cheer-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--lad-blue) 42%, transparent);
+  outline-offset: 2px;
+}
+.cheer-button.is-cheered {
+  border-color: rgba(232, 161, 39, 0.35);
+  background: linear-gradient(145deg, #fff8cf, #ffe39c);
+  box-shadow:
+    0 4px 0 rgba(204, 133, 26, 0.2),
+    0 0 18px rgba(255, 194, 66, 0.28);
+}
+.cheer-hands {
+  @apply d-flex align-center justify-center;
+  width: 34px;
+  height: 27px;
+}
+.cheer-hands i {
+  font-style: normal;
+  font-size: 18px;
+  transform-origin: bottom center;
+}
+.cheer-hands i:first-child {
+  margin-right: -4px;
+  transform: rotate(19deg);
+  animation: cheer-left 1.8s ease-in-out infinite;
+}
+.cheer-hands i:last-child {
+  transform: rotate(-19deg);
+  animation: cheer-right 1.8s ease-in-out infinite;
+}
+.cheer-button.is-cheered .cheer-hands i {
+  animation-duration: 0.72s;
+}
+.cheer-spark {
+  @apply position-absolute pointer-events-none;
+  color: #e7a222;
+  opacity: 0.45;
+  font-size: 9px;
+  animation: cheer-spark 1.8s ease-in-out infinite;
+}
+.cheer-spark--one {
+  top: 3px;
+  right: 7px;
+}
+.cheer-spark--two {
+  bottom: 4px;
+  left: 7px;
+  animation-delay: -0.8s;
+}
+.cheer-button.is-cheered .cheer-spark {
+  opacity: 1;
+  animation-duration: 0.8s;
 }
 .support-icon {
   width: 58px;
@@ -300,6 +404,45 @@ watch(() => store.permissions.canViewFamilyGoals, canViewFamilyGoals => {
   background: #eaf6ff;
   font-size: 31px;
   animation: goal-float 2.8s ease-in-out infinite;
+}
+@keyframes cheer-left {
+  0%,
+  100% {
+    transform: translateX(-1px) rotate(19deg);
+  }
+  45%,
+  55% {
+    transform: translateX(3px) rotate(7deg) scale(1.05);
+  }
+}
+@keyframes cheer-right {
+  0%,
+  100% {
+    transform: translateX(1px) rotate(-19deg);
+  }
+  45%,
+  55% {
+    transform: translateX(-3px) rotate(-7deg) scale(1.05);
+  }
+}
+@keyframes cheer-spark {
+  0%,
+  35%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.65) rotate(0);
+  }
+  52%,
+  72% {
+    opacity: 1;
+    transform: scale(1.25) rotate(25deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cheer-hands i,
+  .cheer-spark {
+    animation: none;
+  }
 }
 .family-goal-actions {
   @apply d-flex align-center;

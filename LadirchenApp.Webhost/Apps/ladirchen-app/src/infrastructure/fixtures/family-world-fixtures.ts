@@ -90,6 +90,7 @@ export const createHouseLayoutPlacements = (): HouseLayoutPlacement[] => [
   { id: createDomainId.houseLayoutPlacement('furniture-halloween-bat-garland'), entityType: 'furniture', entityId: 'halloween-bat-garland', zoneId: 'garden', x: 49, y: 23, scale: .9 },
   { id: createDomainId.houseLayoutPlacement('furniture-candy-cloud-bushes'), entityType: 'furniture', entityId: 'candy-cloud-bushes', zoneId: 'garden', x: 30, y: 66, scale: .86 },
   { id: createDomainId.houseLayoutPlacement('furniture-candy-striped-fence'), entityType: 'furniture', entityId: 'candy-striped-fence', zoneId: 'garden', x: 68, y: 70, scale: .82 },
+  { id: createDomainId.houseLayoutPlacement('furniture-family-flag'), entityType: 'furniture', entityId: 'family-flag', zoneId: 'garden', x: 84, y: 62, scale: .9 },
   { id: createDomainId.houseLayoutPlacement('member-laura'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.laura, zoneId: 'living-room', x: 42, y: 72, scale: .75 },
   { id: createDomainId.houseLayoutPlacement('member-adam'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.adam, zoneId: 'living-room', x: 56, y: 72, scale: .75 },
   { id: createDomainId.houseLayoutPlacement('member-daniel'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.daniel, zoneId: 'living-room', x: 67, y: 72, scale: .75 },
@@ -97,7 +98,7 @@ export const createHouseLayoutPlacements = (): HouseLayoutPlacement[] => [
   { id: createDomainId.houseLayoutPlacement('member-hannes'), entityType: 'member', entityId: FAMILY_MEMBER_IDS.hannes, zoneId: 'kitchen', x: 72, y: 72, scale: .78 },
   { id: createDomainId.houseLayoutPlacement('pet-anna'), entityType: 'pet', entityId: FAMILY_PET_IDS.anna, zoneId: 'living-room', x: 18, y: 80, scale: .72 },
   { id: createDomainId.houseLayoutPlacement('pet-elsa'), entityType: 'pet', entityId: FAMILY_PET_IDS.elsa, zoneId: 'living-room', x: 86, y: 80, scale: .72 },
-  { id: createDomainId.houseLayoutPlacement('family-ladi'), entityType: 'ladi', entityId: 'family-ladi', zoneId: 'living-room', x: 50, y: 48, scale: .78 },
+  { id: createDomainId.houseLayoutPlacement('family-ladi'), entityType: 'ladi', entityId: 'family-ladi', zoneId: 'living-room', x: 18, y: 30, scale: .78 },
 ];
 
 export const createContributions = (): Contribution[] => [

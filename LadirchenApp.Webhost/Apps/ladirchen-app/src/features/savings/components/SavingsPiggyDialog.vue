@@ -82,7 +82,7 @@
           <v-card v-for="goal in store.ownSavingGoals" :key="goal.id" class="piggy-goal pa-4" elevation="0" rounded="xl">
             <div class="d-flex align-center ga-3">
               <div class="goal-emoji">{{ goal.icon }}</div>
-              <div class="flex-grow-1 min-w-0">
+              <div class="goal-copy flex-grow-1 min-w-0">
                 <div class="d-flex align-center justify-space-between ga-2">
                   <strong>{{ goal.title }}</strong>
                   <div class="d-flex align-center ga-1">
@@ -90,7 +90,7 @@
                     <v-btn :aria-label="`${goal.title} bearbeiten`" color="primary" icon="mdi-pencil-outline" size="x-small" variant="text" @click="openEditGoal(goal)" />
                   </div>
                 </div>
-                <v-progress-linear class="mt-2" color="primary" height="7" :model-value="progress(goal.saved, goal.target)" rounded />
+                <v-progress-linear class="goal-progress mt-2" color="primary" height="9" :model-value="progress(goal.saved, goal.target)" rounded />
                 <v-chip v-if="goal.starterBonus && goal.saved < goal.target" class="mt-2" color="warning" prepend-icon="mdi-lock-outline" size="x-small" variant="tonal">{{ goal.starterBonus }} L Startbonus geschützt</v-chip>
                 <p class="text-caption text-medium-emphasis mt-1">Voraussichtlich +{{ weeklyInterest(goal.saved) }} L pro Woche · <strong>davon bisher +{{ goal.interestEarned ?? 0 }} L nur durch Zinsen</strong></p>
               </div>
@@ -232,11 +232,33 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 <style scoped>
 .piggy-dialog {
   max-height: min(820px, 94dvh);
+  border: 2px solid rgba(227, 156, 53, 0.2);
+  background: linear-gradient(180deg, #fffdf8, #fbfdfb) !important;
+  box-shadow:
+    0 10px 0 rgba(119, 85, 47, 0.12),
+    0 28px 70px rgba(62, 85, 75, 0.22) !important;
 }
 .piggy-header {
+  @apply position-relative overflow-hidden;
   color: #253843;
-  background: linear-gradient(145deg, #ffe4e9, #fff2cf);
-  border-bottom: 1px solid rgba(181, 107, 107, 0.14);
+  background:
+    radial-gradient(
+      circle at 88% 8%,
+      rgba(255, 255, 255, 0.72),
+      transparent 22%
+    ),
+    linear-gradient(145deg, #ffe4e9, #fff2cf 64%, #eaf8ef);
+  border-bottom: 2px solid rgba(181, 107, 107, 0.14);
+}
+.piggy-header::after {
+  width: 116px;
+  height: 116px;
+  content: "";
+  @apply position-absolute pointer-events-none;
+  right: -48px;
+  bottom: -62px;
+  border: 18px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
 }
 .piggy-header h2 {
   @apply ma-0;
@@ -245,9 +267,16 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 }
 .ladi-profile {
   padding: 12px 14px;
-  border: 1px solid var(--lad-border);
-  border-radius: 18px;
-  background: linear-gradient(145deg, #fffaf0, #eef9f4);
+  border: 2px solid rgba(67, 162, 125, 0.17);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 88% 15%,
+      rgba(255, 218, 128, 0.2),
+      transparent 25%
+    ),
+    linear-gradient(145deg, #fffaf0, #eef9f4);
+  box-shadow: 0 5px 0 rgba(69, 143, 114, 0.1);
 }
 .balance-grid {
   @apply d-grid;
@@ -255,10 +284,11 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   gap: 10px;
 }
 .balance-tile {
-  @apply pa-3;
-  border: 1px solid rgba(110, 82, 72, 0.13);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.62);
+  @apply pa-3 position-relative;
+  border: 2px solid rgba(110, 82, 72, 0.1);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 4px 0 rgba(124, 93, 65, 0.08);
 }
 .balance-tile.interest-earned {
   color: #247b5d;
@@ -278,11 +308,12 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 }
 .family-currency-value {
   padding: 10px 12px;
-  @apply d-flex align-center;
+  @apply d-flex align-center position-relative;
   gap: 10px;
-  border: 1px solid rgba(110, 82, 72, 0.13);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.76);
+  border: 2px solid rgba(110, 82, 72, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 5px 0 rgba(124, 93, 65, 0.09);
 }
 .family-currency-value > .exchange-icon {
   flex: 0 0 42px;
@@ -305,7 +336,8 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   font-weight: 800;
 }
 .interest-card {
-  border: 1px solid rgba(62, 188, 140, 0.2);
+  border: 2px solid rgba(62, 188, 140, 0.2);
+  box-shadow: 0 5px 0 rgba(45, 150, 109, 0.1) !important;
 }
 .interest-rate {
   color: var(--lad-mint-dark);
@@ -325,7 +357,8 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   font-weight: 800;
 }
 .interest-help {
-  border: 1px solid rgba(242, 175, 66, 0.25);
+  border: 2px solid rgba(242, 175, 66, 0.25);
+  box-shadow: 0 5px 0 rgba(211, 151, 48, 0.1) !important;
 }
 .saving-goals-heading {
   @apply d-flex align-center justify-space-between ga-3;
@@ -391,7 +424,47 @@ watch(() => store.piggyBankOpen, (isOpen) => {
 }
 .piggy-goal,
 .conditions-card {
-  border: 1px solid var(--lad-border);
+  border: 2px solid rgba(68, 155, 121, 0.17);
+}
+.piggy-goal {
+  @apply position-relative overflow-hidden;
+  background:
+    radial-gradient(
+      circle at 94% 8%,
+      rgba(255, 216, 115, 0.23),
+      transparent 24%
+    ),
+    linear-gradient(145deg, #fffefa, #f0faf5);
+  box-shadow:
+    0 6px 0 rgba(62, 135, 105, 0.12),
+    0 13px 24px rgba(73, 112, 97, 0.08) !important;
+  transition: transform 0.18s ease;
+}
+.piggy-goal:nth-child(2n) {
+  background:
+    radial-gradient(
+      circle at 94% 8%,
+      rgba(185, 160, 255, 0.17),
+      transparent 24%
+    ),
+    linear-gradient(145deg, #fffefd, #f7f3ff);
+}
+.piggy-goal:hover {
+  transform: translateY(-2px);
+}
+.goal-copy > div:first-child > strong {
+  font-size: 15px;
+}
+.goal-copy > div:first-child span {
+  padding: 4px 8px;
+  color: #245f4b;
+  border-radius: 999px;
+  background: #e3f6ed;
+}
+.goal-progress {
+  overflow: hidden;
+  border: 1px solid rgba(50, 153, 113, 0.12);
+  box-shadow: inset 0 2px 3px rgba(33, 103, 79, 0.08);
 }
 .bonus-lock-note {
   @apply d-flex align-center;
@@ -401,15 +474,19 @@ watch(() => store.piggyBankOpen, (isOpen) => {
   line-height: 1.35;
 }
 .goal-emoji {
-  width: 43px;
-  height: 43px;
+  width: 54px;
+  height: 54px;
   @apply d-grid place-center flex-shrink-0;
-  border-radius: 13px;
-  background: var(--lad-surface-soft);
-  font-size: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 17px;
+  background: linear-gradient(145deg, #e7f7ff, #eef8df);
+  box-shadow: 0 5px 0 rgba(63, 142, 111, 0.12);
+  font-size: 28px;
+  transform: rotate(-4deg);
 }
 .transfer-card {
-  border: 1px solid rgba(78, 143, 221, 0.2);
+  border: 2px solid rgba(78, 143, 221, 0.2);
+  box-shadow: 0 5px 0 rgba(65, 126, 190, 0.1) !important;
 }
 .transfer-actions {
   grid-template-columns: 1fr 1fr;

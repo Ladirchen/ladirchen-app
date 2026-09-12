@@ -449,6 +449,43 @@ const close = () => emit('update:modelValue', false);
     transform: scale(1.15) rotate(18deg);
   }
 }
+.streak-dialog {
+  border: 2px solid rgba(236, 158, 42, 0.2);
+  box-shadow:
+    0 10px 0 rgba(119, 85, 47, 0.12),
+    0 28px 70px rgba(62, 85, 75, 0.22) !important;
+}
+.streak-header {
+  border-bottom-width: 2px;
+  background:
+    radial-gradient(
+      circle at 85% 12%,
+      rgba(255, 255, 255, 0.72),
+      transparent 22%
+    ),
+    linear-gradient(145deg, #ffe2cf, #fff0b8 62%, #eaf8ef);
+}
+.summary-tile {
+  border-width: 2px;
+  box-shadow:
+    0 5px 0 rgba(135, 91, 46, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.summary-icon {
+  border: 2px solid rgba(255, 255, 255, 0.84);
+  box-shadow: 0 4px 0 rgba(192, 119, 22, 0.14);
+  transform: rotate(-4deg);
+}
+.week-days {
+  border-width: 2px;
+  box-shadow: 0 6px 0 rgba(60, 139, 106, 0.1);
+}
+.energy-card {
+  border-width: 2px;
+  box-shadow:
+    0 6px 0 rgba(59, 134, 105, 0.12),
+    0 12px 24px rgba(64, 101, 88, 0.08) !important;
+}
 @media (prefers-reduced-motion: reduce) {
   .hero-spark {
     animation: none;

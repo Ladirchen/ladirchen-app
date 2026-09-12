@@ -237,11 +237,23 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 }
 .ladi-card,
 .settings-card {
-  border: 1px solid var(--lad-border);
-  box-shadow: 0 4px 0 var(--lad-border) !important;
+  border: 2px solid rgba(78, 143, 221, 0.16);
+  box-shadow:
+    0 7px 0 rgba(78, 143, 221, 0.12),
+    0 13px 22px rgba(58, 96, 137, 0.05) !important;
 }
 .ladi-card {
-  background: linear-gradient(145deg, #fffaf0, #edf9f4);
+  @apply position-relative overflow-hidden;
+  background:
+    radial-gradient(
+      circle at 94% 10%,
+      rgba(255, 211, 94, 0.22) 0 38px,
+      transparent 39px
+    ),
+    linear-gradient(145deg, #fffaf0, #edf9f4);
+}
+.settings-card {
+  background: linear-gradient(145deg, #fff, #eef7ff);
 }
 .nickname-actions {
   @apply d-grid;
@@ -249,14 +261,23 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   @apply align-center ga-2;
 }
 .setting-row {
-  min-height: 50px;
+  min-height: 55px;
   @apply d-flex align-center justify-space-between;
-  border-top: 1px solid var(--lad-border);
+  border-top: 1px dashed rgba(78, 143, 221, 0.2);
 }
 .setting-row span {
   @apply d-flex align-center ga-2;
   font-size: 13px;
   @apply font-weight-bold;
+}
+.setting-row span :deep(.v-icon) {
+  width: 33px;
+  height: 33px;
+  border: 2px solid #fff;
+  border-radius: 11px;
+  color: #3d82c3;
+  background: #e3f2ff;
+  box-shadow: 0 3px 0 rgba(78, 143, 221, 0.15);
 }
 .permission-list {
   @apply d-grid;

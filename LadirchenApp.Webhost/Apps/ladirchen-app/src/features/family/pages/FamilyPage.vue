@@ -284,20 +284,33 @@ const finishWeek = (successful: boolean) => {
 .member-card,
 .pet-card,
 .family-world-controls {
-  border: 1px solid var(--lad-border);
-  box-shadow: 0 4px 0 var(--lad-border) !important;
+  border: 2px solid rgba(64, 158, 121, 0.16);
+  background: linear-gradient(145deg, #fff, #f1faf6);
+  box-shadow:
+    0 6px 0 rgba(64, 158, 121, 0.12),
+    0 12px 20px rgba(50, 103, 82, 0.05) !important;
 }
 .permission-editor {
   padding-top: 10px;
   border-top: 1px solid var(--lad-border);
 }
 .family-admin {
-  border: 1px solid rgba(78, 143, 221, 0.2);
+  border: 2px solid rgba(78, 143, 221, 0.2);
+  background:
+    radial-gradient(
+      circle at 92% 10%,
+      rgba(255, 214, 105, 0.2) 0 34px,
+      transparent 35px
+    ),
+    linear-gradient(145deg, #edf7ff, #fff9e7) !important;
+  box-shadow: 0 7px 0 rgba(78, 143, 221, 0.13) !important;
 }
 .currency-settings {
-  border: 1px solid rgba(242, 175, 66, 0.28);
+  border: 2px solid rgba(242, 175, 66, 0.28);
   background: linear-gradient(145deg, #fffaf0, #f1faf5);
-  box-shadow: 0 4px 0 rgba(242, 175, 66, 0.12) !important;
+  box-shadow:
+    0 7px 0 rgba(242, 175, 66, 0.14),
+    0 13px 21px rgba(130, 93, 36, 0.05) !important;
 }
 .currency-settings-icon {
   width: 42px;
@@ -360,12 +373,17 @@ const finishWeek = (successful: boolean) => {
   font-size: 18px;
 }
 .child-summary {
-  border: 1px solid var(--lad-border);
-  box-shadow: 0 4px 0 var(--lad-border) !important;
+  border: 2px solid var(--lad-border);
+  background: linear-gradient(145deg, #fff, #f7fbf9);
+  box-shadow: 0 6px 0 var(--lad-border) !important;
 }
 .child-summary.selected {
-  border-color: rgba(62, 188, 140, 0.5);
-  box-shadow: 0 4px 0 rgba(62, 188, 140, 0.22) !important;
+  transform: translateY(-2px);
+  border-color: rgba(62, 188, 140, 0.55);
+  background: linear-gradient(145deg, #fff, #e9f9f1);
+  box-shadow:
+    0 8px 0 rgba(62, 188, 140, 0.22),
+    0 13px 20px rgba(48, 118, 90, 0.08) !important;
 }
 .child-metrics {
   @apply d-grid;

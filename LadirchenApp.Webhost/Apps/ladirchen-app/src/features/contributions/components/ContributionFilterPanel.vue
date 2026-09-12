@@ -85,11 +85,22 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
 
 <style scoped>
 .contribution-filter {
+  position: relative;
+  isolation: isolate;
   padding: 15px;
-  border: 1px solid rgba(62, 188, 140, 0.25);
-  border-radius: 24px;
-  background: linear-gradient(145deg, #f0fbf6 0%, #fffaf0 100%);
-  box-shadow: 0 4px 0 rgba(62, 188, 140, 0.1);
+  overflow: hidden;
+  border: 2px solid rgba(62, 188, 140, 0.25);
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at 92% 7%,
+      rgba(255, 211, 105, 0.2) 0 38px,
+      transparent 39px
+    ),
+    linear-gradient(145deg, #effbf5, #fff8e4);
+  box-shadow:
+    0 7px 0 rgba(62, 188, 140, 0.13),
+    0 14px 24px rgba(45, 104, 81, 0.07);
 }
 .filter-heading {
   margin-bottom: 13px;
@@ -107,17 +118,19 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   font-size: 10px;
 }
 .filter-mascot {
-  width: 39px;
-  height: 39px;
+  width: 45px;
+  height: 45px;
   @apply d-grid place-center;
-  flex: 0 0 39px;
-  border-radius: 14px;
-  background: white;
-  box-shadow: 0 3px 0 rgba(62, 188, 140, 0.14);
+  flex: 0 0 45px;
+  border: 3px solid #fff;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #dff7eb, #fff0bf);
+  box-shadow: 0 4px 0 rgba(45, 137, 101, 0.22);
+  transform: rotate(-4deg);
 }
 .filter-eyes {
-  width: 31px;
-  height: 24px;
+  width: 32px;
+  height: 25px;
   @apply overflow-visible;
 }
 .filter-eye {
@@ -147,72 +160,119 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
 .scope-options {
   @apply d-grid;
   grid-template-columns: repeat(3, 1fr);
-  @apply ga-2;
+  gap: 8px;
+  padding-bottom: 7px;
+  border-bottom: 8px solid rgba(225, 202, 158, 0.35);
+  border-radius: 0 0 22px 22px;
 }
 .scope-options button {
   @apply min-w-0;
-  min-height: 86px;
-  padding: 10px 6px 8px;
+  min-height: 100px;
+  padding: 10px 5px 9px;
   @apply position-relative d-flex flex-column align-center justify-center;
-  gap: 2px;
+  gap: 3px;
   color: var(--lad-text);
-  border: 2px solid transparent;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 3px 0 rgba(72, 105, 91, 0.1);
+  border: 2px solid #cfe5da;
+  border-radius: 23px 23px 17px 17px;
+  background: linear-gradient(155deg, #fff, #eaf8f0);
+  box-shadow: 0 5px 0 #c5dfd1;
   @apply cursor-pointer;
   font: inherit;
   transition:
     transform 150ms ease,
     border-color 150ms ease,
-    background 150ms ease;
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+.scope-options button:nth-child(2) {
+  border-color: #f0d69f;
+  background: linear-gradient(155deg, #fff, #fff1cf);
+  box-shadow: 0 5px 0 #ead2a3;
+}
+.scope-options button:nth-child(3) {
+  border-color: #d9d3ed;
+  background: linear-gradient(155deg, #fff, #eeeafb);
+  box-shadow: 0 5px 0 #d4cce8;
 }
 .scope-options button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-3px);
 }
 .scope-options button:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(72, 105, 91, 0.1);
+  box-shadow: 0 2px 0 rgba(72, 105, 91, 0.1);
 }
 .scope-options button.active {
   color: #16745a;
-  border-color: var(--lad-mint);
-  background: #e2f7ed;
-  box-shadow: 0 4px 0 #b7e5cf;
+  transform: translateY(-5px) rotate(-1deg);
+  border-color: #42ae82;
+  background: linear-gradient(155deg, #fff, #dff6e9);
+  box-shadow:
+    0 8px 0 #a9d8bf,
+    0 12px 16px rgba(45, 107, 82, 0.1);
+}
+.scope-options button:nth-child(2).active {
+  color: #95600e;
+  transform: translateY(-5px) rotate(1deg);
+  border-color: #eba735;
+  background: linear-gradient(155deg, #fff, #ffebbd);
+  box-shadow:
+    0 8px 0 #e5bd72,
+    0 12px 16px rgba(145, 99, 30, 0.1);
+}
+.scope-options button:nth-child(3).active {
+  color: #705296;
+  border-color: #9d7ccc;
+  background: linear-gradient(155deg, #fff, #eee4fb);
+  box-shadow:
+    0 8px 0 #c8b3e4,
+    0 12px 16px rgba(92, 65, 128, 0.1);
+}
+.scope-options button :deep(.v-icon) {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 3px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 0 rgba(88, 127, 110, 0.12);
 }
 .scope-options button strong {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.2;
 }
 .scope-options button span {
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 7px;
   line-height: 1.2;
 }
 .scope-options button b {
-  min-width: 20px;
-  height: 20px;
+  min-width: 21px;
+  height: 21px;
   padding: 0 5px;
   @apply position-absolute;
   top: 6px;
   right: 6px;
   @apply d-grid place-center;
   color: #8a5908;
-  border-radius: 10px;
+  border: 2px solid #fff;
+  border-radius: 8px;
   background: #ffe4a8;
-  font-size: 10px;
+  box-shadow: 0 2px 0 #dab56a;
+  font-size: 9px;
 }
 .kind-filter {
-  margin-top: 14px;
-  padding-top: 12px;
+  margin-top: 13px;
+  padding: 10px;
   @apply d-flex align-center;
-  gap: 10px;
-  border-top: 1px dashed rgba(62, 111, 91, 0.18);
+  gap: 9px;
+  border: 1px dashed rgba(62, 111, 91, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.54);
 }
 .kind-filter-label {
   flex: 0 0 auto;
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 850;
   letter-spacing: 0.06em;
   @apply text-uppercase;
@@ -222,22 +282,24 @@ const kindOptions: Array<{ icon: string; title: string; value: KindFilter }> = [
   gap: 6px;
 }
 .kind-options button {
-  padding: 7px 10px;
+  padding: 7px 9px;
   @apply d-inline-flex align-center ga-1;
   color: #53645d;
   border: 1px solid rgba(73, 111, 96, 0.16);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 2px 0 rgba(72, 105, 91, 0.09);
   @apply cursor-pointer;
   font: inherit;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 850;
 }
 .kind-options button.active {
   color: #185f4d;
-  border-color: #9ed9bf;
+  transform: translateY(-1px);
+  border-color: #79c9a7;
   background: white;
-  box-shadow: 0 2px 0 #cceadb;
+  box-shadow: 0 4px 0 #c3e7d5;
 }
 @keyframes filter-wink {
   0%,
