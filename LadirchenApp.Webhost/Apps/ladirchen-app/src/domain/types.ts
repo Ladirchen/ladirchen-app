@@ -6,6 +6,7 @@ declare const domainIdBrand: unique symbol;
 type DomainId<Kind extends string> = string & { readonly [domainIdBrand]: Kind };
 
 export type FamilyMemberId = DomainId<'family-member'>;
+export type FamilyId = DomainId<'family'>;
 export type FamilyPetId = DomainId<'family-pet'>;
 export type ContributionId = DomainId<'contribution'>;
 export type SavingGoalId = DomainId<'saving-goal'>;
@@ -18,6 +19,7 @@ const domainId = <Kind extends string>(value: string): DomainId<Kind> => value a
 
 export const createDomainId = {
   contribution: (value: string): ContributionId => domainId<'contribution'>(value),
+  family: (value: string): FamilyId => domainId<'family'>(value),
   familyMember: (value: string): FamilyMemberId => domainId<'family-member'>(value),
   familyPet: (value: string): FamilyPetId => domainId<'family-pet'>(value),
   guardianGift: (value: string): GuardianGiftId => domainId<'guardian-gift'>(value),
