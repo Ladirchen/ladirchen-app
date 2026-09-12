@@ -45,38 +45,40 @@ withDefaults(defineProps<{
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .page-view-switch {
-  --switch-accent: #4e8fdd;
-  --switch-accent-dark: #2d6da9;
-  --switch-alt: #2a9b73;
-  --switch-alt-dark: #21795b;
-  --switch-bg: #edf7ff;
+  --switch-accent: var(--lad-palette-blue);
+  --switch-accent-dark: var(--lad-palette-blue-strong);
+  --switch-alt: var(--lad-palette-mint-strong);
+  --switch-alt-dark: var(--lad-palette-teal-700);
+  --switch-bg: var(--lad-palette-background);
   position: relative;
   isolation: isolate;
-  padding: 8px;
+  padding: 0.5rem;
   @apply d-grid overflow-hidden;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-  border: 2px solid color-mix(in srgb, var(--switch-accent) 20%, white);
-  border-radius: 27px;
+  gap: 0.5625rem;
+  border: 0.125rem solid color-mix(in srgb, var(--switch-accent) 20%, white);
+  border-radius: 1.6875rem;
   background:
     radial-gradient(
       circle at 88% 12%,
-      color-mix(in srgb, var(--switch-alt) 10%, transparent) 0 34px,
-      transparent 35px
+      color-mix(in srgb, var(--switch-alt) 10%, transparent) 0 2.125rem,
+      transparent 2.1875rem
     ),
-    linear-gradient(145deg, var(--switch-bg), #fffdf8);
+    linear-gradient(145deg, var(--switch-bg), var(--lad-palette-surface));
   box-shadow:
-    0 6px 0 color-mix(in srgb, var(--switch-accent) 14%, transparent),
-    0 12px 24px color-mix(in srgb, var(--switch-accent) 7%, transparent);
+    0 0.375rem 0 color-mix(in srgb, var(--switch-accent) 14%, transparent),
+    0 0.75rem 1.5rem color-mix(in srgb, var(--switch-accent) 7%, transparent);
 }
 .page-view-switch--amber {
-  --switch-accent: #e49b2f;
-  --switch-accent-dark: #b56d12;
-  --switch-alt: #39ae82;
-  --switch-alt-dark: #247a5a;
-  --switch-bg: #fff6dc;
+  --switch-accent: var(--lad-palette-amber-500);
+  --switch-accent-dark: var(--lad-palette-amber-600);
+  --switch-alt: var(--lad-palette-mint);
+  --switch-alt-dark: var(--lad-palette-teal-700);
+  --switch-bg: var(--lad-palette-amber-100);
 }
 .page-view-switch--single {
   grid-template-columns: minmax(0, 1fr);
@@ -85,28 +87,28 @@ withDefaults(defineProps<{
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .page-view-switch--many button {
-  padding-inline: 8px;
-  gap: 6px;
+  padding-inline: 0.5rem;
+  gap: 0.375rem;
 }
 .page-view-switch--many .page-view-icon {
-  width: 39px;
-  height: 39px;
-  border-radius: 13px;
+  width: 2.4375rem;
+  height: 2.4375rem;
+  border-radius: 0.8125rem;
 }
 .page-view-switch--many .page-view-copy strong {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .page-view-switch--many .page-view-copy small {
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .page-view-switch button {
-  min-height: 76px;
-  padding: 11px 12px;
+  min-height: 4.75rem;
+  padding: 0.6875rem 0.75rem;
   @apply position-relative d-flex align-center ga-2 text-left cursor-pointer overflow-hidden;
   color: var(--lad-muted);
-  border: 1px solid color-mix(in srgb, var(--switch-accent) 9%, white);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.42);
+  border: 0.0625rem solid color-mix(in srgb, var(--switch-accent) 9%, white);
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--lad-palette-white) 40%, transparent);
   font: inherit;
   transition:
     color 180ms ease,
@@ -115,39 +117,46 @@ withDefaults(defineProps<{
     transform 180ms ease;
 }
 .page-view-switch button:hover {
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
 }
 .page-view-switch button.active {
   color: var(--switch-accent-dark);
-  transform: translateY(-2px);
+  transform: translateY(-0.125rem);
   border-color: color-mix(in srgb, var(--switch-accent) 30%, white);
-  background: linear-gradient(145deg, #fff, #f8fcff);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-white)
+  );
   box-shadow:
-    0 6px 0 color-mix(in srgb, var(--switch-accent) 19%, transparent),
-    0 11px 17px color-mix(in srgb, var(--switch-accent) 12%, transparent);
+    0 0.375rem 0 color-mix(in srgb, var(--switch-accent) 19%, transparent),
+    0 0.6875rem 1.0625rem
+      color-mix(in srgb, var(--switch-accent) 12%, transparent);
 }
 .page-view-switch button:nth-child(2).active {
   border-color: color-mix(in srgb, var(--switch-alt) 30%, white);
   box-shadow:
-    0 6px 0 color-mix(in srgb, var(--switch-alt) 19%, transparent),
-    0 11px 17px color-mix(in srgb, var(--switch-alt) 11%, transparent);
+    0 0.375rem 0 color-mix(in srgb, var(--switch-alt) 19%, transparent),
+    0 0.6875rem 1.0625rem color-mix(in srgb, var(--switch-alt) 11%, transparent);
 }
 .page-view-switch button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--switch-accent) 26%, transparent);
-  outline-offset: 2px;
+  @include focus-ring(
+    color-mix(in srgb, var(--switch-accent) 26%, transparent)
+  );
 }
 .page-view-icon {
-  width: 46px;
-  height: 46px;
-  @apply d-grid place-center flex-shrink-0;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--switch-accent) 11%, white);
-  box-shadow: 0 3px 0 color-mix(in srgb, var(--switch-accent) 13%, transparent);
-  transform: rotate(-3deg);
+  @include icon-tile(
+    2.875rem,
+    1rem,
+    color-mix(in srgb, var(--switch-accent) 11%, white),
+    color-mix(in srgb, var(--switch-accent) 13%, transparent),
+    -3deg
+  );
+  box-shadow: 0 0.1875rem 0
+    color-mix(in srgb, var(--switch-accent) 13%, transparent);
   transition:
-    transform 180ms ease,
-    background 180ms ease;
+    transform var(--lad-motion-normal) ease,
+    background var(--lad-motion-normal) ease;
 }
 .page-view-switch button:nth-child(2) .page-view-icon {
   background: color-mix(in srgb, var(--switch-alt) 11%, white);
@@ -159,7 +168,7 @@ withDefaults(defineProps<{
     color-mix(in srgb, var(--switch-accent) 78%, white),
     var(--switch-accent)
   );
-  box-shadow: 0 4px 0 var(--switch-accent-dark);
+  box-shadow: 0 0.25rem 0 var(--switch-accent-dark);
   transform: rotate(-7deg) scale(1.06);
 }
 .page-view-switch button:nth-child(2).active .page-view-icon {
@@ -168,7 +177,7 @@ withDefaults(defineProps<{
     color-mix(in srgb, var(--switch-alt) 78%, white),
     var(--switch-alt)
   );
-  box-shadow: 0 3px 0 var(--switch-alt-dark);
+  box-shadow: 0 0.1875rem 0 var(--switch-alt-dark);
 }
 .page-view-copy {
   @apply min-w-0;
@@ -178,25 +187,25 @@ withDefaults(defineProps<{
   @apply d-block;
 }
 .page-view-copy strong {
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.2;
 }
 .page-view-copy small {
-  margin-top: 3px;
+  margin-top: 0.1875rem;
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .page-view-check {
-  width: 21px;
-  height: 21px;
+  width: 1.3125rem;
+  height: 1.3125rem;
   @apply position-absolute d-grid place-center;
-  top: 7px;
-  right: 7px;
+  top: 0.4375rem;
+  right: 0.4375rem;
   color: white;
-  border: 2px solid #fff;
-  border-radius: 7px;
+  border: 0.125rem solid var(--lad-palette-white);
+  border-radius: 0.4375rem;
   background: var(--switch-accent);
-  box-shadow: 0 2px 0
+  box-shadow: 0 0.125rem 0
     color-mix(in srgb, var(--switch-accent-dark) 45%, transparent);
   opacity: 0;
   transform: rotate(12deg) scale(0.65);
@@ -212,45 +221,45 @@ withDefaults(defineProps<{
   transform: rotate(12deg) scale(1);
 }
 .page-view-switch--compact {
-  padding: 6px;
-  border-radius: 21px;
+  padding: 0.375rem;
+  border-radius: 1.3125rem;
 }
 .page-view-switch--compact button {
-  min-height: 60px;
-  padding: 8px 10px;
-  border-radius: 16px;
+  min-height: 3.75rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 1rem;
 }
 .page-view-switch--compact .page-view-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.6875rem;
 }
 .page-view-switch--compact .page-view-copy strong {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .page-view-switch--compact .page-view-copy small {
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .page-view-switch--compact .page-view-check {
-  width: 17px;
-  height: 17px;
-  top: 5px;
-  right: 5px;
+  width: 1.0625rem;
+  height: 1.0625rem;
+  top: 0.3125rem;
+  right: 0.3125rem;
 }
-@media (max-width: 430px) {
+@include respond-down(phone) {
   .page-view-switch--many button {
-    min-height: 82px;
+    min-height: 5.125rem;
     flex-direction: column;
     justify-content: center;
-    padding: 7px 4px;
+    padding: 0.4375rem 0.25rem;
     text-align: center;
   }
   .page-view-switch--many .page-view-copy small {
-    margin-top: 1px;
+    margin-top: 0.0625rem;
   }
   .page-view-switch--many .page-view-check {
-    top: 4px;
-    right: 4px;
+    top: 0.25rem;
+    right: 0.25rem;
   }
 }
 </style>

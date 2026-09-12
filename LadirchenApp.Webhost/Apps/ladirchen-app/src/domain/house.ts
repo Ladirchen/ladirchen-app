@@ -93,14 +93,14 @@ export interface FurniturePlacement {
 export interface HouseStageDefinition {
   readonly id: HouseStageId;
   readonly level: HouseStageLevel;
-  readonly name: string;
+  readonly nameKey: string;
   readonly icon: string;
   readonly rooms: HouseRoomCount;
 }
 
 export interface HouseRoomDefinition {
   readonly id: HouseRoomId;
-  readonly name: string;
+  readonly nameKey: string;
   readonly icon: string;
   readonly minimumHouseLevel: HouseStageLevel;
   readonly wall: HexColor;
@@ -109,8 +109,8 @@ export interface HouseRoomDefinition {
 
 export interface FurnitureSetDefinition {
   readonly id: FurnitureSetId;
-  readonly name: string;
-  readonly description: string;
+  readonly nameKey: string;
+  readonly descriptionKey: string;
   readonly icon: string;
   readonly price: number;
   readonly zoneId: HouseZoneId;
@@ -120,8 +120,8 @@ export interface FurnitureSetDefinition {
 
 export interface HouseThemeDefinition {
   readonly id: HouseThemeId;
-  readonly name: string;
-  readonly description: string;
+  readonly nameKey: string;
+  readonly descriptionKey: string;
   readonly icon: string;
   readonly price: number;
   readonly kind: HouseEditionKind;

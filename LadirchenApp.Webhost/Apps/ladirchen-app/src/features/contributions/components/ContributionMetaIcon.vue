@@ -24,7 +24,8 @@ import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 defineProps<{ kind: 'time' | 'reward' | 'energy' }>();
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .contribution-meta-icon {
   width: 30px;
   height: 30px;
@@ -32,7 +33,7 @@ defineProps<{ kind: 'time' | 'reward' | 'energy' }>();
   overflow: visible;
 }
 .icon-disc {
-  fill: rgba(255, 255, 255, 0.72);
+  fill: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
   stroke: currentColor;
   stroke-width: 1.6;
 }
@@ -45,10 +46,10 @@ defineProps<{ kind: 'time' | 'reward' | 'energy' }>();
   stroke-width: 2;
 }
 .contribution-meta-icon--time {
-  color: #4187bd;
+  color: var(--lad-palette-blue-strong);
 }
 .contribution-meta-icon--time .icon-disc {
-  fill: #e8f5ff;
+  fill: var(--lad-palette-background);
 }
 .clock-hand {
   transform-origin: 16px 16px;
@@ -67,22 +68,22 @@ defineProps<{ kind: 'time' | 'reward' | 'energy' }>();
   transform: scale(1.08);
 }
 .contribution-meta-icon--energy {
-  color: #d48618;
+  color: var(--lad-palette-amber-550);
 }
 .contribution-meta-icon--energy .icon-disc {
-  fill: #fff3c8;
-  stroke: #e9aa34;
+  fill: var(--lad-palette-amber-100);
+  stroke: var(--lad-palette-amber-450);
 }
 .energy-bolt {
-  fill: #f4b62f;
-  stroke: #cf7a12;
+  fill: var(--lad-palette-amber-450);
+  stroke: var(--lad-palette-amber-550);
   stroke-linejoin: round;
   stroke-width: 1.2;
   animation: energy-hop 2s ease-in-out infinite;
 }
 .energy-glow {
   fill: none;
-  stroke: #ffd86d;
+  stroke: var(--lad-palette-amber-250);
   stroke-width: 3;
   opacity: 0;
   animation: energy-glow 2s ease-in-out infinite;
@@ -115,7 +116,7 @@ defineProps<{ kind: 'time' | 'reward' | 'energy' }>();
     opacity: 0.5;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .clock-hand--minute,
   .energy-bolt,
   .energy-glow {

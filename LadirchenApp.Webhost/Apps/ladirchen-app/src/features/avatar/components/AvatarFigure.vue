@@ -1,5 +1,5 @@
 <template>
-  <span class="avatar-figure" :class="[`outfit-${appearance.outfit}`, `age-${appearance.age ?? 'child'}`, { reacting: isReacting, 'full-body': fullBody, calm }]" :style="figureStyle" role="img" aria-label="Animierter, zusammengestellter Profilavatar" @click="react">
+  <span class="avatar-figure" :class="[`outfit-${appearance.outfit}`, `age-${appearance.age ?? 'child'}`, { reacting: isReacting, 'full-body': fullBody, calm }]" :style="figureStyle" role="img" :aria-label="t('avatar.figureAria')" @click="react">
     <svg :viewBox="fullBody ? '0 0 160 260' : '0 0 160 180'">
       <template v-if="!fullBody">
         <circle class="backdrop" cx="80" cy="88" r="74" />
@@ -361,11 +361,13 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { avatarHairColors, avatarOutfitColors, avatarSkinToneColors } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 
 const props = withDefaults(defineProps<{ appearance: AvatarAppearance; size?: number; fullBody?: boolean; calm?: boolean }>(), { size: 64, fullBody: false, calm: false });
+const { t } = useI18n();
 const emit = defineEmits<{ interact: [] }>();
 const isReacting = ref(false);
 let reactionTimer: number | undefined;
@@ -393,14 +395,20 @@ const figureStyle = computed(() => ({
 }));
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .avatar-figure {
   width: var(--avatar-size);
   height: var(--avatar-size);
   @apply d-inline-flex flex-shrink-0 overflow-hidden;
   border-radius: 38%;
-  background: linear-gradient(145deg, #f4fff9, #dff2eb);
-  box-shadow: inset 0 -5px 0 rgba(46, 105, 83, 0.08);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
+  box-shadow: inset 0 -5px 0
+    color-mix(in srgb, var(--lad-palette-teal-700) 8%, transparent);
 }
 .avatar-figure.full-body {
   height: var(--avatar-height);
@@ -428,14 +436,14 @@ svg {
   animation: none;
 }
 .backdrop {
-  fill: #e9f5f0;
+  fill: var(--lad-palette-background);
 }
 .backdrop-dot {
-  fill: #fff;
+  fill: var(--lad-palette-white);
   opacity: 0.7;
 }
 .dot-two {
-  fill: #f5d36e;
+  fill: var(--lad-palette-yellow);
   opacity: 0.32;
 }
 .rainbow path {
@@ -444,22 +452,22 @@ svg {
   stroke-width: 8;
 }
 .rainbow path:nth-child(1) {
-  stroke: #ef766e;
+  stroke: var(--lad-palette-coral);
 }
 .rainbow path:nth-child(2) {
-  stroke: #f5bd50;
+  stroke: var(--lad-palette-yellow);
 }
 .rainbow path:nth-child(3) {
-  stroke: #61b995;
+  stroke: var(--lad-palette-teal-400);
 }
 .torso {
   fill: var(--outfit);
-  stroke: #344e58;
+  stroke: var(--lad-palette-muted-700);
   stroke-width: 4;
 }
 .full-body-lower .trousers {
-  fill: color-mix(in srgb, var(--outfit) 62%, #314a59);
-  stroke: #344e58;
+  fill: color-mix(in srgb, var(--outfit) 62%, var(--lad-palette-muted-700));
+  stroke: var(--lad-palette-muted-700);
   stroke-linejoin: round;
   stroke-width: 4;
 }
@@ -470,8 +478,8 @@ svg {
   stroke-width: 15;
 }
 .full-body-lower .shoe {
-  fill: #f5f7f4;
-  stroke: #344e58;
+  fill: var(--lad-palette-background);
+  stroke: var(--lad-palette-muted-700);
   stroke-linejoin: round;
   stroke-width: 4;
 }
@@ -483,7 +491,7 @@ svg {
 }
 .arms circle {
   fill: var(--skin);
-  stroke: #865d49;
+  stroke: var(--lad-palette-orange-600);
   stroke-width: 2.5;
 }
 .waving-arm {
@@ -492,21 +500,21 @@ svg {
   animation: avatar-wave 18s var(--avatar-phase) ease-in-out infinite;
 }
 .outfit-vampire .arms path {
-  stroke: #302548;
+  stroke: var(--lad-palette-text);
 }
 .outfit-shark .arms path {
-  stroke: #659eb3;
+  stroke: var(--lad-palette-blue-450);
 }
 .neck,
 .ear,
 .head {
   fill: var(--skin);
-  stroke: #865d49;
+  stroke: var(--lad-palette-orange-600);
   stroke-width: 2.5;
 }
 .hair {
   fill: var(--hair);
-  stroke: #47352c;
+  stroke: var(--lad-palette-muted-750);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
@@ -514,13 +522,13 @@ svg {
 .long-curls .curl-highlight,
 .front-hair .curl-fringe {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 30%, transparent);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .braid-tie {
   fill: none;
-  stroke: #ef7187;
+  stroke: var(--lad-palette-red-300);
   stroke-width: 6;
 }
 .shaved-line {
@@ -531,7 +539,7 @@ svg {
   opacity: 0.58;
 }
 .eye {
-  fill: #29383d;
+  fill: var(--lad-palette-text);
   transform-box: fill-box;
   transform-origin: center;
   animation: avatar-blink 11s var(--avatar-phase) ease-in-out infinite;
@@ -548,7 +556,7 @@ svg {
 .eyebrows,
 .tiny-nose {
   fill: none;
-  stroke: #684438;
+  stroke: var(--lad-palette-orange-650);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
@@ -572,7 +580,7 @@ svg {
   stroke-width: 2;
 }
 .blush {
-  fill: #e78478;
+  fill: var(--lad-palette-red-300);
   opacity: 0.28;
   animation: cheek-glow 16s var(--avatar-phase) ease-in-out infinite;
 }
@@ -582,37 +590,37 @@ svg {
   animation: changing-smile 16s var(--avatar-phase) ease-in-out infinite;
 }
 .mouth.surprised {
-  fill: #873f45;
+  fill: var(--lad-palette-red-600);
   animation: surprised-bounce 11s var(--avatar-phase) ease-in-out infinite;
 }
 .confident-mouth {
   transform: rotate(-4deg);
 }
 .silly-mouth path:first-child {
-  fill: #6d3440;
-  stroke: #684438;
+  fill: var(--lad-palette-orange-650);
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 2.5;
 }
 .silly-mouth path:last-child {
-  fill: #ef8b93;
-  stroke: #a54d5c;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-red-500);
   stroke-width: 2;
 }
 .freckles {
-  fill: #b16f55;
+  fill: var(--lad-palette-orange-500);
 }
 .whiskers {
   fill: none;
-  stroke: #654940;
+  stroke: var(--lad-palette-orange-650);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .mustache {
-  fill: #49332d;
+  fill: var(--lad-palette-muted-750);
 }
 .senior-details {
   fill: none;
-  stroke: #a66f5d;
+  stroke: var(--lad-palette-orange-500);
   stroke-linecap: round;
   stroke-width: 1.5;
   opacity: 0.7;
@@ -622,149 +630,149 @@ svg {
 }
 .lashes path {
   fill: none;
-  stroke: #513a35;
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linecap: round;
   stroke-width: 2.4;
 }
 .lashes circle {
-  fill: #fff;
+  fill: var(--lad-palette-white);
   stroke: none;
 }
 .clown-nose circle {
-  fill: #ef5361;
-  stroke: #9b3240;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
   stroke-width: 2;
 }
 .clown-nose ellipse {
-  fill: #ffb5bc;
+  fill: var(--lad-palette-red-100);
 }
 .monster-horns path {
-  fill: #71d3b0;
-  stroke: #315b55;
+  fill: var(--lad-palette-teal-400);
+  stroke: var(--lad-palette-muted-700);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .monster-horns circle {
-  fill: #ffd35d;
-  stroke: #8d6223;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1.5;
 }
 .pirate-patch > path {
   fill: none;
-  stroke: #34313b;
+  stroke: var(--lad-palette-text);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 4;
 }
 .pirate-patch > path:nth-child(2) {
-  fill: #34313b;
+  fill: var(--lad-palette-text);
   stroke-width: 2.5;
 }
 .pirate-patch .pirate-star {
-  fill: #ffd35d;
-  stroke: #91631f;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1;
 }
 .superhero-mask > path:first-child {
-  fill: #244b7a;
-  stroke: #142f51;
+  fill: var(--lad-palette-indigo-750);
+  stroke: var(--lad-palette-text);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .superhero-mask ellipse {
   fill: var(--skin);
-  stroke: #142f51;
+  stroke: var(--lad-palette-text);
   stroke-width: 1.5;
 }
 .hero-mask-flare {
   fill: none;
-  stroke: #ffd45e;
+  stroke: var(--lad-palette-yellow);
   stroke-linecap: round;
   stroke-width: 4;
 }
 .dino-cap {
-  fill: #72c88c;
-  stroke: #356e4b;
+  fill: var(--lad-palette-teal-400);
+  stroke: var(--lad-palette-teal-700);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .dino-spine {
-  fill: #ffd35d;
-  stroke: #91631f;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .dino-tooth {
-  fill: #fff6d8;
-  stroke: #997e50;
+  fill: var(--lad-palette-amber-100);
+  stroke: var(--lad-palette-orange-500);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
 .dino-hood-eye {
-  fill: #fff;
-  stroke: #356e4b;
+  fill: var(--lad-palette-white);
+  stroke: var(--lad-palette-teal-700);
   stroke-width: 2;
 }
 .monster-cap {
-  fill: #8b6bc9;
-  stroke: #4d387d;
+  fill: var(--lad-palette-violet-400);
+  stroke: var(--lad-palette-violet-650);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .monster-horn {
-  fill: #ffd35d;
-  stroke: #91631f;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .monster-hood-eye {
-  fill: #fff;
-  stroke: #4d387d;
+  fill: var(--lad-palette-white);
+  stroke: var(--lad-palette-violet-650);
   stroke-width: 2;
 }
 .monster-hood-pupil {
-  fill: #34464d;
+  fill: var(--lad-palette-muted-700);
 }
 .monster-fuzz {
   fill: none;
-  stroke: #c4afea;
+  stroke: var(--lad-palette-purple-200);
   stroke-linejoin: round;
   stroke-width: 5;
 }
 .vampire-brow {
   fill: none;
-  stroke: #4d2439;
+  stroke: var(--lad-palette-muted-750);
   stroke-linecap: round;
   stroke-width: 3.5;
 }
 .vampire-fang {
-  fill: #fffbed;
-  stroke: #71453f;
+  fill: var(--lad-palette-surface);
+  stroke: var(--lad-palette-orange-650);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
 .shark-hood-shell,
 .shark-top-fin {
-  fill: #659eb3;
-  stroke: #315a6b;
+  fill: var(--lad-palette-blue-450);
+  stroke: var(--lad-palette-muted-700);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .shark-mouth-rim {
   fill: none;
-  stroke: #a8d8df;
+  stroke: var(--lad-palette-blue-250);
   stroke-linecap: round;
   stroke-width: 5;
 }
 .shark-teeth {
-  fill: #fffbea;
-  stroke: #7c8580;
+  fill: var(--lad-palette-surface);
+  stroke: var(--lad-palette-muted);
   stroke-linejoin: round;
   stroke-width: 1.2;
 }
 .shark-eye {
-  fill: #263c47;
-  stroke: #17303a;
+  fill: var(--lad-palette-text);
+  stroke: var(--lad-palette-text);
   stroke-width: 1.5;
 }
 .shark-eye-glint {
@@ -772,172 +780,172 @@ svg {
 }
 .robot-shell,
 .robot-ear {
-  fill: #91acb8;
-  stroke: #405b67;
+  fill: var(--lad-palette-muted-350);
+  stroke: var(--lad-palette-muted-700);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .robot-panel {
-  fill: #304c59;
-  stroke: #20353d;
+  fill: var(--lad-palette-muted-700);
+  stroke: var(--lad-palette-text);
 }
 .robot-light,
 .robot-antenna-tip {
-  fill: #ef5965;
-  stroke: #91313b;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
   stroke-width: 1.5;
 }
 .robot-meter,
 .robot-antenna {
   fill: none;
-  stroke: #ffd35d;
+  stroke: var(--lad-palette-yellow);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .helmet-glass {
-  fill: rgba(183, 235, 245, 0.22);
-  stroke: #d9fbff;
+  fill: color-mix(in srgb, var(--lad-palette-blue-150) 20%, transparent);
+  stroke: var(--lad-palette-background);
   stroke-width: 7;
 }
 .helmet-rim {
   fill: none;
-  stroke: #587e8e;
+  stroke: var(--lad-palette-blue-550);
   stroke-width: 6;
 }
 .helmet-glint {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.9);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   stroke-linecap: round;
   stroke-width: 5;
 }
 .helmet-star {
-  fill: #ffd45e;
-  stroke: #8f6423;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1.5;
 }
 .glasses-lens {
-  fill: rgba(149, 220, 232, 0.2);
-  stroke: #3c5764;
+  fill: color-mix(in srgb, var(--lad-palette-blue-250) 20%, transparent);
+  stroke: var(--lad-palette-muted-700);
   stroke-width: 3;
 }
 .glasses-frame {
   fill: none;
-  stroke: #3c5764;
+  stroke: var(--lad-palette-muted-700);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .glasses-shine {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.88);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   stroke-linecap: round;
   stroke-width: 2.5;
 }
 .headphone-band {
   fill: none;
-  stroke: #443780;
+  stroke: var(--lad-palette-violet-650);
   stroke-linecap: round;
   stroke-width: 8;
 }
 .headphone-band-highlight {
   fill: none;
-  stroke: #9179d5;
+  stroke: var(--lad-palette-violet-400);
   stroke-linecap: round;
   stroke-width: 2.5;
 }
 .headphone-connector {
   fill: none;
-  stroke: #443780;
+  stroke: var(--lad-palette-violet-650);
   stroke-linecap: round;
   stroke-width: 6;
 }
 .headphone-cup {
-  fill: #755bc1;
-  stroke: #443780;
+  fill: var(--lad-palette-violet-400);
+  stroke: var(--lad-palette-violet-650);
   stroke-width: 3;
 }
 .headphone-pad {
-  fill: #c8b9f3;
+  fill: var(--lad-palette-purple-200);
   stroke: none;
 }
 .headphone-star {
-  fill: #ffd65f;
-  stroke: #7b5320;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-700);
   stroke-linejoin: round;
   stroke-width: 1;
 }
 .cat-ear-outer {
-  fill: #f29aaa;
-  stroke: #67463e;
+  fill: var(--lad-palette-rose-250);
+  stroke: var(--lad-palette-orange-650);
   stroke-linejoin: round;
   stroke-width: 3.5;
 }
 .cat-ear-inner {
-  fill: #ffd0d6;
+  fill: var(--lad-palette-red-100);
   stroke: none;
 }
 .cat-ear-band {
   fill: none;
-  stroke: #8053ad;
+  stroke: var(--lad-palette-violet-500);
   stroke-linecap: round;
   stroke-width: 5;
 }
 .cat-ear-dot {
-  fill: #ffd55e;
-  stroke: #8b6023;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1;
 }
 .cap-body {
-  fill: #ee786b;
-  stroke: #71483f;
+  fill: var(--lad-palette-coral);
+  stroke: var(--lad-palette-orange-650);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .cap-brim {
-  fill: #d85d5e;
-  stroke: #71483f;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-orange-650);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .cap-seam {
   fill: none;
-  stroke: #ad4e4d;
+  stroke: var(--lad-palette-red-500);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .cap-button {
-  fill: #ffd15e;
-  stroke: #71483f;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 1.5;
 }
 .crown-body {
-  fill: #ffd35d;
-  stroke: #9a6223;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .crown-tip {
-  fill: #7fcddc;
-  stroke: #446f82;
+  fill: var(--lad-palette-blue-250);
+  stroke: var(--lad-palette-blue-600);
   stroke-width: 1.5;
 }
 .crown-gems {
-  fill: #ef7187;
-  stroke: #98445a;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-red-600);
   stroke-width: 1;
 }
 .crown-shine {
-  fill: #fff6b4;
+  fill: var(--lad-palette-amber-150);
   stroke: none;
 }
 .star-glasses > path:first-child {
-  fill: #ffd45e;
-  stroke: #774f96;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-violet-500);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .star-glasses-bridge {
   fill: none;
-  stroke: #774f96;
+  stroke: var(--lad-palette-violet-500);
   stroke-linecap: round;
   stroke-width: 3;
 }
@@ -949,51 +957,51 @@ svg {
 }
 .flower-band {
   fill: none;
-  stroke: #43906c;
+  stroke: var(--lad-palette-teal-550);
   stroke-linecap: round;
   stroke-width: 5;
 }
 .flower-crown circle {
-  fill: #ef7894;
-  stroke: #9a425b;
+  fill: var(--lad-palette-rose-300);
+  stroke: var(--lad-palette-red-600);
   stroke-width: 1;
 }
 .flower-crown g:nth-of-type(2) circle {
-  fill: #8b73d2;
+  fill: var(--lad-palette-violet-400);
 }
 .flower-crown .flower-center {
-  fill: #ffd45e;
-  stroke: #9a6920;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
 }
 .flower-leaf {
-  fill: #65bf83;
-  stroke: #35744f;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-700);
   stroke-width: 1.5;
 }
 .propeller-cap-body {
-  fill: #65c9a3;
-  stroke: #315c54;
+  fill: var(--lad-palette-teal-400);
+  stroke: var(--lad-palette-muted-700);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .propeller-cap-panel {
   fill: none;
-  stroke: #367c68;
+  stroke: var(--lad-palette-teal-600);
   stroke-width: 2;
 }
 .propeller-stem {
   fill: none;
-  stroke: #40535a;
+  stroke: var(--lad-palette-muted-700);
   stroke-width: 4;
 }
 .propeller-hub {
-  fill: #ffd45e;
-  stroke: #9a6920;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 2;
 }
 .propeller-blade {
-  fill: #ef7187;
-  stroke: #963b55;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-red-600);
   stroke-linejoin: round;
   stroke-width: 2;
   transform-box: fill-box;
@@ -1001,55 +1009,55 @@ svg {
   animation: propeller-wiggle 4s var(--avatar-phase) ease-in-out infinite;
 }
 .blade-right {
-  fill: #7fcddc;
+  fill: var(--lad-palette-blue-250);
 }
 .outfit-back {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .superhero-cape {
-  fill: #e85262;
-  stroke: #8b3040;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
   stroke-width: 3;
 }
 .fairy-wings {
-  fill: rgba(126, 224, 211, 0.58);
-  stroke: #3c967d;
+  fill: color-mix(in srgb, var(--lad-palette-blue-250) 60%, transparent);
+  stroke: var(--lad-palette-teal-550);
   stroke-width: 3;
 }
 .fairy-wings path:last-child {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.8);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
   stroke-width: 2;
 }
 .dino-spikes {
-  fill: #f5c651;
-  stroke: #8e6827;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 3;
 }
 .monster-fur {
-  fill: #8b6bc9;
-  stroke: #4d387d;
+  fill: var(--lad-palette-violet-400);
+  stroke: var(--lad-palette-violet-650);
   stroke-width: 3;
 }
 .vampire-cape {
-  fill: #302548;
-  stroke: #1e172e;
+  fill: var(--lad-palette-text);
+  stroke: var(--lad-palette-violet-850);
   stroke-width: 3;
 }
 .vampire-cape-lining {
-  fill: #a83f58;
-  stroke: #63253b;
+  fill: var(--lad-palette-red-500);
+  stroke: var(--lad-palette-muted-750);
   stroke-width: 2;
 }
 .shark-fins {
-  fill: #548a9f;
-  stroke: #315a6b;
+  fill: var(--lad-palette-blue-550);
+  stroke: var(--lad-palette-muted-700);
   stroke-width: 3;
 }
 .outfit-detail {
   fill: none;
-  stroke: #eef7f5;
+  stroke: var(--lad-palette-background);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
@@ -1057,91 +1065,91 @@ svg {
 .adult-shirt,
 .adult-blouse {
   fill: color-mix(in srgb, var(--outfit) 72%, white);
-  stroke: #40535a;
+  stroke: var(--lad-palette-muted-700);
 }
 .shirt-collar,
 .blouse-collar,
 .blouse-detail {
-  fill: rgba(255, 255, 255, 0.65);
-  stroke: #40535a;
+  fill: color-mix(in srgb, var(--lad-palette-white) 65%, transparent);
+  stroke: var(--lad-palette-muted-700);
 }
 .shirt-button,
 .cardigan-button,
 .blazer-button {
-  fill: #f0c45c;
-  stroke: #805f26;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1;
 }
 .cardigan-shirt,
 .blazer-shirt {
-  fill: #f8f3e8;
-  stroke: #4c5d62;
+  fill: var(--lad-palette-background);
+  stroke: var(--lad-palette-muted-700);
 }
 .cardigan,
 .blazer {
   fill: var(--outfit);
-  stroke: #40535a;
+  stroke: var(--lad-palette-muted-700);
 }
 .cardigan-edge,
 .blazer-lapel {
-  fill: rgba(255, 255, 255, 0.1);
-  stroke: #eef7f5;
+  fill: color-mix(in srgb, var(--lad-palette-white) 10%, transparent);
+  stroke: var(--lad-palette-background);
 }
 .hood-rim {
-  fill: rgba(255, 255, 255, 0.12);
+  fill: color-mix(in srgb, var(--lad-palette-white) 12%, transparent);
 }
 .hood-tip {
-  fill: #ffd35d;
-  stroke: #8e6525;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1.2;
 }
 .hood-pocket {
-  fill: rgba(38, 59, 70, 0.16);
+  fill: color-mix(in srgb, var(--lad-palette-text) 15%, transparent);
 }
 .overall-shirt {
-  fill: #ffd468;
+  fill: var(--lad-palette-yellow);
   stroke: none;
 }
 .overall-bib {
-  fill: #4779b8;
-  stroke: #284d7b;
+  fill: var(--lad-palette-blue-strong);
+  stroke: var(--lad-palette-indigo-750);
 }
 .overall-button {
-  fill: #ffd35d;
-  stroke: #8d6223;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1.2;
 }
 .explorer-vest {
-  fill: #8c6a42;
-  stroke: #5b432a;
+  fill: var(--lad-palette-orange-600);
+  stroke: var(--lad-palette-orange-750);
 }
 .scarf {
-  fill: #f1b349;
-  stroke: #9a5f1b;
+  fill: var(--lad-palette-amber-450);
+  stroke: var(--lad-palette-amber-650);
 }
 .space-collar {
-  fill: #d9f3f5;
-  stroke: #517b88;
+  fill: var(--lad-palette-background);
+  stroke: var(--lad-palette-blue-550);
 }
 .space-panel {
-  fill: #293f61;
-  stroke: #17283e;
+  fill: var(--lad-palette-indigo-750);
+  stroke: var(--lad-palette-text);
 }
 .space-light {
   stroke: none;
 }
 .light-one {
-  fill: #65d39c;
+  fill: var(--lad-palette-teal-400);
 }
 .light-two {
-  fill: #f5c651;
+  fill: var(--lad-palette-yellow);
 }
 .sport-shirt {
-  fill: rgba(255, 255, 255, 0.08);
+  fill: color-mix(in srgb, var(--lad-palette-white) 8%, transparent);
 }
 .sport-number,
 .hero-letter {
-  fill: #fff5c8;
+  fill: var(--lad-palette-amber-100);
   stroke: none;
   text-anchor: middle;
   font-family: sans-serif;
@@ -1149,144 +1157,144 @@ svg {
   @apply font-weight-black;
 }
 .pajama-top {
-  fill: rgba(32, 41, 80, 0.12);
+  fill: color-mix(in srgb, var(--lad-palette-text) 12%, transparent);
 }
 .pajama-moon {
-  fill: #ffd35d;
-  stroke: #936820;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
 }
 .pajama-star {
-  fill: #fff2a4;
-  stroke: #936820;
+  fill: var(--lad-palette-amber-150);
+  stroke: var(--lad-palette-amber-650);
 }
 .hero-collar {
-  fill: #ffe06a;
-  stroke: #9b6620;
+  fill: var(--lad-palette-amber-250);
+  stroke: var(--lad-palette-amber-650);
 }
 .hero-shield {
-  fill: #244b7a;
-  stroke: #173253;
+  fill: var(--lad-palette-indigo-750);
+  stroke: var(--lad-palette-indigo-750);
 }
 .hero-letter {
   font-size: 21px;
 }
 .hero-belt {
-  stroke: #ffd35d;
+  stroke: var(--lad-palette-yellow);
   stroke-width: 7;
 }
 .hero-buckle {
-  fill: #fff0a3;
-  stroke: #8f6220;
+  fill: var(--lad-palette-amber-150);
+  stroke: var(--lad-palette-amber-650);
 }
 .dino-belly {
-  fill: #8ed49d;
-  stroke: #397c58;
+  fill: var(--lad-palette-green-250);
+  stroke: var(--lad-palette-teal-700);
 }
 .dino-dot {
-  fill: #e8f6b0;
+  fill: var(--lad-palette-amber-150);
   stroke: none;
 }
 .dino-claws {
-  stroke: #fff2ba;
+  stroke: var(--lad-palette-amber-150);
   stroke-width: 4;
 }
 .monster-belly {
-  fill: #c9b8ec;
-  stroke: #5f468f;
+  fill: var(--lad-palette-purple-200);
+  stroke: var(--lad-palette-violet-650);
 }
 .monster-belly-fuzz {
   fill: none;
-  stroke: #fff4cc;
+  stroke: var(--lad-palette-amber-100);
 }
 .monster-spot {
-  fill: #ffd35d;
-  stroke: #91631f;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
 }
 .spot-two {
-  fill: #65c9a3;
-  stroke: #347861;
+  fill: var(--lad-palette-teal-400);
+  stroke: var(--lad-palette-teal-700);
 }
 .monster-claws {
   fill: none;
-  stroke: #fff3be;
+  stroke: var(--lad-palette-amber-150);
   stroke-width: 4;
 }
 .vampire-shirt {
-  fill: #241d33;
-  stroke: #171220;
+  fill: var(--lad-palette-violet-850);
+  stroke: var(--lad-palette-violet-850);
 }
 .vampire-collar {
-  fill: #fff5df;
-  stroke: #6f4c47;
+  fill: var(--lad-palette-amber-100);
+  stroke: var(--lad-palette-orange-650);
 }
 .vampire-vest {
-  fill: #8f304e;
-  stroke: #541e36;
+  fill: var(--lad-palette-red-600);
+  stroke: var(--lad-palette-muted-750);
 }
 .vampire-chain {
   fill: none;
-  stroke: #f0cb68;
+  stroke: var(--lad-palette-yellow);
 }
 .vampire-gem {
-  fill: #ef5670;
-  stroke: #7c273f;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
 }
 .shark-body {
-  fill: #659eb3;
-  stroke: #315a6b;
+  fill: var(--lad-palette-blue-450);
+  stroke: var(--lad-palette-muted-700);
 }
 .shark-belly {
-  fill: #d8eef0;
-  stroke: #6094a1;
+  fill: var(--lad-palette-blue-150);
+  stroke: var(--lad-palette-blue-450);
 }
 .shark-gills {
   fill: none;
-  stroke: #315a6b;
+  stroke: var(--lad-palette-muted-700);
 }
 .shark-splash {
   fill: none;
-  stroke: #7dc9dc;
+  stroke: var(--lad-palette-blue-250);
 }
 .robot-body {
-  fill: #91acb8;
-  stroke: #405b67;
+  fill: var(--lad-palette-muted-350);
+  stroke: var(--lad-palette-muted-700);
 }
 .robot-chest {
-  fill: #304c59;
-  stroke: #20353d;
+  fill: var(--lad-palette-muted-700);
+  stroke: var(--lad-palette-text);
 }
 .robot-button {
   stroke: none;
 }
 .robot-red {
-  fill: #ef5965;
+  fill: var(--lad-palette-red-400);
 }
 .robot-yellow {
-  fill: #ffd35d;
+  fill: var(--lad-palette-yellow);
 }
 .robot-green {
-  fill: #65c98f;
+  fill: var(--lad-palette-teal-400);
   stroke: none;
 }
 .robot-grille {
   fill: none;
-  stroke: #cce4e9;
+  stroke: var(--lad-palette-blue-150);
 }
 .fairy-collar {
-  fill: #855fc2;
-  stroke: #533682;
+  fill: var(--lad-palette-violet-400);
+  stroke: var(--lad-palette-violet-650);
 }
 .fairy-leaf {
-  fill: #ffd75e;
-  stroke: #9a6920;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
 }
 .party-collar {
-  fill: rgba(255, 255, 255, 0.14);
-  stroke: #ffe4a1;
+  fill: color-mix(in srgb, var(--lad-palette-white) 15%, transparent);
+  stroke: var(--lad-palette-amber-150);
 }
 .party-star {
-  fill: #ffe276;
-  stroke: #a96d1d;
+  fill: var(--lad-palette-amber-250);
+  stroke: var(--lad-palette-amber-600);
 }
 .seasonal {
   stroke-linecap: round;
@@ -1295,124 +1303,124 @@ svg {
 }
 .witch-top,
 .witch-brim {
-  fill: #594386;
-  stroke: #34295d;
+  fill: var(--lad-palette-violet-650);
+  stroke: var(--lad-palette-indigo-750);
 }
 .witch-fold {
   fill: none;
-  stroke: #8d74cb;
+  stroke: var(--lad-palette-violet-400);
 }
 .witch-band {
-  fill: #ef7187;
-  stroke: #913d5a;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-red-600);
 }
 .witch-buckle {
-  fill: #ffd45e;
-  stroke: #9a6920;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
 }
 .witch-charm {
-  fill: #65c9a3;
-  stroke: #315c54;
+  fill: var(--lad-palette-teal-400);
+  stroke: var(--lad-palette-muted-700);
 }
 .pumpkin-hood {
-  fill: #ef8d39;
-  stroke: #8f4b1d;
+  fill: var(--lad-palette-orange-400);
+  stroke: var(--lad-palette-amber-700);
 }
 .pumpkin-lines {
   fill: none;
-  stroke: #c56828;
+  stroke: var(--lad-palette-amber-600);
 }
 .pumpkin-stem {
   fill: none;
-  stroke: #526b38;
+  stroke: var(--lad-palette-muted-600-2);
   stroke-width: 5;
 }
 .pumpkin-leaf {
-  fill: #73aa51;
-  stroke: #44692d;
+  fill: var(--lad-palette-green-500);
+  stroke: var(--lad-palette-green-700);
 }
 .santa-hat {
-  fill: #df514f;
-  stroke: #8e3435;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
 }
 .santa-fold {
   fill: none;
-  stroke: #f3817f;
+  stroke: var(--lad-palette-red-300);
 }
 .santa-pom,
 .santa-rim {
-  fill: #fff8e8;
-  stroke: #b9a891;
+  fill: var(--lad-palette-surface);
+  stroke: var(--lad-palette-muted-400);
 }
 .santa-holly {
-  fill: #5aaa69;
-  stroke: #397a48;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-700);
 }
 .santa-berry {
-  fill: #e0474d;
-  stroke: #9d2f35;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
 }
 .antlers {
   fill: none;
-  stroke: #704d35;
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 6;
 }
 .reindeer-band {
   fill: none;
-  stroke: #8b5a38;
+  stroke: var(--lad-palette-orange-600);
   stroke-width: 5;
 }
 .reindeer-ear {
-  fill: #a66e45;
-  stroke: #704d35;
+  fill: var(--lad-palette-orange-500);
+  stroke: var(--lad-palette-orange-650);
 }
 .reindeer-nose {
-  fill: #ef4e59;
-  stroke: #9a3039;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
 }
 .reindeer-shine {
-  fill: #ffc5c8;
+  fill: var(--lad-palette-red-100);
   stroke: none;
 }
 .bat-wing,
 .bat-ear {
-  fill: #4c3979;
-  stroke: #2e264b;
+  fill: var(--lad-palette-violet-650);
+  stroke: var(--lad-palette-text);
 }
 .bat-band {
   fill: none;
-  stroke: #2e264b;
+  stroke: var(--lad-palette-text);
   stroke-width: 5;
 }
 .elf-hat {
-  fill: #53ac76;
-  stroke: #326b4a;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-700);
 }
 .elf-fold {
   fill: none;
-  stroke: #8ed49e;
+  stroke: var(--lad-palette-green-250);
 }
 .elf-bell {
-  fill: #ffd45e;
-  stroke: #9a6920;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
 }
 .elf-rim {
-  fill: #ef7187;
-  stroke: #913d5a;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-red-600);
 }
 .elf-ear {
   fill: var(--skin);
-  stroke: #865d49;
+  stroke: var(--lad-palette-orange-600);
 }
 .snow-hood,
 .snow-ear,
 .snow-pom {
-  fill: #b9e8f1;
-  stroke: #4c8292;
+  fill: var(--lad-palette-blue-150);
+  stroke: var(--lad-palette-blue-550);
 }
 .snow-brow {
   fill: none;
-  stroke: #4c8292;
+  stroke: var(--lad-palette-blue-550);
   stroke-width: 5;
 }
 @keyframes propeller-wiggle {
@@ -1538,7 +1546,7 @@ svg {
     transform: rotate(0);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   svg,
   .eye,
   .eye-line,

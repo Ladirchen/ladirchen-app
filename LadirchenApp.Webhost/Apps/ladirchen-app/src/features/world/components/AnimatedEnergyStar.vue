@@ -16,7 +16,8 @@ const props = withDefaults(defineProps<{ size?: number }>(), { size: 32 });
 const starStyle = computed(() => ({ width: `${props.size}px`, height: `${props.size}px` }));
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .energy-star {
   @apply d-inline-grid place-center flex-shrink-0;
 }
@@ -24,25 +25,27 @@ svg {
   @apply d-block w-100 h-100 overflow-visible;
 }
 .star-halo {
-  fill: #fff4ba;
+  fill: var(--lad-palette-amber-150);
   opacity: 0.72;
   transform-box: fill-box;
   transform-origin: center;
   animation: star-halo-breathe 2.8s ease-in-out infinite;
 }
 .star-shape {
-  fill: #f3ac2f;
-  stroke: #a96913;
+  fill: var(--lad-palette-amber-450);
+  stroke: var(--lad-palette-amber-600);
   stroke-linejoin: round;
   stroke-width: 2.5;
-  filter: drop-shadow(0 3px 2px rgba(157, 97, 13, 0.2));
+  filter: drop-shadow(
+    0 3px 2px color-mix(in srgb, var(--lad-palette-amber-650) 20%, transparent)
+  );
   transform-box: fill-box;
   transform-origin: center;
   animation: star-celebrate 2.8s cubic-bezier(0.34, 1.4, 0.64, 1) infinite;
 }
 .star-dot,
 .star-spark {
-  fill: #49b98b;
+  fill: var(--lad-palette-mint);
   transform-box: fill-box;
   transform-origin: center;
   animation: star-twinkle 2.8s ease-in-out infinite;
@@ -88,7 +91,7 @@ svg {
     transform: scale(1.15);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .star-halo,
   .star-shape,
   .star-dot,

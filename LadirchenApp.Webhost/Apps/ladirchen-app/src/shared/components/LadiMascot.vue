@@ -10,7 +10,7 @@
     :while-hover="reducedMotion ? undefined : { scale: characterMotion.scale * 1.035, y: characterMotion.y - 2 }"
     :while-press="reducedMotion ? undefined : { scale: characterMotion.scale * .96 }"
     role="img"
-    :aria-label="`${smart ? 'Klug-Ladi' : stage.name}, das Sparfaultier, Bewertung ${score.toFixed(1)} von 5`"
+    :aria-label="t('ladi.mascotAria', { name: smart ? t('ladi.smartName') : t(stage.nameKey), score: score.toFixed(1) })"
   >
     <svg class="ladi" viewBox="0 0 150 150">
       <g v-if="isBored && showSceneBase" class="bored-branch">
@@ -172,9 +172,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { motion, useReducedMotion } from 'motion-v';
+import { useI18n } from 'vue-i18n';
 
 import { getLadiStage } from '@/domain/ladi';
 
+const { t } = useI18n();
 const props = withDefaults(defineProps<{ score: number; showCoin?: boolean; showSceneBase?: boolean; size?: number; showScore?: boolean; smart?: boolean }>(), { showCoin: true, showSceneBase: true, size: 46, showScore: true, smart: false });
 const stage = computed(() => getLadiStage(props.score));
 const isBored = computed(() => props.score < 2.5);
@@ -192,13 +194,14 @@ const characterMotion = computed(() => {
 const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass: .8 } as const;
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .ladi-wrap {
   --ladi-size: 46px;
-  --fur: #a86d46;
-  --fur-dark: #6e452f;
-  --face: #efd3a5;
-  --mask: #806047;
+  --fur: var(--lad-palette-orange-500);
+  --fur-dark: var(--lad-palette-orange-650);
+  --face: var(--lad-palette-amber-200);
+  --mask: var(--lad-palette-orange-600);
   width: calc(var(--ladi-size) + 23px);
   height: var(--ladi-size);
   @apply position-relative d-inline-flex align-center flex-shrink-0;
@@ -207,7 +210,9 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   width: var(--ladi-size);
   height: var(--ladi-size);
   @apply overflow-visible;
-  filter: drop-shadow(0 3px 2px rgba(48, 45, 36, 0.22));
+  filter: drop-shadow(
+    0 3px 2px color-mix(in srgb, var(--lad-palette-text) 20%, transparent)
+  );
 }
 .ladi-sloth {
   transform-origin: 75px 126px;
@@ -222,14 +227,14 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   animation: super-hover 2.7s ease-in-out infinite;
 }
 .ground-shadow {
-  fill: rgba(43, 74, 65, 0.14);
+  fill: color-mix(in srgb, var(--lad-palette-text) 15%, transparent);
   transform-origin: center;
   animation: shadow-breathe 4.5s ease-in-out infinite;
 }
 .branch,
 .branch-cut {
   fill: none;
-  stroke: #795038;
+  stroke: var(--lad-palette-orange-650);
   stroke-linecap: round;
   stroke-width: 9;
 }
@@ -238,7 +243,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
 }
 .bored-branch {
   fill: none;
-  stroke: #795038;
+  stroke: var(--lad-palette-orange-650);
   stroke-linecap: round;
   stroke-width: 10;
 }
@@ -246,19 +251,19 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   stroke-width: 5;
 }
 .bored-branch .branch-ring {
-  stroke: #a87a55;
+  stroke: var(--lad-palette-orange-500);
   stroke-width: 2.5;
 }
 .bored-bubble {
   animation: bored-bubble 3.2s ease-in-out infinite;
 }
 .bored-bubble path {
-  fill: #fffaf0;
-  stroke: #795038;
+  fill: var(--lad-palette-surface);
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 2;
 }
 .bored-bubble circle {
-  fill: #795038;
+  fill: var(--lad-palette-orange-650);
 }
 .body {
   fill: var(--fur);
@@ -266,7 +271,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   stroke-width: 3.5;
 }
 .belly {
-  fill: #c88f61;
+  fill: var(--lad-palette-orange-400-2);
   opacity: 0.72;
 }
 .ear {
@@ -283,7 +288,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   fill: var(--mask);
 }
 .eye {
-  fill: #2f2b29;
+  fill: var(--lad-palette-text);
   transform-origin: center;
   animation: blink 5.4s ease-in-out infinite;
 }
@@ -291,23 +296,23 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   fill: white;
 }
 .nose {
-  fill: #493329;
+  fill: var(--lad-palette-muted-750);
 }
 .smile {
   fill: none;
-  stroke: #5a392c;
+  stroke: var(--lad-palette-orange-750);
   stroke-linecap: round;
   stroke-width: 2.5;
 }
 .bored-eyes,
 .bored-mouth {
   fill: none;
-  stroke: #5a392c;
+  stroke: var(--lad-palette-orange-750);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .cheek {
-  fill: #e98975;
+  fill: var(--lad-palette-red-300);
   opacity: 0.45;
 }
 .feet path,
@@ -324,7 +329,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   stroke-width: 10;
 }
 .free-arms .free-claw {
-  stroke: #f5dfbd;
+  stroke: var(--lad-palette-amber-150);
   stroke-width: 2.5;
 }
 .waving-arm {
@@ -340,51 +345,51 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
 .hanging-claw,
 .dangling-foot {
   fill: none;
-  stroke: #f5dfbd;
+  stroke: var(--lad-palette-amber-150);
   stroke-linecap: round;
   stroke-width: 2.5;
 }
 .claw {
   fill: none;
-  stroke: #f5dfbd;
+  stroke: var(--lad-palette-amber-150);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .coin-glow {
-  fill: #ffeaa0;
+  fill: var(--lad-palette-amber-150);
   opacity: 0.45;
   transform-origin: 75px 108px;
   animation: coin-heartbeat 2.4s ease-in-out infinite;
 }
 .coin {
-  fill: #ffd05b;
-  stroke: #a46019;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 3.5;
 }
 .coin-letter,
 .coin-shine {
   fill: none;
-  stroke: #885016;
+  stroke: var(--lad-palette-amber-700);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 4;
 }
 .coin-shine {
-  stroke: #fff0a8;
+  stroke: var(--lad-palette-amber-150);
   stroke-width: 3;
 }
 .leaf-cluster,
 .tiny-leaf {
-  fill: #65bc76;
-  stroke: #2e7f52;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-700);
   stroke-linejoin: round;
   stroke-width: 2.5;
   transform-origin: center;
   animation: leaf-wave 3s ease-in-out infinite;
 }
 .sun-scarf {
-  fill: #f0b845;
-  stroke: #a8641a;
+  fill: var(--lad-palette-amber-450);
+  stroke: var(--lad-palette-amber-600);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
@@ -394,97 +399,97 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
 }
 .shade-frame {
   fill: none;
-  stroke: #252638;
+  stroke: var(--lad-palette-text);
   stroke-linecap: round;
   stroke-width: 4;
 }
 .shade-lens {
-  fill: #292b43;
-  stroke: #161725;
+  fill: var(--lad-palette-text);
+  stroke: var(--lad-palette-violet-850);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .shade-glint {
   fill: none;
-  stroke: #82e2ef;
+  stroke: var(--lad-palette-blue-250);
   stroke-linecap: round;
   stroke-width: 2;
   opacity: 0.72;
 }
 .smart-glasses {
-  fill: rgba(210, 239, 245, 0.24);
-  stroke: #514a43;
+  fill: color-mix(in srgb, var(--lad-palette-blue-150) 25%, transparent);
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3.5;
 }
 .smart-glasses-glint {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.88);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   stroke-width: 2;
 }
 .cool-sparkles {
-  fill: #fff1a0;
-  stroke: #d08925;
+  fill: var(--lad-palette-amber-150);
+  stroke: var(--lad-palette-amber-550);
   stroke-linejoin: round;
   stroke-width: 1.5;
   animation: cool-sparkle 2s ease-in-out infinite;
 }
 .super-speed-lines {
   fill: none;
-  stroke: #72d5cf;
+  stroke: var(--lad-palette-blue-250);
   stroke-linecap: round;
   stroke-width: 4;
   opacity: 0.65;
   animation: super-speed 1.4s ease-in-out infinite;
 }
 .super-cape {
-  fill: #e65462;
-  stroke: #933645;
+  fill: var(--lad-palette-red-400);
+  stroke: var(--lad-palette-red-600);
   stroke-linejoin: round;
   stroke-width: 3;
   transform-origin: 75px 57px;
   animation: cape-flutter 1.8s ease-in-out infinite;
 }
 .super-suit > path:first-child {
-  fill: #3d78d8;
-  stroke: #24509a;
+  fill: var(--lad-palette-blue-strong);
+  stroke: var(--lad-palette-indigo-650);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .super-belt {
   fill: none;
-  stroke: #ffd05b;
+  stroke: var(--lad-palette-yellow);
   stroke-width: 5;
 }
 .super-badge {
-  fill: #ffd05b;
-  stroke: #a46019;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 2;
 }
 .super-letter {
   fill: none;
-  stroke: #9d3543;
+  stroke: var(--lad-palette-red-600);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .super-mask {
-  fill: #315fae;
-  stroke: #1d3f79;
+  fill: var(--lad-palette-blue-strong);
+  stroke: var(--lad-palette-indigo-750);
   stroke-linejoin: round;
   stroke-width: 2;
 }
 .super-mask-glint {
   fill: none;
-  stroke: #91def2;
+  stroke: var(--lad-palette-blue-250);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .coin-orbit {
-  fill: #fff1a0;
-  stroke: #d08925;
+  fill: var(--lad-palette-amber-150);
+  stroke: var(--lad-palette-amber-550);
   stroke-dasharray: 5 5;
   stroke-width: 2.5;
   transform-origin: 76px 84px;
@@ -495,50 +500,58 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
 }
 .aurora-ribbons {
   fill: none;
-  stroke: #70d6bb;
+  stroke: var(--lad-palette-teal-400);
   stroke-linecap: round;
   stroke-width: 4;
   opacity: 0.72;
   animation: aurora-drift 3.4s ease-in-out infinite;
 }
 .floating-homes {
-  fill: #fff2ae;
-  stroke: #97601e;
+  fill: var(--lad-palette-amber-150);
+  stroke: var(--lad-palette-amber-650);
   stroke-linejoin: round;
   stroke-width: 2;
   animation: homes-float 2.8s ease-in-out infinite;
 }
 .garden {
-  --fur: #a9774f;
-  --fur-dark: #5c4932;
-  --face: #e9d7a8;
-  --mask: #74634a;
+  --fur: var(--lad-palette-orange-500);
+  --fur-dark: var(--lad-palette-orange-750);
+  --face: var(--lad-palette-amber-200);
+  --mask: var(--lad-palette-orange-600);
 }
 .sun {
-  --fur: #b97748;
-  --fur-dark: #71462e;
-  --face: #f2d6a2;
-  --mask: #7c5941;
+  --fur: var(--lad-palette-orange-500);
+  --fur-dark: var(--lad-palette-orange-650);
+  --face: var(--lad-palette-amber-200);
+  --mask: var(--lad-palette-orange-600);
 }
 .aurora {
-  --fur: #829e83;
-  --fur-dark: #405f54;
-  --face: #e6dfb5;
-  --mask: #5a7061;
+  --fur: var(--lad-palette-muted);
+  --fur-dark: var(--lad-palette-muted-700);
+  --face: var(--lad-palette-amber-200);
+  --mask: var(--lad-palette-muted-600-2);
 }
 .aurora .ladi {
-  filter: drop-shadow(0 0 7px rgba(90, 207, 180, 0.68))
-    drop-shadow(0 3px 2px rgba(48, 45, 36, 0.2));
+  filter: drop-shadow(
+      0 0 7px color-mix(in srgb, var(--lad-palette-teal-400) 70%, transparent)
+    )
+    drop-shadow(
+      0 3px 2px color-mix(in srgb, var(--lad-palette-text) 20%, transparent)
+    );
 }
 .super {
-  --fur: #a86d46;
-  --fur-dark: #61402e;
-  --face: #f0d5aa;
-  --mask: #75553f;
+  --fur: var(--lad-palette-orange-500);
+  --fur-dark: var(--lad-palette-orange-750);
+  --face: var(--lad-palette-amber-200);
+  --mask: var(--lad-palette-orange-650);
 }
 .super .ladi {
-  filter: drop-shadow(0 0 8px rgba(71, 151, 224, 0.56))
-    drop-shadow(0 5px 3px rgba(48, 45, 36, 0.2));
+  filter: drop-shadow(
+      0 0 8px color-mix(in srgb, var(--lad-palette-blue) 60%, transparent)
+    )
+    drop-shadow(
+      0 5px 3px color-mix(in srgb, var(--lad-palette-text) 20%, transparent)
+    );
 }
 .ladi-score {
   min-width: 30px;
@@ -546,21 +559,24 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   padding: 3px 6px 3px 9px;
   @apply d-inline-flex align-center;
   gap: 3px;
-  color: #594016;
-  border: 1px solid rgba(166, 96, 24, 0.16);
+  color: var(--lad-palette-orange-750);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-amber-650) 15%, transparent);
   border-radius: 0 10px 10px 0;
-  background: #fff3c7;
-  box-shadow: 0 2px 5px rgba(87, 59, 17, 0.1);
-  font-size: 9px;
-  font-weight: 950;
+  background: var(--lad-palette-amber-100);
+  box-shadow: 0 2px 5px
+    color-mix(in srgb, var(--lad-palette-orange-750) 10%, transparent);
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-black);
   @apply text-no-wrap;
 }
 .ladi-score i {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #f2b84e;
-  box-shadow: 0 0 0 2px rgba(242, 184, 78, 0.2);
+  background: var(--lad-palette-yellow);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent);
 }
 @keyframes sloth-sway {
   0%,
@@ -728,7 +744,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
     transform: rotate(-9deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .ladi-wrap * {
     animation: none !important;
   }

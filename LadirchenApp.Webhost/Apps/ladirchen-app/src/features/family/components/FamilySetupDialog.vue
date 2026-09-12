@@ -4,12 +4,12 @@
       <div class="setup-header pa-5 pb-4">
         <div class="d-flex align-start justify-space-between ga-3">
           <div>
-            <p class="eyebrow mb-1">{{ store.onboardingCompleted ? 'Familie bearbeiten' : 'Willkommen bei Ladirchen' }}</p>
-            <h2>Wer gehört zu eurer Familie?</h2>
+            <p class="eyebrow mb-1">{{ t(store.onboardingCompleted ? 'family.setup.editEyebrow' : 'family.setup.welcomeEyebrow') }}</p>
+            <h2>{{ t('family.setup.title') }}</h2>
           </div>
           <v-btn
             v-if="store.onboardingCompleted"
-            aria-label="Einrichtung schließen"
+            :aria-label="t('family.setup.close')"
             icon="mdi-close"
             size="small"
             variant="text"
@@ -25,57 +25,57 @@
       <v-card-text class="pa-5 pt-4">
         <v-window v-model="step">
           <v-window-item :value="1">
-            <SetupSectionHeader icon="🧒" title="Kinder" copy="Für jedes Kind entstehen eigene Beiträge, Ladirchen und Sparziele." />
+            <SetupSectionHeader icon="🧒" :title="t('family.setup.children.title')" :copy="t('family.setup.children.description')" />
             <div class="d-flex flex-column ga-3 mt-4">
               <v-card v-for="(child, index) in children" :key="child.id" class="setup-person pa-3" elevation="0" rounded="lg">
                 <div class="d-flex align-center ga-3">
                   <div class="setup-avatar" :style="{ background: `${child.color}24` }">{{ child.avatar }}</div>
-                  <v-text-field v-model="child.name" density="compact" hide-details label="Name des Kindes" variant="outlined" />
-                  <v-btn aria-label="Kind entfernen" :disabled="children.length === 1" icon="mdi-delete-outline" size="small" variant="text" @click="children.splice(index, 1)" />
+                  <v-text-field v-model="child.name" density="compact" hide-details :label="t('family.setup.children.name')" variant="outlined" />
+                  <v-btn :aria-label="t('family.setup.children.remove')" :disabled="children.length === 1" icon="mdi-delete-outline" size="small" variant="text" @click="children.splice(index, 1)" />
                 </div>
               </v-card>
             </div>
-            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addChild">Kind hinzufügen</v-btn>
+            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addChild">{{ t('family.setup.children.add') }}</v-btn>
           </v-window-item>
 
           <v-window-item :value="2">
-            <SetupSectionHeader icon="🐾" title="Haustiere" copy="Haustiere können später eigene Familienbeiträge bekommen." />
+            <SetupSectionHeader icon="🐾" :title="t('family.setup.pets.title')" :copy="t('family.setup.pets.description')" />
             <div class="d-flex flex-column ga-3 mt-4">
               <v-card v-for="(pet, index) in pets" :key="pet.id" class="setup-person pa-3" elevation="0" rounded="lg">
                 <div class="d-flex align-center ga-3">
                   <div class="setup-avatar" :style="{ background: `${pet.color}24` }">{{ pet.avatar }}</div>
                   <div class="d-grid pet-fields ga-2 flex-grow-1">
-                    <v-text-field v-model="pet.name" density="compact" hide-details label="Name" variant="outlined" />
-                    <v-select v-model="pet.kind" density="compact" hide-details item-title="title" item-value="value" :items="petKinds" label="Tierart" variant="outlined" @update:model-value="updatePetAvatar(pet)" />
+                    <v-text-field v-model="pet.name" density="compact" hide-details :label="t('family.setup.name')" variant="outlined" />
+                    <v-select v-model="pet.kind" density="compact" hide-details item-title="title" item-value="value" :items="petKinds" :label="t('family.setup.pets.kind')" variant="outlined" @update:model-value="updatePetAvatar(pet)" />
                   </div>
-                  <v-btn aria-label="Haustier entfernen" icon="mdi-delete-outline" size="small" variant="text" @click="pets.splice(index, 1)" />
+                  <v-btn :aria-label="t('family.setup.pets.remove')" icon="mdi-delete-outline" size="small" variant="text" @click="pets.splice(index, 1)" />
                 </div>
               </v-card>
             </div>
-            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addPet">Haustier hinzufügen</v-btn>
+            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addPet">{{ t('family.setup.pets.add') }}</v-btn>
           </v-window-item>
 
           <v-window-item :value="3">
-            <SetupSectionHeader icon="🤝" title="Bezugspersonen" copy="Bezugspersonen können Beiträge anlegen, prüfen und die Familienwelt begleiten." />
+            <SetupSectionHeader icon="🤝" :title="t('family.setup.guardians.title')" :copy="t('family.setup.guardians.description')" />
             <div class="d-flex flex-column ga-3 mt-4">
               <v-card v-for="(guardian, index) in guardians" :key="guardian.id" class="setup-person pa-3" elevation="0" rounded="lg">
                 <div class="d-flex align-center ga-3">
                   <div class="setup-avatar" :style="{ background: `${guardian.color}24` }">{{ guardian.avatar }}</div>
-                  <v-text-field v-model="guardian.name" density="compact" hide-details label="Name der Bezugsperson" variant="outlined" />
-                  <v-btn aria-label="Bezugsperson entfernen" :disabled="guardians.length === 1" icon="mdi-delete-outline" size="small" variant="text" @click="guardians.splice(index, 1)" />
+                  <v-text-field v-model="guardian.name" density="compact" hide-details :label="t('family.setup.guardians.name')" variant="outlined" />
+                  <v-btn :aria-label="t('family.setup.guardians.remove')" :disabled="guardians.length === 1" icon="mdi-delete-outline" size="small" variant="text" @click="guardians.splice(index, 1)" />
                 </div>
               </v-card>
             </div>
-            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addGuardian">Bezugsperson hinzufügen</v-btn>
+            <v-btn class="mt-4" color="primary" prepend-icon="mdi-plus" rounded="lg" variant="tonal" @click="addGuardian">{{ t('family.setup.guardians.add') }}</v-btn>
           </v-window-item>
         </v-window>
       </v-card-text>
 
       <v-card-actions class="setup-actions pa-5 pt-3">
-        <v-btn :disabled="step === 1" rounded="lg" variant="text" @click="step -= 1">Zurück</v-btn>
+        <v-btn :disabled="step === 1" rounded="lg" variant="text" @click="step -= 1">{{ t('family.setup.back') }}</v-btn>
         <v-spacer />
-        <v-btn v-if="step < 3" color="primary" :disabled="!currentStepIsValid" rounded="lg" variant="flat" @click="step += 1">Weiter</v-btn>
-        <v-btn v-else class="raised-button" color="primary" :disabled="!setupIsValid" rounded="lg" variant="flat" @click="finishSetup">Familienwelt starten</v-btn>
+        <v-btn v-if="step < 3" color="primary" :disabled="!currentStepIsValid" rounded="lg" variant="flat" @click="step += 1">{{ t('common.next') }}</v-btn>
+        <v-btn v-else class="raised-button" color="primary" :disabled="!setupIsValid" rounded="lg" variant="flat" @click="finishSetup">{{ t('family.setup.start') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -83,24 +83,25 @@
 
 <script lang="ts" setup>
 import { computed, defineComponent, h, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { createDefaultAvatarAppearance } from '@/domain/avatar';
 import { createDomainId } from '@/domain/types';
 import type { FamilyMember, FamilyPet, FamilyPetKindId } from '@/domain/types';
 import { useFamilyWorldStore } from '@/stores/family-world';
+import { familyMemberColorPalette } from '@/theme/color-palette';
 
 const store = useFamilyWorldStore();
+const { t } = useI18n();
 const step = ref(1);
 const children = ref<FamilyMember[]>([]);
 const guardians = ref<FamilyMember[]>([]);
 const pets = ref<FamilyPet[]>([]);
-const petKinds: Array<{ title: string; value: FamilyPetKindId }> = [
-  { title: 'Katze', value: 'cat' },
-  { title: 'Hund', value: 'dog' },
-  { title: 'Kaninchen', value: 'rabbit' },
-  { title: 'Vogel', value: 'bird' },
-  { title: 'Anderes Tier', value: 'other' },
-];
+const petKindIds: readonly FamilyPetKindId[] = ['cat', 'dog', 'rabbit', 'bird', 'other'];
+const petKinds = computed(() => petKindIds.map(value => ({
+  title: t(`familyPets.kinds.${value}`),
+  value,
+})));
 
 const SetupSectionHeader = defineComponent({
   props: { icon: { type: String, required: true }, title: { type: String, required: true }, copy: { type: String, required: true } },
@@ -128,12 +129,11 @@ const resetDraft = () => {
   pets.value = store.pets.map((pet) => ({ ...pet }));
   step.value = 1;
 };
-const addChild = () => children.value.push({ id: createDomainId.familyMember(newId('child', children.value.length)), name: '', avatar: '🧒', color: '#7295e8', role: 'child', weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
-const addGuardian = () => guardians.value.push({ id: createDomainId.familyMember(newId('guardian', guardians.value.length)), name: '', avatar: '🧑', color: '#68a985', role: 'guardian', guardianAccess: 'supporter', weeklyStreak: 0 });
-const addPet = () => pets.value.push({ id: createDomainId.familyPet(newId('pet', pets.value.length)), name: '', kind: 'cat', kindLabel: 'Katze', avatar: '🐈', color: '#d9a465' });
+const addChild = () => children.value.push({ id: createDomainId.familyMember(newId('child', children.value.length)), name: '', avatar: '🧒', color: familyMemberColorPalette.laura, role: 'child', participatesInWeeklyGoal: true, weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
+const addGuardian = () => guardians.value.push({ id: createDomainId.familyMember(newId('guardian', guardians.value.length)), name: '', avatar: '🧑', color: familyMemberColorPalette.defaultGuardian, role: 'guardian', guardianAccess: 'supporter', participatesInWeeklyGoal: false, weeklyStreak: 0 });
+const addPet = () => pets.value.push({ id: createDomainId.familyPet(newId('pet', pets.value.length)), name: '', kind: 'cat', avatar: '🐈', color: familyMemberColorPalette.petAnna });
 const updatePetAvatar = (pet: FamilyPet) => {
   const avatars: Record<FamilyPetKindId, string> = { cat: '🐈', dog: '🐕', rabbit: '🐇', bird: '🐦', other: '🐾' };
-  pet.kindLabel = petKinds.find(kind => kind.value === pet.kind)?.title ?? 'Anderes Tier';
   pet.avatar = avatars[pet.kind] ?? '🐾';
 };
 const finishSetup = () => store.completeFamilySetup(
@@ -146,48 +146,53 @@ watch(() => store.familySetupOpen, (isOpen) => {
 }, { immediate: true });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .family-setup-card {
-  max-height: min(760px, 92dvh);
+  max-height: min(47.5rem, 92dvh);
 }
 .setup-header {
-  background: linear-gradient(145deg, #effaf5, #edf6ff);
-  border-bottom: 1px solid var(--lad-border);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-background)
+  );
+  border-bottom: 0.0625rem solid var(--lad-border);
 }
 .setup-header h2 {
   @apply ma-0;
-  font-size: 23px;
+  font-size: 1.4375rem;
   letter-spacing: -0.035em;
 }
 .setup-person {
-  border: 1px solid var(--lad-border);
+  border: 0.0625rem solid var(--lad-border);
 }
 .setup-avatar,
 .setup-section-icon {
   @apply d-grid place-center flex-shrink-0;
-  border-radius: 14px;
-  font-size: 24px;
+  border-radius: 0.875rem;
+  font-size: 1.5rem;
 }
 .setup-avatar {
-  width: 45px;
-  height: 45px;
+  width: 2.8125rem;
+  height: 2.8125rem;
 }
 .setup-section-icon {
-  width: 48px;
-  height: 48px;
+  width: 3rem;
+  height: 3rem;
   background: var(--lad-surface-soft);
 }
 .setup-section-title {
   @apply ma-0;
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .pet-fields {
   grid-template-columns: 1fr 1fr;
 }
 .setup-actions {
-  border-top: 1px solid var(--lad-border);
+  border-top: 0.0625rem solid var(--lad-border);
 }
-@media (max-width: 430px) {
+@include respond-down(phone) {
   .pet-fields {
     grid-template-columns: 1fr;
   }

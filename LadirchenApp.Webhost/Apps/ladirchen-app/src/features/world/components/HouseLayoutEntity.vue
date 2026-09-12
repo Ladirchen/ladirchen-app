@@ -41,14 +41,17 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import type { AvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember, FamilyPet, HouseAccessory, HouseLayoutPlacement } from '@/domain/types';
+import type { FamilyMember, FamilyMemberId, FamilyPet, HouseAccessory, HouseLayoutPlacement } from '@/domain/types';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
 
 import AnimatedPet from './AnimatedPet.vue';
 import RoomFurniture from './RoomFurniture.vue';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   accessory?: HouseAccessory;
@@ -60,6 +63,7 @@ const props = defineProps<{
   placement: HouseLayoutPlacement;
   score: number;
   speech?: string;
+  viewerMemberId?: FamilyMemberId;
 }>();
 const emit = defineEmits<{
   'ladi-interact': [];
@@ -71,13 +75,17 @@ const emit = defineEmits<{
 }>();
 
 const entityName = computed(() => {
-  if (props.placement.entityType === 'furniture') {return props.accessory?.title ?? 'Möbelstück';}
-  if (props.placement.entityType === 'member') {return props.member?.name ?? 'Familienmitglied';}
-  if (props.placement.entityType === 'pet') {return props.pet?.name ?? 'Haustier';}
+  if (props.placement.entityType === 'furniture') {return props.accessory?.title ?? t('world.scene.entity.furniture');}
+  if (props.placement.entityType === 'member') {
+    if (!props.member) return t('world.scene.entity.member');
+    const name = props.member.nickname?.trim() || props.member.name;
+    return props.member.id === props.viewerMemberId ? t('world.scene.memberYou', { name }) : name;
+  }
+  if (props.placement.entityType === 'pet') {return props.pet?.name ?? t('world.scene.entity.pet');}
   return 'Ladi';
 });
 const accessibleLabel = computed(() => props.editable
-  ? `${entityName.value} verschieben`
+  ? t('world.scene.moveEntity', { name: entityName.value })
   : entityName.value);
 const displayY = computed(() => props.accessory?.visual === 'string-lights' ? Math.max(58, props.placement.y) : props.placement.y);
 const entityStyle = computed(() => ({
@@ -100,7 +108,8 @@ const forwardPointerUp = (event: PointerEvent) => emit('pointerup', event);
 const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', event);
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .layout-entity {
   width: 72px;
   height: 72px;
@@ -135,7 +144,9 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
 }
 .layout-entity.editable:active {
   cursor: grabbing;
-  filter: drop-shadow(0 8px 8px rgba(51, 45, 39, 0.26));
+  filter: drop-shadow(
+    0 8px 8px color-mix(in srgb, var(--lad-palette-muted-750) 25%, transparent)
+  );
 }
 .entity-label {
   @apply position-absolute text-no-wrap;
@@ -143,12 +154,12 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   bottom: -8px;
   padding: 2px 5px;
   transform: translateX(-50%);
-  border: 1px solid rgba(50, 63, 58, 0.13);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #42554f;
-  font-size: 6px;
-  font-weight: 900;
+  border: 1px solid color-mix(in srgb, var(--lad-palette-text) 12%, transparent);
+  border-radius: var(--lad-radius-pill);
+  background: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
+  color: var(--lad-palette-muted-700);
+  font-size: 0.375rem;
+  font-weight: var(--lad-font-weight-heavy);
   pointer-events: none;
 }
 .layout-entity :deep(.avatar-figure),
@@ -166,20 +177,27 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
 }
 .ladi-speech {
   width: max-content;
-  max-width: 148px;
+  max-width: 180px;
   @apply position-absolute text-left;
-  bottom: 65%;
+  bottom: 68%;
   left: 66%;
   z-index: 500;
-  padding: 7px 9px;
-  color: #36584e;
-  border: 2px solid #fff;
-  border-radius: 13px 13px 13px 4px;
-  background: #fff8dc;
-  box-shadow: 0 7px 15px rgba(76, 59, 44, 0.2);
-  font-size: 9px;
-  font-weight: 850;
-  line-height: 1.25;
+  padding: 10px 12px;
+  color: var(--lad-palette-muted-700);
+  border: 2px solid var(--lad-palette-white);
+  border-radius: 16px 16px 16px 5px;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
+  box-shadow:
+    0 6px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
+    0 10px 19px
+      color-mix(in srgb, var(--lad-palette-muted-750) 18%, transparent);
+  font-size: 0.6875rem;
+  font-weight: var(--lad-font-weight-strong);
+  line-height: 1.4;
   pointer-events: none;
 }
 .ladi-speech::after {
@@ -188,19 +206,19 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   height: 10px;
   @apply position-absolute;
   bottom: -5px;
-  left: 7px;
+  left: 9px;
   transform: rotate(45deg);
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  background: #fff8dc;
+  border-right: 2px solid var(--lad-palette-white);
+  border-bottom: 2px solid var(--lad-palette-white);
+  background: var(--lad-palette-background);
 }
 .ladi-speech.opens-left {
   right: 66%;
   left: auto;
-  border-radius: 13px 13px 4px 13px;
+  border-radius: 16px 16px 5px 16px;
 }
 .ladi-speech.opens-left::after {
-  right: 7px;
+  right: 9px;
   left: auto;
 }
 .ladi-speech-enter-active,
@@ -230,7 +248,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
     transform: translateY(-2px) rotate(0);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .layout-entity {
     transition: none;
   }

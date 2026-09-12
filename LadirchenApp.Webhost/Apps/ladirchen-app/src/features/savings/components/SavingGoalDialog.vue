@@ -7,41 +7,41 @@
           <i /><i /><i />
         </div>
         <div class="goal-dialog-heading">
-          <p class="eyebrow mb-1">Clever sparen</p>
-          <v-card-title class="pa-0">{{ isEditing ? 'Sparziel bearbeiten' : 'Neues Sparziel' }}</v-card-title>
-          <p>{{ isEditing ? 'Passe deinen Wunsch ganz einfach an.' : 'Aus einem Wunsch wird Schritt für Schritt ein Ziel.' }}</p>
+          <p class="eyebrow mb-1">{{ t('savings.goalDialog.eyebrow') }}</p>
+          <v-card-title class="pa-0">{{ t(isEditing ? 'savings.goalDialog.editTitle' : 'savings.goalDialog.createTitle') }}</v-card-title>
+          <p>{{ t(isEditing ? 'savings.goalDialog.editDescription' : 'savings.goalDialog.createDescription') }}</p>
         </div>
-        <v-btn class="goal-dialog-close" aria-label="Dialog schließen" icon="mdi-close" size="small" variant="text" @click="close" />
+        <v-btn class="goal-dialog-close" :aria-label="t('savings.goalDialog.close')" icon="mdi-close" size="small" variant="text" @click="close" />
       </header>
 
       <v-card-text class="goal-dialog-content">
         <div class="goal-step">
           <span class="goal-step-number">1</span>
-          <div><strong>Was wünschst du dir?</strong><small>Wähle ein Bild und gib deinem Ziel einen Namen.</small></div>
+          <div><strong>{{ t('savings.goalDialog.steps.wish.title') }}</strong><small>{{ t('savings.goalDialog.steps.wish.description') }}</small></div>
         </div>
-        <div class="goal-icon-picker mb-3" aria-label="Symbol für das Sparziel auswählen">
+        <div class="goal-icon-picker mb-3" :aria-label="t('savings.goalDialog.iconAria')">
           <button v-for="icon in iconOptions" :key="icon" :class="{ active: goal.icon === icon }" type="button" @click="goal.icon = icon">{{ icon }}</button>
         </div>
-        <v-text-field v-model="goal.title" autofocus class="goal-field" density="comfortable" hide-details label="Mein Wunsch" placeholder="Zum Beispiel: Neues Fahrrad" variant="outlined" />
+        <v-text-field v-model="goal.title" autofocus class="goal-field" density="comfortable" hide-details :label="t('savings.goalDialog.wishLabel')" :placeholder="t('savings.goalDialog.wishPlaceholder')" variant="outlined" />
 
         <div class="goal-step mt-5">
           <span class="goal-step-number">2</span>
-          <div><strong>Wie viele Ladirchen brauchst du?</strong><small>Du kannst später jederzeit weiter einzahlen.</small></div>
+          <div><strong>{{ t('savings.goalDialog.steps.amount.title') }}</strong><small>{{ t('savings.goalDialog.steps.amount.description') }}</small></div>
         </div>
-        <div class="goal-target-picker" role="group" aria-label="Zielbetrag auswählen">
-          <button aria-label="Zehn Ladirchen weniger" :disabled="goal.target <= minimumTarget" type="button" @click="adjustTarget(-10)">−</button>
+        <div class="goal-target-picker" role="group" :aria-label="t('savings.goalDialog.amountAria')">
+          <button :aria-label="t('savings.goalDialog.decrease')" :disabled="goal.target <= minimumTarget" type="button" @click="adjustTarget(-10)">−</button>
           <div>
-            <small>Zielbetrag</small>
+            <small>{{ t('savings.goalDialog.target') }}</small>
             <output aria-live="polite"><strong>{{ validTargetPreview }}</strong><span>L</span></output>
           </div>
-          <button aria-label="Zehn Ladirchen mehr" type="button" @click="adjustTarget(10)">+</button>
+          <button :aria-label="t('savings.goalDialog.increase')" type="button" @click="adjustTarget(10)">+</button>
           <i class="target-spark target-spark--one" aria-hidden="true">✦</i>
           <i class="target-spark target-spark--two" aria-hidden="true">✧</i>
         </div>
 
         <div class="goal-step mt-5">
           <span class="goal-step-number">3</span>
-          <div><strong>Wer darf dein Ziel sehen?</strong><small>Du entscheidest, wer dich unterstützen kann.</small></div>
+          <div><strong>{{ t('savings.goalDialog.steps.visibility.title') }}</strong><small>{{ t('savings.goalDialog.steps.visibility.description') }}</small></div>
         </div>
         <div class="visibility-options">
           <button v-for="option in visibilityOptions" :key="option.value" :class="{ active: goal.visibility === option.value }" type="button" @click="goal.visibility = option.value">
@@ -51,27 +51,27 @@
 
         <div v-if="!isEditing" class="starter-bonus mt-4">
           <span class="bonus-gift" aria-hidden="true">🎁</span>
-          <p><small>Dein Start</small><strong>5 L geschenkt!</strong><span>Bleibt bis zum Ziel geschützt.</span></p>
+          <p><small>{{ t('savings.goalDialog.starter.eyebrow') }}</small><strong>{{ t('savings.goalDialog.starter.title') }}</strong><span>{{ t('savings.goalDialog.starter.description') }}</span></p>
           <span class="bonus-coin" aria-hidden="true"><b>L</b><em>5</em></span>
           <span class="bonus-spark bonus-spark--one" aria-hidden="true">✦</span>
           <span class="bonus-spark bonus-spark--two" aria-hidden="true">✧</span>
         </div>
 
-        <p v-if="isEditing && minimumTarget > 10" class="saved-hint mt-4">Bereits gespart: {{ minimumTarget }} L. Der Zielbetrag kann deshalb nicht darunter liegen.</p>
+        <p v-if="isEditing && minimumTarget > 10" class="saved-hint mt-4">{{ t('savings.goalDialog.savedHint', { amount: minimumTarget }) }}</p>
 
         <v-alert v-if="removeConfirmation" class="mt-4" color="error" density="compact" variant="tonal">
-          Nicht geschützte Ladirchen werden zurückgegeben. Ein noch gesperrter 5-L-Startbonus verfällt.
+          {{ t('savings.goalDialog.removeWarning') }}
         </v-alert>
       </v-card-text>
 
       <v-card-actions class="goal-dialog-actions">
-        <v-btn v-if="isEditing && !removeConfirmation" color="error" rounded="lg" variant="text" @click="removeConfirmation = true">Sparziel auflösen</v-btn>
+        <v-btn v-if="isEditing && !removeConfirmation" color="error" rounded="lg" variant="text" @click="removeConfirmation = true">{{ t('savings.goalDialog.remove') }}</v-btn>
         <template v-if="removeConfirmation">
-          <v-btn rounded="lg" variant="text" @click="removeConfirmation = false">Behalten</v-btn>
-          <v-btn color="error" rounded="lg" variant="flat" @click="remove">Jetzt auflösen</v-btn>
+          <v-btn rounded="lg" variant="text" @click="removeConfirmation = false">{{ t('savings.goalDialog.keep') }}</v-btn>
+          <v-btn color="error" rounded="lg" variant="flat" @click="remove">{{ t('savings.goalDialog.confirmRemove') }}</v-btn>
         </template>
         <template v-else>
-          <v-btn class="create-goal-button" color="primary" :disabled="!isValid" rounded="lg" variant="flat" @click="submit"><span aria-hidden="true">★</span>{{ isEditing ? 'Speichern' : 'Ziel starten' }}</v-btn>
+          <v-btn class="create-goal-button" color="primary" :disabled="!isValid" rounded="lg" variant="flat" @click="submit"><span aria-hidden="true">★</span>{{ t(isEditing ? 'common.save' : 'savings.goalDialog.start') }}</v-btn>
         </template>
       </v-card-actions>
     </v-card>
@@ -80,6 +80,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import type { GoalVisibility, NewGoal } from '@/domain/types';
 
@@ -96,6 +97,7 @@ const emit = defineEmits<{
   submit: [goal: NewGoal];
   remove: [];
 }>();
+const { t } = useI18n();
 
 const initialGoal = (): NewGoal => props.initialGoal
   ? { ...props.initialGoal }
@@ -103,11 +105,11 @@ const initialGoal = (): NewGoal => props.initialGoal
 const goal = reactive<NewGoal>(initialGoal());
 const removeConfirmation = ref(false);
 const iconOptions = ['✨', '🚲', '📷', '🎨', '🧱', '🦒', '🎮', '🎵'];
-const visibilityOptions: { icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[] = [
-  { icon: 'mdi-home-heart', shortTitle: 'Familie', subtitle: 'Alle dürfen es sehen', value: 'family' },
-  { icon: 'mdi-lock-outline', shortTitle: 'Nur ich', subtitle: 'Bleibt ganz privat', value: 'private' },
-  { icon: 'mdi-shield-account-outline', shortTitle: 'Mit Erwachsenen', subtitle: 'Bezugspersonen helfen', value: 'guardians' },
-];
+const visibilityOptions = computed<{ icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[]>(() => [
+  { icon: 'mdi-home-heart', shortTitle: t('savings.goalDialog.visibility.family.title'), subtitle: t('savings.goalDialog.visibility.family.description'), value: 'family' },
+  { icon: 'mdi-lock-outline', shortTitle: t('savings.goalDialog.visibility.private.title'), subtitle: t('savings.goalDialog.visibility.private.description'), value: 'private' },
+  { icon: 'mdi-shield-account-outline', shortTitle: t('savings.goalDialog.visibility.guardians.title'), subtitle: t('savings.goalDialog.visibility.guardians.description'), value: 'guardians' },
+]);
 const isEditing = computed(() => props.initialGoal !== null);
 const isValid = computed(() => goal.title.trim().length > 0 && Number.isFinite(goal.target) && goal.target >= props.minimumTarget);
 const validTargetPreview = computed(() => Number.isFinite(goal.target) ? Math.max(0, Math.round(goal.target)) : 0);
@@ -132,68 +134,81 @@ watch(() => props.modelValue, (isOpen) => {
     reset();
     removeConfirmation.value = false;
     window.setTimeout(() => window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
-      heading: 'Ladis Spartipp',
-      message: 'Wähle ein klares Ziel und einen Betrag, der gut zu deinem Wunsch passt. Kleine regelmäßige Schritte bringen dich oft leichter ans Ziel als ein großer Sprung.',
+      heading: t('savings.goalDialog.guideTitle'),
+      message: t('savings.goalDialog.guideMessage'),
     } })), 180);
   }
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .goal-dialog-card {
   max-height: calc(100dvh - 24px);
   @apply overflow-hidden;
-  border: 2px solid rgba(75, 143, 117, 0.2);
-  background: linear-gradient(180deg, #fffdf8, #f9fcfa) !important;
+  border: 2px solid var(--lad-border-success);
+  background: var(--lad-gradient-surface) !important;
   box-shadow:
-    0 10px 0 rgba(57, 110, 90, 0.13),
-    0 28px 65px rgba(43, 76, 65, 0.25) !important;
+    0 10px 0 var(--lad-shadow-raised-success),
+    var(--lad-shadow-dialog) !important;
 }
 .goal-dialog-header {
   padding: 17px 50px 15px 18px;
   @apply position-relative d-flex align-center overflow-hidden;
   gap: 12px;
-  border-bottom: 2px solid rgba(78, 143, 221, 0.12);
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
   background:
     radial-gradient(
       circle at 94% 5%,
-      rgba(255, 219, 105, 0.27),
+      color-mix(in srgb, var(--lad-palette-amber-250) 25%, transparent),
       transparent 27%
     ),
-    linear-gradient(145deg, #eaf7ff, #fff7dc);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100)
+    );
 }
 .goal-dialog-header::after {
   content: "✦";
   @apply position-absolute;
   top: 9px;
   right: 49px;
-  color: #e9a82f;
+  color: var(--lad-palette-amber-450);
   animation: goal-twinkle 1.7s ease-in-out infinite;
 }
 .goal-dialog-visual {
   width: 66px;
   height: 66px;
   @apply position-relative d-grid place-center flex-shrink-0;
-  border: 3px solid #fff;
+  border: 3px solid var(--lad-palette-white);
   border-radius: 23px;
-  background: linear-gradient(145deg, #77c9f2, #567fdb 65%, #8a65ca);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-blue) 65%,
+    var(--lad-palette-violet-400)
+  );
   box-shadow:
-    0 6px 0 rgba(60, 99, 174, 0.22),
-    0 10px 18px rgba(67, 101, 157, 0.14);
+    0 6px 0 color-mix(in srgb, var(--lad-palette-blue-strong) 20%, transparent),
+    0 10px 18px color-mix(in srgb, var(--lad-palette-blue-600) 15%, transparent);
   transform: rotate(-5deg);
   animation: goal-visual-float 2.8s ease-in-out infinite;
 }
 .goal-visual-icon {
-  font-size: 31px;
-  filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.35));
+  font-size: 1.9375rem;
+  filter: drop-shadow(
+    0 2px 0 color-mix(in srgb, var(--lad-palette-white) 35%, transparent)
+  );
 }
 .goal-dialog-visual i {
   width: 6px;
   height: 6px;
   @apply position-absolute;
   border-radius: 50%;
-  background: #fff4a8;
-  box-shadow: 0 0 7px #fff;
+  background: var(--lad-palette-amber-150);
+  box-shadow: 0 0 7px var(--lad-palette-white);
   animation: goal-twinkle 1.5s ease-in-out infinite;
 }
 .goal-dialog-visual i:nth-of-type(1) {
@@ -214,14 +229,14 @@ watch(() => props.modelValue, (isOpen) => {
   @apply min-w-0;
 }
 .goal-dialog-heading :deep(.v-card-title) {
-  font-size: 21px;
-  font-weight: 950;
+  font-size: 1.3125rem;
+  font-weight: var(--lad-font-weight-black);
   letter-spacing: -0.035em;
 }
 .goal-dialog-heading > p:last-child {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.35;
 }
 .goal-dialog-close {
@@ -241,13 +256,18 @@ watch(() => props.modelValue, (isOpen) => {
   width: 28px;
   height: 28px;
   @apply d-grid place-center flex-shrink-0;
-  color: #fff;
-  border: 2px solid #fff;
+  color: var(--lad-palette-white);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 10px;
-  background: linear-gradient(145deg, #54b68e, #2c8c68);
-  box-shadow: 0 3px 0 rgba(34, 118, 85, 0.2);
-  font-size: 11px;
-  font-weight: 950;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-mint),
+    var(--lad-palette-mint-strong)
+  );
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-teal-700) 20%, transparent);
+  font-size: 0.6875rem;
+  font-weight: var(--lad-font-weight-black);
   transform: rotate(-4deg);
 }
 .goal-step > div strong,
@@ -255,12 +275,12 @@ watch(() => props.modelValue, (isOpen) => {
   @apply d-block;
 }
 .goal-step > div strong {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .goal-step > div small {
   margin-top: 1px;
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .goal-icon-picker {
   @apply d-grid;
@@ -270,10 +290,10 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-icon-picker button {
   aspect-ratio: 1;
   @apply d-grid place-center cursor-pointer;
-  border: 2px solid rgba(78, 143, 221, 0.12);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
   border-radius: 11px;
-  background: #f3f9fc;
-  font-size: 18px;
+  background: var(--lad-palette-background);
+  font-size: 1.125rem;
   transition:
     transform 0.16s ease,
     background 0.16s ease;
@@ -282,14 +302,23 @@ watch(() => props.modelValue, (isOpen) => {
   transform: translateY(-2px) rotate(-4deg);
 }
 .goal-icon-picker button.active {
-  border-color: rgba(66, 153, 116, 0.45);
-  background: linear-gradient(145deg, #e4f8ee, #fff2c8);
-  box-shadow: 0 3px 0 rgba(52, 139, 103, 0.15);
+  border-color: color-mix(
+    in srgb,
+    var(--lad-palette-teal-550) 40%,
+    transparent
+  );
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
   transform: translateY(-2px) rotate(-4deg);
 }
 .goal-field :deep(.v-field) {
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
 }
 .goal-target-picker {
   min-height: 72px;
@@ -297,50 +326,65 @@ watch(() => props.modelValue, (isOpen) => {
   @apply position-relative d-grid align-center overflow-hidden;
   grid-template-columns: 52px 1fr 52px;
   gap: 10px;
-  border: 2px solid rgba(69, 143, 188, 0.2);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue-strong) 20%, transparent);
   border-radius: 20px;
   background:
     radial-gradient(
       circle at 88% 18%,
-      rgba(255, 217, 91, 0.28),
+      color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent),
       transparent 27%
     ),
-    linear-gradient(145deg, #eef8ff, #edf9f2);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-background)
+    );
   box-shadow:
-    0 5px 0 rgba(55, 125, 160, 0.11),
-    0 10px 18px rgba(55, 125, 160, 0.07);
+    0 5px 0 color-mix(in srgb, var(--lad-palette-blue-550) 10%, transparent),
+    0 10px 18px color-mix(in srgb, var(--lad-palette-blue-550) 8%, transparent);
 }
 .goal-target-picker button {
   width: 46px;
   height: 46px;
   @apply d-grid place-center cursor-pointer;
   z-index: 1;
-  color: #fff;
-  border: 3px solid #fff;
+  color: var(--lad-palette-white);
+  border: 3px solid var(--lad-palette-white);
   border-radius: 16px;
-  background: linear-gradient(145deg, #6abbed, #3e82d1);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-blue)
+  );
   box-shadow:
-    0 4px 0 #2f6cb3,
-    0 7px 11px rgba(48, 112, 181, 0.15);
-  font-size: 27px;
-  font-weight: 950;
+    0 4px 0 var(--lad-palette-blue-strong),
+    0 7px 11px
+      color-mix(in srgb, var(--lad-palette-blue-strong) 15%, transparent);
+  font-size: 1.6875rem;
+  font-weight: var(--lad-font-weight-black);
   line-height: 1;
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
 }
 .goal-target-picker button:last-of-type {
-  background: linear-gradient(145deg, #61c49b, #328e6b);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  );
   box-shadow:
-    0 4px 0 #267153,
-    0 7px 11px rgba(43, 130, 96, 0.15);
+    0 4px 0 var(--lad-palette-teal-700),
+    0 7px 11px
+      color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
 }
 .goal-target-picker button:hover:not(:disabled) {
   transform: translateY(-2px) rotate(-3deg) scale(1.04);
 }
 .goal-target-picker button:active:not(:disabled) {
   transform: translateY(3px) scale(0.96);
-  box-shadow: 0 1px 0 #2f6cb3;
+  box-shadow: 0 1px 0 var(--lad-palette-blue-strong);
 }
 .goal-target-picker button:disabled {
   cursor: default;
@@ -354,8 +398,8 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-target-picker small {
   @apply d-block;
   color: var(--lad-muted);
-  font-size: 9px;
-  font-weight: 850;
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-strong);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -365,17 +409,17 @@ watch(() => props.modelValue, (isOpen) => {
   color: var(--lad-blue-dark);
 }
 .goal-target-picker output strong {
-  font-size: 25px;
+  font-size: 1.5625rem;
   line-height: 1.15;
 }
 .goal-target-picker output span {
-  color: #47826d;
-  font-size: 13px;
-  font-weight: 950;
+  color: var(--lad-palette-teal-600);
+  font-size: 0.8125rem;
+  font-weight: var(--lad-font-weight-black);
 }
 .target-spark {
   @apply position-absolute;
-  color: #e4a42b;
+  color: var(--lad-palette-amber-500);
   font-style: normal;
   animation: goal-twinkle 1.6s ease-in-out infinite;
 }
@@ -398,17 +442,17 @@ watch(() => props.modelValue, (isOpen) => {
   @apply position-relative d-flex align-center text-left cursor-pointer;
   gap: 9px;
   color: var(--lad-text);
-  border: 2px solid rgba(74, 134, 111, 0.12);
+  border: 2px solid var(--lad-border-subtle);
   border-radius: 15px;
-  background: #fff;
+  background: var(--lad-surface);
 }
 .visibility-options button > .v-icon:first-child {
   width: 34px;
   height: 34px;
   @apply flex-shrink-0;
-  color: #4b829f;
+  color: var(--lad-color-info-strong);
   border-radius: 11px;
-  background: #e9f5fb;
+  background: var(--lad-color-info-soft);
 }
 .visibility-options button > span {
   @apply flex-grow-1 min-w-0;
@@ -418,23 +462,23 @@ watch(() => props.modelValue, (isOpen) => {
   @apply d-block;
 }
 .visibility-options strong {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .visibility-options small {
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .visibility-options button.active {
-  border-color: rgba(60, 174, 129, 0.45);
-  background: linear-gradient(145deg, #effaf5, #fff9e7);
-  box-shadow: 0 3px 0 rgba(48, 142, 105, 0.13);
+  border-color: var(--lad-border-success);
+  background: var(--lad-gradient-success);
+  box-shadow: 0 3px 0 var(--lad-shadow-raised-success);
 }
 .visibility-check {
   color: var(--lad-mint-dark);
 }
 .saved-hint {
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.35;
 }
 .starter-bonus {
@@ -442,18 +486,12 @@ watch(() => props.modelValue, (isOpen) => {
   padding: 10px 12px;
   @apply position-relative d-flex align-center overflow-hidden;
   gap: 10px;
-  border: 2px solid rgba(232, 171, 58, 0.3);
+  border: 2px solid var(--lad-border-warning);
   border-radius: 19px;
-  background:
-    radial-gradient(
-      circle at 88% 12%,
-      rgba(255, 217, 96, 0.42),
-      transparent 35%
-    ),
-    linear-gradient(145deg, #fff9d8, #e3f8ed 72%);
+  background: var(--lad-gradient-reward);
   box-shadow:
-    0 5px 0 rgba(184, 126, 34, 0.12),
-    0 10px 18px rgba(129, 100, 49, 0.08);
+    0 5px 0 var(--lad-shadow-raised-warning),
+    var(--lad-shadow-soft);
 }
 .starter-bonus::before {
   content: "";
@@ -466,7 +504,7 @@ watch(() => props.modelValue, (isOpen) => {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.75),
+    color-mix(in srgb, var(--lad-palette-white) 75%, transparent),
     transparent
   );
   animation: bonus-shine 3.1s ease-in-out infinite;
@@ -476,11 +514,12 @@ watch(() => props.modelValue, (isOpen) => {
   height: 45px;
   @apply d-grid place-center flex-shrink-0;
   z-index: 1;
-  border: 2px solid #fff;
+  border: 2px solid var(--lad-palette-white);
   border-radius: 15px;
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow: 0 4px 0 rgba(190, 132, 33, 0.12);
-  font-size: 27px;
+  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-amber-550) 12%, transparent);
+  font-size: 1.6875rem;
   transform-origin: bottom center;
   animation: bonus-wiggle 2.2s ease-in-out infinite;
 }
@@ -493,43 +532,44 @@ watch(() => props.modelValue, (isOpen) => {
   z-index: 1;
 }
 .starter-bonus p small {
-  color: #8a6728;
-  font-size: 8px;
-  font-weight: 900;
+  color: var(--lad-palette-amber-650);
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .starter-bonus p strong {
-  color: #74500f;
-  font-size: 14px;
+  color: var(--lad-palette-amber-700);
+  font-size: 0.875rem;
 }
 .starter-bonus p span {
   margin-top: 1px;
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .bonus-coin {
   width: 49px;
   height: 49px;
   @apply position-relative d-grid place-center flex-shrink-0;
   z-index: 1;
-  color: #8a5707;
-  border: 3px solid #fff5c8;
+  color: var(--lad-palette-amber-700);
+  border: 3px solid var(--lad-palette-amber-100);
   border-radius: 50%;
   background: radial-gradient(
     circle at 36% 29%,
-    #fff7ad 0 8%,
-    #ffd65e 9% 53%,
-    #efa925 54% 100%
+    var(--lad-palette-amber-150) 0 8%,
+    var(--lad-palette-yellow) 9% 53%,
+    var(--lad-palette-amber-450) 54% 100%
   );
   box-shadow:
-    inset 0 -5px 0 rgba(184, 113, 17, 0.2),
-    0 5px 0 #c98a20,
-    0 9px 14px rgba(160, 107, 24, 0.16);
+    inset 0 -5px 0
+      color-mix(in srgb, var(--lad-palette-amber-600) 20%, transparent),
+    0 5px 0 var(--lad-palette-amber-550),
+    0 9px 14px color-mix(in srgb, var(--lad-palette-amber-650) 15%, transparent);
   animation: bonus-coin-bounce 2.1s ease-in-out infinite;
 }
 .bonus-coin b {
-  font-size: 20px;
+  font-size: 1.25rem;
   line-height: 1;
 }
 .bonus-coin em {
@@ -537,18 +577,18 @@ watch(() => props.modelValue, (isOpen) => {
   right: -5px;
   bottom: -3px;
   padding: 2px 5px;
-  color: #fff;
-  border: 2px solid #fff;
-  border-radius: 999px;
-  background: #48a77f;
-  font-size: 9px;
+  color: var(--lad-palette-white);
+  border: 2px solid var(--lad-palette-white);
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-teal-550);
+  font-size: 0.5625rem;
   font-style: normal;
-  font-weight: 950;
+  font-weight: var(--lad-font-weight-black);
 }
 .bonus-spark {
   @apply position-absolute;
   z-index: 2;
-  color: #dc9b24;
+  color: var(--lad-palette-amber-500);
   animation: goal-twinkle 1.4s ease-in-out infinite;
 }
 .bonus-spark--one {
@@ -563,8 +603,9 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-dialog-actions {
   padding: 11px 18px 15px !important;
   @apply flex-shrink-0 d-flex justify-end ga-2;
-  border-top: 1px solid rgba(70, 129, 108, 0.12);
-  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid
+    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+  background: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
 }
 .goal-dialog-actions > :first-child:not(:last-child) {
   @apply me-auto;
@@ -572,11 +613,17 @@ watch(() => props.modelValue, (isOpen) => {
 .create-goal-button {
   min-height: 43px !important;
   padding-inline: 16px !important;
-  border: 2px solid rgba(255, 255, 255, 0.82) !important;
-  background: linear-gradient(145deg, #55bb91, #2c956d) !important;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent) !important;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-mint),
+    var(--lad-palette-mint-strong)
+  ) !important;
   box-shadow:
-    0 4px 0 #23795a,
-    0 8px 14px rgba(39, 131, 96, 0.16) !important;
+    0 4px 0 var(--lad-palette-teal-700),
+    0 8px 14px
+      color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent) !important;
   text-transform: none;
   letter-spacing: 0;
 }
@@ -584,7 +631,7 @@ watch(() => props.modelValue, (isOpen) => {
   gap: 6px;
 }
 .create-goal-button :deep(.v-btn__content) > span {
-  color: #fff1a5;
+  color: var(--lad-palette-amber-150);
   animation: goal-twinkle 1.3s ease-in-out infinite;
 }
 @keyframes goal-visual-float {
@@ -638,7 +685,7 @@ watch(() => props.modelValue, (isOpen) => {
     left: 115%;
   }
 }
-@media (max-width: 390px) {
+@include respond-down(narrow) {
   .goal-icon-picker {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -649,7 +696,7 @@ watch(() => props.modelValue, (isOpen) => {
     padding-inline: 14px !important;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .goal-dialog-visual,
   .goal-dialog-header::after,
   .target-spark,

@@ -15,7 +15,8 @@
   </svg>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .animated-wish-icon {
   width: 45px;
   height: 45px;
@@ -23,7 +24,7 @@
 }
 .wish-orbit {
   fill: none;
-  stroke: #84b9ed;
+  stroke: var(--lad-palette-blue-250);
   stroke-dasharray: 4 5;
   stroke-linecap: round;
   stroke-width: 2;
@@ -35,23 +36,23 @@
   animation: wish-jar-bob 3.2s ease-in-out infinite;
 }
 .jar-lid {
-  fill: #4e8fdd;
-  stroke: #2f6fb8;
+  fill: var(--lad-palette-blue);
+  stroke: var(--lad-palette-blue-strong);
   stroke-linejoin: round;
   stroke-width: 2;
 }
 .jar-body {
-  fill: #dff1ff;
-  stroke: #4e8fdd;
+  fill: var(--lad-palette-background);
+  stroke: var(--lad-palette-blue);
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .jar-glow {
-  fill: rgba(255, 255, 255, 0.76);
+  fill: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
 }
 .wish-heart {
-  fill: #ffb84d;
-  stroke: #d58525;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-550);
   stroke-linejoin: round;
   stroke-width: 1.5;
   transform-box: fill-box;
@@ -59,8 +60,8 @@
   animation: wish-heart-pulse 2.4s ease-in-out infinite;
 }
 .wish-star {
-  fill: #ffd15f;
-  stroke: #d88c24;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-500);
   stroke-linejoin: round;
   stroke-width: 1.5;
   transform-box: fill-box;
@@ -70,7 +71,7 @@
   animation: wish-star-twinkle 2.1s ease-in-out infinite;
 }
 .wish-spark {
-  fill: #71c9a4;
+  fill: var(--lad-palette-teal-400);
   transform-box: fill-box;
   transform-origin: center;
   animation: wish-spark 2.8s ease-in-out infinite;
@@ -123,7 +124,7 @@
     stroke-dashoffset: -36;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .wish-orbit,
   .wish-jar,
   .wish-heart,

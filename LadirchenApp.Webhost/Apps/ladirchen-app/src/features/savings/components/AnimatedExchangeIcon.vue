@@ -3,7 +3,7 @@
     class="exchange-icon"
     viewBox="0 0 52 52"
     role="img"
-    :aria-label="`Wechselkurs zwischen Ladirchen und ${currencyCode}`"
+    :aria-label="t('savings.piggy.exchangeAria', { currency: currencyCode })"
   >
     <circle class="exchange-backdrop" cx="26" cy="26" r="25" />
 
@@ -34,24 +34,27 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ currencyCode: string }>();
+const { t } = useI18n();
 
 const currencyMark = computed(() => ({ CHF: 'Fr', EUR: '€', HUF: 'Ft' })[props.currencyCode] ?? '¤');
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .exchange-icon {
   width: 42px;
   height: 42px;
   @apply d-block overflow-visible;
 }
 .exchange-backdrop {
-  fill: #fff0c3;
+  fill: var(--lad-palette-amber-100);
 }
 .exchange-arrows {
   fill: none;
-  stroke: #32a77d;
+  stroke: var(--lad-palette-teal-550);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
@@ -61,42 +64,44 @@ const currencyMark = computed(() => ({ CHF: 'Fr', EUR: '€', HUF: 'Ft' })[props
 .exchange-coin {
   transform-box: fill-box;
   transform-origin: center;
-  filter: drop-shadow(0 2px 1px rgba(87, 61, 26, 0.18));
+  filter: drop-shadow(
+    0 2px 1px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent)
+  );
 }
 .exchange-coin > circle:first-child {
   stroke-width: 2;
 }
 .exchange-coin .coin-ring {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.62);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 60%, transparent);
   stroke-width: 1.2;
 }
 .exchange-coin text {
   text-anchor: middle;
   font-family: inherit;
   font-size: 9px;
-  font-weight: 950;
+  font-weight: var(--lad-font-weight-black);
 }
 .exchange-coin--ladi {
   animation: coin-ladi-bob 2.8s ease-in-out infinite;
 }
 .exchange-coin--ladi > circle:first-child {
-  fill: #ffc94f;
-  stroke: #dd941f;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-500);
 }
 .exchange-coin--ladi text {
-  fill: #7d520c;
+  fill: var(--lad-palette-amber-700);
   font-size: 12px;
 }
 .exchange-coin--family {
   animation: coin-family-bob 2.8s -0.7s ease-in-out infinite;
 }
 .exchange-coin--family > circle:first-child {
-  fill: #d9f4e8;
-  stroke: #42b68a;
+  fill: var(--lad-palette-teal-150);
+  stroke: var(--lad-palette-mint);
 }
 .exchange-coin--family text {
-  fill: #247759;
+  fill: var(--lad-palette-teal-700);
   font-size: 7px;
 }
 .coin-glint {
@@ -107,10 +112,10 @@ const currencyMark = computed(() => ({ CHF: 'Fr', EUR: '€', HUF: 'Ft' })[props
   animation: coin-shine 2.2s ease-in-out infinite;
 }
 .exchange-spark {
-  fill: #fff;
+  fill: var(--lad-palette-white);
   transform-box: fill-box;
   transform-origin: center;
-  filter: drop-shadow(0 0 3px #ffd760);
+  filter: drop-shadow(0 0 3px var(--lad-palette-yellow));
   animation: exchange-sparkle 1.9s -0.4s ease-in-out infinite;
 }
 @keyframes exchange-orbit {
@@ -161,7 +166,7 @@ const currencyMark = computed(() => ({ CHF: 'Fr', EUR: '€', HUF: 'Ft' })[props
     transform: scale(1.15) rotate(22deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .exchange-arrows,
   .exchange-coin,
   .coin-glint,

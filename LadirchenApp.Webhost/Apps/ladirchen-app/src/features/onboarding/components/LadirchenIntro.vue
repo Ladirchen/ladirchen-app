@@ -1,6 +1,6 @@
 <template>
   <Transition name="intro-fade" @after-leave="emit('finished')">
-    <div v-if="visible" class="app-intro" aria-live="polite" aria-label="Ladirchen wird geladen">
+    <div v-if="visible" class="app-intro" aria-live="polite" :aria-label="t('onboarding.intro.loadingAria')">
       <div class="intro-sun" aria-hidden="true" />
       <div class="intro-cloud intro-cloud-one" aria-hidden="true" />
       <div class="intro-cloud intro-cloud-two" aria-hidden="true" />
@@ -10,9 +10,9 @@
         </div>
         <div class="intro-logo-row">
           <span class="intro-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
-          <h1>Ladirchen</h1>
+          <h1>{{ t('common.appName') }}</h1>
         </div>
-        <p>Super-Ladi bringt die Familienwelt in Ordnung …</p>
+        <p>{{ t('onboarding.intro.message') }}</p>
         <div class="intro-dots" aria-hidden="true"><i /><i /><i /></div>
       </div>
     </div>
@@ -21,10 +21,12 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 
 const emit = defineEmits<{ finished: [] }>();
+const { t } = useI18n();
 const visible = ref(true);
 let timer: number | undefined;
 
@@ -38,12 +40,18 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .app-intro {
   @apply position-fixed inset-0;
   z-index: 1000;
   @apply d-grid place-center overflow-hidden;
-  background: linear-gradient(155deg, #dff7ff 0%, #f2ffe7 58%, #fff2c9 100%);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-background) 0%,
+    var(--lad-palette-background) 58%,
+    var(--lad-palette-amber-100) 100%
+  );
 }
 .intro-sun {
   width: 120px;
@@ -52,8 +60,9 @@ onUnmounted(() => {
   top: -30px;
   right: -25px;
   border-radius: 50%;
-  background: #ffe078;
-  box-shadow: 0 0 0 22px rgba(255, 224, 120, 0.2);
+  background: var(--lad-palette-amber-250);
+  box-shadow: 0 0 0 22px
+    color-mix(in srgb, var(--lad-palette-amber-250) 20%, transparent);
   animation: intro-sun-pulse 2.2s ease-in-out infinite;
 }
 .intro-cloud {
@@ -61,7 +70,7 @@ onUnmounted(() => {
   height: 35px;
   @apply position-absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
   filter: blur(0.2px);
 }
 .intro-cloud::before,
@@ -98,12 +107,14 @@ onUnmounted(() => {
   @apply position-relative;
   padding: 28px 26px 24px;
   @apply text-center;
-  border: 3px solid rgba(64, 123, 101, 0.13);
+  border: 3px solid
+    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
   border-radius: 38px;
-  background: rgba(255, 255, 255, 0.82);
+  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
   box-shadow:
-    0 18px 0 rgba(69, 131, 105, 0.12),
-    0 30px 55px rgba(54, 97, 83, 0.16);
+    0 18px 0 color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent),
+    0 30px 55px
+      color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   backdrop-filter: blur(10px);
   animation: intro-card-arrive 650ms cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
@@ -139,16 +150,16 @@ onUnmounted(() => {
 }
 .intro-logo-row h1 {
   @apply ma-0;
-  color: #294d41;
-  font-size: 35px;
+  color: var(--lad-palette-text);
+  font-size: 2.1875rem;
   line-height: 0.9;
   letter-spacing: -0.06em;
   transform: translateY(1px);
 }
 .intro-card > p {
   margin: 8px 0 0;
-  color: #6b8077;
-  font-size: 12px;
+  color: var(--lad-palette-muted);
+  font-size: 0.75rem;
   @apply font-weight-bold;
 }
 .intro-dots {
@@ -161,7 +172,7 @@ onUnmounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #4db58b;
+  background: var(--lad-palette-mint);
   animation: intro-dot 900ms ease-in-out infinite;
 }
 .intro-dots i:nth-child(2) {
@@ -217,7 +228,7 @@ onUnmounted(() => {
     translate: 14px 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .intro-card,
   .intro-sun,
   .intro-cloud,

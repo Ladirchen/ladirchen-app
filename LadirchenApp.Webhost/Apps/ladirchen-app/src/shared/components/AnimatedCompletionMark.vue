@@ -13,7 +13,8 @@
 withDefaults(defineProps<{ size?: number }>(), { size: 88 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .completion-mark {
   width: var(--completion-size);
   height: var(--completion-size);
@@ -25,29 +26,36 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
   height: 64%;
   @apply position-relative d-grid place-center;
   z-index: 2;
-  color: #fff;
-  border: 4px solid rgba(255, 255, 255, 0.94);
+  color: var(--lad-palette-white);
+  border: 4px solid
+    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
   border-radius: 22px;
-  background: linear-gradient(145deg, #62c9a0, #318d73);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  );
   box-shadow:
-    0 6px 0 #28745c,
-    0 12px 23px rgba(43, 125, 96, 0.2);
+    0 6px 0 var(--lad-palette-teal-700),
+    0 12px 23px color-mix(in srgb, var(--lad-palette-teal-700) 20%, transparent);
   transform: rotate(-5deg);
   animation: completion-pop 2.8s ease-in-out infinite;
 }
 .completion-core :deep(.v-icon) {
   font-size: calc(var(--completion-size) * 0.31);
-  filter: drop-shadow(0 2px 0 rgba(25, 91, 69, 0.18));
+  filter: drop-shadow(
+    0 2px 0 color-mix(in srgb, var(--lad-palette-teal-700) 18%, transparent)
+  );
 }
 .completion-orbit {
   @apply position-absolute inset-0;
-  border: 2px solid rgba(81, 185, 147, 0.25);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
   border-radius: 32%;
   animation: completion-orbit 7s linear infinite;
 }
 .completion-orbit--two {
   inset: 9%;
-  border-color: rgba(91, 158, 210, 0.22);
+  border-color: color-mix(in srgb, var(--lad-palette-blue) 20%, transparent);
   border-style: dashed;
   animation-duration: 5s;
   animation-direction: reverse;
@@ -55,9 +63,10 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
 .completion-spark {
   @apply position-absolute;
   z-index: 3;
-  color: #e7ad2f;
+  color: var(--lad-palette-amber-450);
   font-style: normal;
-  text-shadow: 0 0 8px rgba(255, 228, 132, 0.9);
+  text-shadow: 0 0 8px
+    color-mix(in srgb, var(--lad-palette-amber-250) 90%, transparent);
   animation: completion-spark 1.9s ease-in-out infinite;
 }
 .completion-spark--one {
@@ -68,14 +77,14 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
 .completion-spark--two {
   bottom: 6%;
   left: 4%;
-  color: #709ed3;
+  color: var(--lad-palette-indigo-350);
   font-size: calc(var(--completion-size) * 0.13);
   animation-delay: -0.7s;
 }
 .completion-spark--three {
   top: 19%;
   left: 1%;
-  color: #73c5a6;
+  color: var(--lad-palette-teal-400);
   font-size: calc(var(--completion-size) * 0.09);
   animation-delay: -1.2s;
 }
@@ -117,7 +126,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
     transform: scale(1.2) rotate(16deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .completion-mark,
   .completion-core,
   .completion-orbit,

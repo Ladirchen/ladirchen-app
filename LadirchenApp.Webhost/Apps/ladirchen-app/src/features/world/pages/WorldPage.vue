@@ -3,25 +3,25 @@
     <section class="world-hero px-4 pt-5">
       <div class="d-flex align-start justify-space-between ga-3">
         <div v-if="store.viewerRole === 'child'">
-          <p class="eyebrow">{{ store.activeChild.name }}s Familienwelt</p>
-          <h1 class="world-title">Jeder Beitrag macht unser Zuhause lebendiger.</h1>
+          <p class="eyebrow">{{ t('world.hero.childEyebrow', { name: store.activeChild.name }) }}</p>
+          <h1 class="world-title">{{ t('world.hero.childTitle') }}</h1>
         </div>
         <div v-else>
-          <p class="eyebrow">Bezugspersonen-Übersicht</p>
-          <h1 class="world-title">So geht es allen Kindern heute.</h1>
+          <p class="eyebrow">{{ t('world.hero.guardianEyebrow') }}</p>
+          <h1 class="world-title">{{ t('world.hero.guardianTitle') }}</h1>
         </div>
-        <button :aria-label="`Hausenergie öffnen: ${store.familyEnergy} Prozent`" class="energy-trigger text-right flex-shrink-0" type="button" @click="energyDialogOpen = true">
+        <button :aria-label="t('world.hero.energyAria', { value: store.familyEnergy })" class="energy-trigger text-right flex-shrink-0" type="button" @click="energyDialogOpen = true">
           <AnimatedHouseEnergy :size="43" />
           <span class="energy-trigger-copy">
             <strong class="energy-value">{{ store.familyEnergy }} %</strong>
-            <span class="energy-label">Hausenergie</span>
+            <span class="energy-label">{{ t('world.hero.energy') }}</span>
           </span>
           <v-icon class="energy-chevron" icon="mdi-chevron-right" size="15" />
         </button>
       </div>
 
       <FamilyWorldScene
-        :accessories="store.accessories"
+        :accessories="localizedAccessories"
         :effects="store.activeWorldEffects"
         :energy="store.familyEnergy"
         :house-level="store.houseLevel"
@@ -43,125 +43,114 @@
 
     <div class="page-padding pt-5">
       <template v-if="store.viewerRole === 'guardian' && store.permissions.canManageContent">
-        <section class="guardian-world mb-6">
-          <SectionHeader eyebrow="Heute" title="Kinder im Überblick">
-            <template #action><span class="rating-rule">Hausziel: mindestens 60 % Energie</span></template>
-          </SectionHeader>
-          <div class="guardian-child-grid">
-            <button
-              v-for="child in childMembers"
-              :key="child.id"
-              class="guardian-child"
-              :class="{ selected: child.id === store.activeChildId }"
-              type="button"
-              @click="store.selectChildForGuardian(child.id)"
-            >
-              <span class="guardian-child-avatar">{{ child.avatar }}</span>
-              <span class="guardian-child-copy"><strong>{{ child.name }}</strong><small>{{ store.contributionProgress(child.id) }} % Energie</small></span>
-              <span class="guardian-child-rating" :class="{ ready: store.contributionProgress(child.id) >= 60 }">{{ ratingLabel(child.id) }}</span>
-            </button>
-          </div>
-        </section>
-
         <v-card class="management-card pa-4 mb-6" color="blue-lighten-5" elevation="0" rounded="xl">
           <div class="d-flex align-center justify-space-between ga-3 mb-3">
-            <div><strong>Direkt verwalten</strong><p class="text-caption text-medium-emphasis">Neue Inhalte für {{ store.activeChild.name }} oder die Familie anlegen.</p></div>
+            <div><strong>{{ t('world.management.title') }}</strong><p class="text-caption text-medium-emphasis">{{ t('world.management.description', { name: store.activeChild.name }) }}</p></div>
             <v-icon color="info">mdi-shield-account-outline</v-icon>
           </div>
           <div class="management-actions">
-            <v-btn color="primary" prepend-icon="mdi-plus" rounded="lg" size="small" to="/beitraege?new=1" variant="flat">Beitrag</v-btn>
-            <v-btn color="info" prepend-icon="mdi-target" rounded="lg" size="small" to="/wuensche?new=1" variant="tonal">Sparziel</v-btn>
-            <v-btn color="warning" prepend-icon="mdi-gift-outline" rounded="lg" size="small" to="/shop?new=1" variant="tonal">Shop-Element</v-btn>
-            <v-btn color="secondary" prepend-icon="mdi-hand-coin-outline" rounded="lg" size="small" variant="tonal" @click="openGiftDialog">Ladirchen schenken</v-btn>
+            <v-btn color="primary" prepend-icon="mdi-plus" rounded="lg" size="small" to="/beitraege?new=1" variant="flat">{{ t('world.management.contribution') }}</v-btn>
+            <v-btn color="warning" prepend-icon="mdi-rocket-launch-outline" rounded="lg" size="small" to="/beitraege?promotion=1" variant="tonal">{{ t('world.management.promotion') }}</v-btn>
+            <v-btn color="info" prepend-icon="mdi-target" rounded="lg" size="small" to="/wuensche?new=1" variant="tonal">{{ t('world.management.childGoal') }}</v-btn>
+            <v-btn color="info" prepend-icon="mdi-account-group-outline" rounded="lg" size="small" to="/wuensche?family=1" variant="tonal">{{ t('world.management.familyGoal') }}</v-btn>
+            <v-btn color="warning" prepend-icon="mdi-gift-outline" rounded="lg" size="small" to="/shop?new=1" variant="tonal">{{ t('world.management.reward') }}</v-btn>
+            <v-btn color="secondary" prepend-icon="mdi-hand-coin-outline" rounded="lg" size="small" variant="tonal" @click="openGiftDialog">{{ t('world.management.gift') }}</v-btn>
+            <v-btn color="primary" prepend-icon="mdi-account-cog-outline" rounded="lg" size="small" variant="tonal" @click="store.openFamilySetup">{{ t('world.management.family') }}</v-btn>
+            <v-btn color="success" prepend-icon="mdi-piggy-bank-outline" rounded="lg" size="small" variant="tonal" @click="store.piggyBankOpen = true">{{ t('world.management.money') }}</v-btn>
           </div>
         </v-card>
 
-        <v-card class="energy-simulator pa-4 mb-6" elevation="0" rounded="xl">
-          <div class="d-flex align-center justify-space-between ga-3">
-            <div><p class="eyebrow mb-1">Frontend-Prototyp</p><strong>Energie-Level simulieren</strong></div>
-            <strong class="simulated-value">{{ store.familyEnergy }} %</strong>
-          </div>
-          <v-slider
-            class="mt-3"
-            color="primary"
-            hide-details
-            :model-value="store.familyEnergy"
-            step="10"
-            thumb-label
-            @update:model-value="store.setSimulatedEnergy(Number($event))"
-          />
-          <div class="d-flex align-center justify-space-between mt-2 ga-2">
-            <span class="text-caption text-medium-emphasis">Verändert nur die Darstellung im Prototyp.</span>
-            <v-btn v-if="store.simulatedEnergy !== null" rounded="lg" size="x-small" variant="text" @click="store.setSimulatedEnergy(null)">Zurücksetzen</v-btn>
-          </div>
-        </v-card>
       </template>
 
       <v-card v-else-if="store.viewerRole === 'guardian'" class="supporter-card pa-4 mb-6" elevation="0" rounded="xl">
         <div class="d-flex align-center ga-3">
           <v-avatar color="primary" size="46" variant="tonal"><v-icon icon="mdi-hand-heart-outline" /></v-avatar>
           <div class="flex-grow-1 min-w-0">
-            <p class="eyebrow mb-1">Zielbegleitung</p>
-            <strong>Du siehst freigegebene Kinderziele</strong>
-            <p class="text-caption text-medium-emphasis mt-1">Familienziele und Verwaltungsbereiche bleiben für Administratoren geschützt.</p>
+            <p class="eyebrow mb-1">{{ t('world.supporter.eyebrow') }}</p>
+            <strong>{{ t('world.supporter.title') }}</strong>
+            <p class="text-caption text-medium-emphasis mt-1">{{ t('world.supporter.description') }}</p>
           </div>
         </div>
-        <v-btn class="mt-4" color="primary" prepend-icon="mdi-gift-outline" rounded="lg" to="/wuensche" variant="flat" width="100%">Kinderziele unterstützen</v-btn>
+        <v-btn class="mt-4" color="primary" prepend-icon="mdi-gift-outline" rounded="lg" to="/wuensche" variant="flat" width="100%">{{ t('world.supporter.action') }}</v-btn>
       </v-card>
 
       <v-card v-if="store.viewerRole === 'child' && activePromotion" class="promotion-banner pa-4 mb-6" color="amber-lighten-5" elevation="0" rounded="xl" role="button" tabindex="0" @click="promoDetailsOpen = true" @keydown.enter="promoDetailsOpen = true">
+        <div class="promotion-stars" aria-hidden="true"><i>✦</i><i>✧</i><i>★</i><i>✦</i><i>✧</i><i>·</i></div>
         <div class="d-flex align-center ga-3">
-          <div class="promotion-gem" aria-hidden="true"><v-icon icon="mdi-diamond-stone" size="27" /><i>✦</i><i>✧</i></div>
+          <div class="promotion-gem" aria-hidden="true"><v-icon class="promotion-rocket" icon="mdi-rocket-launch" size="29" /><span><v-icon icon="mdi-diamond-stone" size="12" /></span><i>✦</i><i>✧</i></div>
           <div class="flex-grow-1">
-            <p class="eyebrow mb-1">Bonusaktion</p>
+            <p class="eyebrow mb-1">{{ t('world.promotion.eyebrow') }}</p>
             <strong>{{ activePromotion.title }}</strong>
-            <p class="text-caption text-medium-emphasis">{{ contributionTitle(activePromotion.contributionId) }} bis {{ activePromotion.deadline }} Uhr</p>
+            <p class="text-caption text-medium-emphasis">{{ t('world.promotion.until', { title: contributionTitle(activePromotion.contributionId), time: activePromotion.deadline }) }}</p>
+            <PromotionCountdown class="promotion-banner-countdown mt-2" :deadline="activePromotion.deadline" />
           </div>
-          <v-chip color="warning" size="small">×{{ activePromotion.multiplier }}</v-chip>
+          <div class="promotion-boost" :aria-label="t('world.promotion.boostAria')">
+            <strong>×{{ activePromotion.multiplier }}</strong>
+            <small>{{ t('world.promotion.upTo', { value: promotionRewardTotal }) }}</small>
+          </div>
         </div>
       </v-card>
 
       <section v-if="store.viewerRole === 'child'" class="contribution-board">
         <div class="contribution-board-heading">
           <div>
-            <p class="eyebrow mb-1">Heute für dich</p>
-            <h2>Meine Aufgaben</h2>
-            <p>Bestätigte Grundbeiträge verändern eure Familienwelt.</p>
+            <p class="eyebrow mb-1">{{ t('world.tasks.eyebrow') }}</p>
+            <h2>{{ t('world.tasks.title') }}</h2>
+            <p>{{ t('world.tasks.description') }}</p>
           </div>
-          <RouterLink class="all-contributions" to="/beitraege"><v-icon icon="mdi-view-grid-plus-outline" size="19" /><span>Alle Beiträge</span><v-icon icon="mdi-chevron-right" size="17" /></RouterLink>
+          <RouterLink class="all-contributions" to="/beitraege"><v-icon icon="mdi-view-grid-plus-outline" size="19" /><span>{{ t('world.tasks.all') }}</span><v-icon icon="mdi-chevron-right" size="17" /></RouterLink>
         </div>
 
         <div v-if="personalContributions.length" class="contribution-list">
-          <v-card v-for="contribution in personalContributions" :key="contribution.id" class="contribution-card pa-3" elevation="0" rounded="xl">
-            <div class="d-flex align-center ga-3">
-              <div class="contribution-icon">{{ contribution.icon }}</div>
+          <v-card v-for="contribution in personalContributions" :key="contribution.id" class="home-contribution-item pa-4" :data-ladi-heading="t('world.tasks.tip')" :data-ladi-tip="contribution.description" elevation="0" rounded="xl">
+            <div class="d-flex align-start ga-3">
+              <v-avatar class="home-task-icon" color="blue-lighten-5" rounded="lg" size="58">{{ contribution.icon }}</v-avatar>
               <div class="flex-grow-1 min-w-0">
-                <strong class="d-block text-body-small">{{ contribution.title }}</strong>
-                <p class="text-caption text-medium-emphasis">{{ contribution.dueLabel }} · +{{ store.rewardForContribution(contribution.id) }} L</p>
+                <div class="d-flex align-center flex-wrap ga-2 mb-1">
+                  <strong>{{ contribution.title }}</strong>
+                  <span class="home-contribution-label" :class="contribution.kind === 'basic' ? 'home-contribution-label--basic' : 'home-contribution-label--special'">
+                    <v-icon :icon="contribution.kind === 'basic' ? 'mdi-home-heart' : 'mdi-creation'" size="13" />{{ contribution.kind === 'basic' ? t('world.tasks.basic') : t('world.tasks.extra') }}
+                  </span>
+                  <span class="home-contribution-label home-contribution-label--mine"><v-icon icon="mdi-account-heart" size="13" />{{ t('world.tasks.forYou') }}</span>
+                </div>
+                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
+                <div class="mt-3 home-contribution-meta">
+                  <span class="home-meta-chip home-meta-chip--time"><ContributionMetaIcon kind="time" /><span><small>{{ t('world.tasks.when') }}</small><strong>{{ contribution.dueLabel }}</strong></span></span>
+                  <span class="home-meta-chip home-meta-chip--reward"><ContributionMetaIcon kind="reward" /><span><small>{{ t('world.tasks.earn') }}</small><strong>{{ t('world.tasks.coins', { value: store.rewardForContribution(contribution.id) }) }}</strong></span></span>
+                  <span v-if="contribution.kind === 'basic'" class="home-meta-chip home-meta-chip--energy"><ContributionMetaIcon kind="energy" /><span><small>{{ t('world.tasks.house') }}</small><strong>{{ t('world.tasks.energy', { value: contribution.energy }) }}</strong></span></span>
+                </div>
+                <ActiveContributionBonus
+                  v-if="promotionFor(contribution.id)"
+                  class="mt-2"
+                  :deadline="promotionFor(contribution.id)?.deadline ?? '00:00'"
+                  :multiplier="promotionFor(contribution.id)?.multiplier ?? 1"
+                />
+                <div v-if="contribution.invitedChildIds?.length" class="home-invited-team mt-3">
+                  <span>{{ t('world.tasks.together') }}</span>
+                  <v-chip v-for="name in invitedChildNames(contribution.invitedChildIds)" :key="name" color="info" size="x-small" variant="tonal">{{ name }}</v-chip>
+                </div>
               </div>
-              <v-chip v-if="contribution.status === 'pending'" color="warning" size="small" variant="tonal">Wartet</v-chip>
-              <v-btn
-                v-else
-                class="raised-button"
-                color="info"
-                rounded="lg"
-                size="small"
-                variant="flat"
-                @click="store.submitContribution(contribution.id)"
-              >
-                Fertig
+            </div>
+            <div class="d-flex align-center justify-end flex-wrap ga-2 mt-3">
+              <div v-if="contribution.status === 'pending'" class="home-pending" role="status">
+                <span class="home-pending-icon" aria-hidden="true">✨</span>
+                <span><strong>{{ t('world.tasks.pendingTitle') }}</strong><small>{{ t('world.tasks.pendingDescription') }}</small></span>
+              </div>
+              <v-btn v-else class="home-finish-button" color="info" rounded="lg" variant="flat" @click="store.submitContribution(contribution.id)">
+                <span class="home-finish-check" aria-hidden="true"><v-icon icon="mdi-check-bold" size="22" /></span>
+                <span>{{ t('world.tasks.finish') }}</span>
               </v-btn>
             </div>
           </v-card>
         </div>
 
         <v-card v-else class="contribution-empty pa-4" elevation="0" rounded="xl">
-          <LadiMascot :score="emptyLadiScore" :show-score="false" :size="82" />
+          <AnimatedCompletionMark :size="80" />
           <div class="flex-grow-1 min-w-0">
             <p class="eyebrow mb-1">{{ emptyTaskEyebrow }}</p>
             <strong>{{ emptyTaskTitle }}</strong>
             <p>{{ emptyTaskMessage }}</p>
-            <RouterLink class="empty-task-link" to="/beitraege">Freie Aufgaben ansehen <v-icon icon="mdi-arrow-right" size="15" /></RouterLink>
+            <RouterLink class="empty-task-link" to="/beitraege">{{ t('world.tasks.openAvailable') }} <v-icon icon="mdi-arrow-right" size="15" /></RouterLink>
           </div>
         </v-card>
       </section>
@@ -171,31 +160,35 @@
     <v-dialog v-model="giftDialogOpen" max-width="420">
       <v-card class="pa-5" rounded="xl">
         <div class="direct-gift-icon mb-3">🎁</div>
-        <v-card-title class="pa-0">Ladirchen verschenken</v-card-title>
-        <v-card-subtitle class="pa-0 mt-1 mb-5">Für besondere Momente – unabhängig von einem Beitrag.</v-card-subtitle>
-        <v-select v-model="gift.childId" :items="childOptions" item-title="title" item-value="value" label="Kind" variant="outlined" />
-        <v-text-field v-model.number="gift.amount" label="Betrag" min="1" suffix="L" type="number" variant="outlined" />
-        <v-textarea v-model="gift.reason" label="Anlass" placeholder="Zum Beispiel: tolle Hilfe beim Familienfest" rows="2" variant="outlined" />
-        <v-alert class="mb-4" color="info" density="compact" variant="tonal">Das Kind sieht beim nächsten Login, wer das Geschenk geschickt hat.</v-alert>
+        <v-card-title class="pa-0">{{ t('world.gift.title') }}</v-card-title>
+        <v-card-subtitle class="pa-0 mt-1 mb-5">{{ t('world.gift.description') }}</v-card-subtitle>
+        <v-select v-model="gift.childId" :items="childOptions" item-title="title" item-value="value" :label="t('world.gift.child')" variant="outlined" />
+        <v-text-field v-model.number="gift.amount" :label="t('world.gift.amount')" min="1" suffix="L" type="number" variant="outlined" />
+        <v-textarea v-model="gift.reason" :label="t('world.gift.reason')" :placeholder="t('world.gift.placeholder')" rows="2" variant="outlined" />
+        <v-alert class="mb-4" color="info" density="compact" variant="tonal">{{ t('world.gift.notice') }}</v-alert>
         <div class="d-flex justify-end ga-2">
-          <v-btn rounded="lg" variant="text" @click="giftDialogOpen = false">Abbrechen</v-btn>
-          <v-btn color="secondary" :disabled="!canGiveGift" prepend-icon="mdi-gift-outline" rounded="lg" variant="flat" @click="giveDirectGift">Verschenken</v-btn>
+          <v-btn rounded="lg" variant="text" @click="giftDialogOpen = false">{{ t('common.cancel') }}</v-btn>
+          <v-btn color="secondary" :disabled="!canGiveGift" prepend-icon="mdi-gift-outline" rounded="lg" variant="flat" @click="giveDirectGift">{{ t('world.gift.submit') }}</v-btn>
         </div>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="promoDetailsOpen" max-width="410">
-      <v-card v-if="activePromotion" class="pa-5" rounded="xl">
-        <div class="promotion-detail-gem" aria-hidden="true"><v-icon icon="mdi-diamond-stone" size="38" /><i>✦</i><i>✧</i></div>
-        <p class="eyebrow mt-3 mb-1">Nur heute</p>
+      <v-card v-if="activePromotion" class="promotion-detail-card pa-5" rounded="xl">
+        <v-btn class="promotion-close" :aria-label="t('world.promotion.close')" icon="mdi-close" size="small" variant="tonal" @click="promoDetailsOpen = false" />
+        <div class="promotion-detail-gem" aria-hidden="true"><v-icon icon="mdi-star-four-points" size="55" /><span><v-icon icon="mdi-diamond-stone" size="18" /></span><i>✦</i><i>✧</i></div>
+        <p class="eyebrow promotion-detail-eyebrow mt-4 mb-1">{{ t('world.promotion.onlyToday') }}</p>
         <h2 class="promotion-dialog-title">{{ activePromotion.title }}</h2>
-        <p class="text-body-small text-medium-emphasis mt-2">Erledige „{{ contributionTitle(activePromotion.contributionId) }}“ bis {{ activePromotion.deadline }} Uhr.</p>
-        <v-card class="pa-4 mt-4" color="amber-lighten-5" elevation="0" rounded="lg">
-          <span class="text-caption text-medium-emphasis">Du kannst erhalten</span>
-          <strong class="promotion-total d-block">{{ store.rewardForContribution(activePromotion.contributionId) }} Ladirchen</strong>
-          <span class="text-caption text-medium-emphasis">Aufgabenbonus ×{{ activePromotion.multiplier }} · Teamarbeit +{{ activePromotion.teamworkBonus }} L</span>
+        <p class="text-body-small text-medium-emphasis mt-2">{{ t('world.promotion.completeBy', { title: contributionTitle(activePromotion.contributionId), time: activePromotion.deadline }) }}</p>
+        <v-card class="promotion-reward-card pa-4 mt-4" elevation="0" rounded="lg">
+          <span class="text-caption text-medium-emphasis">{{ t('world.promotion.canEarn') }}</span>
+          <strong class="promotion-total d-block">{{ t('world.promotion.coins', { value: promotionRewardTotal }) }}</strong>
+          <div class="promotion-breakdown mt-3">
+            <span><i>×{{ activePromotion.multiplier }}</i><small>{{ t('world.promotion.taskBonus') }}</small></span>
+            <span><i>+{{ activePromotion.teamworkBonus }} L</i><small>{{ t('world.promotion.teamwork') }}</small></span>
+          </div>
         </v-card>
-        <v-btn class="mt-5" color="warning" rounded="lg" variant="flat" width="100%" @click="promoDetailsOpen = false">Los geht’s</v-btn>
+        <v-btn class="promotion-start mt-5" color="warning" rounded="lg" variant="flat" width="100%" @click="promoDetailsOpen = false"><span aria-hidden="true">★</span>{{ t('world.promotion.cta') }}<v-icon icon="mdi-arrow-right" /></v-btn>
       </v-card>
     </v-dialog>
 
@@ -205,53 +198,65 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import AnimatedHouseEnergy from '../components/AnimatedHouseEnergy.vue';
 import FamilyWorldScene from '../components/FamilyWorldScene.vue';
 import HouseEnergyDialog from '../components/HouseEnergyDialog.vue';
-import LadiMascot from '@/shared/components/LadiMascot.vue';
-import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
+import ActiveContributionBonus from '@/features/contributions/components/ActiveContributionBonus.vue';
+import AnimatedCompletionMark from '@/shared/components/AnimatedCompletionMark.vue';
+import ContributionMetaIcon from '@/features/contributions/components/ContributionMetaIcon.vue';
+import PromotionCountdown from '@/features/contributions/components/PromotionCountdown.vue';
 import type { ContributionId, FamilyMemberId } from '@/domain/types';
-import { getLadiStage } from '@/domain/ladi';
 import { isPromotionAvailable } from '@/domain/promotions';
+import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
+const { t } = useI18n();
+const localize = useLocalizedDomainContent();
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
 const gift = reactive({ childId: store.activeChildId, amount: 20, reason: '' });
 
+const localizedContributions = computed(() => store.contributions.map(localize.contribution));
+const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
+const localizedAccessories = computed(() => store.accessories.map(localize.accessory));
 const personalContributions = computed(() =>
-  store.contributions
+  localizedContributions.value
     .filter((contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== 'approved'),
 );
-const completedPersonalContributions = computed(() => store.contributions.filter(
+const completedPersonalContributions = computed(() => localizedContributions.value.filter(
   contribution => contribution.assigneeId === store.activeChildId && contribution.status === 'approved',
 ));
-const isProudLadi = computed(() => store.averageTaskRating >= 4.3);
-const emptyLadiScore = computed(() => completedPersonalContributions.value.length ? store.averageTaskRating : 0);
-const emptyTaskEyebrow = computed(() => completedPersonalContributions.value.length ? 'Für heute geschafft' : 'Ladi wartet auf eine Mission');
-const emptyTaskTitle = computed(() => completedPersonalContributions.value.length ? 'Alles erledigt!' : 'Heute ist noch nichts zugeteilt');
+const emptyTaskEyebrow = computed(() => t(completedPersonalContributions.value.length ? 'world.tasks.empty.completedEyebrow' : 'world.tasks.empty.availableEyebrow'));
+const emptyTaskTitle = computed(() => t(completedPersonalContributions.value.length ? 'world.tasks.empty.completedTitle' : 'world.tasks.empty.availableTitle'));
 const emptyTaskMessage = computed(() => {
-  if (!completedPersonalContributions.value.length) return 'Schau bei den freien Aufgaben vorbei – vielleicht braucht gerade jemand deine Hilfe.';
-  if (isProudLadi.value) return `${getLadiStage(store.averageTaskRating).name} ist richtig stolz auf dich. Für heute hast du alles geschafft.`;
-  return 'Für heute hast du alles geschafft. Ladi macht es sich nach eurem Einsatz gemütlich.';
+  return t(completedPersonalContributions.value.length ? 'world.tasks.empty.completedMessage' : 'world.tasks.empty.availableMessage');
 });
 const activePromotion = computed(() =>
-  store.promotions.find((promotion) =>
-    isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) && store.contributions.some(
-      (contribution) => contribution.id === promotion.contributionId && contribution.assigneeId === store.activeChildId,
+  localizedPromotions.value.find((promotion) =>
+    isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) && localizedContributions.value.some(
+      (contribution) => contribution.id === promotion.contributionId &&
+        contribution.assigneeId === store.activeChildId &&
+        contribution.status === 'available',
     ),
   ),
 );
 const contributionTitle = (contributionId: ContributionId) =>
-  store.contributions.find((contribution) => contribution.id === contributionId)?.title ?? 'Beitrag';
+  localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ?? t('contributions.singular');
+const promotionRewardTotal = computed(() => {
+  if (!activePromotion.value) return 0;
+  const baseReward = localizedContributions.value.find((contribution) => contribution.id === activePromotion.value?.contributionId)?.reward ?? 0;
+  return baseReward * activePromotion.value.multiplier + activePromotion.value.teamworkBonus;
+});
+const promotionFor = (contributionId: ContributionId) =>
+  localizedPromotions.value.find((promotion) => promotion.contributionId === contributionId && isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)));
+const invitedChildNames = (memberIds: FamilyMemberId[]) => store.members
+  .filter((member) => member.role === 'child' && memberIds.includes(member.id))
+  .map((member) => `${member.avatar} ${member.name}`);
 const childMembers = computed(() => store.members.filter((member) => member.role === 'child'));
-const ratingLabel = (memberId: FamilyMemberId) => {
-  const rating = store.averageTaskRatingFor(memberId);
-  return rating > 0 ? `${rating.toFixed(1)} ★` : 'Noch offen';
-};
 const childOptions = computed(() => childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })));
 const canGiveGift = computed(() => gift.amount >= 1 && gift.reason.trim().length >= 3);
 const openGiftDialog = () => {
@@ -264,31 +269,37 @@ const giveDirectGift = () => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .world-hero {
   padding-bottom: 16px;
   @apply position-relative overflow-hidden;
-  color: #233948;
-  background: linear-gradient(180deg, #dff5ff 0%, #f7fbeb 78%, #f8f1dd 100%);
+  color: var(--lad-palette-text);
+  background: linear-gradient(
+    180deg,
+    var(--lad-palette-background) 0%,
+    var(--lad-palette-background) 78%,
+    var(--lad-palette-amber-100) 100%
+  );
 }
 .world-title {
   max-width: 310px;
   @apply ma-0;
-  font-size: 23px;
+  font-size: 1.4375rem;
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
 .energy-value {
   @apply d-block;
   color: var(--lad-mint-dark);
-  font-size: 20px;
+  font-size: 1.25rem;
   line-height: 1;
   @apply text-no-wrap;
 }
 .energy-label {
   @apply d-block mt-1;
-  color: #65808f;
-  font-size: 10px;
+  color: var(--lad-palette-muted);
+  font-size: 0.625rem;
 }
 .energy-trigger-copy {
   @apply min-w-0 text-left;
@@ -300,10 +311,12 @@ const giveDirectGift = () => {
   @apply d-flex align-center;
   gap: 6px;
   color: inherit;
-  border: 1px solid rgba(73, 150, 121, 0.1);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 10%, transparent);
   border-radius: 17px;
-  background: rgba(255, 255, 255, 0.46);
-  box-shadow: 0 3px 0 rgba(57, 137, 106, 0.07);
+  background: color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
   transition:
@@ -312,12 +325,14 @@ const giveDirectGift = () => {
     box-shadow 160ms ease;
 }
 .energy-trigger:hover {
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 4px 0 rgba(57, 137, 106, 0.11);
+  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 10%, transparent);
 }
 .energy-trigger:active {
   transform: translateY(1px) scale(0.98);
-  box-shadow: 0 1px 0 rgba(57, 137, 106, 0.09);
+  box-shadow: 0 1px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
 }
 .energy-chevron {
   @apply position-absolute;
@@ -326,7 +341,7 @@ const giveDirectGift = () => {
   color: var(--lad-mint-dark);
   transform: translateY(-50%);
 }
-@media (max-width: 420px) {
+@include respond-down(mobile) {
   .energy-trigger {
     min-width: 103px;
     padding-left: 5px;
@@ -337,35 +352,40 @@ const giveDirectGift = () => {
     height: 31px !important;
   }
   .energy-value {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .energy-label {
-    font-size: 9px;
+    font-size: 0.5625rem;
   }
 }
 .contribution-board {
   padding: 15px;
   @apply position-relative overflow-hidden;
-  border: 2px solid rgba(71, 153, 122, 0.17);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 18%, transparent);
   border-radius: 27px;
   background:
     radial-gradient(
       circle at 92% 7%,
-      rgba(255, 218, 112, 0.22),
+      color-mix(in srgb, var(--lad-palette-amber-250) 20%, transparent),
       transparent 23%
     ),
-    linear-gradient(145deg, #fffef9, #f0faf6);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-surface),
+      var(--lad-palette-background)
+    );
   box-shadow:
-    0 7px 0 rgba(58, 135, 105, 0.11),
-    0 15px 27px rgba(62, 100, 85, 0.07);
+    0 7px 0 color-mix(in srgb, var(--lad-palette-teal-600) 10%, transparent),
+    0 15px 27px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
 }
 .contribution-board::after {
   content: "✦";
   @apply position-absolute pointer-events-none;
   top: 10px;
   right: 13px;
-  color: rgba(226, 166, 45, 0.65);
-  font-size: 13px;
+  color: color-mix(in srgb, var(--lad-palette-amber-450) 65%, transparent);
+  font-size: 0.8125rem;
 }
 .contribution-board-heading {
   @apply position-relative d-flex align-start justify-space-between;
@@ -375,26 +395,32 @@ const giveDirectGift = () => {
 }
 .contribution-board-heading h2 {
   @apply ma-0;
-  font-size: 20px;
+  font-size: 1.25rem;
   letter-spacing: -0.035em;
 }
 .contribution-board-heading > div > p:last-child {
   margin-top: 3px;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .all-contributions {
   min-height: 46px;
   padding: 7px 8px 7px 10px;
   @apply d-flex align-center flex-shrink-0;
   gap: 5px;
-  color: #236f57;
-  border: 2px solid rgba(62, 163, 124, 0.2);
+  color: var(--lad-palette-teal-700);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
   border-radius: 16px;
-  background: linear-gradient(145deg, #eaf9f2, #fff);
-  box-shadow: 0 4px 0 rgba(49, 139, 105, 0.13);
-  font-size: 10px;
-  font-weight: 900;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-white)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
+  font-size: 0.625rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-decoration: none;
   transition:
     transform 0.18s ease,
@@ -402,65 +428,207 @@ const giveDirectGift = () => {
 }
 .all-contributions:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 0 rgba(49, 139, 105, 0.13);
+  box-shadow: 0 6px 0
+    color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
 }
 .contribution-list {
   @apply d-flex flex-column;
   gap: 11px;
 }
-.contribution-card {
-  border: 2px solid rgba(78, 143, 221, 0.14);
-  background: linear-gradient(145deg, #fff, #f5faff);
-  box-shadow: 0 5px 0 rgba(78, 143, 221, 0.11) !important;
+.home-contribution-item {
+  @apply position-relative overflow-hidden;
+  border: 1px solid var(--lad-border);
+  box-shadow: 0 4px 0 var(--lad-border) !important;
 }
-.contribution-icon {
-  width: 50px;
-  height: 50px;
-  @apply d-grid place-center flex-shrink-0;
-  border: 3px solid #fff;
+.home-task-icon {
+  flex: 0 0 58px;
+  border: 3px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  ) !important;
+  box-shadow:
+    0 4px 0 color-mix(in srgb, var(--lad-palette-blue-550) 12%, transparent),
+    0 8px 15px color-mix(in srgb, var(--lad-palette-teal-700) 8%, transparent);
+  font-size: 1.9375rem !important;
+  transform: rotate(-3deg);
+  animation: home-task-icon-float 3.4s ease-in-out infinite;
+}
+.home-contribution-label {
+  @include contribution-label;
+}
+.home-contribution-label--basic {
+  @include contribution-label-basic;
+}
+.home-contribution-label--special {
+  @include contribution-label-special;
+}
+.home-contribution-label--mine {
+  @include contribution-label-mine;
+  animation: home-mine-label-breathe 2.6s ease-in-out infinite;
+}
+.home-contribution-meta {
+  @include contribution-meta-grid;
+}
+.home-meta-chip {
+  @include contribution-meta-chip;
+}
+.home-meta-chip--reward {
+  @include contribution-meta-chip-reward;
+}
+.home-meta-chip--energy {
+  @include contribution-meta-chip-energy;
+}
+.home-invited-team {
+  @apply d-flex align-center flex-wrap;
+  gap: 5px;
+}
+.home-invited-team > span {
+  color: var(--lad-muted);
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+.home-finish-button {
+  min-height: 48px !important;
+  padding: 4px 16px 4px 7px !important;
+  overflow: visible !important;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent) !important;
+  border-radius: 17px !important;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-blue-strong)
+  ) !important;
+  box-shadow:
+    0 5px 0 var(--lad-palette-blue-strong),
+    0 10px 18px
+      color-mix(in srgb, var(--lad-palette-blue-strong) 20%, transparent) !important;
+  font-weight: var(--lad-font-weight-heavy);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.home-finish-button :deep(.v-btn__content) {
+  gap: 7px;
+}
+.home-finish-button:active {
+  transform: translateY(3px) scale(0.97);
+  box-shadow: 0 2px 0 var(--lad-palette-blue-strong) !important;
+}
+.home-finish-check {
+  width: 38px;
+  height: 38px;
+  @apply d-grid place-center;
+  color: var(--lad-palette-blue-strong);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  border-radius: 13px;
+  background: var(--lad-palette-white);
+  box-shadow: inset 0 -3px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent);
+}
+.home-pending {
+  min-height: 49px;
+  padding: 7px 12px 7px 7px;
+  @apply position-relative d-flex align-center overflow-hidden;
+  gap: 8px;
+  color: var(--lad-palette-amber-700);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-amber-450) 25%, transparent);
   border-radius: 17px;
-  background: linear-gradient(145deg, #e7f6ff, #fff2c9);
-  box-shadow: 0 4px 0 rgba(78, 143, 221, 0.13);
-  font-size: 25px;
-  transform: rotate(-4deg);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-amber-100),
+    var(--lad-palette-background)
+  );
+  box-shadow:
+    0 4px 0 color-mix(in srgb, var(--lad-palette-amber-550) 12%, transparent),
+    0 8px 15px color-mix(in srgb, var(--lad-palette-orange-600) 8%, transparent);
+}
+.home-pending::after {
+  content: "✦";
+  @apply position-absolute;
+  top: 4px;
+  right: 7px;
+  color: var(--lad-palette-amber-500);
+  font-size: 0.5625rem;
+  animation: home-pending-spark 2s ease-in-out infinite;
+}
+.home-pending-icon {
+  width: 35px;
+  height: 35px;
+  @apply d-grid place-center flex-shrink-0;
+  border: 2px solid var(--lad-palette-white);
+  border-radius: 12px;
+  background: var(--lad-palette-amber-250);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-amber-600) 12%, transparent);
+  font-size: 1.125rem;
+  animation: home-pending-ready 2.5s ease-in-out infinite;
+}
+.home-pending strong,
+.home-pending small {
+  @apply d-block;
+}
+.home-pending strong {
+  font-size: 0.75rem;
+}
+.home-pending small {
+  margin-top: 1px;
+  color: var(--lad-palette-muted-600);
+  font-size: 0.5rem;
 }
 .contribution-empty {
   @apply d-flex align-center position-relative overflow-hidden;
   gap: 13px;
-  border: 2px dashed rgba(77, 153, 122, 0.28);
+  border: 2px dashed
+    color-mix(in srgb, var(--lad-palette-teal-550) 30%, transparent);
   background:
     radial-gradient(
       circle at 88% 18%,
-      rgba(255, 218, 112, 0.25),
+      color-mix(in srgb, var(--lad-palette-amber-250) 25%, transparent),
       transparent 26%
     ),
-    linear-gradient(145deg, #f4fbf7, #fff9e8);
-  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.35) !important;
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-surface)
+    );
+  box-shadow: inset 0 0 0 5px
+    color-mix(in srgb, var(--lad-palette-white) 35%, transparent) !important;
 }
 .contribution-empty strong {
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 .contribution-empty p:not(.eyebrow) {
   margin: 3px 0 8px;
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.4;
 }
 .empty-task-link {
   @apply d-inline-flex align-center;
   gap: 4px;
   color: var(--lad-mint-dark);
-  font-size: 10px;
-  font-weight: 900;
+  font-size: 0.625rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-decoration: none;
 }
 .promotion-banner {
   @apply position-relative overflow-hidden cursor-pointer;
-  border: 2px solid rgba(114, 174, 215, 0.38);
-  background: linear-gradient(135deg, #eef9ff, #fff4d4 54%, #f5eaff) !important;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue-350) 40%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100) 54%,
+    var(--lad-palette-background)
+  ) !important;
   box-shadow:
-    0 7px 0 rgba(112, 164, 198, 0.18),
-    0 14px 25px rgba(75, 105, 136, 0.09) !important;
+    0 7px 0 color-mix(in srgb, var(--lad-palette-blue-450) 18%, transparent),
+    0 14px 25px color-mix(in srgb, var(--lad-palette-blue-600) 8%, transparent) !important;
 }
 .promotion-banner::before {
   content: "";
@@ -473,33 +641,122 @@ const giveDirectGift = () => {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.8),
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent),
     transparent
   );
   animation: bonus-shimmer 3.4s ease-in-out infinite;
 }
-.promotion-banner::after {
-  content: "✦  ✧  ★";
+.promotion-boost {
+  min-width: 78px;
+  padding: 7px 9px;
+  @apply position-relative d-grid place-center flex-shrink-0 text-center;
+  z-index: 1;
+  color: var(--lad-palette-blue-600);
+  border: 3px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
+  border-radius: 18px;
+  background: radial-gradient(
+    circle at 25% 18%,
+    var(--lad-palette-white),
+    var(--lad-palette-background) 50%,
+    var(--lad-palette-teal-150)
+  );
+  box-shadow:
+    0 5px 0 var(--lad-palette-muted-250),
+    0 10px 18px color-mix(in srgb, var(--lad-palette-blue-550) 15%, transparent);
+  transform: rotate(3deg);
+  animation: bonus-boost-pulse 2s ease-in-out infinite;
+}
+.promotion-boost strong,
+.promotion-boost small {
+  @apply d-block;
+}
+.promotion-boost strong {
+  font-size: 1.4375rem;
+  line-height: 1;
+}
+.promotion-boost small {
+  margin-top: 3px;
+  color: var(--lad-palette-teal-700);
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-black);
+  white-space: nowrap;
+}
+.promotion-stars {
+  width: 85px;
+  height: 44px;
+  @apply position-absolute pointer-events-none;
+  top: 6px;
+  right: 8px;
+}
+.promotion-stars i {
   @apply position-absolute;
+  color: var(--lad-palette-amber-500);
+  text-shadow: 0 0 7px
+    color-mix(in srgb, var(--lad-palette-amber-250) 95%, transparent);
+  font-style: normal;
+  opacity: 0;
+  transform: scale(0.35);
+  animation: bonus-star-one 3.7s ease-in-out infinite;
+}
+.promotion-stars i:nth-child(1) {
+  top: 4px;
+  left: 2px;
+  font-size: 0.6875rem;
+  animation-delay: -0.4s;
+}
+.promotion-stars i:nth-child(2) {
   top: 9px;
-  right: 11px;
-  color: #e5a52a;
-  text-shadow:
-    0 0 7px rgba(255, 224, 126, 0.95),
-    18px 12px 0 rgba(121, 106, 205, 0.55);
-  font-size: 14px;
-  letter-spacing: 6px;
-  animation: bonus-stars 2.1s ease-in-out infinite;
+  left: 25px;
+  color: var(--lad-palette-purple-350);
+  font-size: 0.625rem;
+  animation-name: bonus-star-two;
+  animation-delay: -2.1s;
+}
+.promotion-stars i:nth-child(3) {
+  top: 1px;
+  right: 5px;
+  font-size: 0.5625rem;
+  animation-name: bonus-star-three;
+  animation-delay: -1.2s;
+}
+.promotion-stars i:nth-child(4) {
+  top: 24px;
+  left: 12px;
+  color: var(--lad-palette-muted-350);
+  font-size: 0.5rem;
+  animation-name: bonus-star-two;
+  animation-delay: -3.3s;
+}
+.promotion-stars i:nth-child(5) {
+  right: 20px;
+  bottom: 4px;
+  color: var(--lad-palette-pink-300);
+  font-size: 0.5625rem;
+  animation-name: bonus-star-three;
+  animation-delay: -2.7s;
+}
+.promotion-stars i:nth-child(6) {
+  right: 2px;
+  bottom: 9px;
+  color: var(--lad-palette-teal-400);
+  font-size: 1rem;
+  animation-delay: -1.8s;
 }
 .promotion-gem,
 .promotion-detail-gem {
   @apply position-relative d-grid place-center flex-shrink-0;
-  color: #fff;
-  border: 3px solid #fff;
-  background: linear-gradient(145deg, #7bd5ea, #6482dc 58%, #a66ed0);
+  color: var(--lad-palette-amber-150);
+  border: 3px solid var(--lad-palette-white);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-250),
+    var(--lad-palette-indigo-350) 58%,
+    var(--lad-palette-purple-350)
+  );
   box-shadow:
-    0 5px 0 #596ab1,
-    0 9px 16px rgba(77, 89, 154, 0.22);
+    0 5px 0 var(--lad-palette-violet-500),
+    0 9px 16px color-mix(in srgb, var(--lad-palette-blue-600) 20%, transparent);
   transform: rotate(-5deg);
   animation: bonus-gem 2.4s ease-in-out infinite;
 }
@@ -508,17 +765,55 @@ const giveDirectGift = () => {
   height: 49px;
   border-radius: 17px;
 }
+.promotion-gem > span {
+  width: 19px;
+  height: 19px;
+  @apply position-absolute d-grid place-center;
+  right: -7px;
+  bottom: -5px;
+  color: var(--lad-palette-amber-150);
+  border: 2px solid var(--lad-palette-white);
+  border-radius: 7px;
+  background: var(--lad-palette-teal-400);
+  box-shadow: 0 2px 0 var(--lad-palette-teal-600);
+}
+.promotion-rocket {
+  color: var(--lad-palette-amber-150);
+  filter: drop-shadow(
+    0 2px 1px color-mix(in srgb, var(--lad-palette-violet-650) 25%, transparent)
+  );
+  animation: bonus-rocket-launch 2.1s ease-in-out infinite;
+}
+.promotion-banner-countdown {
+  width: fit-content;
+}
 .promotion-detail-gem {
-  width: 68px;
-  height: 68px;
-  border-radius: 22px;
+  width: 92px;
+  height: 92px;
+  margin-inline: auto;
+  border-radius: 29px;
+  box-shadow:
+    0 7px 0 var(--lad-palette-violet-500),
+    0 14px 25px color-mix(in srgb, var(--lad-palette-blue-600) 25%, transparent);
+}
+.promotion-detail-gem > span {
+  width: 28px;
+  height: 28px;
+  @apply position-absolute d-grid place-center;
+  right: -8px;
+  bottom: -7px;
+  color: var(--lad-palette-white);
+  border: 3px solid var(--lad-palette-white);
+  border-radius: 10px;
+  background: var(--lad-palette-teal-400);
+  box-shadow: 0 3px 0 var(--lad-palette-teal-600);
 }
 .promotion-gem i,
 .promotion-detail-gem i {
   @apply position-absolute;
-  color: #fff7b0;
+  color: var(--lad-palette-amber-150);
   font-style: normal;
-  text-shadow: 0 0 7px #fff;
+  text-shadow: 0 0 7px var(--lad-palette-white);
 }
 .promotion-gem i:first-of-type,
 .promotion-detail-gem i:first-of-type {
@@ -531,86 +826,148 @@ const giveDirectGift = () => {
   left: -6px;
   animation-delay: -1s;
 }
+.promotion-detail-card {
+  @apply position-relative overflow-hidden text-center;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue-450) 20%, transparent);
+  background:
+    radial-gradient(
+      circle at 88% 4%,
+      color-mix(in srgb, var(--lad-palette-teal-400) 18%, transparent),
+      transparent 27%
+    ),
+    linear-gradient(
+      155deg,
+      var(--lad-palette-background),
+      var(--lad-palette-background) 60%,
+      var(--lad-palette-background)
+    ) !important;
+  box-shadow:
+    0 9px 0 color-mix(in srgb, var(--lad-palette-blue-550) 15%, transparent),
+    0 25px 55px
+      color-mix(in srgb, var(--lad-palette-indigo-750) 25%, transparent) !important;
+}
+.promotion-detail-card::after {
+  content: "✦";
+  @apply position-absolute;
+  top: 22px;
+  right: 26px;
+  color: var(--lad-palette-teal-400);
+  font-size: 1.5rem;
+  opacity: 0.65;
+}
+.promotion-detail-eyebrow {
+  color: var(--lad-palette-mint-strong);
+}
+.promotion-reward-card {
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue-450) 18%, transparent);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-background)
+  ) !important;
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 10%, transparent) !important;
+}
+.promotion-start {
+  min-height: 49px !important;
+  color: var(--lad-palette-white) !important;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-blue-strong)
+  ) !important;
+  box-shadow:
+    0 5px 0 var(--lad-palette-blue-600),
+    0 10px 17px color-mix(in srgb, var(--lad-palette-blue-600) 15%, transparent) !important;
+  font-weight: var(--lad-font-weight-heavy);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.promotion-start :deep(.v-btn__content) {
+  gap: 8px;
+}
+.promotion-start :deep(.v-btn__content) > span {
+  font-size: 1.25rem;
+  animation: bonus-gem 2.2s ease-in-out infinite;
+}
+.promotion-close {
+  @apply position-absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  color: var(--lad-palette-teal-600) !important;
+  background: color-mix(
+    in srgb,
+    var(--lad-palette-white) 80%,
+    transparent
+  ) !important;
+}
+.promotion-breakdown {
+  @apply d-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.promotion-breakdown > span {
+  min-height: 55px;
+  padding: 7px;
+  @apply d-grid place-center;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue-450) 15%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 8%, transparent);
+}
+.promotion-breakdown i,
+.promotion-breakdown small {
+  @apply d-block;
+}
+.promotion-breakdown i {
+  color: var(--lad-palette-blue-600);
+  font-size: 1.25rem;
+  font-style: normal;
+  font-weight: var(--lad-font-weight-black);
+  line-height: 1;
+}
+.promotion-breakdown small {
+  margin-top: 3px;
+  color: var(--lad-muted);
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-strong);
+}
 .promotion-dialog-title {
   @apply ma-0;
-  font-size: 22px;
+  font-size: 1.375rem;
   letter-spacing: -0.03em;
 }
 .promotion-total {
-  color: #955b06;
-  font-size: 28px;
+  color: var(--lad-palette-blue-600);
+  font-size: 1.75rem;
 }
 .section-title {
   @apply ma-0;
-  font-size: 19px;
+  font-size: 1.1875rem;
   letter-spacing: -0.025em;
 }
-.guardian-child-grid {
-  @apply d-grid;
-  gap: 9px;
-}
-.guardian-child {
-  @apply w-100;
-  padding: 10px;
-  @apply d-flex align-center;
-  gap: 10px;
-  color: var(--lad-text);
-  @apply text-left;
-  border: 1px solid var(--lad-border);
-  border-radius: 15px;
-  background: var(--lad-surface);
-  box-shadow: 0 3px 0 var(--lad-border);
-  @apply cursor-pointer;
-}
-.guardian-child.selected {
-  border-color: rgba(62, 188, 140, 0.55);
-  background: #effaf5;
-  box-shadow: 0 3px 0 rgba(62, 188, 140, 0.25);
-}
-.guardian-child-avatar {
-  width: 39px;
-  height: 39px;
-  @apply d-grid place-center flex-shrink-0;
-  border-radius: 13px;
-  background: var(--lad-surface-soft);
-  font-size: 21px;
-}
-.guardian-child-copy {
-  flex: 1;
-  @apply min-w-0;
-}
-.guardian-child-copy strong,
-.guardian-child-copy small {
-  @apply d-block;
-}
-.guardian-child-copy small {
-  color: var(--lad-muted);
-  font-size: 9px;
-}
-.guardian-child-rating {
-  padding: 5px 7px;
-  color: #956117;
-  border-radius: 8px;
-  background: #fff3d3;
-  font-size: 9px;
-  @apply font-weight-black;
-}
-.guardian-child-rating.ready {
-  color: #22734f;
-  background: #dcf5e8;
-}
 .rating-rule {
-  color: #956117;
-  font-size: 9px;
+  color: var(--lad-palette-amber-650);
+  font-size: 0.5625rem;
   @apply font-weight-black;
 }
 .management-card {
-  border: 1px solid rgba(78, 143, 221, 0.2);
+  border: 1px solid color-mix(in srgb, var(--lad-palette-blue) 20%, transparent);
 }
 .supporter-card {
-  border: 1px solid rgba(62, 188, 140, 0.24);
-  background: linear-gradient(145deg, #effaf5, #fff8df);
-  box-shadow: 0 4px 0 rgba(62, 188, 140, 0.12) !important;
+  border: 1px solid color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-mint) 12%, transparent) !important;
 }
 .management-actions {
   @apply d-grid;
@@ -620,23 +977,15 @@ const giveDirectGift = () => {
 .management-actions :deep(.v-btn) {
   @apply min-w-0;
   padding-inline: 8px;
-  font-size: 9px;
-}
-.energy-simulator {
-  border: 1px dashed rgba(62, 188, 140, 0.55);
-  background: linear-gradient(145deg, #f0faf5, #fff9eb);
-}
-.simulated-value {
-  color: var(--lad-mint-dark);
-  font-size: 21px;
+  font-size: 0.5625rem;
 }
 .direct-gift-icon {
   width: 58px;
   height: 58px;
   @apply d-grid place-center;
   border-radius: 19px;
-  background: #fff0d5;
-  font-size: 31px;
+  background: var(--lad-palette-amber-100);
+  font-size: 1.9375rem;
   animation: bonus-pulse 1.8s ease-in-out infinite;
 }
 @keyframes bonus-pulse {
@@ -648,6 +997,16 @@ const giveDirectGift = () => {
     transform: scale(1.08) rotate(3deg);
   }
 }
+@keyframes bonus-boost-pulse {
+  0%,
+  100% {
+    transform: rotate(3deg) scale(1);
+  }
+  50% {
+    transform: rotate(-2deg) scale(1.07);
+    filter: brightness(1.04);
+  }
+}
 @keyframes bonus-gem {
   0%,
   100% {
@@ -655,6 +1014,19 @@ const giveDirectGift = () => {
   }
   50% {
     transform: translateY(-3px) rotate(4deg) scale(1.06);
+  }
+}
+@keyframes bonus-rocket-launch {
+  0%,
+  70%,
+  100% {
+    transform: translate(0, 0) rotate(-4deg);
+  }
+  78% {
+    transform: translate(3px, -4px) rotate(4deg) scale(1.08);
+  }
+  88% {
+    transform: translate(-1px, 1px) rotate(-2deg);
   }
 }
 @keyframes bonus-shimmer {
@@ -667,18 +1039,121 @@ const giveDirectGift = () => {
     left: 120%;
   }
 }
-@keyframes bonus-stars {
+@keyframes bonus-star-one {
+  0%,
+  18%,
+  42%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-12deg);
+  }
+  25%,
+  34% {
+    opacity: 1;
+    transform: scale(1.15) rotate(16deg);
+  }
+}
+@keyframes bonus-star-two {
+  0%,
+  37%,
+  63%,
+  100% {
+    opacity: 0;
+    transform: scale(0.25) rotate(12deg);
+  }
+  44%,
+  55% {
+    opacity: 0.9;
+    transform: scale(1.08) rotate(-15deg);
+  }
+}
+@keyframes bonus-star-three {
+  0%,
+  58%,
+  87%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-8deg);
+  }
+  67%,
+  78% {
+    opacity: 1;
+    transform: scale(1.2) rotate(21deg);
+  }
+}
+@keyframes home-task-icon-float {
+  0%,
+  68%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  78% {
+    transform: translateY(-3px) rotate(3deg) scale(1.04);
+  }
+  88% {
+    transform: translateY(1px) rotate(-1deg);
+  }
+}
+@keyframes home-mine-label-breathe {
   0%,
   100% {
-    opacity: 0.35;
-    transform: scale(0.8) rotate(0);
+    box-shadow: 0 3px 0
+      color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 3px 0 color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--lad-palette-green-500) 8%, transparent);
+  }
+}
+@keyframes home-pending-ready {
+  0%,
+  75%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  84% {
+    transform: rotate(-8deg) scale(1.1);
+  }
+  92% {
+    transform: rotate(6deg);
+  }
+}
+@keyframes home-pending-spark {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.7);
   }
   50% {
     opacity: 1;
-    transform: scale(1.15) rotate(14deg);
+    transform: scale(1.15) rotate(20deg);
   }
 }
-@media (max-width: 420px) {
+@include reduced-motion {
+  .promotion-stars i,
+  .promotion-boost,
+  .promotion-rocket,
+  .home-task-icon,
+  .home-contribution-label--mine,
+  .home-pending::after,
+  .home-pending-icon {
+    animation: none;
+  }
+  .promotion-stars i {
+    opacity: 0.75;
+    transform: none;
+  }
+}
+@include respond-down(phone) {
+  .home-contribution-meta {
+    @include contribution-meta-grid;
+  }
+  .home-meta-chip--energy {
+    @include contribution-meta-chip-energy;
+  }
+}
+@include respond-down(mobile) {
   .contribution-board {
     padding: 13px;
   }

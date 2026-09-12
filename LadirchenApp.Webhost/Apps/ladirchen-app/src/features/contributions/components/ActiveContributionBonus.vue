@@ -1,14 +1,18 @@
 <template>
   <div class="active-contribution-bonus">
     <span class="bonus-rocket" aria-hidden="true"><v-icon icon="mdi-rocket-launch" size="19" /></span>
-    <span class="bonus-copy"><small>Bonus für diese Aufgabe</small><strong>{{ multiplier }}-fache Belohnung aktiv</strong></span>
+    <span class="bonus-copy"><small>{{ t('contributions.activeBonus.label') }}</small><strong>{{ t('contributions.activeBonus.multiplier', { value: multiplier }) }}</strong></span>
     <span class="bonus-factor">×{{ multiplier }}</span>
     <PromotionCountdown class="bonus-countdown" :deadline="deadline" />
   </div>
 </template>
 
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n';
+
 import PromotionCountdown from './PromotionCountdown.vue';
+
+const { t } = useI18n();
 
 defineProps<{
   deadline: string;
@@ -16,44 +20,56 @@ defineProps<{
 }>();
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .active-contribution-bonus {
   min-height: 51px;
   padding: 6px 8px;
   @apply position-relative d-flex align-center overflow-hidden;
   gap: 7px;
-  color: #285f70;
-  border: 2px solid rgba(77, 171, 183, 0.3);
+  color: var(--lad-palette-teal-700);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-blue-450) 30%, transparent);
   border-radius: 16px;
   background:
     radial-gradient(
       circle at 88% 10%,
-      rgba(255, 255, 255, 0.9),
+      color-mix(in srgb, var(--lad-palette-white) 90%, transparent),
       transparent 25%
     ),
-    linear-gradient(125deg, #dff6ff, #e2f8ee 50%, #fff0bc);
+    linear-gradient(
+      125deg,
+      var(--lad-palette-background),
+      var(--lad-palette-background) 50%,
+      var(--lad-palette-amber-150)
+    );
   box-shadow:
-    0 4px 0 rgba(59, 139, 146, 0.2),
-    0 9px 18px rgba(55, 125, 135, 0.13);
+    0 4px 0 color-mix(in srgb, var(--lad-palette-blue-550) 20%, transparent),
+    0 9px 18px color-mix(in srgb, var(--lad-palette-blue-600) 12%, transparent);
 }
 .active-contribution-bonus::after {
   content: "✦";
   @apply position-absolute pointer-events-none;
   top: 3px;
   right: 7px;
-  color: #df9e23;
-  font-size: 10px;
+  color: var(--lad-palette-amber-500);
+  font-size: 0.625rem;
   animation: bonus-spark 1.7s ease-in-out infinite;
 }
 .bonus-rocket {
   width: 36px;
   height: 36px;
   @apply d-grid place-center flex-shrink-0;
-  color: #fff8b3;
-  border: 2px solid #fff;
+  color: var(--lad-palette-amber-150);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 12px;
-  background: linear-gradient(145deg, #66bfe0, #667ed4 65%, #a26ccc);
-  box-shadow: 0 3px 0 #5269ae;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-indigo-350) 65%,
+    var(--lad-palette-purple-350)
+  );
+  box-shadow: 0 3px 0 var(--lad-palette-blue-550);
   animation: bonus-launch 1.9s ease-in-out infinite;
 }
 .bonus-copy {
@@ -64,28 +80,33 @@ defineProps<{
   @apply d-block;
 }
 .bonus-copy small {
-  color: #317b69;
-  font-size: 7px;
-  font-weight: 900;
+  color: var(--lad-palette-teal-600);
+  font-size: 0.4375rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-transform: uppercase;
   letter-spacing: 0.035em;
 }
 .bonus-copy strong {
   margin-top: 1px;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.15;
 }
 .bonus-factor {
   min-width: 45px;
   padding: 5px 7px;
   @apply d-grid place-center flex-shrink-0;
-  color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.9);
+  color: var(--lad-palette-white);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   border-radius: 13px;
-  background: linear-gradient(145deg, #4ebba0, #3189a8);
-  box-shadow: 0 3px 0 #287489;
-  font-size: 18px;
-  font-weight: 950;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-mint),
+    var(--lad-palette-blue-550)
+  );
+  box-shadow: 0 3px 0 var(--lad-palette-blue-600);
+  font-size: 1.125rem;
+  font-weight: var(--lad-font-weight-black);
   line-height: 1;
   animation: bonus-factor-pulse 1.9s ease-in-out infinite;
 }
@@ -125,7 +146,7 @@ defineProps<{
     transform: scale(1.25) rotate(24deg);
   }
 }
-@media (max-width: 430px) {
+@include respond-down(phone) {
   .active-contribution-bonus {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -137,7 +158,7 @@ defineProps<{
     margin-left: 43px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .bonus-rocket,
   .bonus-factor,
   .active-contribution-bonus::after {
