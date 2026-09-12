@@ -13,7 +13,7 @@ import kitchenUrl from '@/assets/room-designs/kitchen-ladi-classic.webp';
 import livingRoomUrl from '@/assets/room-designs/living-ladi-classic.webp';
 import exteriorUrl from '@/assets/room-designs/starter-home-ladi-background.webp';
 
-type FoundationView = 'front' | 'side' | 'inside' | 'kitchen';
+type FoundationView = 'front' | 'side' | 'inside' | 'garden' | 'kitchen';
 
 const props = defineProps<{
   energy: number;
@@ -22,6 +22,7 @@ const props = defineProps<{
 
 const backgroundUrls: Record<FoundationView, string> = {
   front: exteriorUrl,
+  garden: gardenUrl,
   inside: livingRoomUrl,
   kitchen: kitchenUrl,
   side: gardenUrl,

@@ -1,7 +1,9 @@
 import type { HouseAccessoryId, HouseThemeId } from '@/domain/house';
-import type { FamilyId, FamilyMemberId, HouseLayoutPlacement } from '@/domain/types';
+import type { HouseLayoutPlacement } from '@/domain/types';
+import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
 
 export const HOME_CUSTOMIZATION_SCHEMA_VERSION = 2 as const;
+export const HOME_CUSTOMIZATION_AGGREGATE_TYPE = 'home-customization' as const;
 
 export interface HouseAccessoryState {
   readonly id: HouseAccessoryId;
@@ -14,24 +16,15 @@ export interface HouseEditionState {
   readonly owned: boolean;
 }
 
-export interface HomeCustomizationSnapshot {
-  readonly schemaVersion: typeof HOME_CUSTOMIZATION_SCHEMA_VERSION;
-  readonly familyId: FamilyId;
-  readonly revision: number;
-  readonly updatedAt: string;
-  readonly updatedBy: FamilyMemberId;
+export interface HomeCustomizationState {
   readonly accessories: ReadonlyArray<HouseAccessoryState>;
   readonly editions: ReadonlyArray<HouseEditionState>;
   readonly placements: ReadonlyArray<HouseLayoutPlacement>;
   readonly selectedEditionId: HouseThemeId;
 }
 
-export interface SaveHomeCustomizationCommand {
-  readonly familyId: FamilyId;
-  readonly expectedRevision: number;
-  readonly updatedBy: FamilyMemberId;
-  readonly accessories: ReadonlyArray<HouseAccessoryState>;
-  readonly editions: ReadonlyArray<HouseEditionState>;
-  readonly placements: ReadonlyArray<HouseLayoutPlacement>;
-  readonly selectedEditionId: HouseThemeId;
-}
+export type HomeCustomizationSnapshot = VersionedAggregateSnapshot<
+  typeof HOME_CUSTOMIZATION_AGGREGATE_TYPE,
+  typeof HOME_CUSTOMIZATION_SCHEMA_VERSION,
+  HomeCustomizationState
+>;
