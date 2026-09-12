@@ -36,5 +36,5 @@ export const resolveFamilyPermissions = (member?: FamilyMember): FamilyPermissio
       canViewGuardianGoals: true,
     };
   }
-  return { ...noPermissions, canSupportChildGoals: true };
+  return { ...noPermissions, canSupportChildGoals: true, canViewFamilyGoals: true };
 };

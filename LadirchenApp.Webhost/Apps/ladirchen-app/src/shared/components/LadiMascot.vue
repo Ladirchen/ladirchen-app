@@ -10,7 +10,7 @@
     :while-hover="reducedMotion ? undefined : { scale: characterMotion.scale * 1.035, y: characterMotion.y - 2 }"
     :while-press="reducedMotion ? undefined : { scale: characterMotion.scale * .96 }"
     role="img"
-    :aria-label="`${stage.name}, das Sparfaultier, Bewertung ${score.toFixed(1)} von 5`"
+    :aria-label="`${smart ? 'Klug-Ladi' : stage.name}, das Sparfaultier, Bewertung ${score.toFixed(1)} von 5`"
   >
     <svg class="ladi" viewBox="0 0 150 150">
       <g v-if="isBored && showSceneBase" class="bored-branch">
@@ -104,6 +104,13 @@
           <path class="shade-glint" d="m51 51 8 10m2-11 6 8m24-7 7 9" />
         </g>
 
+        <g v-if="smart" class="smart-glasses" aria-hidden="true">
+          <circle cx="58" cy="56" r="13" />
+          <circle cx="92" cy="56" r="13" />
+          <path d="M71 55q4-3 8 0M45 52l-8-3m68 3 8-3" />
+          <path class="smart-glasses-glint" d="m51 49 7 7m27-7 7 7" />
+        </g>
+
         <g v-if="isSuper" class="super-mask">
           <path d="M43 50c8-8 18-9 29-3l-3 14c-9 6-19 3-26-6Zm64 0c-8-8-18-9-29-3l3 14c9 6 19 3 26-6Z" />
           <path class="super-mask-glint" d="m50 50 9 7m30-7 9 7" />
@@ -119,18 +126,26 @@
           <path d="m95 91 15 18-13 4-9-20Z" />
         </g>
 
-        <g class="ladirchen-core">
+        <g v-if="showCoin" class="ladirchen-core">
           <circle class="coin-glow" cx="75" cy="108" r="27" />
           <circle class="coin" cx="75" cy="108" r="22" />
           <path class="coin-letter" d="M69 96v23h14" />
           <path class="coin-shine" d="M61 103c2-7 7-11 14-12" />
         </g>
 
-        <g v-if="!isBored" class="hugging-arms">
+        <g v-if="!isBored && showCoin" class="hugging-arms">
           <path d="M38 78c-12 16-7 35 15 42" />
           <path d="M112 78c12 16 7 35-15 42" />
           <path class="claw" d="m51 115 7 1m-8 4 7 1" />
           <path class="claw" d="m99 115-7 1m8 4-7 1" />
+        </g>
+
+        <g v-if="!isBored && !showCoin" class="free-arms">
+          <path class="resting-arm" d="M39 80c-10 18-5 31 9 39" />
+          <g class="waving-arm">
+            <path d="M110 81c16-13 22-28 15-43" />
+            <path class="free-claw" d="m121 42 2-9m3 10 6-7" />
+          </g>
         </g>
 
         <g v-else class="hanging-pose">
@@ -160,7 +175,7 @@ import { motion, useReducedMotion } from 'motion-v';
 
 import { getLadiStage } from '@/domain/ladi';
 
-const props = withDefaults(defineProps<{ score: number; showSceneBase?: boolean; size?: number; showScore?: boolean }>(), { showSceneBase: true, size: 46, showScore: true });
+const props = withDefaults(defineProps<{ score: number; showCoin?: boolean; showSceneBase?: boolean; size?: number; showScore?: boolean; smart?: boolean }>(), { showCoin: true, showSceneBase: true, size: 46, showScore: true, smart: false });
 const stage = computed(() => getLadiStage(props.score));
 const isBored = computed(() => props.score < 2.5);
 const isCool = computed(() => props.score >= 4.3 && props.score < 4.8);
@@ -302,6 +317,20 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   stroke-linecap: round;
   stroke-width: 10;
 }
+.free-arms path {
+  fill: none;
+  stroke: var(--fur-dark);
+  stroke-linecap: round;
+  stroke-width: 10;
+}
+.free-arms .free-claw {
+  stroke: #f5dfbd;
+  stroke-width: 2.5;
+}
+.waving-arm {
+  transform-origin: 111px 82px;
+  animation: free-arm-wave 2.8s ease-in-out infinite;
+}
 .hanging-arm {
   fill: none;
   stroke: var(--fur-dark);
@@ -381,6 +410,18 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   stroke-linecap: round;
   stroke-width: 2;
   opacity: 0.72;
+}
+.smart-glasses {
+  fill: rgba(210, 239, 245, 0.24);
+  stroke: #514a43;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.5;
+}
+.smart-glasses-glint {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 2;
 }
 .cool-sparkles {
   fill: #fff1a0;
@@ -669,6 +710,22 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   50% {
     opacity: 0.85;
     transform: translateX(4px);
+  }
+}
+@keyframes free-arm-wave {
+  0%,
+  58%,
+  100% {
+    transform: rotate(0);
+  }
+  68% {
+    transform: rotate(-18deg);
+  }
+  77% {
+    transform: rotate(13deg);
+  }
+  86% {
+    transform: rotate(-9deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -38,11 +38,11 @@ export const SAVING_GOAL_IDS = {
 } as const;
 
 export const createFamilyMembers = (): FamilyMember[] => [
-  { id: FAMILY_MEMBER_IDS.laura, name: 'Laura', avatar: '👧', color: '#6f8df5', role: 'child', weeklyStreak: 4 },
-  { id: FAMILY_MEMBER_IDS.adam, name: 'Adam', avatar: '👦', color: '#e79f45', role: 'child', weeklyStreak: 3 },
-  { id: FAMILY_MEMBER_IDS.daniel, name: 'Daniel', avatar: '🧒', color: '#59a8d8', role: 'child', weeklyStreak: 2 },
-  { id: FAMILY_MEMBER_IDS.mama, name: 'Mama (du)', avatar: '👩', color: '#dd7b91', role: 'guardian', guardianAccess: 'admin', weeklyStreak: 0, appearance: { ...createGuardianAvatarAppearance('adult'), hair: 'waves', outfit: 'blouse', outfitColorId: 'outfit-rose' } },
-  { id: FAMILY_MEMBER_IDS.hannes, name: 'Hannes', avatar: '🧑', color: '#58aa82', role: 'guardian', guardianAccess: 'supporter', weeklyStreak: 0, appearance: { ...createGuardianAvatarAppearance('adult'), faceShape: 'angular', outfitColorId: 'outfit-mint' } },
+  { id: FAMILY_MEMBER_IDS.laura, name: 'Laura', avatar: '👧', color: '#6f8df5', role: 'child', participatesInWeeklyGoal: true, weeklyStreak: 4 },
+  { id: FAMILY_MEMBER_IDS.adam, name: 'Adam', avatar: '👦', color: '#e79f45', role: 'child', participatesInWeeklyGoal: true, weeklyStreak: 3 },
+  { id: FAMILY_MEMBER_IDS.daniel, name: 'Daniel', avatar: '🧒', color: '#59a8d8', role: 'child', participatesInWeeklyGoal: true, weeklyStreak: 2 },
+  { id: FAMILY_MEMBER_IDS.mama, name: 'Mama', avatar: '👩', color: '#dd7b91', role: 'guardian', guardianAccess: 'admin', participatesInWeeklyGoal: true, weeklyStreak: 0, appearance: { ...createGuardianAvatarAppearance('adult'), hair: 'waves', outfit: 'blouse', outfitColorId: 'outfit-rose' } },
+  { id: FAMILY_MEMBER_IDS.hannes, name: 'Hannes', avatar: '🧑', color: '#58aa82', role: 'guardian', guardianAccess: 'supporter', participatesInWeeklyGoal: false, weeklyStreak: 0, appearance: { ...createGuardianAvatarAppearance('adult'), faceShape: 'angular', outfitColorId: 'outfit-mint' } },
 ];
 
 export const createFamilyBalances = (): Record<FamilyMemberId, number> => ({
