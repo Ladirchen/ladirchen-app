@@ -74,12 +74,12 @@ import { computed, defineComponent, h, nextTick, reactive, ref, watch } from 'vu
 import { useI18n } from 'vue-i18n';
 
 import AvatarCategoryIcon from './AvatarCategoryIcon.vue';
-import AvatarFigure from './AvatarFigure.vue';
-import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from '../data/avatar-options';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
+import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from './data/avatar-options';
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance, GuardianAvatarPreset } from '@/domain/avatar';
 import type { ViewerRole } from '@/domain/family/types';
-import type { AvatarCatalogItemId, AvatarColorOption } from '../data/avatar-options';
+import type { AvatarCatalogItemId, AvatarColorOption } from './data/avatar-options';
 
 type Section = 'base' | 'face' | 'hair' | 'outfit' | 'extras' | 'fun' | 'season';
 type PreviewKind = 'face' | 'faceShape' | 'hair' | 'outfit' | 'accessory' | 'fun' | 'season';
@@ -186,7 +186,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .studio-header h2 {
   margin: 1px 0 0;
-  font-size: 1.4375rem;
+  font-size: rem(23);
   letter-spacing: -0.035em;
 }
 .studio-preview {
@@ -248,7 +248,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply d-flex flex-column align-start;
 }
 .preview-tools > strong {
-  font-size: 1.375rem;
+  font-size: rem(22);
 }
 .preview-tools > span {
   max-width: 270px;
@@ -271,7 +271,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   box-shadow: 0 3px 0
     color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
   font: inherit;
-  font-size: 0.6875rem;
+  font-size: rem(11);
   @apply font-weight-black cursor-pointer;
 }
 .random-actions .fun-random {
@@ -358,7 +358,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: var(--lad-mint);
 }
 .category-rail span {
-  font-size: 0.625rem;
+  font-size: rem(10);
   @apply font-weight-black;
 }
 .builder-options {
@@ -376,24 +376,24 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .section-intro p {
   margin: 0 0 1px;
   color: var(--lad-color-primary-strong);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.11em;
   @apply text-uppercase;
 }
 .section-intro h3 {
   @apply ma-0;
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .section-intro > span {
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   @apply text-right;
 }
 .mini-section-label {
   margin-bottom: -8px;
   color: var(--lad-text-strong);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.06em;
   @apply text-uppercase;
@@ -425,7 +425,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   );
 }
 .guardian-preset-grid strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .guardian-preset-grid span {
   color: var(--lad-muted);
@@ -472,7 +472,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   transform: rotate(-25deg);
 }
 .skin-choice strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .skin-choice.active {
   border: 2px solid var(--lad-mint);
@@ -533,7 +533,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 :deep(.option-choice strong) {
   max-width: 100%;
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.05;
   @apply text-center;
 }
@@ -592,7 +592,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: var(--lad-mint);
   box-shadow: 0 2px 5px
     color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
 }
 :deep(.compact-colors) {
@@ -604,7 +604,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: var(--lad-surface);
 }
 :deep(.compact-colors > strong) {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 :deep(.color-row) {
   @apply d-flex flex-wrap justify-end ga-2;
@@ -662,7 +662,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     0 4px 0 color-mix(in srgb, var(--lad-color-primary-deep) 70%, transparent),
     0 9px 18px
       color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
-  font-size: 0.875rem;
+  font-size: rem(14);
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
@@ -671,10 +671,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   gap: 10px;
 }
 .studio-save-icon {
-  font-size: 1.4375rem;
+  font-size: rem(23);
 }
 .studio-save-arrow {
-  font-size: 1.1875rem;
+  font-size: rem(19);
   transition: transform 0.18s ease;
 }
 .studio-save-button:hover .studio-save-arrow {
@@ -731,10 +731,24 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     height: 158px;
   }
   .preview-tools > strong {
-    font-size: 1.125rem;
+    font-size: rem(18);
+  }
+  .category-rail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 2px 14px 8px;
+    @apply d-grid overflow-visible;
+    gap: 4px;
   }
   .category-rail button {
-    min-width: 72px;
+    width: 100%;
+    min-width: 0;
+    height: 58px;
+    padding-inline: 2px;
+    border-radius: 15px;
+  }
+  .category-rail span {
+    max-width: 100%;
+    @apply text-truncate;
   }
   .skin-studio {
     grid-template-columns: repeat(2, 1fr);

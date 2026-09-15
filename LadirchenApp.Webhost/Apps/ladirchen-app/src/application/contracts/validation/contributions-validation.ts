@@ -2,6 +2,7 @@ import type { ContributionsState } from '../contributions-contract';
 import type { StateGuard } from './runtime-validation';
 import { exhaustiveValues, hasLocalizedValue, hasOptionalDomainId, hasUniqueIds, isArrayOf, isClockTime, isDomainId, isFamilyMemberId, isFiniteNumber, isInteger, isIsoDateTime, isKnownString, isNonEmptyString, isOptionalBoolean, isOptionalNonNegativeNumber, isOptionalPositiveNumber, isOptionalString, isRecord, values } from './runtime-validation';
 import { CONTRIBUTION_STATUSES } from '@/domain/contributions/types';
+import { CONTRIBUTION_RATING } from '@/domain/contributions/rating';
 import type { Contribution, ContributionKind, ContributionStatus, Promotion, WorldEffect } from '@/domain/contributions/types';
 import type { ContributionId } from '@/domain/shared/identifiers';
 
@@ -19,7 +20,8 @@ const hasValidContent = (value: Record<string, unknown>): boolean =>
   typeof value.dueLabel === 'string' &&
   isOptionalString(value.dueLabelKey);
 const hasValidResult = (value: Record<string, unknown>): boolean =>
-  (value.stars === undefined || (isInteger(value.stars) && value.stars >= 1 && value.stars <= 5)) &&
+  (value.stars === undefined || (isInteger(value.stars) &&
+    value.stars >= CONTRIBUTION_RATING.minimum && value.stars <= CONTRIBUTION_RATING.maximum)) &&
   isOptionalNonNegativeNumber(value.earnedReward) &&
   isOptionalNonNegativeNumber(value.earnedRatingBonus) &&
   isOptionalPositiveNumber(value.earnedPromotionMultiplier) &&

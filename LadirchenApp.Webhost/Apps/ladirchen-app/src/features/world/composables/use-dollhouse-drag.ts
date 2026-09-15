@@ -2,10 +2,10 @@ import { computed } from 'vue';
 import type { ComputedRef } from 'vue';
 
 import { isHouseZoneId } from '@/application/contracts/family-aggregate-validation';
-import { characterCollidesWithFurniture, furnitureVisualDefinitionFor } from '@/domain/house';
+import { characterCollidesWithFurniture, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS } from '@/domain/house';
 import type { HouseAccessory, HouseLayoutPlacement, HouseZoneId } from '@/domain/house';
 import type { HouseLayoutPlacementId } from '@/domain/shared/identifiers';
-import { ENTITY_PLACEMENT_CONFIG } from '../entity-visual-config';
+import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
 import { useEntityDrag } from './use-entity-drag';
 
 interface DollhouseDragProps {
@@ -28,8 +28,8 @@ const isLadiPerchDrop = (
   x: number,
   y: number,
 ): boolean => placement?.entityType === 'ladi' && zoneId === 'living-room' &&
-  x >= ENTITY_PLACEMENT_CONFIG.perch.minimumX && x <= ENTITY_PLACEMENT_CONFIG.perch.maximumX &&
-  y >= ENTITY_PLACEMENT_CONFIG.perch.minimumY && y <= ENTITY_PLACEMENT_CONFIG.perch.maximumY;
+  x >= HOUSE_LAYOUT_CONSTRAINTS.perch.minimumX && x <= HOUSE_LAYOUT_CONSTRAINTS.perch.maximumX &&
+  y >= HOUSE_LAYOUT_CONSTRAINTS.perch.minimumY && y <= HOUSE_LAYOUT_CONSTRAINTS.perch.maximumY;
 
 export const useDollhouseDrag = (
   props: DollhouseDragProps,
@@ -71,14 +71,16 @@ export const useDollhouseDrag = (
       const isFloorEntity = placement?.entityType === 'member' || placement?.entityType === 'pet' || placement?.entityType === 'ladi';
       const accessory = placement ? accessoryFor(placement) : undefined;
       const visualDefinition = accessory?.visual ? furnitureVisualDefinitionFor(accessory.visual) : undefined;
-      const rawX = ((clientX - bounds.left) / bounds.width) * 100;
-      const rawY = ((clientY - bounds.top) / bounds.height) * 100;
+      const rawX = ((clientX - bounds.left) / bounds.width) * PERCENTAGE_BASE;
+      const rawY = ((clientY - bounds.top) / bounds.height) * PERCENTAGE_BASE;
       const snapsToLadiPerch = isLadiPerchDrop(placement, zoneId, rawX, rawY);
-      const horizontalInset = isFloorEntity ? ENTITY_PLACEMENT_CONFIG.floorHorizontalInset : ENTITY_PLACEMENT_CONFIG.furnitureHorizontalInset;
-      const minimumY = isFloorEntity && !snapsToLadiPerch ? ENTITY_PLACEMENT_CONFIG.floorMinimumY : visualDefinition?.minimumY ?? ENTITY_PLACEMENT_CONFIG.furnitureMinimumY;
-      const maximumY = visualDefinition?.maximumY ?? ENTITY_PLACEMENT_CONFIG.maximumY;
-      const x = snapsToLadiPerch ? ENTITY_PLACEMENT_CONFIG.perch.x : Math.min(100 - horizontalInset, Math.max(horizontalInset, rawX));
-      const y = snapsToLadiPerch ? ENTITY_PLACEMENT_CONFIG.perch.y : Math.min(maximumY, Math.max(minimumY, rawY));
+      const horizontalInset = isFloorEntity ? HOUSE_LAYOUT_CONSTRAINTS.floorHorizontalInset : HOUSE_LAYOUT_CONSTRAINTS.furnitureHorizontalInset;
+      const minimumY = isFloorEntity && !snapsToLadiPerch ? HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY : visualDefinition?.minimumY ?? HOUSE_LAYOUT_CONSTRAINTS.furnitureMinimumY;
+      const maximumY = visualDefinition?.maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY;
+      const x = snapsToLadiPerch
+        ? HOUSE_LAYOUT_CONSTRAINTS.perch.x
+        : Math.min(HOUSE_LAYOUT_CONSTRAINTS.coordinateMaximum - horizontalInset, Math.max(horizontalInset, rawX));
+      const y = snapsToLadiPerch ? HOUSE_LAYOUT_CONSTRAINTS.perch.y : Math.min(maximumY, Math.max(minimumY, rawY));
       const collidesWithFurniture = isFloorEntity && !snapsToLadiPerch && placement
         ? characterCollidesWithFurniture(placement.id, zoneId, x, y, props.placements, props.accessories)
         : false;

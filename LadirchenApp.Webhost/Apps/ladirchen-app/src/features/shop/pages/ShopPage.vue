@@ -187,8 +187,8 @@ import { useI18n } from 'vue-i18n';
 
 import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
 import PageViewSwitch from '@/shared/components/ui/PageViewSwitch.vue';
-import RoomFurniture from '@/features/world/components/RoomFurniture.vue';
-import ShopRewardCard from '@/features/shop/components/ShopRewardCard.vue';
+import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
+import ShopRewardCard from '../components/ShopRewardCard.vue';
 import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
 import { useShopPage } from '../composables/use-shop-page';
 
@@ -312,11 +312,11 @@ const {
   transform: rotate(7deg) scale(1.07);
 }
 .shop-mode-switch :deep(.page-view-copy strong) {
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .shop-mode-switch :deep(.page-view-copy small) {
   margin-top: 4px;
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .shop-mode-switch :deep(.page-view-check) {
   width: 23px;
@@ -483,11 +483,11 @@ const {
   transform: rotate(-6deg) scale(1.06);
 }
 .shop-area-switch :deep(.page-view-copy strong) {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .shop-area-switch :deep(.page-view-copy small) {
   margin-top: 2px;
-  font-size: 0.4375rem;
+  font-size: rem(7);
   line-height: 1.15;
 }
 .shop-area-switch :deep(.page-view-check) {
@@ -517,7 +517,7 @@ const {
 }
 .catalog-heading > span {
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   text-align: right;
 }
 .edition-grid {
@@ -539,10 +539,10 @@ const {
   height: 8.5rem;
   flex: 0 0 8.5rem;
   @apply position-relative overflow-hidden;
-  border-radius: 0.875rem;
+  border-radius: rem(14);
   background-position: center;
   background-size: cover;
-  box-shadow: inset 0 0 0 0.125rem
+  box-shadow: inset 0 0 0 rem(2)
     color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
 }
 .edition-house-sprite {
@@ -596,12 +596,12 @@ const {
     0 4px 0 var(--lad-color-primary-deep),
     0 8px 14px
       color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
   animation: edition-selected-breathe 2.5s ease-in-out infinite;
 }
 .edition-selected :deep(.v-icon) {
-  font-size: 1.0625rem;
+  font-size: rem(17);
   animation: edition-check-pop 2.5s ease-in-out infinite;
 }
 .edition-selected i {
@@ -657,7 +657,7 @@ const {
   transform: rotate(7deg);
 }
 .set-copy strong {
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .set-copy p {
   margin-top: 3px;
@@ -690,7 +690,7 @@ const {
   );
   box-shadow: 0 4px 0
     color-mix(in srgb, var(--lad-color-reward-shadow) 15%, transparent);
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .catalog-buy-button {
   @include action-button;
@@ -720,7 +720,7 @@ const {
     var(--lad-surface-soft),
     var(--lad-color-reward-soft)
   );
-  font-size: 2.625rem;
+  font-size: rem(42);
 }
 .accessory-card.special {
   border-color: color-mix(
@@ -831,7 +831,7 @@ const {
   border-radius: 12px;
   background: var(--lad-surface);
   @apply cursor-pointer;
-  font-size: 1.4375rem;
+  font-size: rem(23);
 }
 .icon-picker button.active {
   border: 2px solid var(--lad-mint);
@@ -859,7 +859,7 @@ const {
     align-self: end;
   }
 }
-@include respond-down(compact) {
+@include respond-down(studio) {
   .reward-grid,
   .accessory-grid {
     grid-template-columns: 1fr;
@@ -884,6 +884,10 @@ const {
   .set-action {
     grid-column: 2;
     @apply justify-start;
+  }
+  .set-action :deep(.v-btn),
+  .set-action .catalog-status {
+    width: 100%;
   }
 }
 @keyframes owned-star {

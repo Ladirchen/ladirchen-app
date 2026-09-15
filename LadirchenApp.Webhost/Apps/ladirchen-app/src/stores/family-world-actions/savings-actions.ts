@@ -1,4 +1,6 @@
 import type { FamilyCurrency, NewGoal, SavingGoalOwnerId } from '@/domain/savings/types';
+import { calculateSavingsCredit } from '@/domain/savings/interest';
+import { normalizeSpecialGiftAmount, SAVINGS_RULES } from '@/domain/savings/rules';
 import { createDomainId } from '@/domain/shared/identifiers';
 import type { FamilyMemberId, SavingGoalId } from '@/domain/shared/identifiers';
 import { createUuid, supportedFamilyCurrencies } from './family-world-store-utils';
@@ -36,7 +38,7 @@ export const savingsActions = {
     const isManagedChildGoal = this.permissions.canManageGoals && this.members.some((member) => member.id === ownerId && member.role === 'child');
     if (!isFamilyGoal && !isOwnGoal && !isManagedChildGoal) {return;}
     const id = createDomainId.savingGoal(createUuid());
-    const starterBonus = isFamilyGoal ? 0 : 5;
+    const starterBonus = isFamilyGoal ? 0 : SAVINGS_RULES.goalStarterBonus;
     this.goals.push({
       id,
       ...input,
@@ -151,7 +153,7 @@ export const savingsActions = {
   giftLadirchenToChild(this: FamilyWorldStoreContext, childId: FamilyMemberId, amount: number, reason: string) {
     if (!this.permissions.canManageContent) {return;}
     const child = this.members.find((member) => member.id === childId && member.role === 'child');
-    const safeAmount = Math.max(1, Math.min(10_000, Math.round(amount)));
+    const safeAmount = normalizeSpecialGiftAmount(amount);
     const safeReason = reason.trim();
     if (!child || !safeReason) {return;}
     this.balances[child.id] = this.balanceFor(child.id) + safeAmount;
@@ -227,11 +229,7 @@ export const savingsActions = {
     let credited = 0;
     for (const goal of this.goals) {
       if (goal.ownerId === 'family' || goal.saved <= 0) {continue;}
-      const remaining = Math.max(0, goal.target - goal.saved);
-      const interest = Math.min(
-        remaining,
-        Math.max(1, Math.round(goal.saved * (this.savingsInterestRateFor(goal.ownerId) / 100))),
-      );
+      const interest = calculateSavingsCredit(goal.saved, goal.target, this.savingsInterestRateFor(goal.ownerId));
       goal.saved += interest;
       goal.interestEarned = (goal.interestEarned ?? 0) + interest;
       credited += interest;
@@ -245,8 +243,7 @@ export const savingsActions = {
     let credited = 0;
     for (const goal of this.goals) {
       if (goal.ownerId !== this.activeChildId || goal.saved <= 0) {continue;}
-      const remaining = Math.max(0, goal.target - goal.saved);
-      const interest = Math.min(remaining, Math.max(1, Math.round(goal.saved * (safeRate / 100))));
+      const interest = calculateSavingsCredit(goal.saved, goal.target, safeRate);
       if (interest <= 0) {continue;}
       goal.saved += interest;
       goal.interestEarned = (goal.interestEarned ?? 0) + interest;

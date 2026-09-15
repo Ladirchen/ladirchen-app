@@ -243,12 +243,12 @@ const {
   @apply d-block;
 }
 .create-goal-card strong {
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .create-goal-card small {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .create-goal-arrow {
   color: var(--lad-blue-dark);
@@ -283,14 +283,14 @@ const {
 }
 .goal-total small {
   color: var(--lad-muted);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .goal-total strong {
   margin-top: 1px;
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .goal-stat-icon {
   color: var(--lad-color-info-deep);
@@ -306,8 +306,8 @@ const {
   animation: account-stat-float 3s ease-in-out infinite;
 }
 .goal-stat-icon :deep(.v-icon) {
-  width: 1.125rem;
-  height: 1.125rem;
+  width: rem(18);
+  height: rem(18);
   @apply ma-auto;
   color: inherit;
   background-color: currentColor;
@@ -430,7 +430,7 @@ const {
 }
 .cheer-hands i {
   font-style: normal;
-  font-size: 1.125rem;
+  font-size: rem(18);
   transform-origin: bottom center;
 }
 .cheer-hands i:first-child {
@@ -449,7 +449,7 @@ const {
   @apply position-absolute pointer-events-none;
   color: var(--lad-color-reward-accent);
   opacity: 0.45;
-  font-size: 0.5625rem;
+  font-size: rem(9);
   animation: cheer-spark 1.8s ease-in-out infinite;
 }
 .cheer-spark--one {
@@ -471,7 +471,7 @@ const {
   @apply d-grid place-center;
   border-radius: 19px;
   background: var(--lad-surface-soft);
-  font-size: 1.9375rem;
+  font-size: rem(31);
   animation: goal-float 2.8s ease-in-out infinite;
 }
 .family-gift-button {
@@ -509,7 +509,7 @@ const {
   @apply d-block;
   margin-top: 4px;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .support-journey {
   height: 54px;
@@ -549,7 +549,7 @@ const {
   font-size: 1.25rem;
 }
 .support-high-five {
-  font-size: 1.5625rem;
+  font-size: rem(25);
 }
 .support-dialog-card.is-sending .support-coin {
   animation: support-coin-flight 0.85s ease-in forwards;
@@ -568,7 +568,7 @@ const {
     var(--lad-color-primary-strong)
   );
   box-shadow: 0 4px 0 var(--lad-color-primary-deep);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
@@ -667,7 +667,7 @@ const {
   box-shadow:
     0 4px 0 color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent),
     0 8px 14px color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
@@ -690,7 +690,7 @@ const {
   top: -7px;
   right: 5px;
   color: var(--lad-color-reward-border);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-style: normal;
   animation: assign-spark 2.3s ease-in-out infinite;
 }
@@ -734,7 +734,7 @@ const {
   @apply d-block;
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .save-goal-icon {
   width: 54px;
@@ -749,7 +749,7 @@ const {
   );
   box-shadow: 0 4px 0
     color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
-  font-size: 1.8125rem;
+  font-size: rem(29);
   transform: rotate(-5deg);
 }
 .save-dialog-content {
@@ -808,7 +808,7 @@ const {
   font-size: 0.5rem;
 }
 .save-balance strong {
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .save-journey {
   height: 8px;
@@ -862,19 +862,19 @@ const {
   font-weight: var(--lad-font-weight-black);
 }
 .save-value strong {
-  font-size: 2.125rem;
+  font-size: rem(34);
   line-height: 1;
 }
 .save-value small {
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-strong);
 }
 .save-empty-note {
   margin: -3px 8px 14px;
   color: var(--lad-muted);
   @apply text-center;
-  font-size: 0.5625rem;
+  font-size: rem(9);
   line-height: 1.4;
 }
 .save-submit {
@@ -924,19 +924,19 @@ const {
   border: 2px solid var(--lad-color-reward-pale);
   border-radius: 50%;
   background: var(--lad-color-reward);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
   animation: save-button-coin 2.2s ease-in-out infinite;
 }
 .save-submit > span:nth-of-type(2) {
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .save-submit > i {
   @apply position-absolute;
   top: 4px;
   right: 9px;
   color: var(--lad-color-reward-pale);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-style: normal;
   animation: save-button-spark 1.7s ease-in-out infinite;
 }

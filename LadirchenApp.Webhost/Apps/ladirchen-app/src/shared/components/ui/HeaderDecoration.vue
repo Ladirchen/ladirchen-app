@@ -15,6 +15,8 @@ withDefaults(defineProps<{
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .header-decoration {
   --decoration-accent: var(--lad-tone-world-accent);
   --decoration-tint: var(--lad-tone-world-tint);
@@ -38,7 +40,7 @@ withDefaults(defineProps<{
   height: 8rem;
   top: -4.75rem;
   right: -1.75rem;
-  box-shadow: 0 0 0 1.125rem
+  box-shadow: 0 0 0 rem(18)
     color-mix(in srgb, var(--decoration-companion) 42%, transparent);
 }
 
@@ -46,13 +48,13 @@ withDefaults(defineProps<{
   width: 5.5rem;
   height: 2rem;
   right: 3rem;
-  bottom: -1.125rem;
+  bottom: -rem(18);
   background: color-mix(in srgb, var(--decoration-companion) 62%, transparent);
 }
 
 .header-decoration i:last-child {
-  width: 2.375rem;
-  height: 2.375rem;
+  width: rem(38);
+  height: rem(38);
   top: 1rem;
   right: 6.75rem;
   border: 0.5rem solid

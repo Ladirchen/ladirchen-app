@@ -49,11 +49,11 @@ import type { HouseAccessory, HouseLayoutPlacement } from '@/domain/house';
 import type { FamilyMember, FamilyPet } from '@/domain/family/types';
 import type { FamilyMemberId } from '@/domain/shared/identifiers';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import { ENTITY_VISUAL_CONFIG } from '../entity-visual-config';
 
-import AnimatedPet from './AnimatedPet.vue';
-import RoomFurniture from './RoomFurniture.vue';
+import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
+import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
 
 const { t } = useI18n();
 
@@ -174,7 +174,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   border-radius: var(--lad-radius-pill);
   background: color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   color: var(--lad-palette-muted-700);
-  font-size: 0.375rem;
+  font-size: rem(6);
   font-weight: var(--lad-font-weight-heavy);
   pointer-events: none;
 }
@@ -212,7 +212,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
     0 6px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
     0 10px 19px
       color-mix(in srgb, var(--lad-palette-muted-750) 18%, transparent);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-strong);
   line-height: 1.4;
   pointer-events: none;

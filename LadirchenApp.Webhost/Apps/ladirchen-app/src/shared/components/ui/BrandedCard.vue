@@ -52,10 +52,10 @@ withDefaults(defineProps<{
 }
 
 .branded-card--interactive:hover {
-  transform: translateY(-0.125rem);
+  transform: translateY(-rem(2));
   box-shadow:
-    0 0.4375rem 0 color-mix(in srgb, var(--branded-card-lift) 18%, transparent),
-    0 0.9375rem 1.625rem
+    0 rem(7) 0 color-mix(in srgb, var(--branded-card-lift) 18%, transparent),
+    0 rem(15) rem(26)
       color-mix(in srgb, var(--branded-card-accent) 11%, transparent);
 }
 </style>

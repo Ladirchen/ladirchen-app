@@ -31,10 +31,10 @@ withDefaults(defineProps<{
 }
 
 .metric-card--compact {
-  min-height: 3.375rem;
-  padding: 0.25rem 0.3125rem 0.25rem 0.25rem;
+  min-height: rem(54);
+  padding: 0.25rem rem(5) 0.25rem 0.25rem;
   gap: 0.25rem;
-  border-radius: 0.875rem;
+  border-radius: rem(14);
 }
 
 .metric-card :deep(> span:last-child) {
@@ -57,20 +57,20 @@ withDefaults(defineProps<{
 }
 
 .metric-card :deep(strong) {
-  margin-top: 0.125rem;
+  margin-top: rem(2);
   color: var(--lad-text-strong);
   font-size: 1rem;
   line-height: 1.15;
 }
 
 .metric-card--compact :deep(small) {
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: var(--lad-font-weight-heavy);
   line-height: 1.1;
 }
 
 .metric-card--compact :deep(strong) {
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
 }
 

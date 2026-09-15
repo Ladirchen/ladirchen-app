@@ -1,4 +1,5 @@
 import { isPromotionAvailable } from '@/domain/contributions/promotions';
+import { CONTRIBUTION_RATING, normalizeContributionRating, percentageOf } from '@/domain/contributions/rating';
 import type { Contribution, NewContribution, NewPromotion } from '@/domain/contributions/types';
 import { createDomainId } from '@/domain/shared/identifiers';
 import type { ContributionId, FamilyMemberId, PromotionId } from '@/domain/shared/identifiers';
@@ -42,9 +43,9 @@ export const contributionsActions = {
     const promotion = this.promotions.find(item => item.contributionId === id && isPromotionAvailable(item, this.familyTimeZone, approvalTime));
     const baseReward = contribution.reward * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
     contribution.status = 'approved';
-    contribution.stars = Math.max(1, Math.min(5, Math.round(stars)));
-    const ratingBonus = stars === 5 && this.perfectRatingBonusPercent > 0
-      ? Math.max(1, Math.round(baseReward * (this.perfectRatingBonusPercent / 100)))
+    contribution.stars = normalizeContributionRating(stars);
+    const ratingBonus = contribution.stars === CONTRIBUTION_RATING.perfect && this.perfectRatingBonusPercent > 0
+      ? Math.max(1, Math.round(percentageOf(baseReward, this.perfectRatingBonusPercent)))
       : 0;
     const reward = baseReward + ratingBonus;
     contribution.earnedReward = baseReward;

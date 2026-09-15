@@ -1,4 +1,5 @@
 import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
+import type { FamilyAggregateDescriptor } from '@/application/contracts/family-aggregate-descriptors';
 import { isVersionedAggregateSnapshot } from '@/application/contracts/family-aggregate-validation';
 import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
 import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
@@ -19,23 +20,13 @@ const parseStoredValue = (storage: ClientStorage, key: string): unknown => {
   }
 };
 
-interface LocalStorageAggregateOptions<
-  TAggregateType extends FamilyAggregateType,
-  TSchemaVersion extends number,
-  TState,
-> {
-  readonly aggregateType: TAggregateType;
-  readonly isState: (value: unknown) => value is TState;
-  readonly schemaVersion: TSchemaVersion;
-}
-
 export class LocalStorageVersionedAggregateRepository<
   TAggregateType extends FamilyAggregateType,
   TSchemaVersion extends number,
   TState,
 > implements VersionedAggregateRepository<TAggregateType, TSchemaVersion, TState> {
   public constructor(
-    private readonly options: LocalStorageAggregateOptions<TAggregateType, TSchemaVersion, TState>,
+    private readonly options: FamilyAggregateDescriptor<TAggregateType, TSchemaVersion, TState>,
     private readonly storage: ClientStorage = browserClientStorage,
   ) {}
 

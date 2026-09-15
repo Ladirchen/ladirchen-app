@@ -1,8 +1,9 @@
 import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
+import { FURNITURE_SETS, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS, HOUSE_ROOMS, HOUSE_STAGES, HOUSE_THEMES, ROOM_DESIGNS, roomDesignsForTheme } from '@/domain/house';
 import type { FurnitureSetId, HouseAccessoryId, HouseThemeId, HouseZoneId, RoomDesignId } from '@/domain/house';
-import { FURNITURE_SETS, furnitureVisualDefinitionFor, HOUSE_ROOMS, HOUSE_STAGES, HOUSE_THEMES, ROOM_DESIGNS, roomDesignsForTheme } from '@/domain/house';
 import type { HouseAccessory } from '@/domain/house/entities';
 import type { HouseLayoutPlacementId } from '@/domain/shared/identifiers';
+import { clamp, PERCENTAGE_BASE } from '@/domain/shared/numbers';
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-world-store-context';
 
 const applyHouseThemeRoomDesigns = (store: FamilyWorldStoreContext, themeId: HouseThemeId) => {
@@ -61,9 +62,11 @@ export const homeActions = {
     if (targetRoom && targetRoom.minimumHouseLevel > this.houseLevel) {return;}
     if (placement.zoneId !== targetZoneId) {
       placement.zoneId = targetZoneId;
-      placement.x = 50;
+      placement.x = HOUSE_LAYOUT_CONSTRAINTS.defaultX;
       const visualDefinition = accessory.visual ? furnitureVisualDefinitionFor(accessory.visual) : undefined;
-      placement.y = visualDefinition?.placementY ?? visualDefinition?.minimumY ?? (targetZoneId === 'garden' ? 68 : 66);
+      placement.y = visualDefinition?.placementY ?? visualDefinition?.minimumY ?? (targetZoneId === 'garden'
+        ? HOUSE_LAYOUT_CONSTRAINTS.defaultGardenY
+        : HOUSE_LAYOUT_CONSTRAINTS.defaultIndoorY);
     }
     accessory.equipped = true;
     this.persistHomeCustomization();
@@ -115,8 +118,16 @@ export const homeActions = {
     if (!placement) {return;}
     if (placement.entityType === 'furniture' && this.accessories.find(accessory => accessory.id === placement.entityId)?.mobility === 'fixed') {return;}
     placement.zoneId = zoneId;
-    placement.x = Math.max(4, Math.min(96, Number(x.toFixed(2))));
-    placement.y = Math.max(8, Math.min(94, Number(y.toFixed(2))));
+    placement.x = clamp(
+      Number(x.toFixed(HOUSE_LAYOUT_CONSTRAINTS.coordinatePrecision)),
+      HOUSE_LAYOUT_CONSTRAINTS.minimumX,
+      HOUSE_LAYOUT_CONSTRAINTS.maximumX,
+    );
+    placement.y = clamp(
+      Number(y.toFixed(HOUSE_LAYOUT_CONSTRAINTS.coordinatePrecision)),
+      HOUSE_LAYOUT_CONSTRAINTS.minimumY,
+      HOUSE_LAYOUT_CONSTRAINTS.maximumY,
+    );
     this.persistHomeCustomization();
   },
   resetHouseEntityPosition(this: FamilyWorldStoreContext, placementId: HouseLayoutPlacementId) {
@@ -133,7 +144,7 @@ export const homeActions = {
   },
   setSimulatedEnergy(this: FamilyWorldStoreContext, value: number | null) {
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {return;}
-    this.simulatedEnergy = value === null ? null : Math.max(0, Math.min(100, Math.round(value)));
+    this.simulatedEnergy = value === null ? null : clamp(Math.round(value), 0, PERCENTAGE_BASE);
   },
   completeWeekDemo(this: FamilyWorldStoreContext): boolean {
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {return false;}

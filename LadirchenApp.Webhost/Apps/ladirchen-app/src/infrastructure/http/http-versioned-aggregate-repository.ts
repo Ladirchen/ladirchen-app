@@ -1,5 +1,5 @@
 import { isVersionedAggregateSnapshot } from '@/application/contracts/family-aggregate-validation';
-import type { StateGuard } from '@/application/contracts/family-aggregate-validation';
+import type { FamilyAggregateDescriptor } from '@/application/contracts/family-aggregate-descriptors';
 import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
 import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
 import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
@@ -15,16 +15,13 @@ export class AggregateApiError extends Error {
   }
 }
 
-interface HttpAggregateRepositoryOptions<
+type HttpAggregateRepositoryOptions<
   TAggregateType extends FamilyAggregateType,
   TSchemaVersion extends number,
   TState,
-> {
-  readonly aggregateType: TAggregateType;
+> = FamilyAggregateDescriptor<TAggregateType, TSchemaVersion, TState> & {
   readonly apiBaseUrl: string;
-  readonly isState: StateGuard<TState>;
-  readonly schemaVersion: TSchemaVersion;
-}
+};
 
 const parseJson = async (response: Response): Promise<unknown> => {
   try {

@@ -37,6 +37,7 @@ public static class LoggerHelper
     catch (Exception ex)
     {
       bootstrapLogger.Fatal(ex, "*** Unhandled exception in Ladierchen Host!");
+      throw;
     }
     finally
     {
