@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia';
+import { inject } from 'vue';
+import type { InjectionKey } from 'vue';
 
 import { calculateAverageEnergy, calculateContributionProgress, MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
 import { FURNITURE_SETS, HOUSE_ROOMS } from '@/domain/house/catalog';
@@ -20,9 +22,10 @@ import { lifecycleActions } from './family-world-actions/lifecycle-actions';
 import { savingsActions } from './family-world-actions/savings-actions';
 import { shopActions } from './family-world-actions/shop-actions';
 import { createFamilyWorldState } from './family-world-state';
+import type { FamilyWorldInitialDataFactory } from '@/application/ports/family-world-initial-data';
 
-export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
-  state: createFamilyWorldState,
+export const createFamilyWorldStoreDefinition = (initialDataFactory: FamilyWorldInitialDataFactory) => defineStore('ladirchenFamilyWorld', {
+  state: () => createFamilyWorldState(initialDataFactory.create()),
 
   getters: {
     activeChild(state): FamilyMember {
@@ -219,3 +222,13 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     ...homeActions,
   },
 });
+
+export type FamilyWorldStoreDefinition = ReturnType<typeof createFamilyWorldStoreDefinition>;
+
+export const FAMILY_WORLD_STORE_DEFINITION: InjectionKey<FamilyWorldStoreDefinition> = Symbol('FamilyWorldStoreDefinition');
+
+export const useFamilyWorldStore = () => {
+  const storeDefinition = inject(FAMILY_WORLD_STORE_DEFINITION);
+  if (!storeDefinition) {throw new Error('The family world store has not been registered.');}
+  return storeDefinition();
+};

@@ -8,13 +8,7 @@ import type { HouseLayoutPlacement } from '@/domain/house/entities';
 import type { FamilyCurrency, GuardianGift } from '@/domain/savings/types';
 import type { ContributionId } from '@/domain/shared/identifiers';
 import type { TranslationKey } from '@/locales/translation-keys';
-import type { FamilyWorldInitialData, FamilyWorldInitialDataFactory } from '@/application/ports/family-world-initial-data';
-
-let configuredInitialDataFactory: FamilyWorldInitialDataFactory | undefined;
-
-export const configureFamilyWorldInitialData = (factory: FamilyWorldInitialDataFactory): void => {
-  configuredInitialDataFactory = factory;
-};
+import type { FamilyWorldInitialData } from '@/application/ports/family-world-initial-data';
 
 export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] => {
   const guardians = members.filter(member => member.role === 'guardian');
@@ -117,9 +111,7 @@ export const mergeHouseLayout = (
   });
 };
 
-export const createFamilyWorldState = (providedInitialData?: FamilyWorldInitialData) => {
-  const initialData = providedInitialData ?? configuredInitialDataFactory?.create();
-  if (!initialData) {throw new Error('Family world initial data must be configured before the store is created.');}
+export const createFamilyWorldState = (initialData: FamilyWorldInitialData) => {
   const viewerRole = initialStateValue<ViewerRole>('child');
   const familyCurrencyCode = initialStateValue<FamilyCurrency>('CHF');
   const simulatedEnergy = initialStateValue<number | null>(null);
