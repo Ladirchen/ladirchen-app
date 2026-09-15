@@ -54,6 +54,16 @@ export const HOUSE_THEME_IDS = [
 ] as const;
 export type HouseThemeId = typeof HOUSE_THEME_IDS[number];
 export type HouseEnergyVisualLevel = 1 | 2 | 3 | 4 | 5;
+export const HOUSE_ENERGY_THRESHOLDS = Object.freeze({
+  bright: 70,
+  cloudy: 40,
+  critical: 30,
+  highVisual: 85,
+  low: 55,
+  lowVisual: 40,
+  mediumVisual: 65,
+  minimumVisual: 20,
+});
 export type HouseExteriorBackgroundAssetId = `${HouseThemeId}-energy-${HouseEnergyVisualLevel}-exterior-background`;
 export type HouseExteriorHouseAssetId = `${HouseStageId}-${HouseThemeId}-house`;
 export type HouseExteriorAssetId = HouseExteriorBackgroundAssetId | HouseExteriorHouseAssetId;
@@ -61,10 +71,10 @@ export type HouseEditionKind = 'standard' | 'seasonal' | 'fantasy';
 export type HexColor = `#${string}`;
 
 export const resolveHouseEnergyVisualLevel = (energy: number): HouseEnergyVisualLevel => {
-  if (energy < 20) { return 1; }
-  if (energy < 40) { return 2; }
-  if (energy < 65) { return 3; }
-  if (energy < 85) { return 4; }
+  if (energy < HOUSE_ENERGY_THRESHOLDS.minimumVisual) { return 1; }
+  if (energy < HOUSE_ENERGY_THRESHOLDS.lowVisual) { return 2; }
+  if (energy < HOUSE_ENERGY_THRESHOLDS.mediumVisual) { return 3; }
+  if (energy < HOUSE_ENERGY_THRESHOLDS.highVisual) { return 4; }
   return 5;
 };
 

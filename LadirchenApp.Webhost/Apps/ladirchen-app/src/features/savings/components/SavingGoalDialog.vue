@@ -199,7 +199,7 @@ watch(() => props.modelValue, (isOpen) => {
   animation: goal-visual-float 2.8s ease-in-out infinite;
 }
 .goal-visual-icon {
-  font-size: 1.9375rem;
+  font-size: rem(31);
   filter: drop-shadow(
     0 2px 0 color-mix(in srgb, var(--lad-surface-raised) 35%, transparent)
   );
@@ -231,14 +231,14 @@ watch(() => props.modelValue, (isOpen) => {
   @apply min-w-0;
 }
 .goal-dialog-heading :deep(.v-card-title) {
-  font-size: 1.3125rem;
+  font-size: rem(21);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: -0.035em;
 }
 .goal-dialog-heading > p:last-child {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.35;
 }
 .goal-dialog-close {
@@ -268,7 +268,7 @@ watch(() => props.modelValue, (isOpen) => {
   );
   box-shadow: 0 3px 0
     color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
   transform: rotate(-4deg);
 }
@@ -282,7 +282,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-step > div small {
   margin-top: 1px;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .goal-icon-picker {
   @apply d-grid;
@@ -295,7 +295,7 @@ watch(() => props.modelValue, (isOpen) => {
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 12%, transparent);
   border-radius: 11px;
   background: var(--lad-surface-soft);
-  font-size: 1.125rem;
+  font-size: rem(18);
   transition:
     transform 0.16s ease,
     background 0.16s ease;
@@ -358,7 +358,7 @@ watch(() => props.modelValue, (isOpen) => {
   box-shadow:
     0 4px 0 var(--lad-color-info-strong),
     0 7px 11px color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
-  font-size: 1.6875rem;
+  font-size: rem(27);
   font-weight: var(--lad-font-weight-black);
   line-height: 1;
   transition:
@@ -395,7 +395,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-target-picker small {
   @apply d-block;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-strong);
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -406,12 +406,12 @@ watch(() => props.modelValue, (isOpen) => {
   color: var(--lad-blue-dark);
 }
 .goal-target-picker output strong {
-  font-size: 1.5625rem;
+  font-size: rem(25);
   line-height: 1.15;
 }
 .goal-target-picker output span {
   color: var(--lad-color-primary-supporting);
-  font-size: 0.8125rem;
+  font-size: rem(13);
   font-weight: var(--lad-font-weight-black);
 }
 .target-spark {
@@ -459,7 +459,7 @@ watch(() => props.modelValue, (isOpen) => {
   @apply d-block;
 }
 .visibility-options strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .visibility-options small {
   color: var(--lad-muted);
@@ -475,7 +475,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .saved-hint {
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.35;
 }
 .starter-bonus {
@@ -516,7 +516,7 @@ watch(() => props.modelValue, (isOpen) => {
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
   box-shadow: 0 4px 0
     color-mix(in srgb, var(--lad-color-reward-shadow) 12%, transparent);
-  font-size: 1.6875rem;
+  font-size: rem(27);
   transform-origin: bottom center;
   animation: bonus-wiggle 2.2s ease-in-out infinite;
 }
@@ -537,7 +537,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .starter-bonus p strong {
   color: var(--lad-color-reward-strong);
-  font-size: 0.875rem;
+  font-size: rem(14);
 }
 .starter-bonus p span {
   margin-top: 1px;
@@ -578,7 +578,7 @@ watch(() => props.modelValue, (isOpen) => {
   border: 2px solid var(--lad-border-on-accent);
   border-radius: var(--lad-radius-pill);
   background: var(--lad-color-primary-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-style: normal;
   font-weight: var(--lad-font-weight-black);
 }

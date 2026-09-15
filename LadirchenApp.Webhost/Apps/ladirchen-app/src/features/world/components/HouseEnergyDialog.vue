@@ -269,11 +269,11 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile span {
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .summary-tile strong {
   margin-top: 1px;
-  font-size: 0.9375rem;
+  font-size: rem(15);
   line-height: 1.2;
 }
 .summary-tile small {
@@ -324,12 +324,12 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-orb small {
   @apply d-inline;
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .summary-icon {
   @include icon-tile(
     2.75rem,
-    0.875rem,
+    rem(14),
     var(--lad-color-reward-pale),
     color-mix(in srgb, var(--lad-color-reward-deep) 12%, transparent),
     -4deg
@@ -367,11 +367,11 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-dialog h3 {
   margin: 1px 0 0;
-  font-size: 1.0625rem;
+  font-size: rem(17);
 }
 .average-label {
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: 800;
 }
 .child-energy-list {
@@ -436,19 +436,19 @@ const close = () => emit('update:modelValue', false);
   @apply d-flex align-center justify-space-between ga-2;
 }
 .child-energy-row strong {
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .child-energy-row b {
   padding: 4px 8px;
   color: var(--lad-mint-dark);
   border-radius: var(--lad-radius-pill);
   background: var(--lad-surface-soft);
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .child-energy-description {
   @apply ma-0 mt-2;
   color: var(--lad-color-primary-supporting);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: 650;
   line-height: 1.35;
 }
@@ -538,14 +538,14 @@ const close = () => emit('update:modelValue', false);
 }
 .dialog-kicker {
   margin: 0 0 5px;
-  @include overline(var(--lad-blue), 0.5625rem);
+  @include overline(var(--lad-blue), rem(9));
 }
 .energy-dialog-header h2 {
-  font-size: 1.5625rem;
+  font-size: rem(25);
 }
 .energy-subtitle {
   max-width: 225px;
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .energy-mascot {
   width: 78px;

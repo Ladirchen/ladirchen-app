@@ -148,8 +148,8 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .profile-header-avatar {
-  width: 4.625rem;
-  height: 4.625rem;
+  width: rem(74);
+  height: rem(74);
   @apply position-relative d-grid place-center;
   border-radius: 1.5rem;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
@@ -170,14 +170,14 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 }
 .profile-editor-card h2 {
   @apply ma-0;
-  font-size: 1.3125rem;
+  font-size: rem(21);
   letter-spacing: -0.03em;
 }
 .profile-editor-nickname {
-  padding: 0.8125rem;
-  border: 0.0625rem solid
+  padding: rem(13);
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
-  border-radius: 1.125rem;
+  border-radius: rem(18);
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
 }
 .profile-editor-label {
@@ -191,15 +191,15 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   font-size: 0.75rem;
 }
 .profile-editor-label small {
-  margin-top: 0.0625rem;
+  margin-top: rem(1);
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .profile-nickname-icon {
-  width: 1.9375rem;
-  height: 1.9375rem;
+  width: rem(31);
+  height: rem(31);
   @apply d-grid place-center flex-shrink-0;
-  border-radius: 0.6875rem;
+  border-radius: rem(11);
   background: var(--lad-color-reward-soft);
   font-size: 1rem;
   animation: nickname-spark 3s ease-in-out infinite;
@@ -210,21 +210,21 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 .profile-quick-actions {
   @apply d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6875rem;
+  gap: rem(11);
 }
 .profile-quick-actions--single {
   grid-template-columns: 1fr;
 }
 .profile-action-button {
   width: 100%;
-  min-height: 5.125rem;
-  padding: 0.6875rem 0.75rem 0.6875rem 0.5625rem;
+  min-height: rem(82);
+  padding: rem(11) 0.75rem rem(11) rem(9);
   @apply position-relative d-flex align-center overflow-hidden text-left cursor-pointer;
-  gap: 0.5625rem;
+  gap: rem(9);
   color: var(--lad-text);
-  border: 0.125rem solid
+  border: rem(2) solid
     color-mix(in srgb, var(--lad-color-info) 20%, transparent);
-  border-radius: 1.3125rem;
+  border-radius: rem(21);
   background:
     radial-gradient(
       circle at 88% 10%,
@@ -238,7 +238,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
       var(--lad-color-reward-soft)
     );
   box-shadow:
-    0 0.375rem 0
+    0 rem(6) 0
       color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent),
     0 0.75rem 1.25rem
       color-mix(in srgb, var(--lad-color-info-deep) 8%, transparent);
@@ -248,12 +248,12 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     box-shadow 0.18s ease;
 }
 .profile-action-button::before {
-  width: 2.625rem;
+  width: rem(42);
   height: 160%;
   content: "";
   @apply position-absolute;
   top: -30%;
-  left: -4.0625rem;
+  left: -rem(65);
   transform: rotate(18deg);
   background: linear-gradient(
     90deg,
@@ -267,15 +267,15 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   animation-delay: -2s;
 }
 .profile-action-button:hover {
-  transform: translateY(-0.1875rem);
+  transform: translateY(-rem(3));
   box-shadow:
     0 0.5rem 0 color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent),
     0 1rem 1.5rem
       color-mix(in srgb, var(--lad-color-info-deep) 10%, transparent);
 }
 .profile-action-button:active {
-  transform: translateY(0.1875rem) scale(0.985);
-  box-shadow: 0 0.125rem 0
+  transform: translateY(rem(3)) scale(0.985);
+  box-shadow: 0 rem(2) 0
     color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
 }
 .profile-action-button > span:nth-child(2) {
@@ -287,11 +287,11 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   @apply d-block;
 }
 .profile-action-button strong {
-  font-size: 0.8125rem;
+  font-size: rem(13);
   line-height: 1.2;
 }
 .profile-action-button small {
-  margin-top: 0.1875rem;
+  margin-top: rem(3);
   @apply overflow-hidden;
   color: var(--lad-muted);
   font-size: 0.5rem;
@@ -300,12 +300,12 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   white-space: nowrap;
 }
 .profile-action-icon {
-  width: 2.875rem;
-  height: 2.875rem;
+  width: rem(46);
+  height: rem(46);
   @apply d-grid place-center flex-shrink-0;
   z-index: 1;
   color: var(--lad-text-inverse);
-  border: 0.1875rem solid var(--lad-border-on-accent);
+  border: rem(3) solid var(--lad-border-on-accent);
   border-radius: 1rem;
   background: linear-gradient(
     145deg,
@@ -314,7 +314,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   );
   box-shadow:
     0 0.25rem 0 var(--lad-color-info-strong),
-    0 0.5rem 0.8125rem
+    0 0.5rem rem(13)
       color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
   transform: rotate(-5deg);
   animation: appearance-icon-float 2.8s ease-in-out infinite;
@@ -341,7 +341,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
       var(--lad-color-reward-soft)
     );
   box-shadow:
-    0 0.375rem 0
+    0 rem(6) 0
       color-mix(in srgb, var(--lad-neutral-decorative) 12%, transparent),
     0 0.75rem 1.25rem
       color-mix(in srgb, var(--lad-color-accent-pink-strong) 5%, transparent);
@@ -354,14 +354,14 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   );
   box-shadow:
     0 0.25rem 0 var(--lad-color-bonus-muted),
-    0 0.5rem 0.8125rem
+    0 0.5rem rem(13)
       color-mix(in srgb, var(--lad-color-bonus-muted) 18%, transparent);
   animation-delay: -0.9s;
 }
 .profile-action-spark {
   @apply position-absolute;
-  top: 0.4375rem;
-  right: 0.5625rem;
+  top: rem(7);
+  right: rem(9);
   z-index: 2;
   color: var(--lad-color-reward-border);
   font-style: normal;
@@ -373,24 +373,24 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   @apply align-center ga-2;
 }
 .setting-row {
-  min-height: 3.4375rem;
+  min-height: rem(55);
   @apply d-flex align-center justify-space-between;
-  border-top: 0.0625rem dashed
+  border-top: rem(1) dashed
     color-mix(in srgb, var(--lad-color-info) 20%, transparent);
 }
 .setting-row > span {
   @apply d-flex align-center ga-2;
-  font-size: 0.8125rem;
+  font-size: rem(13);
   @apply font-weight-bold;
 }
 .setting-icon {
-  width: 2.0625rem;
-  height: 2.0625rem;
+  width: rem(33);
+  height: rem(33);
   @apply d-grid place-center flex-shrink-0;
-  border: 0.125rem solid var(--lad-border-on-accent);
-  border-radius: 0.6875rem;
+  border: rem(2) solid var(--lad-border-on-accent);
+  border-radius: rem(11);
   background: var(--lad-surface-raised);
-  box-shadow: 0 0.1875rem 0
+  box-shadow: 0 rem(3) 0
     color-mix(in srgb, var(--lad-color-info) 22%, transparent);
   font-style: normal;
 }
@@ -402,21 +402,21 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 .language-options {
   @apply d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.375rem;
+  gap: rem(6);
 }
 .language-options button {
-  min-width: 4.375rem;
+  min-width: rem(70);
   min-height: 2.75rem;
-  padding: 0.3125rem 0.5rem;
+  padding: rem(5) 0.5rem;
   @apply d-grid align-center cursor-pointer;
   grid-template-columns: auto auto;
-  column-gap: 0.3125rem;
+  column-gap: rem(5);
   color: var(--lad-text-strong);
-  border: 0.125rem solid
+  border: rem(2) solid
     color-mix(in srgb, var(--lad-color-info) 18%, transparent);
-  border-radius: 0.875rem;
+  border-radius: rem(14);
   background: var(--lad-surface-raised);
-  box-shadow: 0 0.1875rem 0
+  box-shadow: 0 rem(3) 0
     color-mix(in srgb, var(--lad-color-info-deep) 10%, transparent);
   font: inherit;
   transition:
@@ -426,7 +426,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     box-shadow 0.15s ease;
 }
 .language-options button:hover {
-  transform: translateY(-0.125rem);
+  transform: translateY(-rem(2));
 }
 .language-options button.active {
   color: var(--lad-color-primary-deep);
@@ -441,38 +441,38 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 }
 .language-options button i {
   grid-row: 1 / 3;
-  font-size: 1.125rem;
+  font-size: rem(18);
   font-style: normal;
 }
 .language-options button strong {
   align-self: end;
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1;
 }
 .language-options button small {
   align-self: start;
   color: var(--lad-muted);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   line-height: 1.15;
 }
 .permission-list {
   @apply d-grid;
-  gap: 0.625rem;
+  gap: rem(10);
   color: var(--lad-muted);
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .logout-card {
   width: 100%;
-  min-height: 4.125rem;
-  padding: 0.5625rem 0.8125rem;
+  min-height: rem(66);
+  padding: rem(9) rem(13);
   @apply d-flex align-center text-left cursor-pointer;
-  gap: 0.625rem;
+  gap: rem(10);
   color: var(--lad-color-accent-warm-deep);
-  border: 0.125rem solid
+  border: rem(2) solid
     color-mix(in srgb, var(--lad-color-danger) 15%, transparent);
-  border-radius: 1.1875rem;
+  border-radius: rem(19);
   background: linear-gradient(145deg, var(--lad-surface), var(--lad-surface));
-  box-shadow: 0 0.3125rem 0
+  box-shadow: 0 rem(5) 0
     color-mix(in srgb, var(--lad-color-danger-muted) 8%, transparent);
   font: inherit;
   transition:
@@ -480,13 +480,13 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     box-shadow 0.16s ease;
 }
 .logout-card:hover {
-  transform: translateY(-0.125rem);
-  box-shadow: 0 0.4375rem 0
+  transform: translateY(-rem(2));
+  box-shadow: 0 rem(7) 0
     color-mix(in srgb, var(--lad-color-danger-muted) 8%, transparent);
 }
 .logout-card:active {
-  transform: translateY(0.125rem);
-  box-shadow: 0 0.125rem 0
+  transform: translateY(rem(2));
+  box-shadow: 0 rem(2) 0
     color-mix(in srgb, var(--lad-color-danger-muted) 8%, transparent);
 }
 .logout-card > span:nth-child(2) {
@@ -497,10 +497,10 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   @apply d-block;
 }
 .logout-card strong {
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .logout-card small {
-  margin-top: 0.125rem;
+  margin-top: rem(2);
   color: var(--lad-muted);
   font-size: 0.5rem;
 }
@@ -509,10 +509,10 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   height: 2.5rem;
   @apply d-grid place-center flex-shrink-0;
   color: var(--lad-color-danger-muted);
-  border: 0.125rem solid var(--lad-border-on-accent);
-  border-radius: 0.8125rem;
+  border: rem(2) solid var(--lad-border-on-accent);
+  border-radius: rem(13);
   background: var(--lad-color-reward-soft);
-  box-shadow: 0 0.1875rem 0
+  box-shadow: 0 rem(3) 0
     color-mix(in srgb, var(--lad-color-danger-muted) 10%, transparent);
 }
 .logout-arrow {
@@ -542,7 +542,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 @keyframes appearance-shine {
   0%,
   45% {
-    left: -4.375rem;
+    left: -rem(70);
   }
   72%,
   100% {
@@ -552,10 +552,10 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 @keyframes appearance-icon-float {
   0%,
   100% {
-    transform: translateY(0.0625rem) rotate(-5deg);
+    transform: translateY(rem(1)) rotate(-5deg);
   }
   50% {
-    transform: translateY(-0.1875rem) rotate(4deg);
+    transform: translateY(-rem(3)) rotate(4deg);
   }
 }
 @include respond-down(narrow) {

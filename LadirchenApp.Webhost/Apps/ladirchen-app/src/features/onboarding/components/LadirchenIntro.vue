@@ -152,7 +152,7 @@ onUnmounted(() => {
 .intro-logo-row h1 {
   @apply ma-0;
   color: var(--lad-palette-text);
-  font-size: 2.1875rem;
+  font-size: rem(35);
   line-height: 0.9;
   letter-spacing: -0.06em;
   transform: translateY(1px);

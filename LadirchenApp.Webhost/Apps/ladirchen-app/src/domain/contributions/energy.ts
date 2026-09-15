@@ -1,4 +1,5 @@
 import type { FamilyMemberId } from '../shared/identifiers';
+import { percentageOfTotal } from '../shared/numbers';
 import type { Contribution } from './types';
 
 export const DEFAULT_ENERGY_PERCENT = 60;
@@ -20,7 +21,7 @@ export function calculateContributionProgress(
   const completedEnergy = baseContributions
     .filter((contribution) => contribution.status === 'approved')
     .reduce((sum, contribution) => sum + contribution.energy, 0);
-  return Math.min(100, Math.round((completedEnergy / totalEnergy) * 100));
+  return Math.round(percentageOfTotal(completedEnergy, totalEnergy));
 }
 
 export function calculateAverageEnergy(progressValues: number[]): number {

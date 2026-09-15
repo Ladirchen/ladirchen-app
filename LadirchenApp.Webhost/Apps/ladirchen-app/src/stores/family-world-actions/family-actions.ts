@@ -1,6 +1,7 @@
 import { createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import type { FamilyMember, FamilyPet, GuardianAccessLevel } from '@/domain/family/types';
+import { FAMILY_PROFILE_RULES } from '@/domain/family/profile-rules';
 import { createDomainId } from '@/domain/shared/identifiers';
 import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
 import { normalizeFamilyMembers } from '@/stores/family-world-state';
@@ -123,7 +124,7 @@ export const familyActions = {
     if (this.viewerRole !== 'child' || this.signedInMemberId !== this.activeChildId) {return;}
     const member = this.members.find((item) => item.id === this.activeChildId && item.role === 'child');
     if (!member) {return;}
-    member.nickname = nickname.trim().slice(0, 18) || undefined;
+    member.nickname = nickname.trim().slice(0, FAMILY_PROFILE_RULES.nicknameMaximumLength) || undefined;
     this.persistFamilyProfile();
     this.notify(member.nickname ? 'notifications.profile.nicknameSaved' : 'notifications.profile.nicknameRemoved', member.nickname ? { nickname: member.nickname } : {});
   },

@@ -21,10 +21,12 @@ withDefaults(defineProps<{
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .ladirchen-amount {
   min-width: 0;
   @apply d-inline-flex align-center;
-  gap: 0.1875rem;
+  gap: rem(3);
   line-height: 1;
   white-space: nowrap;
   vertical-align: middle;
@@ -36,11 +38,11 @@ withDefaults(defineProps<{
 }
 
 .ladirchen-amount--compact {
-  gap: 0.125rem;
+  gap: rem(2);
 }
 
 .ladirchen-amount--compact :deep(.ladirchen-coin) {
-  width: 1.375rem;
-  height: 1.375rem;
+  width: rem(22);
+  height: rem(22);
 }
 </style>

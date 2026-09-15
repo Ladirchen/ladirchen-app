@@ -63,7 +63,7 @@ import LadiMascot from '@/shared/components/LadiMascot.vue';
 
 import AnimatedPiggyBank from './AnimatedPiggyBank.vue';
 import { getLadiStage } from '@/domain/ladi';
-import { familyParticipationInterestStrategy } from '@/domain/savings/interest';
+import { calculateSavingsCredit, familyParticipationInterestStrategy } from '@/domain/savings/interest';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
@@ -105,8 +105,7 @@ const formatRate = (value: number) => value.toLocaleString(locale.value, {
   minimumFractionDigits: 1,
 });
 function interestForRate(saved: number, target: number, rate: number): number {
-  if (saved <= 0 || saved >= target) return 0;
-  return Math.min(target - saved, Math.max(1, Math.round(saved * (rate / 100))));
+  return calculateSavingsCredit(saved, target, rate);
 }
 function resetSimulation(): void {
   simulatedCompletion.value = store.dailyEnergy;
@@ -137,7 +136,7 @@ onUnmounted(() => {
 }
 h3 {
   @apply ma-0;
-  font-size: 1.125rem;
+  font-size: rem(18);
   letter-spacing: -0.025em;
 }
 .simulator-preview {
@@ -156,11 +155,11 @@ h3 {
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) small {
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .simulator-preview > div:nth-child(2) strong {
   margin: 1px 0;
-  font-size: 0.875rem;
+  font-size: rem(14);
 }
 .simulator-rate {
   min-width: 70px;
@@ -176,13 +175,13 @@ h3 {
 }
 .simulator-rate span {
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .simulator-label {
   margin-top: 9px;
   @apply d-flex align-center justify-space-between;
   color: var(--lad-muted);
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .simulator-label strong {
   color: var(--lad-text);
@@ -198,11 +197,11 @@ h3 {
 .payout-estimate span,
 .payout-estimate small {
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .payout-estimate strong {
   color: var(--lad-mint-dark);
-  font-size: 1.375rem;
+  font-size: rem(22);
 }
 .payout-estimate small {
   @apply d-block;
@@ -226,12 +225,12 @@ h3 {
 }
 .payout-success > div:last-child strong {
   color: var(--lad-color-success-strong);
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .payout-success > div:last-child span {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.35;
 }
 .payout-visual {

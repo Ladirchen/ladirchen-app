@@ -259,7 +259,7 @@ const {
   padding: 15px 16px;
   @apply d-flex align-center justify-space-between;
   gap: 10px;
-  @include dialog-title-panel(1.3125rem);
+  @include dialog-title-panel(rem(21));
 }
 .piggy-title-row::before,
 .piggy-title-row::after {
@@ -294,7 +294,7 @@ const {
 }
 .piggy-header h2 {
   @apply ma-0;
-  @include heading(1.4375rem, 1.1, -0.04em);
+  @include heading(rem(23), 1.1, -0.04em);
 }
 .piggy-subtitle {
   max-width: 230px;
@@ -325,7 +325,7 @@ const {
   top: -10px;
   right: -10px;
   z-index: 3;
-  @include dialog-close-button(2.125rem, var(--lad-radius-small));
+  @include dialog-close-button(rem(34), var(--lad-radius-small));
 }
 .balance-grid,
 .balance-detail-grid {
@@ -342,7 +342,7 @@ const {
 .balance-icon {
   @include icon-tile(
     2.5rem,
-    0.875rem,
+    rem(14),
     linear-gradient(
       145deg,
       var(--lad-color-primary-highlight),
@@ -350,7 +350,7 @@ const {
     ),
     var(--lad-color-info-strong),
     -5deg,
-    0.1875rem solid var(--lad-surface-raised)
+    rem(3) solid var(--lad-surface-raised)
   );
   color: var(--lad-text-inverse);
 }
@@ -383,12 +383,12 @@ const {
     var(--lad-color-primary-soft) 90%,
     transparent
   );
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: var(--lad-font-weight-strong);
   line-height: 1;
 }
 .today-earned :deep(.v-icon) {
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .today-earned b {
   font-weight: var(--lad-font-weight-black);
@@ -423,7 +423,7 @@ const {
 .family-currency-value span {
   @apply overflow-hidden;
   color: var(--lad-muted);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -438,7 +438,7 @@ const {
 .family-currency-value small {
   grid-column: 1 / -1;
   color: var(--lad-text-strong);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: var(--lad-font-weight-strong);
   line-height: 1.2;
   text-align: center;
@@ -543,20 +543,20 @@ const {
 .guardian-child-stat small {
   @apply overflow-hidden;
   color: var(--lad-muted);
-  font-size: 0.46875rem;
+  font-size: rem(7.5);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .guardian-child-stat strong {
   margin-top: 2px;
   @apply overflow-hidden;
-  font-size: 0.6875rem;
+  font-size: rem(11);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .guardian-child-stat--level strong {
   color: var(--lad-color-primary-deep);
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .currency-settings-card {
   border: 2px solid
@@ -580,7 +580,7 @@ const {
   color: var(--lad-color-reward-strong);
   border-radius: 12px;
   background: var(--lad-color-reward-pale);
-  font-size: 1.0625rem;
+  font-size: rem(17);
   font-weight: var(--lad-font-weight-black);
 }
 .currency-settings-fields {
@@ -634,7 +634,7 @@ const {
   top: 7px;
   right: 10px;
   color: var(--lad-color-reward-border);
-  font-size: 0.625rem;
+  font-size: rem(10);
   animation: transfer-spark 2s ease-in-out infinite;
 }
 .transfer-card::after {
@@ -681,12 +681,12 @@ const {
   @apply d-block;
 }
 .destination-switch strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.15;
 }
 .destination-switch small {
   margin-top: 2px;
-  font-size: 0.4375rem;
+  font-size: rem(7);
   opacity: 0.75;
 }
 .destination-switch button.active {
@@ -800,7 +800,7 @@ const {
   border: 2px solid
     color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
   border-radius: 14px;
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
@@ -809,7 +809,7 @@ const {
   gap: 5px;
 }
 .transfer-button :deep(.v-btn__content) > span {
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .transfer-button--withdraw {
   color: var(--lad-color-info-deep);
@@ -953,13 +953,13 @@ const {
 }
 .selected-goal-option strong {
   @apply overflow-hidden;
-  font-size: 0.6875rem;
+  font-size: rem(11);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .selected-goal-option small {
   color: var(--lad-muted);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: 750;
 }
 .goal-option-icon {
@@ -975,7 +975,7 @@ const {
   );
   box-shadow: 0 2px 0
     color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
-  font-size: 1.0625rem;
+  font-size: rem(17);
   transform: rotate(-4deg);
 }
 .goal-option {
@@ -1079,7 +1079,7 @@ const {
   @apply d-flex align-center justify-center;
   gap: 5px;
   color: var(--lad-text);
-  font-size: 0.9375rem;
+  font-size: rem(15);
   font-weight: var(--lad-font-weight-black);
 }
 .amount-stepper output :deep(.ladirchen-coin) {
@@ -1111,10 +1111,10 @@ const {
   scale: 0.7;
 }
 .family-currency-value strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .family-currency-value small {
-  font-size: 0.40625rem;
+  font-size: rem(6.5);
 }
 .transfer-heading {
   @apply justify-start;
@@ -1131,7 +1131,7 @@ const {
 .transfer-input :deep(.v-field__input) {
   min-height: 36px;
   padding-inline: 8px;
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .amount-stepper {
   height: 38px;
@@ -1141,7 +1141,7 @@ const {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .amount-stepper output {
   @apply text-no-wrap;
@@ -1151,7 +1151,7 @@ const {
   min-height: 40px;
 }
 .transfer-button--gift :deep(.v-icon) {
-  font-size: 1.0625rem;
+  font-size: rem(17);
 }
 .setting-label {
   @apply mt-3 d-flex justify-space-between;
@@ -1180,22 +1180,22 @@ const {
     height: 36px;
   }
   .guardian-child-name strong {
-    font-size: 0.625rem;
+    font-size: rem(10);
   }
   .guardian-child-name small {
-    font-size: 0.4375rem;
+    font-size: rem(7);
   }
   .guardian-child-stat {
     padding-left: 3px;
   }
   .guardian-child-stat small {
-    font-size: 0.40625rem;
+    font-size: rem(6.5);
   }
   .guardian-child-stat strong {
-    font-size: 0.5625rem;
+    font-size: rem(9);
   }
   .guardian-child-stat--level strong {
-    font-size: 0.8125rem;
+    font-size: rem(13);
   }
 }
 @keyframes transfer-to-goal {

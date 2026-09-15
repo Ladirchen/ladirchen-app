@@ -8,6 +8,8 @@ import type { Application, Container } from 'pixi.js';
 import type * as PixiNamespace from 'pixi.js';
 
 import type { RoomDesignDefinition, RoomSceneOverlayDefinition } from '@/domain/house';
+import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
+import { MILLISECONDS_PER_SECOND } from '@/domain/shared/time';
 import { ROOM_DESIGN_ASSET_URLS, roomDesignBackgroundAssetId } from '@/features/world/room-design-assets';
 import { visualColorPalette } from '@/theme/color-palette';
 
@@ -15,6 +17,11 @@ const props = defineProps<{
   design: RoomDesignDefinition;
   energy: number;
 }>();
+
+const MAXIMUM_DEVICE_PIXEL_RATIO = 2;
+const OVERLAY_FLOAT_FREQUENCY = 1.15;
+const OVERLAY_FLOAT_ROTATION = 0.055;
+const OVERLAY_SPIN_SPEED = 0.45;
 
 const host = ref<HTMLElement>();
 let application: Application | undefined;
@@ -37,7 +44,7 @@ onMounted(async () => {
     autoDensity: true,
     backgroundAlpha: 0,
     preference: 'webgl',
-    resolution: Math.min(window.devicePixelRatio, 2),
+    resolution: Math.min(window.devicePixelRatio, MAXIMUM_DEVICE_PIXEL_RATIO),
     resizeTo: host.value,
   });
   if (destroyed || !host.value) {
@@ -64,8 +71,8 @@ onMounted(async () => {
   const overlayNodes = props.design.overlays.map((overlay) => {
     const node = new pixi.Container();
     node.position.set(
-      props.design.canvasWidth * overlay.xPercent / 100,
-      props.design.canvasHeight * overlay.yPercent / 100,
+      props.design.canvasWidth * overlay.xPercent / PERCENTAGE_BASE,
+      props.design.canvasHeight * overlay.yPercent / PERCENTAGE_BASE,
     );
     node.scale.set(overlay.scale);
     node.addChild(createOverlay(pixi, overlay, { accent, leaf, outline }));
@@ -91,11 +98,11 @@ onMounted(async () => {
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     let elapsed = 0;
     app.ticker.add((ticker) => {
-      elapsed += ticker.deltaMS / 1000;
+      elapsed += ticker.deltaMS / MILLISECONDS_PER_SECOND;
       overlayNodes.forEach(({ definition, node }) => {
         node.rotation = definition.motion === 'spin'
-          ? elapsed * .45
-          : Math.sin(elapsed * 1.15) * .055;
+          ? elapsed * OVERLAY_SPIN_SPEED
+          : Math.sin(elapsed * OVERLAY_FLOAT_FREQUENCY) * OVERLAY_FLOAT_ROTATION;
       });
     });
   }

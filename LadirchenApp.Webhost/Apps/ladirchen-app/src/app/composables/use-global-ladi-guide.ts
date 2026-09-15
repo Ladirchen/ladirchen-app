@@ -9,6 +9,18 @@ import type { LadiGuideActionId, LadiGuideMessage } from '@/shared/services/ladi
 
 type GuideMood = 'gentle' | 'calm' | 'happy';
 
+const GUIDE_TIMING = Object.freeze({
+  celebrationDuration: 2400,
+  defaultSpeechDuration: 11_000,
+  emergeDuration: 1250,
+  moodSelectionDelay: 1700,
+  motionDuration: 950,
+  randomMotionBaseDelay: 3200,
+  randomMotionDelayVariance: 4200,
+  reducedMotionPromptDelay: 650,
+  standardPromptDelay: 2650,
+});
+
 export const useGlobalLadiGuide = () => {
 const store = useFamilyWorldStore();
 const route = useRoute();
@@ -80,9 +92,9 @@ const showSpeech = (message: string, heading = '', smart = false, detail?: Pick<
     celebrationTimer = window.setTimeout(() => {
       giftCelebration.value = false;
       randomMotion.value = '';
-    }, 2400);
+    }, GUIDE_TIMING.celebrationDuration);
   }
-  if (!smart) {speechTimer = window.setTimeout(closeSpeech, 11000);}
+  if (!smart) {speechTimer = window.setTimeout(closeSpeech, GUIDE_TIMING.defaultSpeechDuration);}
 };
 const triggerSpeechAction = () => {
   if (!speechActionId.value) {return;}
@@ -118,7 +130,7 @@ const selectMood = (nextMood: GuideMood) => {
       ? t('guide.mood.gentleMessage')
       : t('guide.mood.calmMessage');
   clearSpeechTimer();
-  speechTimer = window.setTimeout(speakCurrentPageIntro, 1700);
+  speechTimer = window.setTimeout(speakCurrentPageIntro, GUIDE_TIMING.moodSelectionDelay);
 };
 const handleGuideMessage = (detail: LadiGuideMessage) => {
   if (detail.pageIntro) {
@@ -156,7 +168,7 @@ const revealGuide = () => {
   motionTimer = window.setTimeout(() => {
     randomMotion.value = '';
     scheduleRandomMotion();
-  }, 1250);
+  }, GUIDE_TIMING.emergeDuration);
 };
 const scheduleRandomMotion = () => {
   motionTimer = window.setTimeout(() => {
@@ -165,8 +177,8 @@ const scheduleRandomMotion = () => {
     motionTimer = window.setTimeout(() => {
       randomMotion.value = '';
       scheduleRandomMotion();
-    }, 950);
-  }, 3200 + Math.round(Math.random() * 4200));
+    }, GUIDE_TIMING.motionDuration);
+  }, GUIDE_TIMING.randomMotionBaseDelay + Math.round(Math.random() * GUIDE_TIMING.randomMotionDelayVariance));
 };
 
 watch(() => store.activeChildId, () => {
@@ -209,7 +221,7 @@ onMounted(() => {
       customHeading.value = t('guide.mood.promptHeading');
       speech.value = t('guide.mood.promptMessage');
       initialMoodTimer = undefined;
-    }, reduceMotion ? 650 : 2650);
+    }, reduceMotion ? GUIDE_TIMING.reducedMotionPromptDelay : GUIDE_TIMING.standardPromptDelay);
   } else {
     moodPromptPending.value = false;
   }

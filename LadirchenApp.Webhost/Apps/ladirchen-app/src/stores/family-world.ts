@@ -80,12 +80,7 @@ export const useFamilyWorldStore = defineStore('ladirchenFamilyWorld', {
     },
     dailyEnergy(state): number {
       if (state.simulatedEnergy !== null) {return state.simulatedEnergy;}
-      const total = this.dailyBaseContributions.reduce((sum, contribution) => sum + contribution.energy, 0);
-      if (total === 0) {return 60;}
-      const completed = this.dailyBaseContributions
-        .filter((contribution) => contribution.status === 'approved')
-        .reduce((sum, contribution) => sum + contribution.energy, 0);
-      return Math.min(100, Math.round((completed / total) * 100));
+      return calculateContributionProgress(state.contributions, state.activeChildId);
     },
     approvedBaseCount(): number {
       return this.dailyBaseContributions.filter((contribution) => contribution.status === 'approved').length;

@@ -109,6 +109,7 @@ import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 
 import AppNavigationIcon from './AppNavigationIcon.vue';
 import { useFamilyWorldStore } from '@/stores/family-world';
+import { CURRENT_TIME_REFRESH_INTERVAL_MS } from '@/shared/runtime-timing';
 import { isInstantInIsoWeek } from '@/domain/shared/zoned-calendar';
 
 const AsyncAuthGateway = defineAsyncComponent(() => import('@/features/auth/components/AuthGateway.vue'));
@@ -167,7 +168,7 @@ const handleIntroFinished = () => {
 };
 onMounted(() => {
   store.refreshCurrentTime();
-  clockTimer = window.setInterval(() => store.refreshCurrentTime(), 30_000);
+  clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
 });
 onBeforeUnmount(() => {
   if (clockTimer !== undefined) {window.clearInterval(clockTimer);}
@@ -216,7 +217,7 @@ onBeforeUnmount(() => {
 .contribution-reward-card h2 {
   @apply position-relative ma-0;
   color: var(--lad-text);
-  font-size: 1.625rem;
+  font-size: rem(26);
   letter-spacing: -0.04em;
 }
 .reward-eyebrow {
@@ -282,7 +283,7 @@ onBeforeUnmount(() => {
     var(--lad-color-info-shadow)
   );
   box-shadow: 0 3px 0 var(--lad-color-info-deep);
-  font-size: 1.1875rem;
+  font-size: rem(19);
   animation: reward-double-pop 0.7s 0.65s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 .reward-rocket {
@@ -291,7 +292,7 @@ onBeforeUnmount(() => {
   left: -16px;
   z-index: 2;
   color: var(--lad-color-reward-pale);
-  font-size: 2.125rem;
+  font-size: rem(34);
   filter: drop-shadow(
     0 3px 1px
       color-mix(in srgb, var(--lad-color-bonus-info-strong) 30%, transparent)
@@ -346,7 +347,7 @@ onBeforeUnmount(() => {
 .reward-result strong {
   margin-top: 3px;
   color: var(--lad-color-reward-strong);
-  font-size: 1.0625rem;
+  font-size: rem(17);
   font-weight: var(--lad-font-weight-black);
   line-height: 1.08;
 }
@@ -373,7 +374,7 @@ onBeforeUnmount(() => {
   @apply d-flex align-center justify-center;
   gap: 5px;
   color: var(--lad-color-info-deep);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
 }
 .reward-dismiss {
@@ -443,7 +444,7 @@ onBeforeUnmount(() => {
 }
 .guardian-gift-card h2 {
   @apply position-relative ma-0;
-  font-size: 1.4375rem;
+  font-size: rem(23);
   letter-spacing: -0.035em;
 }
 .gift-coin {
@@ -457,7 +458,7 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
   box-shadow: 0 10px 28px
     color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
-  animation: gift-coin-arrive 850ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: gift-coin-arrive 850ms var(--lad-easing-pop);
 }
 .gift-coin :deep(.ladirchen-coin) {
   transform: scale(1.65);
@@ -466,14 +467,14 @@ onBeforeUnmount(() => {
 .gift-amount {
   @apply d-block position-relative mt-3;
   color: var(--lad-color-primary-strong);
-  font-size: 2.1875rem;
-  animation: gift-amount-pop 700ms 500ms both cubic-bezier(0.2, 0.9, 0.2, 1);
+  font-size: rem(35);
+  animation: gift-amount-pop 700ms 500ms both var(--lad-easing-pop);
 }
 .gift-confetti span {
   @apply position-absolute;
   z-index: 1;
   color: var(--lad-color-reward-border);
-  font-size: 1.125rem;
+  font-size: rem(18);
   animation: gift-confetti 1.8s infinite ease-in-out;
 }
 .gift-confetti span:nth-child(1) {

@@ -174,15 +174,15 @@ const close = () => emit('update:modelValue', false);
 }
 .dialog-kicker {
   margin: 0 0 5px;
-  @include overline(var(--lad-blue), 0.5625rem);
+  @include overline(var(--lad-blue), rem(9));
 }
 .streak-dialog h2 {
   @apply ma-0;
-  @include heading(1.5625rem, 1.1, -0.04em);
+  @include heading(rem(25), 1.1, -0.04em);
 }
 .streak-subtitle {
   max-width: 225px;
-  @include body-copy(0.6875rem);
+  @include body-copy(rem(11));
 }
 .close-button {
   @apply position-absolute;
@@ -234,7 +234,7 @@ const close = () => emit('update:modelValue', false);
 .summary-icon {
   @include icon-tile(
     2.5rem,
-    0.875rem,
+    rem(14),
     linear-gradient(
       145deg,
       var(--lad-color-primary-highlight),
@@ -242,7 +242,7 @@ const close = () => emit('update:modelValue', false);
     ),
     var(--lad-color-info-strong),
     -5deg,
-    0.1875rem solid var(--lad-surface-raised)
+    rem(3) solid var(--lad-surface-raised)
   );
   flex-basis: 40px;
   color: var(--lad-text-inverse);
@@ -271,11 +271,11 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile span {
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .summary-tile strong {
   margin-top: 1px;
-  font-size: 1.0625rem;
+  font-size: rem(17);
   @apply text-no-wrap;
 }
 .streak-content {
@@ -299,7 +299,7 @@ const close = () => emit('update:modelValue', false);
 }
 .week-heading > div strong {
   margin-top: 3px;
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .section-kicker {
   @include overline(
@@ -345,7 +345,7 @@ const close = () => emit('update:modelValue', false);
 }
 .week-day > span {
   color: var(--lad-text-strong);
-  font-size: 0.625rem;
+  font-size: rem(10);
   @apply font-weight-black;
 }
 .day-symbol {
@@ -432,7 +432,7 @@ const close = () => emit('update:modelValue', false);
   @apply d-block;
 }
 .week-motivation strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .week-motivation small {
   margin-top: 2px;
@@ -470,12 +470,12 @@ const close = () => emit('update:modelValue', false);
 }
 .ladi-level strong {
   margin-top: 2px;
-  font-size: 1.0625rem;
+  font-size: rem(17);
 }
 .ladi-level span {
   margin-top: 4px;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.45;
 }
 @keyframes spark-pulse {

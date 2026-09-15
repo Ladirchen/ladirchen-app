@@ -27,7 +27,7 @@ const spriteUrl = computed(() => {
   @apply overflow-visible;
   object-fit: contain;
   filter: drop-shadow(
-    0 0.25rem 0.125rem
+    0 0.25rem 2px
       color-mix(in srgb, var(--lad-palette-muted-750) 18%, transparent)
   );
   pointer-events: none;

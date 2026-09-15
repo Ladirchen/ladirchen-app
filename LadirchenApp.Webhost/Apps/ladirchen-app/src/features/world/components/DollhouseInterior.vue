@@ -19,7 +19,7 @@
       <div class="room-baseboard" aria-hidden="true" />
       <div class="room-floor" aria-hidden="true" />
       <div class="room-partition" aria-hidden="true" />
-      <div v-if="energy < 70" class="room-wear" aria-hidden="true"><i v-for="mark in 6" :key="mark" /></div>
+      <div v-if="energy < HOUSE_ENERGY_THRESHOLDS.bright" class="room-wear" aria-hidden="true"><i v-for="mark in ROOM_WEAR_MARK_COUNT" :key="mark" /></div>
       <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true" />
       <div v-if="room.id === 'children-room'" class="room-detail bunting" aria-hidden="true"><i v-for="index in 5" :key="index" /></div>
       <div v-if="room.id === 'creative-room'" class="room-detail paint-dots" aria-hidden="true"><i v-for="index in 6" :key="index" /></div>
@@ -98,7 +98,8 @@ import { useI18n } from 'vue-i18n';
 
 import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import { furnitureVisualDefinitionFor, resolveHouseEnergyVisualLevel } from '@/domain/house';
+import { furnitureVisualDefinitionFor, HOUSE_ENERGY_THRESHOLDS, HOUSE_LAYOUT_CONSTRAINTS, resolveHouseEnergyVisualLevel } from '@/domain/house';
+import { getLadiStage } from '@/domain/ladi';
 import type { HouseAccessory, HouseLayoutPlacement, HouseRoomDefinition, HouseZoneId, RoomDesignDefinition } from '@/domain/house';
 import type { FamilyMember, FamilyPet } from '@/domain/family/types';
 import type { FamilyMemberId, HouseLayoutPlacementId } from '@/domain/shared/identifiers';
@@ -108,6 +109,12 @@ import HouseLayoutEntity from './HouseLayoutEntity.vue';
 import { useDollhouseDrag } from '../composables/use-dollhouse-drag';
 
 const PixiRoomScene = defineAsyncComponent(() => import('./PixiRoomScene.vue'));
+
+const LADI_MOTIVATION_DURATION_MS = 4800;
+const PERCH_MESSAGE_BASE_DELAY_MS = 6500;
+const PERCH_MESSAGE_DELAY_VARIANCE_MS = 4500;
+const PERCH_MESSAGE_DURATION_MS = 4200;
+const ROOM_WEAR_MARK_COUNT = 6;
 
 const { t } = useI18n();
 
@@ -207,23 +214,28 @@ const petFor = (placement: HouseLayoutPlacement): FamilyPet | undefined => place
   : undefined;
 const ladiPlacement = computed(() => props.placements.find((placement) => placement.entityType === 'ladi'));
 const isLadiOnPerch = computed(() => ladiPlacement.value?.zoneId === 'living-room'
-  && Math.abs(ladiPlacement.value.x - 18) <= 7
-  && Math.abs(ladiPlacement.value.y - 30) <= 8);
+  && Math.abs(ladiPlacement.value.x - HOUSE_LAYOUT_CONSTRAINTS.perch.x) <= HOUSE_LAYOUT_CONSTRAINTS.perch.proximityToleranceX
+  && Math.abs(ladiPlacement.value.y - HOUSE_LAYOUT_CONSTRAINTS.perch.y) <= HOUSE_LAYOUT_CONSTRAINTS.perch.proximityToleranceY);
 const ladiIsPerched = (placement: HouseLayoutPlacement) => placement.entityType === 'ladi' && isLadiOnPerch.value;
 const ladiSpeech = computed(() => ladiMotivation.value || perchMessage.value);
-const energyClass = computed(() => props.energy < 30 ? 'energy-critical' : props.energy < 55 ? 'energy-low' : props.energy < 70 ? 'energy-tired' : 'energy-bright');
+const energyClass = computed(() => props.energy < HOUSE_ENERGY_THRESHOLDS.critical
+  ? 'energy-critical'
+  : props.energy < HOUSE_ENERGY_THRESHOLDS.low
+    ? 'energy-low'
+    : props.energy < HOUSE_ENERGY_THRESHOLDS.bright ? 'energy-tired' : 'energy-bright');
 const { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag } =
   useDollhouseDrag(props, emit, unlockedZones, accessoryFor);
 const motivateLadi = () => {
-  ladiMotivation.value = props.score < 2.5
+  const tier = getLadiStage(props.score).tier;
+  ladiMotivation.value = tier === 'spark'
     ? t('world.interior.motivation.wakeUp')
-    : props.score >= 4.8
+    : tier === 'super'
       ? t('world.interior.motivation.superTeam')
-      : props.score >= 4.3
+      : tier === 'aurora'
         ? t('world.interior.motivation.coolTeam')
         : t('world.interior.motivation.default');
   if (motivationTimer !== undefined) window.clearTimeout(motivationTimer);
-  motivationTimer = window.setTimeout(() => { ladiMotivation.value = ''; }, 4800);
+  motivationTimer = window.setTimeout(() => { ladiMotivation.value = ''; }, LADI_MOTIVATION_DURATION_MS);
 };
 const perchMessageKeys = ['together', 'smallSteps', 'whoHelps', 'believe'] as const;
 const perchMessages = computed(() => perchMessageKeys.map(key => t(`world.interior.perch.${key}`)));
@@ -232,10 +244,10 @@ const schedulePerchMessage = () => {
     if (isLadiOnPerch.value) {
       perchMessage.value = perchMessages.value[Math.floor(Math.random() * perchMessages.value.length)] ?? perchMessages.value[0]!;
       if (perchMessageTimer !== undefined) window.clearTimeout(perchMessageTimer);
-      perchMessageTimer = window.setTimeout(() => { perchMessage.value = ''; }, 4200);
+      perchMessageTimer = window.setTimeout(() => { perchMessage.value = ''; }, PERCH_MESSAGE_DURATION_MS);
     }
     schedulePerchMessage();
-  }, 6500 + Math.round(Math.random() * 4500));
+  }, PERCH_MESSAGE_BASE_DELAY_MS + Math.round(Math.random() * PERCH_MESSAGE_DELAY_VARIANCE_MS));
 };
 onMounted(schedulePerchMessage);
 onUnmounted(() => {
@@ -929,15 +941,15 @@ onUnmounted(() => {
   background:
     repeating-linear-gradient(
       45deg,
-      transparent 0 0.6875rem,
+      transparent 0 rem(11),
       color-mix(in srgb, var(--lad-palette-orange-500) 45%, transparent) 0.75rem
-        0.875rem
+        rem(14)
     ),
     repeating-linear-gradient(
       -45deg,
-      transparent 0 0.6875rem,
+      transparent 0 rem(11),
       color-mix(in srgb, var(--lad-palette-orange-500) 45%, transparent) 0.75rem
-        0.875rem
+        rem(14)
     ),
     color-mix(in srgb, var(--lad-palette-background) 70%, transparent);
   box-shadow: 0 0.25rem 0
@@ -945,7 +957,7 @@ onUnmounted(() => {
 }
 .garden-trellis i {
   width: 1rem;
-  height: 0.625rem;
+  height: rem(10);
   @apply position-absolute;
   border-radius: 70% 30% 65% 35%;
   background: var(--lad-palette-mint-450);
@@ -980,23 +992,23 @@ onUnmounted(() => {
 }
 .garden-plant-shelf {
   width: 38%;
-  height: 1.125rem;
+  height: rem(18);
   @apply position-absolute d-flex align-end justify-space-around;
   top: 47%;
   right: 7%;
   z-index: 1;
-  border: 0.1875rem solid var(--lad-palette-orange-650);
-  border-radius: 0.375rem;
+  border: rem(3) solid var(--lad-palette-orange-650);
+  border-radius: rem(6);
   background: var(--lad-palette-orange-400-2);
-  box-shadow: 0 0.375rem 0
+  box-shadow: 0 rem(6) 0
     color-mix(in srgb, var(--lad-palette-orange-750) 16%, transparent);
 }
 .garden-plant-shelf span {
-  width: 1.375rem;
+  width: rem(22);
   height: 1rem;
   @apply position-relative;
   bottom: 0.5rem;
-  border: 0.125rem solid var(--lad-palette-orange-650);
+  border: rem(2) solid var(--lad-palette-orange-650);
   border-radius: 0.25rem 0.25rem 0.5rem 0.5rem;
   background: var(--lad-palette-amber-200);
 }
@@ -1004,8 +1016,8 @@ onUnmounted(() => {
   width: 1.5rem;
   height: 1.75rem;
   @apply position-absolute;
-  left: -0.1875rem;
-  bottom: 0.625rem;
+  left: -rem(3);
+  bottom: rem(10);
   background:
     radial-gradient(
       ellipse at 30% 62%,
@@ -1031,7 +1043,7 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   z-index: 0;
-  border-top: 0.1875rem solid
+  border-top: rem(3) solid
     color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
   background:
     linear-gradient(
@@ -1292,7 +1304,7 @@ onUnmounted(() => {
   top: 4px;
   left: 4px;
   padding: 2px 5px;
-  font-size: 0.375rem;
+  font-size: rem(6);
 }
 .compact .room-window {
   width: 27px;
