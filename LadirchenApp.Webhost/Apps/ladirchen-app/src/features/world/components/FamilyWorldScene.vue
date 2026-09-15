@@ -294,6 +294,9 @@ const {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .world-scene-wrap {
+  --world-furniture-overview-size: 60px;
+  --world-furniture-room-size: 96px;
+  --world-furniture-focused-size: 116px;
   @apply w-100;
   margin-top: 10px;
   padding-bottom: 8px;
@@ -535,8 +538,8 @@ const {
   min-height: 229px;
 }
 .scene-world-shell :deep(.compact:not(.single-zone) .entity-furniture) {
-  width: 68px;
-  height: 68px;
+  width: var(--world-furniture-overview-size);
+  height: var(--world-furniture-overview-size);
 }
 .scene-world-shell :deep(.compact:not(.single-zone) .entity-member) {
   width: 42px;
@@ -551,8 +554,8 @@ const {
   height: 52px;
 }
 .scene-world-shell :deep(.compact.single-zone .entity-furniture) {
-  width: 112px;
-  height: 112px;
+  width: var(--world-furniture-room-size);
+  height: var(--world-furniture-room-size);
 }
 .scene-world-shell :deep(.compact.single-zone .entity-member) {
   width: 61px;
@@ -568,8 +571,8 @@ const {
 }
 .scene-world-shell
   :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-furniture) {
-  width: 136px;
-  height: 136px;
+  width: var(--world-furniture-focused-size);
+  height: var(--world-furniture-focused-size);
 }
 .scene-world-shell
   :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-member) {

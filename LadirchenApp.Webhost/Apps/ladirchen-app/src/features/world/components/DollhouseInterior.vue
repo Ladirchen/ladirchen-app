@@ -115,6 +115,7 @@ const PERCH_MESSAGE_BASE_DELAY_MS = 6500;
 const PERCH_MESSAGE_DELAY_VARIANCE_MS = 4500;
 const PERCH_MESSAGE_DURATION_MS = 4200;
 const ROOM_WEAR_MARK_COUNT = 6;
+const ROOM_PREVIEW_COLUMN_WIDTH_PX = 30;
 
 const { t } = useI18n();
 
@@ -184,7 +185,9 @@ const contextGridStyle = computed(() => {
   const selectedZoneId = props.selectedZoneId;
   if (selectedZoneId === 'all') return undefined;
   const selectedIndex = visibleZoneIds.value.indexOf(selectedZoneId);
-  const columns = visibleZoneIds.value.map((_, index) => index === selectedIndex ? 'minmax(0, 3fr)' : 'minmax(52px, 1fr)').join(' ');
+  const columns = visibleZoneIds.value
+    .map((_, index) => index === selectedIndex ? 'minmax(0, 1fr)' : `${ROOM_PREVIEW_COLUMN_WIDTH_PX}px`)
+    .join(' ');
   return { '--context-columns': columns };
 });
 const isPreviewZone = (zoneId: HouseZoneId) => isContextualZone.value && zoneId !== props.selectedZoneId;
