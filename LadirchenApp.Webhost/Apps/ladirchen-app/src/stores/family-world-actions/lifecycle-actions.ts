@@ -105,7 +105,7 @@ export const lifecycleActions = {
         this.accessories = initialData.accessories.map((accessory) => {
           const saved = accessoryStateById.get(accessory.id);
           return saved
-            ? { ...accessory, owned: accessory.owned || saved.owned, equipped: accessory.equipped || saved.equipped }
+            ? { ...accessory, owned: accessory.owned || saved.owned, equipped: saved.equipped }
             : accessory;
         });
         this.houseLayout = mergeHouseLayout(snapshot.state.placements, initialData);
@@ -125,11 +125,11 @@ export const lifecycleActions = {
         for (const design of DEFAULT_ROOM_DESIGNS) {
           if (this.ownedRoomDesignIds.includes(design.id)) { selectedRoomDesignIds[design.zoneId] = design.id; }
         }
-        for (const selection of snapshot.state.selectedRoomDesigns) {
-          if (this.ownedRoomDesignIds.includes(selection.designId)) { selectedRoomDesignIds[selection.zoneId] = selection.designId; }
-        }
         for (const design of roomDesignsForTheme(this.houseThemeId)) {
           selectedRoomDesignIds[design.zoneId] = design.id;
+        }
+        for (const selection of snapshot.state.selectedRoomDesigns) {
+          if (this.ownedRoomDesignIds.includes(selection.designId)) { selectedRoomDesignIds[selection.zoneId] = selection.designId; }
         }
         this.selectedRoomDesignIds = selectedRoomDesignIds;
       }
