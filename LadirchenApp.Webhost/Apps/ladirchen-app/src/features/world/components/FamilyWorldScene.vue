@@ -271,8 +271,8 @@
 import { motion } from 'motion-v';
 import { useI18n } from 'vue-i18n';
 
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
-import AnimatedPet from './AnimatedPet.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
+import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
 import DollhouseInterior from './DollhouseInterior.vue';
 import FurnitureStoragePanel from './FurnitureStoragePanel.vue';
 import HouseThemeDecoration from './HouseThemeDecoration.vue';

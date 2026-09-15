@@ -43,7 +43,7 @@
 import { useI18n } from 'vue-i18n';
 
 import type { HouseAccessory } from '@/domain/house';
-import RoomFurniture from './RoomFurniture.vue';
+import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
 
 defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; open: boolean }>();
 const emit = defineEmits<{ place: [accessory: HouseAccessory]; 'update:open': [open: boolean] }>();

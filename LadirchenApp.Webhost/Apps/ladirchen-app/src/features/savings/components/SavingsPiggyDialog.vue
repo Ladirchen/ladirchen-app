@@ -208,7 +208,7 @@
 import { useI18n } from 'vue-i18n';
 
 import AnimatedExchangeIcon from './AnimatedExchangeIcon.vue';
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
 import MetricCard from '@/shared/components/ui/MetricCard.vue';

@@ -74,12 +74,12 @@ import { computed, defineComponent, h, nextTick, reactive, ref, watch } from 'vu
 import { useI18n } from 'vue-i18n';
 
 import AvatarCategoryIcon from './AvatarCategoryIcon.vue';
-import AvatarFigure from './AvatarFigure.vue';
-import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from '../data/avatar-options';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
+import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from './data/avatar-options';
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance, GuardianAvatarPreset } from '@/domain/avatar';
 import type { ViewerRole } from '@/domain/family/types';
-import type { AvatarCatalogItemId, AvatarColorOption } from '../data/avatar-options';
+import type { AvatarCatalogItemId, AvatarColorOption } from './data/avatar-options';
 
 type Section = 'base' | 'face' | 'hair' | 'outfit' | 'extras' | 'fun' | 'season';
 type PreviewKind = 'face' | 'faceShape' | 'hair' | 'outfit' | 'accessory' | 'fun' | 'season';

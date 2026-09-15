@@ -10,7 +10,7 @@ import type * as PixiNamespace from 'pixi.js';
 import type { RoomDesignDefinition, RoomSceneOverlayDefinition } from '@/domain/house';
 import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
 import { MILLISECONDS_PER_SECOND } from '@/domain/shared/time';
-import { ROOM_DESIGN_ASSET_URLS, roomDesignBackgroundAssetId } from '@/features/world/room-design-assets';
+import { ROOM_DESIGN_ASSET_URLS, roomDesignBackgroundAssetId } from '@/shared/visuals/house/room-design-assets';
 import { visualColorPalette } from '@/theme/color-palette';
 
 const props = defineProps<{

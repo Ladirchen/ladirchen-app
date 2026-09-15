@@ -7,7 +7,7 @@ import type { FurnitureSetId, HouseAccessoryId, HouseThemeId } from '@/domain/ho
 import { shopRedemptionIsOpen, shopRewardIsPublished } from '@/domain/shop';
 import type { ShopReward, ShopRewardCategory } from '@/domain/shop';
 import { calendarDateInTimeZone, calendarDateIsWithin } from '@/domain/shared/zoned-calendar';
-import { HOUSE_EXTERIOR_ASSET_URLS, houseExteriorBackgroundAssetId, houseExteriorHouseAssetId } from '@/features/world/house-exterior-assets';
+import { HOUSE_EXTERIOR_ASSET_URLS, houseExteriorBackgroundAssetId, houseExteriorHouseAssetId } from '@/shared/visuals/house/house-exterior-assets';
 import type { PageViewOption } from '@/shared/components/ui/PageViewSwitch.vue';
 import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { UI_ICONS } from '@/shared/ui-icons';

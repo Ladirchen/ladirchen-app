@@ -72,7 +72,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
 
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import type { FamilyMember } from '@/domain/family/types';

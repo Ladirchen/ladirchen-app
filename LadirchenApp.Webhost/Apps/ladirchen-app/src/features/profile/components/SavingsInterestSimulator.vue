@@ -61,7 +61,7 @@ import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
 import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 
-import AnimatedPiggyBank from './AnimatedPiggyBank.vue';
+import AnimatedPiggyBank from '@/shared/components/AnimatedPiggyBank.vue';
 import { getLadiStage } from '@/domain/ladi';
 import { calculateSavingsCredit, familyParticipationInterestStrategy } from '@/domain/savings/interest';
 import { useFamilyWorldStore } from '@/stores/family-world';

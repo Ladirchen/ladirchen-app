@@ -49,11 +49,11 @@ import type { HouseAccessory, HouseLayoutPlacement } from '@/domain/house';
 import type { FamilyMember, FamilyPet } from '@/domain/family/types';
 import type { FamilyMemberId } from '@/domain/shared/identifiers';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import { ENTITY_VISUAL_CONFIG } from '../entity-visual-config';
 
-import AnimatedPet from './AnimatedPet.vue';
-import RoomFurniture from './RoomFurniture.vue';
+import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
+import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
 
 const { t } = useI18n();
 

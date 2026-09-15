@@ -3,7 +3,7 @@
     <span class="bonus-rocket" aria-hidden="true"><v-icon icon="i-mdi:rocket-launch" size="19" /></span>
     <span class="bonus-copy"><small>{{ t('contributions.activeBonus.label') }}</small><strong>{{ t('contributions.activeBonus.multiplier', { value: multiplier }) }}</strong></span>
     <span class="bonus-factor">×{{ multiplier }}</span>
-    <PromotionCountdown class="bonus-countdown" :deadline="deadline" />
+    <PromotionCountdown class="bonus-countdown" :deadline="deadline" :time-zone="timeZone" />
   </div>
 </template>
 
@@ -11,12 +11,14 @@
 import { useI18n } from 'vue-i18n';
 
 import PromotionCountdown from './PromotionCountdown.vue';
+import type { IanaTimeZone } from '@/domain/family/types';
 
 const { t } = useI18n();
 
 defineProps<{
   deadline: string;
   multiplier: number;
+  timeZone: IanaTimeZone;
 }>();
 </script>
 

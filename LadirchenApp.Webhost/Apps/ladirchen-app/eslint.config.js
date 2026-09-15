@@ -18,4 +18,15 @@ export default vuetify(
       'vue/script-indent': 'off',
     },
   },
+  {
+    files: ['src/features/**/*.{ts,vue}', 'src/shared/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@/features/*'],
+          message: 'Feature modules must communicate through shared presentation or explicit inputs and events.',
+        }],
+      }],
+    },
+  },
 );

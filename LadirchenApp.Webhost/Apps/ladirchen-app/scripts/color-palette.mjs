@@ -10,24 +10,19 @@ const allowedPaletteFiles = new Set([
 ]);
 const semanticTokenFile = path.join(sourceRoot, 'styles', 'main.scss');
 const illustrationDirectories = [
-  path.join(sourceRoot, 'features', 'avatar', 'components', 'avatar-visuals'),
+  path.join(sourceRoot, 'shared', 'components', 'avatar', 'avatar-visuals'),
   path.join(sourceRoot, 'features', 'world', 'components', 'furniture-visuals'),
   path.join(sourceRoot, 'features', 'world', 'components', 'house-theme-visuals'),
 ];
 const illustrationFiles = new Set([
   'src/app/components/AppNavigationIcon.vue',
   'src/app/components/GlobalLadiGuide.vue',
-  'src/features/avatar/components/AvatarCategoryIcon.vue',
-  'src/features/avatar/components/AvatarFigure.vue',
-  'src/features/contributions/components/ContributionMetaIcon.vue',
   'src/features/onboarding/components/LadirchenIntro.vue',
   'src/features/savings/components/AnimatedExchangeIcon.vue',
-  'src/features/savings/components/AnimatedPiggyBank.vue',
   'src/features/savings/components/AnimatedWishIcon.vue',
   'src/features/streaks/components/AnimatedStreakFlame.vue',
   'src/features/world/components/AnimatedEnergyStar.vue',
   'src/features/world/components/AnimatedHouseEnergy.vue',
-  'src/features/world/components/AnimatedPet.vue',
   'src/features/world/components/DollhouseInterior.vue',
   'src/features/world/components/FamilyWorldScene.vue',
   'src/features/world/components/FurnitureStoragePanel.vue',
@@ -35,11 +30,16 @@ const illustrationFiles = new Set([
   'src/features/world/components/HouseLayoutEntity.vue',
   'src/features/world/components/HouseThemeDecoration.vue',
   'src/features/world/components/PixiRoomScene.vue',
-  'src/features/world/components/RoomFurniture.vue',
   'src/features/world/composables/use-family-world-scene.ts',
   'src/shared/components/AnimatedCompletionMark.vue',
+  'src/shared/components/AnimatedPiggyBank.vue',
   'src/shared/components/LadiMascot.vue',
   'src/shared/components/LadirchenCoin.vue',
+  'src/shared/components/avatar/AvatarCategoryIcon.vue',
+  'src/shared/components/avatar/AvatarFigure.vue',
+  'src/shared/components/contributions/ContributionMetaIcon.vue',
+  'src/shared/components/family/AnimatedPet.vue',
+  'src/shared/components/house/RoomFurniture.vue',
   'src/shared/components/ui/AnimatedSectionIcon.vue',
 ].map(file => path.join(projectRoot, file)));
 const checkedExtensions = new Set(['.css', '.scss', '.ts', '.vue']);

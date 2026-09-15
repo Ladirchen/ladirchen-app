@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
-import { FURNITURE_SPRITE_DEFINITIONS } from '../furniture-sprite-assets';
+import { FURNITURE_SPRITE_DEFINITIONS } from '@/shared/visuals/house/furniture-sprite-assets';
 import type { HouseAccessory } from '@/domain/house';
 
 const props = withDefaults(defineProps<{ item: HouseAccessory; open?: boolean }>(), { open: false });

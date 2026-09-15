@@ -37,10 +37,16 @@
         <ChildContributionCard
           v-for="contribution in filteredContributions"
           :key="contribution.id"
+          :active-child-id="store.activeChildId"
           :contribution="contribution"
+          :family-members="store.members"
+          :family-time-zone="store.familyTimeZone"
           :promotion="promotionFor(contribution.id)"
+          :reward="store.rewardForContribution(contribution.id)"
           :tip="contributionTip(contribution)"
+          @claim="store.claimContribution($event.id)"
           @invite="openTeamInvite"
+          @submit="store.submitContribution($event.id)"
         />
       </TransitionGroup>
       <BrandedCard v-if="!filteredContributions.length" class="empty-contributions pa-5 text-center" tone="contributions">
@@ -111,7 +117,7 @@
               <div class="flex-grow-1">
                 <strong class="text-body-small">{{ promotion.title }}</strong>
                 <p class="text-caption text-medium-emphasis">{{ contributionTitle(promotion.contributionId) }} · {{ t('contributions.promotions.includingTeamwork', { value: promotion.teamworkBonus }) }}</p>
-                <PromotionCountdown class="mt-1" :deadline="promotion.deadline" />
+                <PromotionCountdown class="mt-1" :deadline="promotion.deadline" :time-zone="store.familyTimeZone" />
               </div>
               <v-chip color="warning" size="small">×{{ promotion.multiplier }}</v-chip>
               <v-btn :aria-label="t('contributions.promotions.deleteAria', { title: promotion.title })" color="error" icon="i-mdi:delete-outline" size="small" variant="tonal" @click.stop="promotionToDelete = promotion" />
@@ -244,7 +250,7 @@
         <p class="eyebrow mt-3 mb-1">{{ t('contributions.promotions.singular') }}</p>
         <h2 class="promotion-detail-title">{{ selectedPromotion.title }}</h2>
         <p class="text-body-small text-medium-emphasis mt-2">{{ t('contributions.promotions.deadline', { title: contributionTitle(selectedPromotion.contributionId), deadline: selectedPromotion.deadline }) }}</p>
-        <PromotionCountdown class="mt-3" :deadline="selectedPromotion.deadline" />
+        <PromotionCountdown class="mt-3" :deadline="selectedPromotion.deadline" :time-zone="store.familyTimeZone" />
         <div class="promotion-reward mt-4">
           <span>{{ t('contributions.promotions.reachableReward') }}</span>
           <strong>{{ t('contributions.reward.coins', { value: store.rewardForContribution(selectedPromotion.contributionId) }) }}</strong>
@@ -283,9 +289,9 @@
 import { useI18n } from 'vue-i18n';
 
 import AnimatedCompletionMark from '@/shared/components/AnimatedCompletionMark.vue';
-import ChildContributionCard from '../components/ChildContributionCard.vue';
+import ChildContributionCard from '@/shared/components/contributions/ChildContributionCard.vue';
 import ContributionFilterPanel from '../components/ContributionFilterPanel.vue';
-import PromotionCountdown from '../components/PromotionCountdown.vue';
+import PromotionCountdown from '@/shared/components/contributions/PromotionCountdown.vue';
 import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
 import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
 import { useContributionsPage } from '../composables/use-contributions-page';

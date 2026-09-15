@@ -95,7 +95,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import SavingsInterestSimulator from '@/features/savings/components/SavingsInterestSimulator.vue';
+import SavingsInterestSimulator from './SavingsInterestSimulator.vue';
 import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house/catalog';
 import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
 import { useFamilyWorldStore } from '@/stores/family-world';
