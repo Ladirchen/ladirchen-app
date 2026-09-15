@@ -859,7 +859,7 @@ const {
     align-self: end;
   }
 }
-@include respond-down(compact) {
+@include respond-down(studio) {
   .reward-grid,
   .accessory-grid {
     grid-template-columns: 1fr;
@@ -884,6 +884,10 @@ const {
   .set-action {
     grid-column: 2;
     @apply justify-start;
+  }
+  .set-action :deep(.v-btn),
+  .set-action .catalog-status {
+    width: 100%;
   }
 }
 @keyframes owned-star {
