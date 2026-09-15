@@ -107,6 +107,7 @@ const { t } = useI18n();
 .reward-actions {
   @apply mt-auto;
   padding-top: 16px;
+  flex-wrap: wrap;
 }
 .price {
   min-height: 38px;

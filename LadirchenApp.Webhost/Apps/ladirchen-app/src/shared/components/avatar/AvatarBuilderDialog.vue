@@ -733,8 +733,22 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   .preview-tools > strong {
     font-size: rem(18);
   }
+  .category-rail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 2px 14px 8px;
+    @apply d-grid overflow-visible;
+    gap: 4px;
+  }
   .category-rail button {
-    min-width: 72px;
+    width: 100%;
+    min-width: 0;
+    height: 58px;
+    padding-inline: 2px;
+    border-radius: 15px;
+  }
+  .category-rail span {
+    max-width: 100%;
+    @apply text-truncate;
   }
   .skin-studio {
     grid-template-columns: repeat(2, 1fr);
