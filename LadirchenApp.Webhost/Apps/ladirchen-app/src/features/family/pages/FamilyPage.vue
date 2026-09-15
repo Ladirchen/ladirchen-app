@@ -121,9 +121,9 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
-import AnimatedPet from '@/features/world/components/AnimatedPet.vue';
+import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
 import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import type { FamilyMember, GuardianAccessLevel } from '@/domain/family/types';

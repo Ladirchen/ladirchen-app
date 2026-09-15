@@ -106,8 +106,8 @@
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import AvatarBuilderDialog from '@/features/avatar/components/AvatarBuilderDialog.vue';
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarBuilderDialog from '@/shared/components/avatar/AvatarBuilderDialog.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import DevelopmentToolsPanel from '../components/DevelopmentToolsPanel.vue';
 import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
 import PageHeader from '@/shared/components/ui/PageHeader.vue';

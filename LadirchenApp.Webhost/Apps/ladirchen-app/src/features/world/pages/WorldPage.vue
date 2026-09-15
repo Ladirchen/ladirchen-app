@@ -83,7 +83,7 @@
             <p class="eyebrow mb-1">{{ t('world.promotion.eyebrow') }}</p>
             <strong>{{ activePromotion.title }}</strong>
             <p class="text-caption text-medium-emphasis">{{ t('world.promotion.until', { title: contributionTitle(activePromotion.contributionId), time: activePromotion.deadline }) }}</p>
-            <PromotionCountdown class="promotion-banner-countdown mt-2" :deadline="activePromotion.deadline" />
+            <PromotionCountdown class="promotion-banner-countdown mt-2" :deadline="activePromotion.deadline" :time-zone="store.familyTimeZone" />
           </div>
           <div class="promotion-boost" :aria-label="t('world.promotion.boostAria')">
             <strong>×{{ activePromotion.multiplier }}</strong>
@@ -106,10 +106,16 @@
           <ChildContributionCard
             v-for="contribution in personalContributions"
             :key="contribution.id"
+            :active-child-id="store.activeChildId"
             :allow-invite="false"
             :contribution="contribution"
+            :family-members="store.members"
+            :family-time-zone="store.familyTimeZone"
             :promotion="promotionFor(contribution.id)"
+            :reward="store.rewardForContribution(contribution.id)"
             :tip="contribution.description"
+            @claim="store.claimContribution($event.id)"
+            @submit="store.submitContribution($event.id)"
           />
         </div>
 
@@ -172,9 +178,9 @@ import { useI18n } from 'vue-i18n';
 import AnimatedHouseEnergy from '../components/AnimatedHouseEnergy.vue';
 import FamilyWorldScene from '../components/FamilyWorldScene.vue';
 import HouseEnergyDialog from '../components/HouseEnergyDialog.vue';
-import ChildContributionCard from '@/features/contributions/components/ChildContributionCard.vue';
+import ChildContributionCard from '@/shared/components/contributions/ChildContributionCard.vue';
 import AnimatedCompletionMark from '@/shared/components/AnimatedCompletionMark.vue';
-import PromotionCountdown from '@/features/contributions/components/PromotionCountdown.vue';
+import PromotionCountdown from '@/shared/components/contributions/PromotionCountdown.vue';
 import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
 import type { ContributionId } from '@/domain/shared/identifiers';
 import { isPromotionAvailable } from '@/domain/contributions/promotions';

@@ -187,8 +187,8 @@ import { useI18n } from 'vue-i18n';
 
 import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
 import PageViewSwitch from '@/shared/components/ui/PageViewSwitch.vue';
-import RoomFurniture from '@/features/world/components/RoomFurniture.vue';
-import ShopRewardCard from '@/features/shop/components/ShopRewardCard.vue';
+import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
+import ShopRewardCard from '../components/ShopRewardCard.vue';
 import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
 import { useShopPage } from '../composables/use-shop-page';
 

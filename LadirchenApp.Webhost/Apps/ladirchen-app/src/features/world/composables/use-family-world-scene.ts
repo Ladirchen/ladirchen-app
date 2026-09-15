@@ -9,7 +9,7 @@ import { HOUSE_ENERGY_THRESHOLDS, HOUSE_STAGES, HOUSE_THEMES } from '@/domain/ho
 import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
 import type { HouseAccessory, HouseAccessoryId, HouseLayoutPlacement, HouseRoomDefinition, HouseStageLevel, HouseThemeId, HouseZoneId, RoomDesignDefinition } from '@/domain/house';
 import type { FamilyMemberId, FamilyPetId, HouseLayoutPlacementId } from '@/domain/shared/identifiers';
-import { HOUSE_EXTERIOR_ASSET_URLS, houseExteriorBackgroundAssetId, houseExteriorHouseAssetId } from '@/features/world/house-exterior-assets';
+import { HOUSE_EXTERIOR_ASSET_URLS, houseExteriorBackgroundAssetId, houseExteriorHouseAssetId } from '@/shared/visuals/house/house-exterior-assets';
 
 type HouseView = 'front' | 'inside' | 'garden';
 

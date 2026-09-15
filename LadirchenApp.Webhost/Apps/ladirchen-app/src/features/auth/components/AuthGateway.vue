@@ -50,7 +50,7 @@ import { useI18n } from 'vue-i18n';
 
 import { authenticationGateway } from '@/app/composition-root';
 import { createDomainId } from '@/domain/shared/identifiers';
-import { AUTH_INPUT_RULES, DEMO_CREDENTIALS } from '@/features/auth/auth-config';
+import { AUTH_INPUT_RULES, DEMO_CREDENTIALS } from '../auth-config';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 type AuthMode = 'login' | 'register';

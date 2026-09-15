@@ -11,16 +11,15 @@ import { useI18n } from 'vue-i18n';
 
 import { remainingPromotionMilliseconds } from '@/domain/contributions/promotions';
 import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/domain/shared/time';
-import { useFamilyWorldStore } from '@/stores/family-world';
+import type { IanaTimeZone } from '@/domain/family/types';
 
-const props = defineProps<{ deadline: string }>();
+const props = defineProps<{ deadline: string; timeZone: IanaTimeZone }>();
 const { t } = useI18n();
-const store = useFamilyWorldStore();
 const now = ref(new Date());
 let timer: ReturnType<typeof window.setInterval> | undefined;
 
 const remainingMilliseconds = computed(() =>
-  remainingPromotionMilliseconds(props.deadline, store.familyTimeZone, now.value),
+  remainingPromotionMilliseconds(props.deadline, props.timeZone, now.value),
 );
 const label = computed(() => {
   if (remainingMilliseconds.value <= 0) return t('contributions.countdown.expired');
