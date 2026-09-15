@@ -330,6 +330,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { avatarHairColors, avatarOutfitColors, avatarSkinToneColors } from '@/domain/avatar';
+import { CHARACTER_REACTION_DURATION_MS } from '@/shared/runtime-timing';
 import type { AvatarAppearance } from '@/domain/avatar';
 import { avatarAccessoryVisuals, avatarExtensionVisualFor } from './avatar-visuals';
 
@@ -343,7 +344,7 @@ const react = () => {
   isReacting.value = false;
   window.clearTimeout(reactionTimer);
   requestAnimationFrame(() => { isReacting.value = true; });
-  reactionTimer = window.setTimeout(() => { isReacting.value = false; }, 620);
+  reactionTimer = window.setTimeout(() => { isReacting.value = false; }, CHARACTER_REACTION_DURATION_MS);
 };
 const outfitHasHeadwear = computed(() => ['superhero', 'dinosaur', 'monster', 'shark', 'robot', 'space'].includes(props.appearance.outfit));
 const showsOutfitHeadwear = computed(() => props.appearance.seasonalAccessoryId === 'none');
@@ -403,7 +404,7 @@ const figureStyle = computed(() => ({
   @apply cursor-pointer;
 }
 .avatar-figure.reacting svg {
-  animation: avatar-tap 620ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: avatar-tap 620ms var(--lad-easing-pop);
 }
 svg {
   @apply w-100 h-100 overflow-visible;

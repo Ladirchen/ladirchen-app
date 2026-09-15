@@ -109,7 +109,7 @@ const {
   background: var(--lad-palette-background);
   box-shadow: 0 4px 0
     color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
-  font-size: 1.4375rem;
+  font-size: rem(23);
   font-weight: var(--lad-font-weight-heavy);
   line-height: 1;
 }
@@ -176,7 +176,7 @@ const {
     0 6px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
     0 14px 28px
       color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
-  font-size: 0.8125rem;
+  font-size: rem(13);
   line-height: 1.52;
 }
 .guide-speech::after {
@@ -201,7 +201,7 @@ const {
   padding-right: 24px;
   margin-bottom: 5px;
   color: var(--lad-palette-teal-700);
-  font-size: 0.9375rem;
+  font-size: rem(15);
   line-height: 1.25;
 }
 .guide-close {
@@ -214,7 +214,7 @@ const {
   border: 0;
   border-radius: 10px;
   background: color-mix(in srgb, var(--lad-palette-teal-550) 8%, transparent);
-  font-size: 1.125rem;
+  font-size: rem(18);
   line-height: 1;
 }
 .speech-actions {
@@ -232,7 +232,7 @@ const {
   color: var(--lad-palette-amber-700);
   border-radius: var(--lad-radius-pill);
   background: var(--lad-palette-amber-150);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
 }
 .speech-next {

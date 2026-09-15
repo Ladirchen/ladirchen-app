@@ -38,14 +38,14 @@ withDefaults(defineProps<{
 .family-world-page-header {
   --header-accent: var(--lad-color-primary-muted);
   --header-accent-soft: var(--lad-surface-soft);
-  min-height: 8.625rem;
+  min-height: rem(138);
   @apply mb-5 pa-5 position-relative overflow-hidden d-flex align-center justify-space-between ga-4;
   @include raised-surface(
     color-mix(in srgb, var(--header-accent) 18%, var(--lad-surface-raised)),
     color-mix(in srgb, var(--header-accent) 14%, transparent),
     var(--lad-radius-large),
-    0.3125rem,
-    0.0625rem
+    rem(5),
+    rem(1)
   );
   background: linear-gradient(
     145deg,
@@ -70,12 +70,12 @@ withDefaults(defineProps<{
   --header-accent-soft: var(--lad-tone-profile-tint);
 }
 .page-header-copy {
-  max-width: 19.375rem;
+  max-width: rem(310);
   @apply position-relative;
   z-index: 1;
 }
 .page-header-kicker {
-  margin: 0 0 0.3125rem;
+  margin: 0 0 rem(5);
   @include overline(var(--header-accent));
 }
 h1 {
@@ -83,18 +83,18 @@ h1 {
   @include heading(var(--lad-font-size-page), 1.08, -0.045em);
 }
 .page-header-copy > p:last-child {
-  margin: 0.4375rem 0 0;
+  margin: rem(7) 0 0;
   @include body-copy(var(--lad-font-size-body), 1.45);
 }
 .page-header-side {
-  min-width: 3.375rem;
+  min-width: rem(54);
   @apply position-relative;
   z-index: 1;
   @apply d-flex align-center ga-2;
 }
 .page-header-icon {
   @include icon-tile(
-    3.375rem,
+    rem(54),
     var(--lad-radius-medium),
     color-mix(in srgb, var(--lad-surface-raised) 75%, transparent),
     color-mix(in srgb, var(--header-accent) 13%, transparent),
@@ -105,19 +105,19 @@ h1 {
 }
 @include respond-down(narrow) {
   .family-world-page-header {
-    min-height: 7.875rem;
-    padding: 1.0625rem;
+    min-height: rem(126);
+    padding: rem(17);
   }
   .page-header-copy {
-    max-width: 15.3125rem;
+    max-width: rem(245);
   }
   .page-header-copy > p:last-child {
-    font-size: 0.6875rem;
+    font-size: rem(11);
   }
   .page-header-icon {
-    width: 2.875rem;
-    height: 2.875rem;
-    border-radius: 0.9375rem;
+    width: rem(46);
+    height: rem(46);
+    border-radius: rem(15);
   }
 }
 </style>

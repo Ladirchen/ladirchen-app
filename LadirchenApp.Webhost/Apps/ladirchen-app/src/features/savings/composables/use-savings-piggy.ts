@@ -5,12 +5,17 @@ import { isFamilyCurrency } from '@/application/contracts/family-aggregate-valid
 import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import { getLadiStage, LADI_STAGES } from '@/domain/ladi';
+import { SAVINGS_RULES } from '@/domain/savings/rules';
 import type { FamilyCurrency } from '@/domain/savings/types';
 import type { FamilyMemberId, SavingGoalId } from '@/domain/shared/identifiers';
+import { percentageOfTotal } from '@/domain/shared/numbers';
 import { isInstantInIsoWeek } from '@/domain/shared/zoned-calendar';
 import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+
+const PIGGY_GUIDE_DELAY_MS = 320;
+const TRANSFER_ANIMATION_DURATION_MS = 1100;
 
 export const useSavingsPiggy = () => {
   const store = useFamilyWorldStore();
@@ -19,7 +24,7 @@ export const useSavingsPiggy = () => {
   const selectedGoalId = ref<SavingGoalId>();
   const selectedMemberId = ref<FamilyMemberId>();
   const transferDestination = ref<'goal' | 'member'>('goal');
-  const amount = ref(25);
+  const amount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
   const transferDirection = ref<'deposit' | 'withdraw' | 'gift' | ''>('');
   const piggyGuideStep = ref(-1);
   let transferTimer: number | undefined;
@@ -63,28 +68,31 @@ export const useSavingsPiggy = () => {
   const formattedGuardianFamilyValue = computed(() => new Intl.NumberFormat(locale.value, { style: 'currency', currency: store.familyCurrencyCode }).format(store.familyCurrencyValue(100)));
   const formatRate = (value: number) => value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
   const setCurrency = (value: unknown) => { if (isFamilyCurrency(value)) {store.setFamilyCurrency(value);} };
-  const goalProgress = (saved: number, target: number) => Math.min(100, Math.round((saved / target) * 100));
+  const goalProgress = (saved: number, target: number) => Math.round(percentageOfTotal(saved, target));
   const adjustTransferAmount = (change: number) => { amount.value = Math.max(0, Math.min(transferAmountMaximum.value, amount.value + change)); };
   const setTransferDestination = (destination: 'goal' | 'member') => {
     transferDestination.value = destination;
-    amount.value = Math.min(25, transferAmountMaximum.value);
+    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, transferAmountMaximum.value);
   };
   const playTransfer = (direction: 'deposit' | 'withdraw' | 'gift') => {
     if (transferTimer !== undefined) {window.clearTimeout(transferTimer);}
     transferDirection.value = direction;
-    transferTimer = window.setTimeout(() => { transferDirection.value = ''; transferTimer = undefined; }, 1100);
+    transferTimer = window.setTimeout(() => {
+      transferDirection.value = '';
+      transferTimer = undefined;
+    }, TRANSFER_ANIMATION_DURATION_MS);
   };
   const deposit = () => {
     if (!selectedGoalId.value) {return;}
     store.saveToGoal(selectedGoalId.value, amount.value);
     playTransfer('deposit');
-    amount.value = 25;
+    amount.value = SAVINGS_RULES.defaultTransferAmount;
   };
   const withdraw = () => {
     if (!selectedGoalId.value) {return;}
     store.withdrawFromGoal(selectedGoalId.value, amount.value);
     playTransfer('withdraw');
-    amount.value = 25;
+    amount.value = SAVINGS_RULES.defaultTransferAmount;
   };
   const giftToMember = () => {
     if (!selectedMemberId.value || amount.value <= 0) {return;}
@@ -94,7 +102,7 @@ export const useSavingsPiggy = () => {
     ladiGuideController.say({
       heading: t('savings.piggy.guide.giftTitle'), message: t('savings.piggy.guide.giftMessage', { name: recipientName }), celebration: 'gift',
     });
-    amount.value = Math.min(25, store.availableBalance);
+    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, store.availableBalance);
   };
   const piggyGuideSteps = computed(() => [
     { heading: t('savings.piggy.guide.balanceTitle'), message: t('savings.piggy.guide.balanceMessage', { available: store.availableBalance, saved: store.totalSaved }) },
@@ -118,9 +126,12 @@ export const useSavingsPiggy = () => {
     selectedGoalId.value = store.ownSavingGoals.some(goal => goal.id === store.activeGoal.id) ? store.activeGoal.id : store.ownSavingGoals[0]?.id;
     selectedMemberId.value = memberOptions.value[0]?.value;
     transferDestination.value = 'goal';
-    amount.value = Math.min(25, store.availableBalance);
+    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, store.availableBalance);
     piggyGuideStep.value = -1;
-    guidanceTimer = window.setTimeout(() => { nextPiggyGuide(); guidanceTimer = undefined; }, 320);
+    guidanceTimer = window.setTimeout(() => {
+      nextPiggyGuide();
+      guidanceTimer = undefined;
+    }, PIGGY_GUIDE_DELAY_MS);
   });
   let unregisterGuideAction: (() => void) | undefined;
   onMounted(() => { unregisterGuideAction = ladiGuideController.registerAction('piggy:next', nextPiggyGuide); });

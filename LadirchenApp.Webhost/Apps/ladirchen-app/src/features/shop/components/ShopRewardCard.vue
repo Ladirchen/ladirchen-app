@@ -99,7 +99,7 @@ const { t } = useI18n();
     var(--lad-surface-soft),
     var(--lad-color-reward-soft)
   );
-  font-size: 2.625rem;
+  font-size: rem(42);
 }
 .reward-description {
   min-height: 47px;
@@ -116,7 +116,7 @@ const { t } = useI18n();
   color: var(--lad-color-reward-strong);
   border-radius: var(--lad-radius-pill);
   background: var(--lad-color-reward-soft);
-  font-size: 0.8125rem;
+  font-size: rem(13);
   font-weight: var(--lad-font-weight-black);
 }
 .request-reward-button {
@@ -129,8 +129,8 @@ const { t } = useI18n();
     var(--lad-color-info-strong),
     var(--lad-text-inverse),
     2.5rem,
-    0.9375rem,
-    0.25rem 0.8125rem
+    rem(15),
+    0.25rem rem(13)
   );
 }
 </style>

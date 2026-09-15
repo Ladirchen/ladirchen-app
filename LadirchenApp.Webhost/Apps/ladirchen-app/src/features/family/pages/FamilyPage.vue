@@ -209,7 +209,7 @@ onMounted(() => {
   top: 15px;
   right: 18px;
   color: var(--lad-color-reward-border);
-  font-size: 0.8125rem;
+  font-size: rem(13);
   animation: family-spark 2.2s ease-in-out infinite;
 }
 .family-hero-copy {
@@ -219,7 +219,7 @@ onMounted(() => {
 .family-hero-kicker {
   margin: 0 0 5px;
   color: var(--lad-color-info);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -227,7 +227,7 @@ onMounted(() => {
 .family-hero h1 {
   @apply ma-0;
   color: var(--lad-text);
-  font-size: 1.8125rem;
+  font-size: rem(29);
   line-height: 1;
   letter-spacing: -0.05em;
 }
@@ -235,7 +235,7 @@ onMounted(() => {
   @apply d-block;
   margin-top: 9px;
   color: var(--lad-muted);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   line-height: 1.45;
 }
 .family-hero-avatars {
@@ -285,7 +285,7 @@ onMounted(() => {
   border-radius: 10px;
   background: var(--lad-color-primary);
   box-shadow: 0 3px 0 var(--lad-color-primary-supporting);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-style: normal;
   font-weight: var(--lad-font-weight-black);
 }
@@ -302,7 +302,7 @@ onMounted(() => {
 .family-section-heading p {
   margin: 0 0 3px;
   color: var(--lad-color-bonus-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -316,7 +316,7 @@ onMounted(() => {
   @apply d-block;
   margin-top: 3px;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .member-grid {
   @apply d-grid;
@@ -349,7 +349,7 @@ onMounted(() => {
   @apply d-block;
 }
 .weekly-participation strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .weekly-participation span {
   margin-top: 2px;

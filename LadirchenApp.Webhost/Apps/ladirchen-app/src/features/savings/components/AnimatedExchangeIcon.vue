@@ -33,8 +33,8 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .exchange-icon {
-  width: 2.625rem;
-  height: 2.625rem;
+  width: rem(42);
+  height: rem(42);
   @apply position-relative d-inline-block overflow-visible flex-shrink-0;
   border-radius: 50%;
   background: var(--lad-palette-amber-100);
@@ -43,7 +43,7 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
   @apply position-absolute;
   inset: 0.5rem;
   color: var(--lad-palette-teal-550);
-  font-size: 1.625rem;
+  font-size: rem(26);
   transform-origin: center;
   animation: exchange-orbit 5.8s ease-in-out infinite;
 }
@@ -53,40 +53,40 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
   transform-origin: center;
 }
 .exchange-coin--ladi {
-  left: -0.0625rem;
+  left: -rem(1);
   bottom: 0;
   animation: coin-ladi-bob 2.8s ease-in-out infinite;
 }
 .exchange-coin--ladi :deep(.ladirchen-coin) {
-  width: 1.5625rem;
-  height: 1.5625rem;
+  width: rem(25);
+  height: rem(25);
 }
 .exchange-coin--family {
   width: 1.5rem;
   height: 1.5rem;
   top: 0;
-  right: -0.0625rem;
+  right: -rem(1);
   color: var(--lad-palette-teal-700);
-  border: 0.125rem solid var(--lad-palette-mint);
+  border: rem(2) solid var(--lad-palette-mint);
   border-radius: 50%;
   background: var(--lad-palette-teal-150);
   box-shadow:
-    inset 0 0 0 0.0625rem
+    inset 0 0 0 rem(1)
       color-mix(in srgb, var(--lad-palette-white) 60%, transparent),
-    0 0.125rem 0
+    0 rem(2) 0
       color-mix(in srgb, var(--lad-palette-teal-700) 16%, transparent);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: var(--lad-font-weight-black);
   animation: coin-family-bob 2.8s -0.7s ease-in-out infinite;
 }
 .exchange-spark {
   @apply position-absolute;
-  right: -0.1875rem;
-  bottom: 0.1875rem;
+  right: -rem(3);
+  bottom: rem(3);
   z-index: 3;
   color: var(--lad-palette-white);
-  font-size: 0.5625rem;
-  filter: drop-shadow(0 0 0.1875rem var(--lad-palette-yellow));
+  font-size: rem(9);
+  filter: drop-shadow(0 0 rem(3) var(--lad-palette-yellow));
   transform-origin: center;
   animation: exchange-sparkle 1.9s -0.4s ease-in-out infinite;
 }
@@ -102,19 +102,19 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
 @keyframes coin-ladi-bob {
   0%,
   100% {
-    transform: translateY(0.0625rem) rotate(-2deg);
+    transform: translateY(rem(1)) rotate(-2deg);
   }
   50% {
-    transform: translateY(-0.125rem) rotate(2deg);
+    transform: translateY(-rem(2)) rotate(2deg);
   }
 }
 @keyframes coin-family-bob {
   0%,
   100% {
-    transform: translateY(-0.0625rem) rotate(2deg);
+    transform: translateY(-rem(1)) rotate(2deg);
   }
   50% {
-    transform: translateY(0.125rem) rotate(-2deg);
+    transform: translateY(rem(2)) rotate(-2deg);
   }
 }
 @keyframes exchange-sparkle {

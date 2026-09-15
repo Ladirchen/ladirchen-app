@@ -1,4 +1,5 @@
 import type { IanaTimeZone } from '../family/time-zone';
+import { DAYS_PER_WEEK, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from './time';
 
 export interface ZonedCalendarParts {
   readonly date: string;
@@ -47,7 +48,7 @@ export const startOfIsoWeek = (instant: Date, timeZone: IanaTimeZone): string =>
   const date = calendarDateInTimeZone(instant, timeZone);
   const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return addCalendarDays(date, -((weekday + 6) % 7));
+  return addCalendarDays(date, -((weekday + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK));
 };
 
 export const isInstantInIsoWeek = (value: string, reference: Date, timeZone: IanaTimeZone): boolean => {
@@ -55,7 +56,7 @@ export const isInstantInIsoWeek = (value: string, reference: Date, timeZone: Ian
   if (Number.isNaN(instant.getTime())) {return false;}
   const date = calendarDateInTimeZone(instant, timeZone);
   const start = startOfIsoWeek(reference, timeZone);
-  return date >= start && date <= addCalendarDays(start, 6);
+  return date >= start && date <= addCalendarDays(start, DAYS_PER_WEEK - 1);
 };
 
 export const isSameCalendarDay = (value: string, reference: Date, timeZone: IanaTimeZone): boolean => {
@@ -66,7 +67,7 @@ export const isSameCalendarDay = (value: string, reference: Date, timeZone: Iana
 
 export const secondsSinceStartOfDay = (instant: Date, timeZone: IanaTimeZone): number => {
   const { hour, minute, second } = zonedCalendarParts(instant, timeZone);
-  return hour * 3_600 + minute * 60 + second;
+  return hour * SECONDS_PER_HOUR + minute * SECONDS_PER_MINUTE + second;
 };
 
 export const calendarDateIsWithin = (date: string, from?: string, until?: string): boolean =>

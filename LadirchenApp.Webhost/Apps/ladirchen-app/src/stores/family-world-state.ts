@@ -1,5 +1,6 @@
 import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
-import { characterCollidesWithFurniture, DEFAULT_ROOM_DESIGNS, furnitureVisualDefinitionFor, HOUSE_THEMES } from '@/domain/house';
+import { characterCollidesWithFurniture, DEFAULT_ROOM_DESIGNS, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS, HOUSE_THEMES } from '@/domain/house';
+import { clamp } from '@/domain/shared/numbers';
 import type { HouseStageLevel, HouseZoneId, RoomDesignId } from '@/domain/house';
 import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from '@/domain/family/types';
 import { DEFAULT_FAMILY_TIME_ZONE } from '@/domain/family/time-zone';
@@ -63,7 +64,7 @@ export const mergeHouseLayout = (
     if (!saved) {return placement;}
     const isCharacter = placement.entityType === 'member' || placement.entityType === 'pet';
     const isLadi = placement.entityType === 'ladi';
-    const savedLadiWasPerched = isLadi && saved.y < 62;
+    const savedLadiWasPerched = isLadi && saved.y < HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY;
     const accessory = placement.entityType === 'furniture'
       ? accessories.find(item => item.id === placement.entityId)
       : undefined;
@@ -71,14 +72,28 @@ export const mergeHouseLayout = (
     const minimumY = visualDefinition?.minimumY;
     const locksScale = visualDefinition?.locksScale ?? false;
     const savedYIsValid = minimumY !== undefined
-      ? saved.y >= minimumY && saved.y <= (visualDefinition?.maximumY ?? 94)
+      ? saved.y >= minimumY && saved.y <= (visualDefinition?.maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY)
       : isLadi
-        ? (saved.y >= 22 && saved.y <= 38) || saved.y >= 62
-        : saved.y >= (isCharacter || locksScale ? 62 : 52);
+        ? (saved.y >= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMinimumY &&
+          saved.y <= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMaximumY) ||
+          saved.y >= HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
+        : saved.y >= (isCharacter || locksScale
+          ? HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
+          : HOUSE_LAYOUT_CONSTRAINTS.furnitureMinimumY);
     const coordinates = {
-      scale: locksScale ? placement.scale : Math.max(.5, Math.min(1.35, saved.scale)),
-      x: savedLadiWasPerched ? placement.x : Math.max(4, Math.min(96, saved.x)),
-      y: savedYIsValid ? Math.max(8, Math.min(94, saved.y)) : placement.y,
+      scale: locksScale ? placement.scale : clamp(
+        saved.scale,
+        HOUSE_LAYOUT_CONSTRAINTS.minimumScale,
+        HOUSE_LAYOUT_CONSTRAINTS.maximumScale,
+      ),
+      x: savedLadiWasPerched ? placement.x : clamp(
+        saved.x,
+        HOUSE_LAYOUT_CONSTRAINTS.minimumX,
+        HOUSE_LAYOUT_CONSTRAINTS.maximumX,
+      ),
+      y: savedYIsValid
+        ? clamp(saved.y, HOUSE_LAYOUT_CONSTRAINTS.minimumY, HOUSE_LAYOUT_CONSTRAINTS.maximumY)
+        : placement.y,
       zoneId: saved.zoneId,
     };
     if (placement.entityType === 'furniture') {return { ...placement, ...coordinates };}

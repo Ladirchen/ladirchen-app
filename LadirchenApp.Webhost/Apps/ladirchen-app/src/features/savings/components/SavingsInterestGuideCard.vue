@@ -3,6 +3,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { calculateSavingsCredit } from '@/domain/savings/interest';
 import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
 
 import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
@@ -14,9 +15,8 @@ const { goal: localizeGoal } = useLocalizedDomainContent();
 const conversationStep = ref(-1);
 
 const streakInterest = computed(() => store.currentDailyStreak * store.streakBonusRate);
-const weeklyInterest = (saved: number, target = Number.POSITIVE_INFINITY) => saved <= 0 || saved >= target
-  ? 0
-  : Math.min(target - saved, Math.max(1, Math.round(saved * (store.savingsInterestRate / 100))));
+const weeklyInterest = (saved: number, target = Number.POSITIVE_INFINITY) =>
+  calculateSavingsCredit(saved, target, store.savingsInterestRate);
 const goalInterestRows = computed(() => {
   const rows = store.ownSavingGoals.map((goal) => ({
     ...localizeGoal(goal),

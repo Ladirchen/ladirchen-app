@@ -10,6 +10,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { remainingPromotionMilliseconds } from '@/domain/contributions/promotions';
+import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/domain/shared/time';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const props = defineProps<{ deadline: string }>();
@@ -23,16 +24,16 @@ const remainingMilliseconds = computed(() =>
 );
 const label = computed(() => {
   if (remainingMilliseconds.value <= 0) return t('contributions.countdown.expired');
-  const totalSeconds = Math.floor(remainingMilliseconds.value / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+  const totalSeconds = Math.floor(remainingMilliseconds.value / MILLISECONDS_PER_SECOND);
+  const hours = Math.floor(totalSeconds / SECONDS_PER_HOUR);
+  const minutes = Math.floor((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+  const seconds = totalSeconds % SECONDS_PER_MINUTE;
   const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   return t('contributions.countdown.remaining', { time });
 });
 
 onMounted(() => {
-  timer = window.setInterval(() => { now.value = new Date(); }, 1000);
+  timer = window.setInterval(() => { now.value = new Date(); }, MILLISECONDS_PER_SECOND);
 });
 onBeforeUnmount(() => {
   if (timer) window.clearInterval(timer);
@@ -50,7 +51,7 @@ onBeforeUnmount(() => {
     color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
   border-radius: 9px;
   background: color-mix(in srgb, var(--lad-color-reward-soft) 90%, transparent);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-variant-numeric: tabular-nums;
   @apply font-weight-black;
   letter-spacing: 0.01em;

@@ -91,7 +91,7 @@ const approvalMessage = computed(() => {
       color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .task-icon-avatar {
-  @include task-icon-tile(3.625rem, 2rem, -3deg, false);
+  @include task-icon-tile(rem(58), 2rem, -3deg, false);
 }
 .contribution-label {
   @include contribution-label;
@@ -150,7 +150,7 @@ const approvalMessage = computed(() => {
 }
 .approved-reward-main strong,
 .approved-energy strong {
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .invited-team,
 .approved-celebration {
@@ -159,7 +159,7 @@ const approvalMessage = computed(() => {
 }
 .invited-team > span {
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: 800;
 }
 .assigned-member,
@@ -185,7 +185,7 @@ const approvalMessage = computed(() => {
 }
 .assigned-member strong,
 .pending-celebration strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .approved-badge,
 .earned-stars {
@@ -215,7 +215,7 @@ const approvalMessage = computed(() => {
   @include action-button;
 }
 .claim-button-icon {
-  @include action-button-icon(2.1875rem, var(--lad-color-primary-strong));
+  @include action-button-icon(rem(35), var(--lad-color-primary-strong));
 }
 .finish-check {
   @include action-button-icon;

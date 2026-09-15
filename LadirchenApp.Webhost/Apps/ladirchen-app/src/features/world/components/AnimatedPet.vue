@@ -66,6 +66,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
+import { CHARACTER_REACTION_DURATION_MS } from '@/shared/runtime-timing';
 import { useI18n } from 'vue-i18n';
 
 import type { FamilyPet } from '@/domain/family/types';
@@ -86,7 +87,7 @@ const react = () => {
   isReacting.value = false;
   window.clearTimeout(reactionTimer);
   requestAnimationFrame(() => { isReacting.value = true; });
-  reactionTimer = window.setTimeout(() => { isReacting.value = false; }, 620);
+  reactionTimer = window.setTimeout(() => { isReacting.value = false; }, CHARACTER_REACTION_DURATION_MS);
 };
 
 const petStyle = computed(() => {
@@ -114,7 +115,7 @@ const petStyle = computed(() => {
   @apply cursor-pointer;
 }
 .animated-pet.reacting {
-  animation: pet-tap 620ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: pet-tap 620ms var(--lad-easing-pop);
 }
 svg {
   @apply w-100 h-100 overflow-visible;

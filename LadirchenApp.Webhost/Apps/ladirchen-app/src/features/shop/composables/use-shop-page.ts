@@ -13,6 +13,7 @@ import { useLocalizedDomainContent } from '@/shared/composables/use-localized-do
 import { UI_ICONS } from '@/shared/ui-icons';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+import { CURRENT_TIME_REFRESH_INTERVAL_MS } from '@/shared/runtime-timing';
 
 type HouseCatalogArea = 'inside' | 'outside' | 'special';
 type PublicationMode = 'now' | 'scheduled' | 'hidden';
@@ -134,7 +135,7 @@ export const useShopPage = () => {
     if (value === '1' && store.permissions.canManageContent) { activeTab.value = 'family'; rewardDialog.value = true; }
   }, { immediate: true });
   onMounted(() => {
-    clockTimer = window.setInterval(() => { currentTime.value = new Date(); }, 30_000);
+    clockTimer = window.setInterval(() => { currentTime.value = new Date(); }, CURRENT_TIME_REFRESH_INTERVAL_MS);
     if (store.viewerRole === 'child') {
       window.setTimeout(() => ladiGuideController.say({
         heading: redemptionOpen.value ? t('shop.guide.openTitle') : t('shop.guide.closedTitle'),

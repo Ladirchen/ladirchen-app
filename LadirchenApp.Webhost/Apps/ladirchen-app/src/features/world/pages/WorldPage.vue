@@ -255,7 +255,7 @@ const giveDirectGift = () => {
 .world-title {
   max-width: 310px;
   @apply ma-0;
-  font-size: 1.4375rem;
+  font-size: rem(23);
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
@@ -269,7 +269,7 @@ const giveDirectGift = () => {
 .energy-label {
   @apply d-block mt-1;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .energy-trigger-copy {
   @apply min-w-0 text-left;
@@ -322,10 +322,10 @@ const giveDirectGift = () => {
     height: 31px;
   }
   .energy-value {
-    font-size: 1.0625rem;
+    font-size: rem(17);
   }
   .energy-label {
-    font-size: 0.5625rem;
+    font-size: rem(9);
   }
 }
 .contribution-board {
@@ -354,7 +354,7 @@ const giveDirectGift = () => {
   top: 10px;
   right: 13px;
   color: color-mix(in srgb, var(--lad-color-reward-border) 65%, transparent);
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .contribution-board-heading {
   @apply position-relative d-flex align-start justify-space-between;
@@ -370,7 +370,7 @@ const giveDirectGift = () => {
 .contribution-board-heading > div > p:last-child {
   margin-top: 3px;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .all-contributions {
   min-height: 46px;
@@ -388,7 +388,7 @@ const giveDirectGift = () => {
   );
   box-shadow: 0 4px 0
     color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-heavy);
   text-decoration: none;
   transition:
@@ -420,19 +420,19 @@ const giveDirectGift = () => {
     color-mix(in srgb, var(--lad-surface-raised) 35%, transparent);
 }
 .contribution-empty strong {
-  font-size: 0.9375rem;
+  font-size: rem(15);
 }
 .contribution-empty p:not(.eyebrow) {
   margin: 3px 0 8px;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.4;
 }
 .empty-task-link {
   @apply d-inline-flex align-center;
   gap: 4px;
   color: var(--lad-mint-dark);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-heavy);
   text-decoration: none;
 }
@@ -497,7 +497,7 @@ const giveDirectGift = () => {
   @apply d-block;
 }
 .promotion-boost strong {
-  font-size: 1.4375rem;
+  font-size: rem(23);
   line-height: 1;
 }
 .promotion-boost small {
@@ -527,21 +527,21 @@ const giveDirectGift = () => {
 .promotion-stars i:nth-child(1) {
   top: 4px;
   left: 2px;
-  font-size: 0.6875rem;
+  font-size: rem(11);
   animation-delay: -0.4s;
 }
 .promotion-stars i:nth-child(2) {
   top: 9px;
   left: 25px;
   color: var(--lad-color-bonus-highlight);
-  font-size: 0.625rem;
+  font-size: rem(10);
   animation-name: bonus-star-two;
   animation-delay: -2.1s;
 }
 .promotion-stars i:nth-child(3) {
   top: 1px;
   right: 5px;
-  font-size: 0.5625rem;
+  font-size: rem(9);
   animation-name: bonus-star-three;
   animation-delay: -1.2s;
 }
@@ -557,7 +557,7 @@ const giveDirectGift = () => {
   right: 20px;
   bottom: 4px;
   color: var(--lad-color-accent-pink);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   animation-name: bonus-star-three;
   animation-delay: -2.7s;
 }
@@ -760,7 +760,7 @@ const giveDirectGift = () => {
 }
 .promotion-dialog-title {
   @apply ma-0;
-  font-size: 1.375rem;
+  font-size: rem(22);
   letter-spacing: -0.03em;
 }
 .promotion-total {
@@ -768,11 +768,11 @@ const giveDirectGift = () => {
   font-size: 1.75rem;
 }
 .section-title {
-  @include section-title(1.1875rem);
+  @include section-title(rem(19));
 }
 .rating-rule {
   color: var(--lad-color-reward-ink);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   @apply font-weight-black;
 }
 .management-actions {
@@ -783,7 +783,7 @@ const giveDirectGift = () => {
 .management-actions :deep(.v-btn) {
   @apply min-w-0;
   padding-inline: 8px;
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .direct-gift-icon {
   width: 58px;
@@ -791,7 +791,7 @@ const giveDirectGift = () => {
   @apply d-grid place-center;
   border-radius: 19px;
   background: var(--lad-color-reward-soft);
-  font-size: 1.9375rem;
+  font-size: rem(31);
   animation: bonus-pulse 1.8s ease-in-out infinite;
 }
 @keyframes bonus-pulse {

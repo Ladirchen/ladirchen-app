@@ -122,35 +122,35 @@ const finishWeek = (successful: boolean) => {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .development-tools {
-  padding: 0.9375rem;
-  border: 0.125rem dashed
+  padding: rem(15);
+  border: rem(2) dashed
     color-mix(in srgb, var(--lad-color-bonus) 30%, transparent);
-  border-radius: 1.5625rem;
+  border-radius: rem(25);
   background: var(--lad-gradient-bonus);
-  box-shadow: 0 0.375rem 0
+  box-shadow: 0 rem(6) 0
     color-mix(in srgb, var(--lad-color-bonus) 10%, transparent);
 }
 .development-heading {
   @apply d-flex align-center;
-  gap: 0.6875rem;
+  gap: rem(11);
 }
 .development-heading h2 {
   @apply ma-0;
-  font-size: 1.3125rem;
+  font-size: rem(21);
   letter-spacing: -0.035em;
 }
 .development-heading p:last-child {
-  margin-top: 0.125rem;
+  margin-top: rem(2);
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .development-icon {
   width: 3rem;
   height: 3rem;
   @apply d-grid place-center flex-shrink-0;
   color: var(--lad-color-bonus);
-  border: 0.1875rem solid var(--lad-surface);
-  border-radius: 1.0625rem;
+  border: rem(3) solid var(--lad-surface);
+  border-radius: rem(17);
   background: var(--lad-color-bonus-soft);
   box-shadow: 0 0.25rem 0
     color-mix(in srgb, var(--lad-color-bonus) 16%, transparent);
@@ -159,22 +159,22 @@ const finishWeek = (successful: boolean) => {
   gap: 0.5rem;
 }
 .development-panels :deep(.v-expansion-panel) {
-  border: 0.0625rem solid
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-bonus-muted) 15%, transparent);
   background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
   box-shadow: 0 0.25rem 0
     color-mix(in srgb, var(--lad-color-bonus-strong) 8%, transparent);
 }
 .development-panels :deep(.v-expansion-panel-title) {
-  min-height: 3.875rem;
-  padding: 0.6875rem 0.875rem;
+  min-height: rem(62);
+  padding: rem(11) rem(14);
 }
 .development-panels :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0.3125rem 0.8125rem 0.9375rem;
+  padding: rem(5) rem(13) rem(15);
 }
 .panel-title {
   @apply d-flex align-center;
-  gap: 0.625rem;
+  gap: rem(10);
 }
 .panel-title > .v-icon {
   width: 2.25rem;
@@ -189,12 +189,12 @@ const finishWeek = (successful: boolean) => {
   @apply d-block;
 }
 .panel-title strong {
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .panel-title small {
-  margin-top: 0.0625rem;
+  margin-top: rem(1);
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .session-grid {
   @apply d-grid;
@@ -203,13 +203,13 @@ const finishWeek = (successful: boolean) => {
 }
 .session-option {
   min-width: 0;
-  padding: 0.5625rem;
+  padding: rem(9);
   @apply d-flex align-center text-left cursor-pointer;
   gap: 0.5rem;
   color: var(--lad-text);
-  border: 0.125rem solid
+  border: rem(2) solid
     color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
-  border-radius: 0.9375rem;
+  border-radius: rem(15);
   background: var(--lad-surface-raised);
 }
 .session-option.active {
@@ -217,7 +217,7 @@ const finishWeek = (successful: boolean) => {
   background: var(--lad-surface-soft);
 }
 .session-option > span:first-child {
-  font-size: 1.375rem;
+  font-size: rem(22);
 }
 .session-option > span:nth-child(2) {
   @apply flex-grow-1 min-w-0;
@@ -227,7 +227,7 @@ const finishWeek = (successful: boolean) => {
   @apply d-block text-truncate;
 }
 .session-option strong {
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .session-option small {
   color: var(--lad-muted);
@@ -240,7 +240,7 @@ const finishWeek = (successful: boolean) => {
   @apply d-flex align-center justify-space-between;
   gap: 0.5rem;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .embedded-simulator {
   margin: 0;
@@ -267,19 +267,19 @@ const finishWeek = (successful: boolean) => {
 }
 .development-result h2 {
   @apply ma-0;
-  font-size: 1.375rem;
+  font-size: rem(22);
 }
 .result-house {
   font-size: 4.75rem;
-  animation: result-arrive 0.8s cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: result-arrive 0.8s var(--lad-easing-pop);
 }
 @keyframes result-arrive {
   0% {
     opacity: 0;
-    transform: translateY(1.5625rem) scale(0.5) rotate(-7deg);
+    transform: translateY(rem(25)) scale(0.5) rotate(-7deg);
   }
   70% {
-    transform: translateY(-0.3125rem) scale(1.08) rotate(2deg);
+    transform: translateY(-rem(5)) scale(1.08) rotate(2deg);
   }
   100% {
     opacity: 1;

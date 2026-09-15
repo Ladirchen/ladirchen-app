@@ -6,6 +6,36 @@ import type { FurnitureCollisionBounds } from './furniture-visuals';
 
 const CHARACTER_COLLISION_BOUNDS = { horizontalRadius: 4, verticalRadius: 6 } as const satisfies FurnitureCollisionBounds;
 
+export const HOUSE_LAYOUT_CONSTRAINTS = Object.freeze({
+  coordinateMaximum: 100,
+  coordinatePrecision: 2,
+  defaultGardenY: 68,
+  defaultIndoorY: 66,
+  defaultX: 50,
+  floorHorizontalInset: 7,
+  floorMinimumY: 62,
+  furnitureHorizontalInset: 3,
+  furnitureMinimumY: 52,
+  maximumScale: 1.35,
+  maximumX: 96,
+  maximumY: 94,
+  minimumScale: 0.5,
+  minimumX: 4,
+  minimumY: 8,
+  perch: Object.freeze({
+    maximumX: 31,
+    maximumY: 47,
+    minimumX: 6,
+    minimumY: 12,
+    persistedMaximumY: 38,
+    persistedMinimumY: 22,
+    proximityToleranceX: 7,
+    proximityToleranceY: 8,
+    x: 18,
+    y: 30,
+  }),
+});
+
 export const ENTITY_LAYER_BASE = {
   furniture: 100,
   pet: 400,

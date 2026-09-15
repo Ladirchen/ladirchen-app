@@ -320,7 +320,7 @@ const { t } = useI18n();
     color-mix(in srgb, var(--lad-surface-raised) 40%, transparent);
 }
 .contribution-card-list {
-  padding-inline: 1.0625rem;
+  padding-inline: rem(17);
 }
 .guardian-context {
   border: 1px solid color-mix(in srgb, var(--lad-color-info) 20%, transparent);
@@ -335,7 +335,7 @@ const { t } = useI18n();
 }
 .task-icon-avatar--compact {
   flex-basis: 50px;
-  font-size: 1.6875rem;
+  font-size: rem(27);
 }
 .task-icon-avatar--small {
   flex-basis: 44px;
@@ -362,7 +362,7 @@ const { t } = useI18n();
 }
 .promotion-detail-title {
   @apply ma-0;
-  font-size: 1.375rem;
+  font-size: rem(22);
   letter-spacing: -0.03em;
 }
 .promotion-reward {
@@ -378,11 +378,11 @@ const { t } = useI18n();
 .promotion-reward span,
 .promotion-reward small {
   color: var(--lad-muted);
-  font-size: 0.6875rem;
+  font-size: rem(11);
 }
 .promotion-reward strong {
   color: var(--lad-color-reward-ink);
-  font-size: 1.6875rem;
+  font-size: rem(27);
 }
 .team-dialog-icon {
   width: 58px;
@@ -390,7 +390,7 @@ const { t } = useI18n();
   @apply d-grid place-center;
   border-radius: 18px;
   background: var(--lad-surface-soft);
-  font-size: 1.875rem;
+  font-size: rem(30);
 }
 .sibling-rule {
   padding: 10px 12px;
@@ -398,7 +398,7 @@ const { t } = useI18n();
   color: var(--lad-muted);
   border-radius: 12px;
   background: var(--lad-surface-soft);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   line-height: 1.4;
 }
 .rating-setting {
@@ -406,7 +406,7 @@ const { t } = useI18n();
 }
 .bonus-value {
   color: var(--lad-color-reward-deep);
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .section-title {
   @include section-title;
@@ -415,7 +415,7 @@ const { t } = useI18n();
   grid-template-columns: 0.8fr 1.2fr;
 }
 .empty-icon {
-  font-size: 2.625rem;
+  font-size: rem(42);
 }
 .form-columns {
   grid-template-columns: 1fr 1fr;
@@ -423,7 +423,7 @@ const { t } = useI18n();
 .assignment-select {
   max-width: 150px;
   flex: 0 0 150px;
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .list-enter-active,
 .list-leave-active {

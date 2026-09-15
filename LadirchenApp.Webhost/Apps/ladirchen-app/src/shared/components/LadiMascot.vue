@@ -46,9 +46,9 @@ const spriteId = computed<LadiSpriteId>(() => {
   return stage.value.id;
 });
 const spriteUrl = computed(() => LADI_SPRITE_ASSET_URLS[spriteId.value]);
-const isBored = computed(() => props.score < 2.5);
-const isCool = computed(() => props.score >= 4.3 && props.score < 4.8);
-const isSuper = computed(() => props.score >= 4.8);
+const isBored = computed(() => stage.value.id === 'idle-ladi');
+const isCool = computed(() => stage.value.tier === 'aurora');
+const isSuper = computed(() => stage.value.tier === 'super');
 const reducedMotion = useReducedMotion();
 const motionState = computed(() => isSuper.value ? 'super' : isCool.value ? 'cool' : isBored.value ? 'bored' : 'happy');
 const characterMotion = computed(() => {
@@ -111,7 +111,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   background: var(--lad-palette-amber-100);
   box-shadow: 0 2px 5px
     color-mix(in srgb, var(--lad-palette-orange-750) 10%, transparent);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
 }
 .ladi-score i {

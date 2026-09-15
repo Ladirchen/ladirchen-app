@@ -31,7 +31,7 @@ withDefaults(defineProps<{
 }
 .section-copy > span {
   @apply d-block;
-  margin-bottom: 0.125rem;
+  margin-bottom: rem(2);
   @include overline(var(--lad-mint-dark), var(--lad-font-size-micro));
 }
 h2 {
@@ -39,7 +39,7 @@ h2 {
   @include heading(var(--lad-font-size-section), 1.2, -0.025em);
 }
 p {
-  margin: 0.1875rem 0 0;
+  margin: rem(3) 0 0;
   @include body-copy(var(--lad-font-size-caption));
 }
 .section-action {

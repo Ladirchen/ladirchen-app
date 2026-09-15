@@ -606,10 +606,10 @@ const {
   transform-origin: 230px 210px;
 }
 .world-reveal {
-  animation: house-reveal 850ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation: house-reveal 850ms var(--lad-easing-pop) both;
 }
 .plot-upgrade {
-  animation: garden-grow 700ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: garden-grow 700ms var(--lad-easing-pop);
 }
 .plot-flower-border > path {
   fill: none;
@@ -1086,7 +1086,7 @@ const {
   background: var(--lad-palette-surface);
   box-shadow: 0 4px 10px
     color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   @apply font-weight-black;
   line-height: 1;
   @apply pointer-events-none;
@@ -1307,10 +1307,10 @@ const {
 }
 .accessory,
 .interior-item {
-  animation: accessory-pop 450ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: accessory-pop 450ms var(--lad-easing-pop);
 }
 .house-addon {
-  animation: accessory-pop 650ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: accessory-pop 650ms var(--lad-easing-pop);
 }
 .scene-actions {
   @apply position-absolute d-flex justify-center;
@@ -1366,7 +1366,7 @@ const {
   line-height: 1.05;
 }
 .scene-action strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .scene-action small {
   margin-top: 2px;

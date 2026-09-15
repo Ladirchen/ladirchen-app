@@ -50,7 +50,7 @@ import { useI18n } from 'vue-i18n';
 
 import { authenticationGateway } from '@/app/composition-root';
 import { createDomainId } from '@/domain/shared/identifiers';
-import { DEMO_CREDENTIALS } from '@/features/auth/auth-config';
+import { AUTH_INPUT_RULES, DEMO_CREDENTIALS } from '@/features/auth/auth-config';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 type AuthMode = 'login' | 'register';
@@ -72,16 +72,16 @@ const errorMessage = ref('');
 
 const demoAccessLabel = computed(() => {
   const names = store.members
-    .slice(0, 2)
+    .slice(0, AUTH_INPUT_RULES.demoMemberCount)
     .map(member => `„${member.nickname || member.name}“`);
   return names.length > 1 ? `${names[0]} / ${names[1]}` : names[0] || t('auth.login.demoFallback');
 });
 
 const registrationIsValid = computed(() =>
-  familyName.value.trim().length >= 2
-  && guardianName.value.trim().length >= 2
-  && registerUsername.value.trim().length >= 3
-  && registerPassword.value.length >= 6
+  familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength
+  && guardianName.value.trim().length >= AUTH_INPUT_RULES.guardianNameMinimumLength
+  && registerUsername.value.trim().length >= AUTH_INPUT_RULES.usernameMinimumLength
+  && registerPassword.value.length >= AUTH_INPUT_RULES.passwordMinimumLength
   && registerPassword.value === passwordConfirmation.value,
 );
 
@@ -151,9 +151,9 @@ const register = async () => {
   height: min(42.5rem, calc(100dvh - 5rem));
   padding: 1.5rem;
   @apply overflow-auto position-relative;
-  border: 0.125rem solid
+  border: rem(2) solid
     color-mix(in srgb, var(--lad-color-info) 15%, transparent);
-  border-radius: 1.875rem;
+  border-radius: rem(30);
   background:
     radial-gradient(
       circle at 92% 5%,
@@ -167,9 +167,9 @@ const register = async () => {
       var(--lad-surface-soft)
     );
   box-shadow:
-    0 0.625rem 0
+    0 rem(10) 0
       color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent),
-    0 1.875rem 4.375rem
+    0 rem(30) rem(70)
       color-mix(in srgb, var(--lad-text-warm) 18%, transparent);
 }
 .auth-brand {
@@ -177,13 +177,13 @@ const register = async () => {
   gap: 0.75rem;
 }
 .auth-logo {
-  width: 3.625rem;
-  height: 3.625rem;
+  width: rem(58);
+  height: rem(58);
   @apply position-relative flex-shrink-0 overflow-hidden;
-  border: 0.125rem solid var(--lad-border-on-accent);
-  border-radius: 1.1875rem;
+  border: rem(2) solid var(--lad-border-on-accent);
+  border-radius: rem(19);
   background: var(--lad-surface-raised);
-  box-shadow: 0 0.3125rem 0
+  box-shadow: 0 rem(5) 0
     color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
 }
 .auth-logo img {
@@ -191,7 +191,7 @@ const register = async () => {
   height: 6.75rem;
   @apply position-absolute;
   top: -0.75rem;
-  left: -1.6875rem;
+  left: -rem(27);
   max-width: none;
 }
 .auth-brand strong,
@@ -200,35 +200,35 @@ const register = async () => {
 }
 .auth-brand strong {
   color: var(--lad-color-primary-deep);
-  font-size: 1.4375rem;
+  font-size: rem(23);
   letter-spacing: -0.04em;
 }
 .auth-brand small {
-  margin-top: 0.125rem;
+  margin-top: rem(2);
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .auth-switch {
-  padding: 0.3125rem;
+  padding: rem(5);
   @apply d-grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.3125rem;
-  border: 0.0625rem solid
+  gap: rem(5);
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-info) 15%, transparent);
-  border-radius: 1.125rem;
+  border-radius: rem(18);
   background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
 }
 .auth-switch button {
-  min-height: 2.8125rem;
-  padding: 0.5rem 0.625rem;
+  min-height: rem(45);
+  padding: 0.5rem rem(10);
   @apply d-flex align-center justify-center cursor-pointer;
-  gap: 0.4375rem;
+  gap: rem(7);
   color: var(--lad-muted);
   border: 0;
-  border-radius: 0.875rem;
+  border-radius: rem(14);
   background: transparent;
   font: inherit;
-  font-size: 0.6875rem;
+  font-size: rem(11);
   font-weight: var(--lad-font-weight-heavy);
 }
 .auth-switch button.active {
@@ -241,18 +241,18 @@ const register = async () => {
   box-shadow: 0 0.25rem 0 var(--lad-color-primary-deep);
 }
 .auth-switch button :deep(.v-icon) {
-  font-size: 1.1875rem;
+  font-size: rem(19);
 }
 .auth-form {
   @apply d-flex flex-column;
 }
 .auth-heading {
-  margin-bottom: 1.0625rem;
+  margin-bottom: rem(17);
 }
 .auth-heading p {
   margin: 0 0 0.25rem;
   color: var(--lad-color-info);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -260,54 +260,54 @@ const register = async () => {
 .auth-heading h1 {
   @apply ma-0;
   color: var(--lad-text);
-  font-size: 1.625rem;
+  font-size: rem(26);
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
 .auth-heading span {
   @apply d-block;
-  margin-top: 0.4375rem;
+  margin-top: rem(7);
   color: var(--lad-muted);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   line-height: 1.45;
 }
 .register-grid {
   @apply d-grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5625rem;
+  gap: rem(9);
 }
 .auth-form :deep(.v-input) {
-  margin-bottom: 0.1875rem;
+  margin-bottom: rem(3);
 }
 .auth-error {
-  margin: 0 0 0.6875rem;
-  padding: 0.5625rem 0.6875rem;
+  margin: 0 0 rem(11);
+  padding: rem(9) rem(11);
   color: var(--lad-color-danger-strong);
-  border: 0.0625rem solid
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-danger-muted) 18%, transparent);
   border-radius: 0.75rem;
   background: var(--lad-surface);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: 750;
 }
 .auth-submit {
   width: 100%;
-  min-height: 3.0625rem;
-  padding: 0.5625rem 0.875rem;
+  min-height: rem(49);
+  padding: rem(9) rem(14);
   @apply d-flex align-center justify-center cursor-pointer;
-  gap: 0.5625rem;
+  gap: rem(9);
   color: var(--lad-text-inverse);
-  border: 0.1875rem solid
+  border: rem(3) solid
     color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
-  border-radius: 1.0625rem;
+  border-radius: rem(17);
   background: linear-gradient(
     145deg,
     var(--lad-color-info-subtle),
     var(--lad-color-info-strong)
   );
   box-shadow:
-    0 0.3125rem 0 var(--lad-color-info-strong),
-    0 0.625rem 1.125rem
+    0 rem(5) 0 var(--lad-color-info-strong),
+    0 rem(10) rem(18)
       color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
   font: inherit;
   font-size: 0.75rem;
@@ -322,15 +322,15 @@ const register = async () => {
   font-style: normal;
 }
 .auth-submit:hover:not(:disabled) {
-  transform: translateY(-0.125rem);
+  transform: translateY(-rem(2));
   box-shadow:
-    0 0.4375rem 0 var(--lad-color-info-strong),
-    0 0.8125rem 1.25rem
+    0 rem(7) 0 var(--lad-color-info-strong),
+    0 rem(13) 1.25rem
       color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
 }
 .auth-submit:active:not(:disabled) {
-  transform: translateY(0.125rem);
-  box-shadow: 0 0.125rem 0 var(--lad-color-info-strong);
+  transform: translateY(rem(2));
+  box-shadow: 0 rem(2) 0 var(--lad-color-info-strong);
 }
 .auth-submit:disabled {
   cursor: default;
@@ -344,19 +344,19 @@ const register = async () => {
     var(--lad-color-primary-strong)
   );
   box-shadow:
-    0 0.3125rem 0 var(--lad-color-primary-deep),
-    0 0.625rem 1.125rem
+    0 rem(5) 0 var(--lad-color-primary-deep),
+    0 rem(10) rem(18)
       color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
 }
 .demo-login {
-  margin-top: 0.875rem;
-  padding: 0.625rem 0.6875rem;
+  margin-top: rem(14);
+  padding: rem(10) rem(11);
   @apply d-flex align-center;
-  gap: 0.5625rem;
+  gap: rem(9);
   color: var(--lad-color-accent-warm-deep);
-  border: 0.0625rem solid
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-reward-accent) 18%, transparent);
-  border-radius: 0.875rem;
+  border-radius: rem(14);
   background: var(--lad-color-reward-soft);
 }
 .demo-login > :deep(.v-icon) {
@@ -367,23 +367,23 @@ const register = async () => {
   @apply d-block;
 }
 .demo-login strong {
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .demo-login small {
-  margin-top: 0.0625rem;
+  margin-top: rem(1);
   font-size: 0.5rem;
   line-height: 1.35;
 }
 @include respond-down(phone) {
   .auth-card {
-    padding: 1.125rem;
+    padding: rem(18);
     border-radius: 1.5rem;
   }
   .register-grid {
     grid-template-columns: 1fr;
   }
   .auth-heading h1 {
-    font-size: 1.4375rem;
+    font-size: rem(23);
   }
 }
 </style>
