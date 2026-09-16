@@ -4,6 +4,8 @@ import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 import { defineConfig } from "vite-plus";
 import { fileURLToPath, URL } from "node:url";
 
+const enableProductionDevtools = process.env.ENABLE_VUE_DEVTOOLS === "true";
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -18,7 +20,10 @@ export default defineConfig({
     }),
     UnoCSS(),
   ],
-  define: { "process.env": {} },
+  define: {
+    "process.env": {},
+    __VUE_PROD_DEVTOOLS__: enableProductionDevtools,
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("src", import.meta.url)),
