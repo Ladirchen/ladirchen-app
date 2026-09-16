@@ -80,7 +80,7 @@ export type HouseLayoutEntityType = 'furniture' | 'member' | 'pet' | 'ladi';
 export type HouseStageId = 'starter-home' | 'family-home' | 'garden-home' | 'tower-home' | 'dream-home';
 export type HouseStageLevel = 0 | 1 | 2 | 3 | 4;
 export type HouseRoomCount = 1 | 2 | 3 | 4 | 5;
-export type HouseThemeId = 'sunny-dollhouse' | 'halloween-night' | 'cotton-candy-dream';
+export type HouseThemeId = 'sunny-dollhouse' | 'halloween-night' | 'cotton-candy-dream' | 'starlight-palace';
 export type HouseEditionKind = 'standard' | 'seasonal' | 'fantasy';
 export type HexColor = `#${string}`;
 
