@@ -301,8 +301,34 @@ const {
   margin-top: 10px;
   padding-bottom: 8px;
   @apply position-relative overflow-hidden;
+  container: world-scene / inline-size;
   touch-action: pan-y;
   @apply select-none;
+}
+.scene-world-shell :deep(.layout-entity.entity-furniture) {
+  --world-entity-responsive-scale: 0.8;
+}
+.scene-world-shell :deep(.room-furniture--kitchen-counter) {
+  transform: translateX(-16px);
+}
+.scene-world-shell :deep(.room-furniture--retro-fridge) {
+  transform: translateX(16px);
+}
+@container world-scene (min-width: 42rem) {
+  .scene-world-shell :deep(.layout-entity) {
+    --world-entity-responsive-scale: 1.2;
+  }
+  .scene-world-shell :deep(.layout-entity.entity-furniture) {
+    --world-entity-responsive-scale: 1.2;
+  }
+}
+@container world-scene (min-width: 50rem) {
+  .scene-world-shell :deep(.layout-entity) {
+    --world-entity-responsive-scale: 1.35;
+  }
+  .scene-world-shell :deep(.layout-entity.entity-furniture) {
+    --world-entity-responsive-scale: 1.35;
+  }
 }
 .scene-drag-layer {
   @apply position-relative;

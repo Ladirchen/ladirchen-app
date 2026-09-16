@@ -21,8 +21,9 @@ import petBedUrl from '@/assets/furniture/pet-bed.webp';
 import plantUrl from '@/assets/furniture/plant.webp';
 import poolUrl from '@/assets/furniture/pool.webp';
 import pumpkinArchUrl from '@/assets/furniture/pumpkin-arch.webp';
+import retroFridgeFrontUrl from '@/assets/furniture/retro-fridge-front.webp';
 import retroFridgeUrl from '@/assets/furniture/retro-fridge.webp';
-import retroFridgeOpenUrl from '@/assets/furniture/retro-fridge-open.webp';
+import retroFridgeOpenFrontUrl from '@/assets/furniture/retro-fridge-open-front.webp';
 import rugUrl from '@/assets/furniture/rug.webp';
 import sofaUrl from '@/assets/furniture/sofa.webp';
 import storageCabinetUrl from '@/assets/furniture/storage-cabinet.webp';
@@ -81,5 +82,5 @@ const baseSpriteDefinitions = Object.fromEntries(Object.entries(FURNITURE_SPRITE
 
 export const FURNITURE_SPRITE_DEFINITIONS: Record<FurnitureVisualId, FurnitureSpriteDefinition> = {
   ...baseSpriteDefinitions,
-  'retro-fridge': { closedUrl: retroFridgeUrl, openUrl: retroFridgeOpenUrl },
+  'retro-fridge': { closedUrl: retroFridgeFrontUrl, openUrl: retroFridgeOpenFrontUrl },
 };

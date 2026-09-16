@@ -1,5 +1,5 @@
 <template>
-  <span class="room-furniture" aria-hidden="true">
+  <span class="room-furniture" :class="`room-furniture--${item.visual}`" aria-hidden="true">
     <img v-if="spriteUrl" :src="spriteUrl" alt="" draggable="false">
   </span>
 </template>
@@ -32,5 +32,9 @@ const spriteUrl = computed(() => {
   );
   pointer-events: none;
   user-select: none;
+}
+.room-furniture--kitchen-counter img,
+.room-furniture--retro-fridge img {
+  object-position: center bottom;
 }
 </style>

@@ -100,7 +100,7 @@ const layerY = computed(() => props.accessory?.mobility === 'fixed' ? 0 : displa
 const entityStyle = computed(() => ({
   left: `${props.placement.x}%`,
   top: `${displayY.value}%`,
-  transform: `translate(-50%, -70%) translate(${props.dragOffset?.x ?? 0}px, ${props.dragOffset?.y ?? 0}px) scale(${props.placement.scale})`,
+  transform: `translate(-50%, -70%) translate(${props.dragOffset?.x ?? 0}px, ${props.dragOffset?.y ?? 0}px) scale(${props.placement.scale}) scale(var(--world-entity-responsive-scale, 1))`,
   zIndex: props.dragOffset ? ENTITY_VISUAL_CONFIG.draggingLayer : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
 }));
 const interact = () => {
