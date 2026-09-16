@@ -35,7 +35,8 @@ export type AnimatedSectionIconVariant = 'contributions' | 'family' | 'shop';
 defineProps<{ variant: AnimatedSectionIconVariant }>();
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .animated-section-icon {
   width: 45px;
   height: 45px;
@@ -47,32 +48,32 @@ defineProps<{ variant: AnimatedSectionIconVariant }>();
   animation: section-bob 3.4s ease-in-out infinite;
 }
 .icon-fill {
-  fill: #dff3eb;
+  fill: var(--lad-palette-background);
 }
 .icon-fill--soft {
-  fill: #ecf8f3;
+  fill: var(--lad-palette-background);
 }
 .icon-stroke {
   fill: none;
-  stroke: #278568;
+  stroke: var(--lad-palette-mint-strong);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
 }
 .accent-fill {
-  fill: #f6b945;
-  stroke: #bf7918;
+  fill: var(--lad-palette-amber-450);
+  stroke: var(--lad-palette-amber-550);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
 .section-spark {
-  fill: #f7bd4b;
+  fill: var(--lad-palette-yellow);
   transform-box: fill-box;
   transform-origin: center;
   animation: section-spark 2.5s ease-in-out infinite;
 }
 .section-spark--two {
-  fill: #67c49d;
+  fill: var(--lad-palette-teal-400);
   animation-delay: -1.15s;
 }
 .contribution-heart {
@@ -81,21 +82,21 @@ defineProps<{ variant: AnimatedSectionIconVariant }>();
   animation: section-pulse 2.3s ease-in-out infinite;
 }
 .animated-section-icon--shop .icon-fill {
-  fill: #ffedba;
+  fill: var(--lad-palette-amber-150);
 }
 .animated-section-icon--shop .icon-fill--soft {
-  fill: #fff8e4;
+  fill: var(--lad-palette-amber-100);
 }
 .animated-section-icon--shop .icon-stroke {
-  stroke: #d68e27;
+  stroke: var(--lad-palette-amber-500);
 }
 .animated-section-icon--shop .accent-fill {
-  fill: #e9972e;
+  fill: var(--lad-palette-amber-500);
   stroke: none;
 }
 .gift-ribbon {
-  fill: #fff0c7;
-  stroke: #d68e27;
+  fill: var(--lad-palette-amber-100);
+  stroke: var(--lad-palette-amber-500);
   stroke-linejoin: round;
   stroke-width: 2.5;
   transform-box: fill-box;
@@ -103,15 +104,15 @@ defineProps<{ variant: AnimatedSectionIconVariant }>();
   animation: ribbon-wiggle 3s ease-in-out infinite;
 }
 .family-head {
-  stroke: #278568;
+  stroke: var(--lad-palette-mint-strong);
   stroke-width: 2;
 }
 .family-head--center {
-  stroke: #b9791e;
+  stroke: var(--lad-palette-amber-550);
 }
 .family-heart {
-  fill: #ee7f72;
-  stroke: #b95b52;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-red-500);
   stroke-width: 1.2;
   transform-box: fill-box;
   transform-origin: center;
@@ -155,7 +156,7 @@ defineProps<{ variant: AnimatedSectionIconVariant }>();
     transform: rotate(3deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .section-main,
   .section-spark,
   .contribution-heart,

@@ -2,20 +2,20 @@
   <v-dialog :model-value="modelValue" max-width="500" scrollable @update:model-value="emit('update:modelValue', $event)">
     <v-card class="avatar-builder" rounded="xl">
       <header class="studio-header px-5 pt-4">
-        <div><p class="eyebrow mb-0">Mein Profil</p><h2>{{ userName }}s Figurenstudio</h2></div>
-        <v-btn aria-label="Figurenstudio schließen" icon="mdi-close" size="small" variant="text" @click="close" />
+        <div><p class="eyebrow mb-0">{{ t('avatar.builder.eyebrow') }}</p><h2>{{ t('avatar.builder.title', { name: userName }) }}</h2></div>
+        <v-btn :aria-label="t('avatar.builder.close')" icon="mdi-close" size="small" variant="text" @click="close" />
       </header>
 
-      <section class="studio-preview mx-5 mt-3" aria-label="Live-Vorschau des Avatars">
+      <section class="studio-preview mx-5 mt-3" :aria-label="t('avatar.builder.previewAria')">
         <div class="preview-decoration preview-star-one" /><div class="preview-decoration preview-star-two" />
         <AvatarFigure :appearance="draft" :size="190" />
         <div class="preview-tools">
-          <strong>{{ userName }}</strong><span>Tippe unten auf ein Teil – du siehst es sofort.</span>
-          <div class="random-actions"><button type="button" @click="randomLook(false)">Überraschung</button><button class="fun-random" type="button" @click="randomLook(true)">Quatschmix</button></div>
+          <strong>{{ userName }}</strong><span>{{ t('avatar.builder.previewHint') }}</span>
+          <div class="random-actions"><button type="button" @click="randomLook(false)">{{ t('avatar.builder.random') }}</button><button class="fun-random" type="button" @click="randomLook(true)">{{ t('avatar.builder.funRandom') }}</button></div>
         </div>
       </section>
 
-      <nav class="category-rail mt-3" aria-label="Figurenteile">
+      <nav class="category-rail mt-3" :aria-label="t('avatar.builder.partsAria')">
         <button v-for="category in categories" :key="category.value" :aria-current="section === category.value ? 'page' : undefined" :class="{ active: section === category.value }" type="button" @click="selectSection(category.value)">
           <AvatarCategoryIcon :name="category.value" /><span>{{ category.label }}</span>
         </button>
@@ -25,12 +25,12 @@
         <div class="section-intro"><div><p>{{ activeCategory.kicker }}</p><h3>{{ activeCategory.title }}</h3></div><span>{{ activeCategory.hint }}</span></div>
 
         <div v-if="section === 'base'" class="skin-studio mt-4">
-          <button v-for="tone in skinToneOptions" :key="tone.id" :aria-label="tone.label" :aria-pressed="draft.skinToneId === tone.value" :class="{ active: draft.skinToneId === tone.value }" class="skin-choice" type="button" @click="draft.skinToneId = tone.value">
-            <span :style="{ '--swatch-color': tone.color }" /><strong>{{ tone.label }}</strong>
+          <button v-for="tone in skinToneOptions" :key="tone.id" :aria-label="t(tone.id)" :aria-pressed="draft.skinToneId === tone.value" :class="{ active: draft.skinToneId === tone.value }" class="skin-choice" type="button" @click="draft.skinToneId = tone.value">
+            <span :style="{ '--swatch-color': tone.color }" /><strong>{{ t(tone.id) }}</strong>
           </button>
         </div>
         <div v-if="section === 'base' && profileRole === 'guardian'" class="guardian-presets mt-5">
-          <p class="mini-section-label">Profiltyp</p>
+          <p class="mini-section-label">{{ t('avatar.builder.profileType') }}</p>
           <div class="guardian-preset-grid mt-3">
             <button v-for="preset in guardianPresets" :key="preset.value" :aria-pressed="activeGuardianPreset === preset.value" :class="{ active: activeGuardianPreset === preset.value }" type="button" @click="selectGuardianPreset(preset.value)">
               <AvatarFigure :appearance="guardianPresetAppearance(preset.value)" :size="68" />
@@ -41,16 +41,16 @@
         </div>
 
         <template v-else-if="section === 'face'">
-          <p class="mini-section-label mt-4">Gesichtsform</p>
+          <p class="mini-section-label mt-4">{{ t('avatar.builder.faceShape') }}</p>
           <OptionGrid v-model="draft.faceShape" :options="faceShapeOptions" preview-kind="faceShape" />
-          <p class="mini-section-label mt-5">Augen & Ausdruck</p>
+          <p class="mini-section-label mt-5">{{ t('avatar.builder.expression') }}</p>
           <OptionGrid v-model="draft.face" :options="faceOptions" preview-kind="face" />
         </template>
         <template v-else-if="section === 'hair'">
-          <OptionGrid v-model="draft.hair" :options="visibleHairOptions" preview-kind="hair" /><ColorPicker v-model="draft.hairColorId" :options="visibleHairColorOptions" label="Haarfarbe" />
+          <OptionGrid v-model="draft.hair" :options="visibleHairOptions" preview-kind="hair" /><ColorPicker v-model="draft.hairColorId" :options="visibleHairColorOptions" :label="t('avatar.builder.hairColor')" />
         </template>
         <template v-else-if="section === 'outfit'">
-          <OptionGrid v-model="draft.outfit" :options="visibleOutfitOptions" preview-kind="outfit" /><ColorPicker v-model="draft.outfitColorId" :options="outfitColorOptions" label="Outfitfarbe" />
+          <OptionGrid v-model="draft.outfit" :options="visibleOutfitOptions" preview-kind="outfit" /><ColorPicker v-model="draft.outfitColorId" :options="outfitColorOptions" :label="t('avatar.builder.outfitColor')" />
         </template>
         <OptionGrid v-else-if="section === 'extras'" v-model="draft.accessoryId" :options="accessoryOptions" preview-kind="accessory" />
         <OptionGrid v-else-if="section === 'fun'" v-model="draft.funAccessoryId" :options="funOptions" preview-kind="fun" />
@@ -60,7 +60,7 @@
       <v-card-actions class="builder-actions px-5 py-3">
         <v-btn class="studio-save-button" color="primary" rounded="lg" variant="flat" @click="save">
           <v-icon class="studio-save-icon" icon="mdi-check-circle-outline" />
-          <span>Figur speichern</span>
+          <span>{{ t('avatar.builder.save') }}</span>
           <v-icon class="studio-save-arrow" icon="mdi-arrow-right" />
           <i class="studio-save-shine" aria-hidden="true" />
         </v-btn>
@@ -71,6 +71,7 @@
 
 <script lang="ts" setup>
 import { computed, defineComponent, h, nextTick, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { motion } from 'motion-v';
 
 import AvatarCategoryIcon from './AvatarCategoryIcon.vue';
@@ -86,28 +87,29 @@ type PreviewKind = 'face' | 'faceShape' | 'hair' | 'outfit' | 'accessory' | 'fun
 
 const props = withDefaults(defineProps<{ modelValue: boolean; userName: string; initialAppearance?: AvatarAppearance; profileRole?: ViewerRole }>(), { profileRole: 'child' });
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; save: [appearance: AvatarAppearance] }>();
+const { t } = useI18n();
 const section = ref<Section>('base');
 const optionsPanel = ref<HTMLElement | { $el?: HTMLElement }>();
 const draft = reactive<AvatarAppearance>(createDefaultAvatarAppearance());
 const categories = computed<Array<{ value: Section; label: string; kicker: string; title: string; hint: string }>>(() => [
-  { value: 'base', label: 'Ich', kicker: 'Grundlage', title: props.profileRole === 'guardian' ? 'Mein Profiltyp' : 'Mein Hautton', hint: 'Was passt zu dir?' },
-  { value: 'face', label: 'Gesicht', kicker: 'Mimik', title: 'So schaue ich', hint: 'Auch Zwinkern ist erlaubt.' },
-  { value: 'hair', label: 'Haare', kicker: 'Frisur', title: 'Haare & Farbe', hint: 'Natürlich, verspielt oder mutig.' },
-  { value: 'outfit', label: props.profileRole === 'guardian' ? 'Kleidung' : 'Kostüme', kicker: props.profileRole === 'guardian' ? 'Garderobe' : 'Verkleiden', title: props.profileRole === 'guardian' ? 'Was trage ich heute?' : 'Wer will ich heute sein?', hint: props.profileRole === 'guardian' ? 'Alltag, festlich oder gemütlich.' : 'Kostüm, Maske oder Lieblingslook.' },
-  { value: 'extras', label: 'Extras', kicker: 'Accessoires', title: 'Mein Lieblingsdetail', hint: 'Cool, süß oder königlich.' },
-  { value: 'fun', label: 'Quatsch', kicker: 'Lustige Teile', title: 'Heute ein bisschen anders', hint: 'Clown, Pirat oder Monster?' },
-  { value: 'season', label: 'Saison', kicker: 'Sammlung', title: 'Für besondere Tage', hint: 'Feiern geht das ganze Jahr.' },
+  { value: 'base', label: t('avatar.builder.categories.base.label'), kicker: t('avatar.builder.categories.base.kicker'), title: t(`avatar.builder.categories.base.${props.profileRole}Title`), hint: t('avatar.builder.categories.base.hint') },
+  { value: 'face', label: t('avatar.builder.categories.face.label'), kicker: t('avatar.builder.categories.face.kicker'), title: t('avatar.builder.categories.face.title'), hint: t('avatar.builder.categories.face.hint') },
+  { value: 'hair', label: t('avatar.builder.categories.hair.label'), kicker: t('avatar.builder.categories.hair.kicker'), title: t('avatar.builder.categories.hair.title'), hint: t('avatar.builder.categories.hair.hint') },
+  { value: 'outfit', label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`), kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`), title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`), hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`) },
+  { value: 'extras', label: t('avatar.builder.categories.extras.label'), kicker: t('avatar.builder.categories.extras.kicker'), title: t('avatar.builder.categories.extras.title'), hint: t('avatar.builder.categories.extras.hint') },
+  { value: 'fun', label: t('avatar.builder.categories.fun.label'), kicker: t('avatar.builder.categories.fun.kicker'), title: t('avatar.builder.categories.fun.title'), hint: t('avatar.builder.categories.fun.hint') },
+  { value: 'season', label: t('avatar.builder.categories.season.label'), kicker: t('avatar.builder.categories.season.kicker'), title: t('avatar.builder.categories.season.title'), hint: t('avatar.builder.categories.season.hint') },
 ]);
 const activeCategory = computed(() => categories.value.find(category => category.value === section.value) ?? categories.value[0]!);
 const baseAppearance = () => props.profileRole === 'guardian' ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
 const visibleHairOptions = computed(() => props.profileRole === 'guardian' ? adultHairOptions : hairOptions);
 const visibleHairColorOptions = computed(() => props.profileRole === 'guardian' ? adultHairColorOptions : hairColorOptions);
 const visibleOutfitOptions = computed(() => props.profileRole === 'guardian' ? adultOutfitOptions : outfitOptions);
-const guardianPresets: Array<{ value: GuardianAvatarPreset; label: string; description: string }> = [
-  { value: 'adult', label: 'Erwachsen', description: 'Moderner Alltagslook' },
-  { value: 'grandma', label: 'Oma', description: 'Herzlich und elegant' },
-  { value: 'grandpa', label: 'Opa', description: 'Klassisch und gemütlich' },
-];
+const guardianPresets = computed<Array<{ value: GuardianAvatarPreset; label: string; description: string }>>(() => [
+  { value: 'adult', label: t('avatar.builder.presets.adult.label'), description: t('avatar.builder.presets.adult.description') },
+  { value: 'grandma', label: t('avatar.builder.presets.grandma.label'), description: t('avatar.builder.presets.grandma.description') },
+  { value: 'grandpa', label: t('avatar.builder.presets.grandpa.label'), description: t('avatar.builder.presets.grandpa.description') },
+]);
 const activeGuardianPreset = computed<GuardianAvatarPreset>(() => draft.age !== 'senior' ? 'adult' : draft.outfit === 'cardigan' ? 'grandma' : 'grandpa');
 const guardianPresetAppearance = (preset: GuardianAvatarPreset) => ({ ...createGuardianAvatarAppearance(preset), skinToneId: draft.skinToneId });
 const selectGuardianPreset = (preset: GuardianAvatarPreset) => Object.assign(draft, guardianPresetAppearance(preset));
@@ -123,7 +125,7 @@ const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
 const previewAppearance = (kind: PreviewKind, value: string): AvatarAppearance => ({ ...baseAppearance(), age: draft.age, skinToneId: draft.skinToneId, hairColorId: draft.hairColorId, outfitColorId: draft.outfitColorId, [previewField[kind]]: value });
 
 const OptionGrid = defineComponent({
-  props: { modelValue: { type: String, required: true }, options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string; label: string }>, required: true }, previewKind: { type: String as () => PreviewKind, required: true } },
+  props: { modelValue: { type: String, required: true }, options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true }, previewKind: { type: String as () => PreviewKind, required: true } },
   emits: ['update:modelValue'],
   setup: (gridProps, { emit: gridEmit }) => () => h(
     'div',
@@ -135,7 +137,7 @@ const OptionGrid = defineComponent({
         type: 'button',
         'data-catalog-id': option.id,
         'data-preview-kind': gridProps.previewKind,
-        'aria-label': `${option.label} auswählen`,
+        'aria-label': t('avatar.builder.selectAria', { label: t(option.id) }),
         'aria-pressed': gridProps.modelValue === option.value,
         initial: { opacity: 0, y: 10, scale: .95 },
         animate: { opacity: 1, y: 0, scale: 1 },
@@ -147,7 +149,7 @@ const OptionGrid = defineComponent({
       {
         default: () => [
           h('span', { class: 'option-art', 'aria-hidden': 'true' }, [h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 })]),
-          h('strong', option.label),
+          h('strong', t(option.id)),
           gridProps.modelValue === option.value ? h('span', { class: 'option-check', 'aria-hidden': 'true' }, '✓') : null,
         ],
       },
@@ -157,10 +159,14 @@ const OptionGrid = defineComponent({
 
 const ColorPicker = defineComponent({
   props: { modelValue: { type: String, required: true }, options: { type: Array as () => AvatarColorOption<string>[], required: true }, label: { type: String, required: true } }, emits: ['update:modelValue'],
-  setup: (colorProps, { emit: colorEmit }) => () => h('div', { class: 'compact-colors' }, [h('strong', colorProps.label), h('div', { class: 'color-row' }, colorProps.options.map(option => h('button', { class: ['color-choice', { active: colorProps.modelValue === option.value }], type: 'button', 'data-catalog-id': option.id, 'aria-label': option.label, 'aria-pressed': colorProps.modelValue === option.value, style: { background: option.color }, onClick: () => colorEmit('update:modelValue', option.value) }))) ]),
+  setup: (colorProps, { emit: colorEmit }) => () => h('div', { class: 'compact-colors' }, [h('strong', colorProps.label), h('div', { class: 'color-row' }, colorProps.options.map(option => h('button', { class: ['color-choice', { active: colorProps.modelValue === option.value }], type: 'button', 'data-catalog-id': option.id, 'aria-label': t(option.id), 'aria-pressed': colorProps.modelValue === option.value, style: { background: option.color }, onClick: () => colorEmit('update:modelValue', option.value) }))) ]),
 });
 
-const randomItem = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)] as T;
+const randomItem = <T,>(items: T[]): T => {
+  const item = items[Math.floor(Math.random() * items.length)];
+  if (item === undefined) {throw new RangeError('Cannot select a random item from an empty list.');}
+  return item;
+};
 const resetDraft = () => Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
 const scrollOptionsToTop = () => void nextTick(() => { const panel = optionsPanel.value; const element = panel instanceof HTMLElement ? panel : panel?.$el; element?.scrollTo({ top: 0, behavior: 'smooth' }); });
 const selectSection = (value: Section) => { section.value = value; scrollOptionsToTop(); };
@@ -173,19 +179,20 @@ const save = () => { emit('save', { ...draft }); close(); };
 watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); section.value = 'base'; scrollOptionsToTop(); }, { immediate: true });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .avatar-builder {
   height: min(660px, calc(100dvh - 28px));
   max-height: min(660px, calc(100dvh - 28px));
   @apply d-flex flex-column overflow-hidden;
-  background: #fffdf9;
+  background: var(--lad-palette-surface);
 }
 .studio-header {
   @apply d-flex flex-shrink-0 align-center justify-space-between;
 }
 .studio-header h2 {
   margin: 1px 0 0;
-  font-size: 23px;
+  font-size: 1.4375rem;
   letter-spacing: -0.035em;
 }
 .studio-preview {
@@ -193,24 +200,34 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply position-relative d-grid flex-shrink-0;
   grid-template-columns: 210px 1fr;
   @apply align-center overflow-hidden;
-  border: 2px solid rgba(58, 141, 114, 0.14);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
   border-radius: 28px;
   background:
     radial-gradient(
       circle at 20% 18%,
-      rgba(255, 255, 255, 0.96) 0 42px,
+      color-mix(in srgb, var(--lad-palette-white) 95%, transparent) 0 42px,
       transparent 43px
     ),
-    linear-gradient(145deg, #dff7ee, #fff2c9);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100)
+    );
   box-shadow:
-    inset 0 -10px 0 rgba(112, 85, 44, 0.05),
-    0 5px 0 rgba(54, 122, 96, 0.08);
+    inset 0 -10px 0
+      color-mix(in srgb, var(--lad-palette-orange-650) 5%, transparent),
+    0 5px 0 color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
 }
 .studio-preview::after {
   content: "";
   height: 38px;
   @apply position-absolute right-0 bottom-0 left-0;
-  background: rgba(229, 191, 116, 0.25);
+  background: color-mix(
+    in srgb,
+    var(--lad-palette-orange-350) 25%,
+    transparent
+  );
   clip-path: polygon(
     0 55%,
     25% 20%,
@@ -225,7 +242,9 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply position-relative;
   z-index: 2;
   @apply justify-self-center;
-  filter: drop-shadow(0 9px 7px rgba(48, 86, 70, 0.16));
+  filter: drop-shadow(
+    0 9px 7px color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent)
+  );
 }
 .preview-tools {
   @apply position-relative;
@@ -234,13 +253,13 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply d-flex flex-column align-start;
 }
 .preview-tools > strong {
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 .preview-tools > span {
   max-width: 270px;
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.35;
 }
 .random-actions {
@@ -250,25 +269,27 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .random-actions button {
   min-height: 36px;
   padding: 0 13px;
-  color: #31594b;
-  border: 1px solid rgba(49, 89, 75, 0.18);
+  color: var(--lad-palette-muted-700);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-muted-700) 18%, transparent);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 3px 0 rgba(49, 89, 75, 0.1);
+  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
   font: inherit;
-  font-size: 11px;
+  font-size: 0.6875rem;
   @apply font-weight-black cursor-pointer;
 }
 .random-actions .fun-random {
-  color: #663c7b;
-  background: #f7e9ff;
+  color: var(--lad-palette-pink-650);
+  background: var(--lad-palette-background);
 }
 .preview-decoration {
   width: 12px;
   height: 12px;
   @apply position-absolute;
   z-index: 1;
-  background: #ffd45f;
+  background: var(--lad-palette-yellow);
   clip-path: polygon(
     50% 0,
     61% 38%,
@@ -321,12 +342,17 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .category-rail button:hover {
   transform: translateY(-2px);
-  background: #f1faf6;
+  background: var(--lad-palette-background);
 }
 .category-rail button.active {
-  color: #237b5e;
-  background: linear-gradient(145deg, #e1f8ee, #fff5cf);
-  box-shadow: inset 0 0 0 2px rgba(62, 188, 140, 0.2);
+  color: var(--lad-palette-teal-700);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: inset 0 0 0 2px
+    color-mix(in srgb, var(--lad-palette-mint) 20%, transparent);
 }
 .category-rail button.active::after {
   content: "";
@@ -334,11 +360,11 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   height: 3px;
   @apply position-absolute;
   bottom: 3px;
-  border-radius: 999px;
+  border-radius: var(--lad-radius-pill);
   background: var(--lad-mint);
 }
 .category-rail span {
-  font-size: 10px;
+  font-size: 0.625rem;
   @apply font-weight-black;
 }
 .builder-options {
@@ -355,26 +381,26 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .section-intro p {
   margin: 0 0 1px;
-  color: #26906d;
-  font-size: 9px;
-  font-weight: 950;
+  color: var(--lad-palette-mint-strong);
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.11em;
   @apply text-uppercase;
 }
 .section-intro h3 {
   @apply ma-0;
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .section-intro > span {
   color: var(--lad-muted);
-  font-size: 10px;
+  font-size: 0.625rem;
   @apply text-right;
 }
 .mini-section-label {
   margin-bottom: -8px;
-  color: #526660;
-  font-size: 10px;
-  font-weight: 950;
+  color: var(--lad-palette-muted-700);
+  font-size: 0.625rem;
+  font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.06em;
   @apply text-uppercase;
 }
@@ -391,21 +417,26 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 18px;
-  background: #fffdf8;
-  box-shadow: 0 3px 0 rgba(55, 95, 79, 0.08);
+  background: var(--lad-palette-surface);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
 }
 .guardian-preset-grid button.active {
   border: 2px solid var(--lad-mint);
-  background: linear-gradient(155deg, #e1f8ed, #fff4c9);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
 }
 .guardian-preset-grid strong {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .guardian-preset-grid span {
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 0.5rem;
   line-height: 1.2;
   @apply text-center;
 }
@@ -422,8 +453,13 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 22px;
-  background: linear-gradient(155deg, #f4fffa, #fff8e9);
-  box-shadow: 0 4px 0 rgba(55, 95, 79, 0.09);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-surface)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
 }
@@ -434,7 +470,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 3px solid white;
   border-radius: 48% 48% 44% 44%;
   background: var(--swatch-color);
-  box-shadow: 0 3px 0 rgba(65, 70, 68, 0.15);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
 }
 .skin-choice > span::before {
   content: "";
@@ -444,16 +481,21 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   top: 12px;
   left: 12px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.28);
+  background: color-mix(in srgb, var(--lad-palette-white) 30%, transparent);
   transform: rotate(-25deg);
 }
 .skin-choice strong {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .skin-choice.active {
   border: 2px solid var(--lad-mint);
-  background: linear-gradient(155deg, #e1f8ed, #fff4c9);
-  box-shadow: 0 5px 0 rgba(62, 188, 140, 0.24);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
   transform: translateY(-2px);
 }
 :deep(.option-grid) {
@@ -469,25 +511,43 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 21px;
-  background: linear-gradient(155deg, #f8fffc, #fff7e7);
-  box-shadow: 0 4px 0 rgba(55, 95, 79, 0.09);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-surface)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
   font: inherit;
   @apply cursor-pointer;
 }
 :deep(.option-choice:nth-child(3n + 2)) {
-  background: linear-gradient(155deg, #f2f7ff, #fff8ed);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-background),
+    var(--lad-palette-surface)
+  );
 }
 :deep(.option-choice:nth-child(3n + 3)) {
-  background: linear-gradient(155deg, #fff3f5, #f2fbf7);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
 }
 :deep(.option-choice.active) {
   border: 2px solid var(--lad-mint);
-  background: linear-gradient(155deg, #e1f8ed, #fff4c9);
-  box-shadow: 0 5px 0 rgba(62, 188, 140, 0.24);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
 }
 :deep(.option-choice strong) {
   max-width: 100%;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.05;
   @apply text-center;
 }
@@ -495,15 +555,18 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   width: 78px;
   height: 78px;
   @apply d-grid place-center overflow-hidden;
-  border: 2px solid rgba(255, 255, 255, 0.86);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 85%, transparent);
   border-radius: 40% 40% 34% 34%;
   background: radial-gradient(
     circle at 50% 37%,
-    #f5fffb 0 42%,
-    #dff3ec 43% 69%,
-    #f4dca8 70%
+    var(--lad-palette-surface) 0 42%,
+    var(--lad-palette-background) 43% 69%,
+    var(--lad-palette-amber-200) 70%
   );
-  filter: drop-shadow(0 4px 3px rgba(44, 72, 61, 0.12));
+  filter: drop-shadow(
+    0 4px 3px color-mix(in srgb, var(--lad-palette-text) 12%, transparent)
+  );
 }
 :deep(.option-art .avatar-figure) {
   border: 0;
@@ -541,9 +604,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 2px solid white;
   border-radius: 50%;
   background: var(--lad-mint);
-  box-shadow: 0 2px 5px rgba(35, 98, 74, 0.2);
-  font-size: 11px;
-  font-weight: 950;
+  box-shadow: 0 2px 5px
+    color-mix(in srgb, var(--lad-palette-teal-700) 20%, transparent);
+  font-size: 0.6875rem;
+  font-weight: var(--lad-font-weight-black);
 }
 :deep(.compact-colors) {
   margin-top: 18px;
@@ -551,10 +615,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   @apply d-flex align-center justify-space-between ga-3;
   border: 1px solid var(--lad-border);
   border-radius: 18px;
-  background: #f7fbf9;
+  background: var(--lad-palette-surface);
 }
 :deep(.compact-colors > strong) {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 :deep(.color-row) {
   @apply d-flex flex-wrap justify-end ga-2;
@@ -566,7 +630,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 3px solid white;
   border-radius: 43% 43% 48% 48%;
   box-shadow:
-    0 2px 0 rgba(65, 70, 68, 0.14),
+    0 2px 0 color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent),
     0 0 0 1px var(--lad-border);
   @apply cursor-pointer;
 }
@@ -578,13 +642,13 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   top: 5px;
   left: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.34);
+  background: color-mix(in srgb, var(--lad-palette-white) 35%, transparent);
   transform: rotate(-28deg);
 }
 :deep(.color-choice.active) {
   transform: translateY(-2px) scale(1.08);
   box-shadow:
-    0 4px 0 rgba(62, 188, 140, 0.22),
+    0 4px 0 color-mix(in srgb, var(--lad-palette-mint) 20%, transparent),
     0 0 0 3px var(--lad-mint);
 }
 .builder-actions {
@@ -592,22 +656,28 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   z-index: 3;
   @apply flex-shrink-0;
   border-top: 1px solid var(--lad-border);
-  background: #fffdf8;
-  box-shadow: 0 -10px 22px rgba(42, 69, 59, 0.06);
+  background: var(--lad-palette-surface);
+  box-shadow: 0 -10px 22px
+    color-mix(in srgb, var(--lad-palette-text) 5%, transparent);
 }
 .studio-save-button {
   min-width: 250px;
   min-height: 50px !important;
   padding-inline: 18px !important;
   @apply position-relative overflow-hidden;
-  border: 2px solid rgba(255, 255, 255, 0.88) !important;
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent) !important;
   border-radius: 17px !important;
-  background: linear-gradient(135deg, #5bb9df, #43aa82) !important;
+  background: linear-gradient(
+    135deg,
+    var(--lad-palette-blue-350),
+    var(--lad-palette-teal-550)
+  ) !important;
   box-shadow:
-    0 4px 0 rgba(39, 120, 100, 0.72),
-    0 9px 18px rgba(45, 125, 104, 0.16) !important;
-  font-size: 14px;
-  font-weight: 900;
+    0 4px 0 color-mix(in srgb, var(--lad-palette-teal-700) 70%, transparent),
+    0 9px 18px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent) !important;
+  font-size: 0.875rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -615,10 +685,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   gap: 10px;
 }
 .studio-save-icon {
-  font-size: 23px;
+  font-size: 1.4375rem;
 }
 .studio-save-arrow {
-  font-size: 19px;
+  font-size: 1.1875rem;
   transition: transform 0.18s ease;
 }
 .studio-save-button:hover .studio-save-arrow {
@@ -634,7 +704,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.58),
+    color-mix(in srgb, var(--lad-palette-white) 60%, transparent),
     transparent
   );
   animation: studio-save-shine 3.8s ease-in-out infinite;
@@ -665,7 +735,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     opacity: 0;
   }
 }
-@media (max-width: 560px) {
+@include respond-down(studio) {
   .studio-preview {
     min-height: 185px;
     grid-template-columns: 170px 1fr;
@@ -675,7 +745,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     height: 158px !important;
   }
   .preview-tools > strong {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
   .category-rail button {
     min-width: 72px;
@@ -687,7 +757,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     grid-template-columns: repeat(2, 1fr);
   }
 }
-@media (max-width: 390px) {
+@include respond-down(narrow) {
   .studio-preview {
     grid-template-columns: 1fr;
     @apply pa-2;
@@ -700,7 +770,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     @apply d-none;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .preview-decoration,
   .studio-save-shine {
     animation: none;

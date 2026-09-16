@@ -4,7 +4,6 @@ import type { AvatarAccessoryId, AvatarFace, AvatarFaceShape, AvatarFunAccessory
 export interface AvatarOption<T extends string> {
   id: AvatarCatalogItemId;
   value: T;
-  label: string;
 }
 
 export interface AvatarColorOption<T extends string> extends AvatarOption<T> {
@@ -14,11 +13,11 @@ export interface AvatarColorOption<T extends string> extends AvatarOption<T> {
 export type AvatarCatalogCategory = 'skin-tone' | 'face' | 'face-shape' | 'hair' | 'hair-color' | 'outfit' | 'outfit-color' | 'accessory' | 'fun-accessory' | 'seasonal-accessory';
 export type AvatarCatalogItemId = `avatar.${AvatarCatalogCategory}.${string}`;
 
-const defineAvatarOptions = <T extends string>(category: AvatarCatalogCategory, options: Array<Omit<AvatarOption<T>, 'id'>>): AvatarOption<T>[] =>
-  options.map(option => ({ ...option, id: `avatar.${category}.${option.value}` }));
+const defineAvatarOptions = <T extends string>(category: AvatarCatalogCategory, values: T[]): AvatarOption<T>[] =>
+  values.map(value => ({ id: `avatar.${category}.${value}`, value }));
 
 const defineAvatarColorOptions = <T extends string>(category: AvatarCatalogCategory, colors: Record<T, string>, ids: T[]): AvatarColorOption<T>[] =>
-  ids.map((value, index) => ({ id: `avatar.${category}.${value}`, value, label: `Farbe ${index + 1}`, color: colors[value] }));
+  ids.map(value => ({ id: `avatar.${category}.${value}`, value, color: colors[value] }));
 
 export const skinToneOptions = defineAvatarColorOptions<AvatarSkinToneId>('skin-tone', avatarSkinToneColors, [
   'skin-light', 'skin-medium', 'skin-tan', 'skin-deep',
@@ -37,34 +36,34 @@ export const outfitColorOptions = defineAvatarColorOptions<AvatarOutfitColorId>(
 ]);
 
 export const faceOptions = defineAvatarOptions<AvatarFace>('face', [
-  { value: 'happy', label: 'Fröhlich' },
-  { value: 'freckles', label: 'Sommersprossen' },
-  { value: 'wink', label: 'Zwinkern' },
-  { value: 'surprised', label: 'Überrascht' },
-  { value: 'confident', label: 'Selbstbewusst' },
-  { value: 'dreamy', label: 'Verträumt' },
-  { value: 'silly', label: 'Quatschig' },
-  { value: 'sparkle', label: 'Strahlend' },
+  'happy',
+  'freckles',
+  'wink',
+  'surprised',
+  'confident',
+  'dreamy',
+  'silly',
+  'sparkle',
 ]);
 
 export const faceShapeOptions = defineAvatarOptions<AvatarFaceShape>('face-shape', [
-  { value: 'soft', label: 'Sanft' },
-  { value: 'round', label: 'Rund' },
-  { value: 'oval', label: 'Oval' },
-  { value: 'angular', label: 'Markant' },
+  'soft',
+  'round',
+  'oval',
+  'angular',
 ]);
 
 export const hairOptions = defineAvatarOptions<AvatarHair>('hair', [
-  { value: 'short', label: 'Kurz' },
-  { value: 'waves', label: 'Lange Wellen' },
-  { value: 'ponytail', label: 'Pferdeschwanz' },
-  { value: 'curls', label: 'Locken' },
-  { value: 'afro', label: 'Afro' },
-  { value: 'bob', label: 'Bob' },
-  { value: 'braids', label: 'Zöpfe' },
-  { value: 'bun', label: 'Dutt' },
-  { value: 'space-buns', label: 'Space Buns' },
-  { value: 'undercut', label: 'Undercut' },
+  'short',
+  'waves',
+  'ponytail',
+  'curls',
+  'afro',
+  'bob',
+  'braids',
+  'bun',
+  'space-buns',
+  'undercut',
 ]);
 
 export const adultHairOptions: AvatarOption<AvatarHair>[] = hairOptions.filter(
@@ -72,61 +71,61 @@ export const adultHairOptions: AvatarOption<AvatarHair>[] = hairOptions.filter(
 );
 
 export const outfitOptions = defineAvatarOptions<AvatarOutfit>('outfit', [
-  { value: 'superhero', label: 'Superheld' },
-  { value: 'dinosaur', label: 'Dinokostüm' },
-  { value: 'monster', label: 'Monsterkostüm' },
-  { value: 'vampire', label: 'Vampirkostüm' },
-  { value: 'shark', label: 'Haikostüm' },
-  { value: 'robot', label: 'Roboter' },
-  { value: 'space', label: 'Astronaut' },
-  { value: 'fairy', label: 'Flügelwesen' },
-  { value: 'hoodie', label: 'Hoodie' },
-  { value: 'overalls', label: 'Latzhose' },
-  { value: 'explorer', label: 'Entdecker' },
-  { value: 'party', label: 'Party' },
-  { value: 'sporty', label: 'Sportlich' },
-  { value: 'pajamas', label: 'Pyjama' },
+  'superhero',
+  'dinosaur',
+  'monster',
+  'vampire',
+  'shark',
+  'robot',
+  'space',
+  'fairy',
+  'hoodie',
+  'overalls',
+  'explorer',
+  'party',
+  'sporty',
+  'pajamas',
 ]);
 
 export const adultOutfitOptions = defineAvatarOptions<AvatarOutfit>('outfit', [
-  { value: 'shirt', label: 'Hemd' },
-  { value: 'blouse', label: 'Bluse' },
-  { value: 'cardigan', label: 'Cardigan' },
-  { value: 'blazer', label: 'Blazer' },
-  { value: 'explorer', label: 'Freizeitjacke' },
-  { value: 'sporty', label: 'Sportlich' },
-  { value: 'party', label: 'Festlich' },
+  'shirt',
+  'blouse',
+  'cardigan',
+  'blazer',
+  'explorer',
+  'sporty',
+  'party',
 ]);
 
 export const accessoryOptions = defineAvatarOptions<AvatarAccessoryId>('accessory', [
-  { value: 'none', label: 'Ohne' },
-  { value: 'glasses', label: 'Brille' },
-  { value: 'headphones', label: 'Kopfhörer' },
-  { value: 'cat-ears', label: 'Katzenohren' },
-  { value: 'cap', label: 'Kappe' },
-  { value: 'crown', label: 'Krone' },
-  { value: 'star-glasses', label: 'Sternenbrille' },
-  { value: 'flower-crown', label: 'Blumenkrone' },
-  { value: 'propeller-cap', label: 'Propellerkappe' },
+  'none',
+  'glasses',
+  'headphones',
+  'cat-ears',
+  'cap',
+  'crown',
+  'star-glasses',
+  'flower-crown',
+  'propeller-cap',
 ]);
 
 export const funOptions = defineAvatarOptions<AvatarFunAccessoryId>('fun-accessory', [
-  { value: 'none', label: 'Ohne' },
-  { value: 'mustache', label: 'Schnurrbart' },
-  { value: 'whiskers', label: 'Schnurrhaare' },
-  { value: 'rainbow', label: 'Regenbogen' },
-  { value: 'clown-nose', label: 'Clownsnase' },
-  { value: 'pirate', label: 'Piratenklappe' },
-  { value: 'monster-horns', label: 'Monsterhörner' },
+  'none',
+  'mustache',
+  'whiskers',
+  'rainbow',
+  'clown-nose',
+  'pirate',
+  'monster-horns',
 ]);
 
 export const seasonOptions = defineAvatarOptions<AvatarSeasonalAccessoryId>('seasonal-accessory', [
-  { value: 'none', label: 'Ohne' },
-  { value: 'witch', label: 'Hexenhut' },
-  { value: 'pumpkin', label: 'Kürbis' },
-  { value: 'santa', label: 'Weihnachtsmütze' },
-  { value: 'reindeer', label: 'Rentiergeweih' },
-  { value: 'bat', label: 'Fledermaus' },
-  { value: 'elf', label: 'Wichtelmütze' },
-  { value: 'snow-monster', label: 'Schneemonster' },
+  'none',
+  'witch',
+  'pumpkin',
+  'santa',
+  'reindeer',
+  'bat',
+  'elf',
+  'snow-monster',
 ]);

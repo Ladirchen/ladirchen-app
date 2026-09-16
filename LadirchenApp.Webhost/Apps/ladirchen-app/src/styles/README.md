@@ -8,9 +8,11 @@ The frontend uses three complementary styling layers:
 
 ## Shared tokens
 
-Runtime design tokens are defined as CSS custom properties in `main.scss`. Theme colors that belong to the family-world shell remain in `family-world.scss`.
+`src/theme/color-palette.ts` is the single source of truth for every application and illustration colour. It contains the consolidated visual palette, semantic application colours, and typed domain palettes. Application startup installs the visual colours as `--lad-palette-*` CSS custom properties, so SCSS and Vue styles consume the same values without maintaining a second palette.
 
-Use the semantic `--lad-color-*`, `--lad-border-*`, `--lad-shadow-*`, and `--lad-gradient-*` tokens for ordinary cards, status feedback, rewards, bonuses, and raised surfaces. Do not copy their literal colour values into feature components. SVG artwork and CSS illustrations may keep a local palette because those colours describe the drawing rather than an application state.
+Use the semantic `--lad-color-*`, `--lad-border-*`, `--lad-shadow-*`, and `--lad-gradient-*` tokens for ordinary cards, status feedback, rewards, bonuses, and raised surfaces. Use `--lad-palette-*` only for feature artwork and CSS illustrations. Reuse the closest existing tone instead of adding a nearly identical colour.
+
+Direct hexadecimal and `rgb()`/`rgba()` literals are prohibited outside `src/theme/color-palette.ts`. `pnpm colors:check` enforces this rule and is also part of `pnpm lint`. When a genuinely new colour is required, add it to the appropriate typed palette first.
 
 SCSS-only values, currently the named responsive breakpoints, live in `_tokens.scss`.
 

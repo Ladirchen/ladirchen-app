@@ -1,5 +1,5 @@
 <template>
-  <div class="world-scene-wrap" :class="{ 'is-inside': view === 'inside', 'is-garden': view === 'garden', 'is-entering': entering, 'is-storage-open': storageOpen, 'is-dragging-furniture': draggingEntityType === 'furniture' }" :style="sceneStyle">
+  <div class="world-scene-wrap" :class="[{ 'is-inside': view === 'inside', 'is-garden': view === 'garden', 'is-entering': entering, 'is-storage-open': storageOpen, 'is-dragging-furniture': draggingEntityType === 'furniture' }, houseEnergyClass]" :style="sceneStyle">
     <motion.div
       class="scene-drag-layer"
       :drag="false"
@@ -12,25 +12,25 @@
       <svg class="world-scene" :class="`theme-${activeThemeId}`" viewBox="10 8 440 325" role="img" :aria-label="ariaLabel">
         <defs>
           <linearGradient id="meadowGround" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stop-color="#8fca86" />
-            <stop offset=".48" stop-color="#b7dda0" />
-            <stop offset="1" stop-color="#eef3d7" />
+            <stop offset="0" stop-color="var(--lad-palette-green-250)" />
+            <stop offset=".48" stop-color="var(--lad-palette-green-250)" />
+            <stop offset="1" stop-color="var(--lad-palette-amber-100)" />
           </linearGradient>
           <linearGradient id="insideFloor" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0" stop-color="#f8d89b" />
-            <stop offset="1" stop-color="#e7ae68" />
+            <stop offset="0" stop-color="var(--lad-palette-amber-200)" />
+            <stop offset="1" stop-color="var(--lad-palette-orange-350)" />
           </linearGradient>
           <linearGradient id="insideWall" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stop-color="#fff8df" />
-            <stop offset="1" stop-color="#f8e7bd" />
+            <stop offset="0" stop-color="var(--lad-palette-amber-100)" />
+            <stop offset="1" stop-color="var(--lad-palette-amber-150)" />
           </linearGradient>
           <pattern id="cottonRoofPattern" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
-            <rect width="24" height="24" fill="#f5a8ce" />
-            <path d="M-6 6 6-6m0 24L30-6M18 30 30 18" stroke="#fff1fa" stroke-width="8" />
-            <circle cx="7" cy="7" r="2.5" fill="#8bd8ec" />
+            <rect width="24" height="24" fill="var(--lad-palette-rose-200)" />
+            <path d="M-6 6 6-6m0 24L30-6M18 30 30 18" stroke="var(--lad-palette-surface)" stroke-width="8" />
+            <circle cx="7" cy="7" r="2.5" fill="var(--lad-palette-blue-250)" />
           </pattern>
           <filter id="sceneShadow" height="160%" width="160%" x="-30%" y="-30%">
-            <feDropShadow dx="0" dy="12" flood-color="#335443" flood-opacity=".2" stdDeviation="8" />
+            <feDropShadow dx="0" dy="12" flood-color="var(--lad-palette-muted-700)" flood-opacity=".2" stdDeviation="8" />
           </filter>
           <clipPath id="frontDoorOpeningClip">
             <path d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
@@ -80,8 +80,8 @@
 
           <g class="tree" :class="{ subdued: !hasEffect('garden') }" transform="translate(94 139)">
             <g class="tree-motion">
-              <path d="m35 61 7 37-13 6-2-41z" fill="#76533e" />
-              <g class="tree-crown"><circle cx="31" cy="35" fill="#3d9f66" r="27" /><circle cx="14" cy="48" fill="#5bbd79" r="21" /><circle cx="51" cy="49" fill="#2f8a59" r="23" /><circle cx="35" cy="21" fill="#70cf88" r="22" /></g>
+              <path d="m35 61 7 37-13 6-2-41z" fill="var(--lad-palette-orange-650)" />
+              <g class="tree-crown"><circle cx="31" cy="35" fill="var(--lad-palette-teal-550)" r="27" /><circle cx="14" cy="48" fill="var(--lad-palette-mint-450)" r="21" /><circle cx="51" cy="49" fill="var(--lad-palette-mint-strong)" r="23" /><circle cx="35" cy="21" fill="var(--lad-palette-teal-400)" r="22" /></g>
             </g>
           </g>
 
@@ -104,12 +104,12 @@
               <g class="toy-door">
                 <path class="doorway-back" d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
                 <g class="doorway-glimpse" clip-path="url(#frontDoorOpeningClip)">
-                  <rect x="210" y="181" width="42" height="75" fill="#f9e7bd" />
-                  <path d="m211 232 40-7v31h-40Z" fill="#d79f6d" />
-                  <path d="M231 182v31m-12 42 5-24m23 24-10-27" fill="none" stroke="#b47a55" stroke-width="2" />
-                  <path d="M218 218h25v12h-25Z" fill="#73a4d6" stroke="#446e96" stroke-width="2" />
-                  <circle cx="230" cy="202" r="7" fill="#ffe47c" opacity=".8" />
-                  <path d="M230 181v15" stroke="#725844" stroke-width="2" />
+                  <rect x="210" y="181" width="42" height="75" fill="var(--lad-palette-amber-150)" />
+                  <path d="m211 232 40-7v31h-40Z" fill="var(--lad-palette-orange-350)" />
+                  <path d="M231 182v31m-12 42 5-24m23 24-10-27" fill="none" stroke="var(--lad-palette-orange-500)" stroke-width="2" />
+                  <path d="M218 218h25v12h-25Z" fill="var(--lad-palette-indigo-350)" stroke="var(--lad-palette-blue-600)" stroke-width="2" />
+                  <circle cx="230" cy="202" r="7" fill="var(--lad-palette-amber-250)" opacity=".8" />
+                  <path d="M230 181v15" stroke="var(--lad-palette-orange-650)" stroke-width="2" />
                 </g>
                 <g class="door-leaf">
                   <path class="door-panel" d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
@@ -147,12 +147,12 @@
 
           </g>
 
-          <g v-if="view === 'front' && activeThemeId === 'halloween-night'" class="edition-decor halloween-edition" aria-label="Halloween-Nacht Hausedition">
+          <g v-if="view === 'front' && activeThemeId === 'halloween-night'" class="edition-decor halloween-edition" :aria-label="t('world.scene.editionAria', { name: t('catalog.themes.halloween.name') })">
             <path class="bat bat-one" d="M155 111q8-10 16 0 8-10 16 0-8-2-16 10-8-12-16-10Z" /><path class="bat bat-two" d="M317 105q6-8 13 0 6-8 13 0-7-1-13 9-6-10-13-9Z" />
             <circle class="pumpkin" cx="191" cy="255" r="11" /><circle class="pumpkin" cx="275" cy="256" r="10" /><path class="pumpkin-face" d="m186 252 3 3 3-3m-5 8q4 3 8 0m75-8 3 3 3-3m-5 8q4 3 8 0" />
             <path class="spooky-vine" d="M144 213q-20-22 0-43m174 44q20-24 2-45" />
           </g>
-          <g v-if="view === 'front' && activeThemeId === 'cotton-candy-dream'" class="edition-decor candy-edition" aria-label="Zuckerwatte-Traum Hausedition">
+          <g v-if="view === 'front' && activeThemeId === 'cotton-candy-dream'" class="edition-decor candy-edition" :aria-label="t('world.scene.editionAria', { name: t('catalog.themes.candy.name') })">
             <g class="candy-cloud candy-left"><circle cx="119" cy="238" r="17" /><circle cx="135" cy="229" r="20" /><circle cx="151" cy="240" r="16" /></g>
             <g class="candy-cloud candy-right"><circle cx="314" cy="238" r="17" /><circle cx="331" cy="228" r="20" /><circle cx="348" cy="240" r="16" /></g>
             <path class="candy-swirl" d="M217 122q25-23 38 0-8 17-27 6 4-10 14-6" />
@@ -161,13 +161,20 @@
             <g class="wrapped-candies"><path d="m169 191-9-5v10Zm18 0 9-5v10Z" /><rect x="169" y="184" width="18" height="14" rx="7" /><path d="m273 178-8-5v10Zm17 0 8-5v10Z" /><rect x="273" y="171" width="17" height="14" rx="7" /></g>
             <g class="candy-sprinkles"><circle cx="177" cy="121" r="3" /><circle cx="289" cy="133" r="3" /><circle cx="309" cy="157" r="2.5" /><circle cx="154" cy="153" r="2.5" /></g>
           </g>
+          <g v-if="view === 'front' && activeThemeId === 'starlight-palace'" class="edition-decor starlight-edition" :aria-label="t('world.scene.editionAria', { name: t('catalog.themes.starlight.name') })">
+            <path class="palace-garland" d="M151 168q80 34 161 0" />
+            <g class="palace-lights"><circle cx="165" cy="174" r="4" /><circle cx="190" cy="181" r="4" /><circle cx="217" cy="185" r="4" /><circle cx="245" cy="185" r="4" /><circle cx="272" cy="181" r="4" /><circle cx="298" cy="174" r="4" /></g>
+            <path class="palace-crown" d="m213 129 9 8 10-18 10 18 9-8-3 24h-32Z" />
+            <g class="palace-flags"><path d="M151 153v-35l19 7-19 9m162 19v-35l-19 7 19 9" /></g>
+            <g class="palace-stars"><path d="m178 119 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" /><path d="m294 124 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" /><path d="m329 199 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></g>
+          </g>
 
-          <g v-if="view === 'front' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="#8d5d49" /><circle cx="288" cy="122" fill="#fff" opacity=".55" r="8" /><circle cx="296" cy="110" fill="#fff" opacity=".38" r="11" /></g>
-          <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)"><ellipse fill="#438c58" rx="20" ry="8" /><circle cx="-9" cy="-8" fill="#ff8378" r="6" /><circle cx="4" cy="-11" fill="#ffd161" r="6" /><circle cx="13" cy="-5" fill="#f5a0b9" r="5" /></g>
-          <g v-if="energy >= 85 && energy < 100" class="sparkles" fill="#fff4a2">
+          <g v-if="view === 'front' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="var(--lad-palette-orange-600)" /><circle cx="288" cy="122" fill="var(--lad-palette-white)" opacity=".55" r="8" /><circle cx="296" cy="110" fill="var(--lad-palette-white)" opacity=".38" r="11" /></g>
+          <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)"><ellipse fill="var(--lad-palette-teal-600)" rx="20" ry="8" /><circle cx="-9" cy="-8" fill="var(--lad-palette-coral)" r="6" /><circle cx="4" cy="-11" fill="var(--lad-palette-yellow)" r="6" /><circle cx="13" cy="-5" fill="var(--lad-palette-rose-250)" r="5" /></g>
+          <g v-if="energy >= 85 && energy < 100" class="sparkles" fill="var(--lad-palette-amber-150)">
             <path d="m330 154 4 10 10 4-10 4-4 10-4-10-10-4 10-4z" /><path d="m353 179 3 7 7 3-7 3-3 7-3-7-7-3 7-3z" /><path d="m115 181 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
           </g>
-          <g v-if="energy === 100" class="perfect-shimmer" aria-label="Glitzereffekt für 100 Prozent Energie">
+          <g v-if="energy === 100" class="perfect-shimmer" :aria-label="t('world.scene.perfectEnergyAria')">
             <path class="shimmer-star shimmer-one" d="m352 125 5 13 13 5-13 5-5 13-5-13-13-5 13-5Z" />
             <path class="shimmer-star shimmer-two" d="m397 172 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
             <path class="shimmer-star shimmer-three" d="m111 172 4 10 10 4-10 4-4 10-4-10-10-4 10-4Z" />
@@ -179,7 +186,7 @@
         </g>
       </svg>
 
-      <div v-if="view === 'front'" class="front-garden-items" aria-label="Gartenausstattung im Vorgarten">
+      <div v-if="view === 'front'" class="front-garden-items" :aria-label="t('world.scene.frontGardenAria')">
         <HouseLayoutEntity
           v-for="placement in frontGardenPlacements"
           :key="placement.id"
@@ -202,6 +209,7 @@
           compact
           contextual-neighbors
           :editable="canArrangeHouse"
+          :energy="energy"
           include-garden
           :members="members"
           :pets="pets"
@@ -211,6 +219,7 @@
           :selected-zone-id="selectedRoomView"
           :show-room-labels="false"
           :storage-open="storageOpen"
+          :viewer-member-id="viewerMemberId"
           @drag-state="draggingEntityType = $event"
           @move="forwardEntityMove"
           @reset="forwardEntityReset"
@@ -223,7 +232,7 @@
         v-if="view !== 'front' && !storageOpen"
         class="furniture-storage-trigger"
         :aria-expanded="storageOpen"
-        aria-label="Möbellager öffnen"
+        :aria-label="t('world.scene.storage.open')"
         type="button"
         @click.stop="storageOpen = !storageOpen"
       >
@@ -231,35 +240,35 @@
         <v-icon class="storage-plus" icon="mdi-plus" size="12" />
       </button>
       <Transition name="storage-tray">
-        <aside v-if="view !== 'front' && storageOpen" class="furniture-storage" data-furniture-storage aria-label="Möbellager">
+        <aside v-if="view !== 'front' && storageOpen" class="furniture-storage" data-furniture-storage :aria-label="t('world.scene.storage.title')">
           <header>
             <div class="storage-title">
               <span class="storage-title-icon"><v-icon icon="mdi-archive-star-outline" size="19" /></span>
-              <span><strong>Möbellager</strong><small>{{ storageAccessories.length === 1 ? '1 Möbelstück verstaut' : `${storageAccessories.length} Möbelstücke verstaut` }}</small></span>
+              <span><strong>{{ t('world.scene.storage.title') }}</strong><small>{{ t('world.scene.storage.count', { count: storageAccessories.length }) }}</small></span>
             </div>
-            <button aria-label="Möbellager schließen" type="button" @click="storageOpen = false"><v-icon icon="mdi-close" size="18" /></button>
+            <button :aria-label="t('world.scene.storage.close')" type="button" @click="storageOpen = false"><v-icon icon="mdi-close" size="18" /></button>
           </header>
           <div class="storage-items">
-            <p v-if="storageAccessories.length === 0" class="storage-empty"><span><v-icon icon="mdi-inbox-arrow-down-outline" size="25" /></span><strong>Hier ist noch Platz!</strong><small>Ziehe ein Möbelstück in diese Truhe.</small></p>
+            <p v-if="storageAccessories.length === 0" class="storage-empty"><span><v-icon icon="mdi-inbox-arrow-down-outline" size="25" /></span><strong>{{ t('world.scene.storage.emptyTitle') }}</strong><small>{{ t('world.scene.storage.emptyDescription') }}</small></p>
             <button
               v-for="accessory in storageAccessories"
               :key="accessory.id"
-              :aria-label="`${accessory.title} aufstellen`"
+              :aria-label="t('world.scene.storage.placeAria', { title: accessory.title })"
               class="stored"
               type="button"
               @click="placeStoredAccessory(accessory)"
             >
               <span class="stored-preview"><RoomFurniture :item="accessory" /></span>
               <strong>{{ accessory.title }}</strong>
-              <span class="stored-action"><v-icon icon="mdi-plus" size="10" />Aufstellen</span>
+              <span class="stored-action"><v-icon icon="mdi-plus" size="10" />{{ t('world.scene.storage.place') }}</span>
             </button>
-            <p v-if="storageAccessories.length > 0" class="storage-drop-hint"><v-icon icon="mdi-inbox-arrow-down-outline" size="15" />Weitere Möbel hier ablegen</p>
+            <p v-if="storageAccessories.length > 0" class="storage-drop-hint"><v-icon icon="mdi-inbox-arrow-down-outline" size="15" />{{ t('world.scene.storage.dropMore') }}</p>
           </div>
         </aside>
       </Transition>
 
-      <div v-if="view === 'front'" class="world-family" :class="{ 'guardian-active': activeFamilyMember?.role === 'guardian' }" aria-label="Familienmitglieder in der Familienwelt">
-        <div class="world-family-background" aria-label="Weitere Familienmitglieder im Hintergrund">
+      <div v-if="view === 'front'" class="world-family" :class="{ 'guardian-active': activeFamilyMember?.role === 'guardian' }" :aria-label="t('world.scene.familyAria')">
+        <div class="world-family-background" :aria-label="t('world.scene.backgroundFamilyAria')">
           <div v-for="group in backgroundMemberGroups" :key="group.side" :class="['world-family-side', `world-family-side--${group.side}`]">
             <div
               v-for="(member, index) in group.members"
@@ -267,7 +276,7 @@
               :class="['world-family-member', 'is-background-member', member.role === 'child' ? 'is-child' : 'is-guardian']"
             >
               <Transition name="member-name">
-                <span v-if="speakingMemberId === member.id" class="member-name-bubble" role="status">{{ member.nickname?.trim() || member.name }}</span>
+                <span v-if="speakingMemberId === member.id" class="member-name-bubble" role="status">{{ worldMemberName(member) }}</span>
               </Transition>
               <AvatarFigure
                 :appearance="appearanceFor(member, index)"
@@ -281,7 +290,7 @@
         </div>
         <div v-if="activeFamilyMember" class="world-family-member is-active-member">
           <Transition name="member-name">
-            <span v-if="speakingMemberId === activeFamilyMember.id" class="member-name-bubble" role="status">{{ activeFamilyMember.nickname?.trim() || activeFamilyMember.name }}</span>
+            <span v-if="speakingMemberId === activeFamilyMember.id" class="member-name-bubble" role="status">{{ worldMemberName(activeFamilyMember) }}</span>
           </Transition>
           <AvatarFigure
             :appearance="appearanceFor(activeFamilyMember, 0)"
@@ -293,7 +302,7 @@
         </div>
       </div>
 
-      <div v-if="view === 'front'" class="world-pets" aria-label="Haustiere in der Familienwelt">
+      <div v-if="view === 'front'" class="world-pets" :aria-label="t('world.scene.petsAria')">
         <div v-for="pet in pets" :key="pet.id" class="world-pet">
           <Transition name="member-name">
             <span v-if="activePetId === pet.id" class="pet-name-bubble" role="status">{{ pet.name }}</span>
@@ -305,14 +314,14 @@
 
     <div class="scene-actions">
       <template v-if="view === 'front'">
-        <button class="scene-action" :disabled="entering" aria-label="Haus betreten" type="button" @click.stop="enterHouse">
+        <button class="scene-action" :disabled="entering" :aria-label="t('world.scene.enterAria')" type="button" @click.stop="enterHouse">
           <v-icon icon="mdi-door-open" size="20" />
-          <span><strong>Eintreten</strong><small>Tür öffnen</small></span>
+          <span><strong>{{ t('world.scene.enter') }}</strong><small>{{ t('world.scene.openDoor') }}</small></span>
         </button>
       </template>
-      <button v-else class="scene-action" aria-label="Zurück vor das Haus" type="button" @click.stop="leaveScene">
+      <button v-else class="scene-action" :aria-label="t('world.scene.leaveAria')" type="button" @click.stop="leaveScene">
         <v-icon icon="mdi-arrow-left" size="20" />
-        <span><strong>Nach draußen</strong><small>Vorgarten</small></span>
+        <span><strong>{{ t('world.scene.outside') }}</strong><small>{{ t('world.scene.frontGarden') }}</small></span>
       </button>
     </div>
   </div>
@@ -321,6 +330,7 @@
 <script lang="ts" setup>
 import { computed, onUnmounted, ref } from 'vue';
 import { motion } from 'motion-v';
+import { useI18n } from 'vue-i18n';
 
 import PixiWorldFoundation from '@/components/PixiWorldFoundation.vue';
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
@@ -328,7 +338,7 @@ import AnimatedPet from './AnimatedPet.vue';
 import DollhouseInterior from './DollhouseInterior.vue';
 import HouseLayoutEntity from './HouseLayoutEntity.vue';
 import RoomFurniture from './RoomFurniture.vue';
-import { HOUSE_THEMES } from '../data/house-catalog';
+import { HOUSE_THEMES } from '@/domain/house-catalog';
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import type { HouseAccessoryId, HouseRoomDefinition, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
@@ -357,6 +367,7 @@ const emit = defineEmits<{
   'reset-entity': [placementId: HouseLayoutPlacementId];
   'store-furniture': [accessoryId: HouseAccessoryId];
 }>();
+const { t } = useI18n();
 
 const view = ref<HouseView>('front');
 const selectedRoomView = ref<HouseZoneId | 'all'>('living-room');
@@ -368,9 +379,9 @@ const activePetId = ref<FamilyPetId | null>(null);
 let memberNameTimer: number | undefined;
 let petNameTimer: number | undefined;
 let entranceTimer: number | undefined;
-const viewLabels: Record<HouseView, string> = { front: 'Vorne', inside: 'Innen', garden: 'Garten' };
-const viewLabel = computed(() => viewLabels[view.value]);
-const weatherLabel = computed(() => props.energy >= 70 ? 'sonnig' : props.energy >= 40 ? 'wolkig' : 'regnerisch');
+const viewLabel = computed(() => t(`world.scene.views.${view.value}`));
+const weatherLabel = computed(() => t(`world.scene.weather.${props.energy >= 70 ? 'sunny' : props.energy >= 40 ? 'cloudy' : 'rainy'}`));
+const houseEnergyClass = computed(() => props.energy < 30 ? 'energy-critical' : props.energy < 55 ? 'energy-low' : props.energy < 70 ? 'energy-tired' : 'energy-bright');
 const sunOpacity = computed(() => Math.max(.08, props.energy / 100));
 const familyChildren = computed(() => props.members.filter((member) => member.role === 'child'));
 const familyGuardians = computed(() => props.members.filter((member) => member.role === 'guardian'));
@@ -392,6 +403,10 @@ const familyLineup = computed(() => {
   ];
 });
 const activeFamilyMember = computed(() => familyLineup.value.find((member) => member.id === props.viewerMemberId));
+const worldMemberName = (member: FamilyMember) => {
+  const name = member.nickname?.trim() || member.name;
+  return member.id === props.viewerMemberId ? t('world.scene.memberYou', { name }) : name;
+};
 const backgroundFamilyMembers = computed(() => familyLineup.value.filter((member) => member.id !== props.viewerMemberId));
 const backgroundMemberGroups = computed(() => {
   const split = Math.ceil(backgroundFamilyMembers.value.length / 2);
@@ -403,20 +418,20 @@ const backgroundMemberGroups = computed(() => {
 const activeTheme = computed(() => HOUSE_THEMES.find((theme) => theme.id === props.houseThemeId) ?? HOUSE_THEMES[0]);
 const activeThemeId = computed(() => activeTheme.value?.id ?? 'sunny-dollhouse');
 const sceneStyle = computed(() => ({
-  '--house-wall': activeTheme.value?.wall ?? '#fff8df',
-  '--house-wall-upper': activeTheme.value?.wallUpper ?? '#f2dcf2',
-  '--house-floor': activeTheme.value?.floor ?? '#f8d89b',
-  '--house-roof': activeTheme.value?.roof ?? '#ec6e66',
-  '--house-roof-shade': activeTheme.value?.roofShade ?? '#c64f56',
-  '--house-trim': activeTheme.value?.trim ?? '#a96855',
-  '--house-door': activeTheme.value?.door ?? '#75a982',
-  '--house-window': activeTheme.value?.window ?? '#8ed5e6',
-  '--landscape-accent': activeTheme.value?.landscapeAccent ?? '#62bd77',
+  '--house-wall': activeTheme.value?.wall ?? 'var(--lad-palette-amber-100)',
+  '--house-wall-upper': activeTheme.value?.wallUpper ?? 'var(--lad-palette-background)',
+  '--house-floor': activeTheme.value?.floor ?? 'var(--lad-palette-amber-200)',
+  '--house-roof': activeTheme.value?.roof ?? 'var(--lad-palette-red-400)',
+  '--house-roof-shade': activeTheme.value?.roofShade ?? 'var(--lad-palette-red-500)',
+  '--house-trim': activeTheme.value?.trim ?? 'var(--lad-palette-orange-500)',
+  '--house-door': activeTheme.value?.door ?? 'var(--lad-palette-mint-450)',
+  '--house-window': activeTheme.value?.window ?? 'var(--lad-palette-blue-250)',
+  '--landscape-accent': activeTheme.value?.landscapeAccent ?? 'var(--lad-palette-mint-450)',
   '--world-saturation': `${.55 + props.energy / 200}`,
   '--world-brightness': `${.82 + props.energy / 550}`,
 }));
 const ariaLabel = computed(
-  () => `Familienwelt, Hausstufe ${props.houseLevel + 1}, ${viewLabel.value}, ${props.energy} Prozent Hausenergie, ${weatherLabel.value}`,
+  () => t('world.scene.aria', { level: props.houseLevel + 1, view: viewLabel.value, energy: props.energy, weather: weatherLabel.value }),
 );
 
 const hasEffect = (effect: WorldEffect) => props.effects.includes(effect);
@@ -491,7 +506,8 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .world-scene-wrap {
   @apply w-100;
   margin-top: 10px;
@@ -520,7 +536,36 @@ onUnmounted(() => {
   height: 58px;
 }
 .front-garden-items :deep(.room-furniture) {
-  filter: drop-shadow(0 5px 4px rgba(54, 72, 55, 0.18));
+  filter: drop-shadow(
+    0 5px 4px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent)
+  );
+}
+.world-scene-wrap.energy-tired .garden,
+.world-scene-wrap.energy-tired .plot-flower-border {
+  filter: saturate(0.82);
+}
+.world-scene-wrap.energy-low .garden,
+.world-scene-wrap.energy-low .plot-flower-border,
+.world-scene-wrap.energy-low .plot-garden-bed {
+  filter: saturate(0.58) brightness(0.92);
+}
+.world-scene-wrap.energy-critical .garden,
+.world-scene-wrap.energy-critical .plot-flower-border,
+.world-scene-wrap.energy-critical .plot-garden-bed {
+  filter: saturate(0.28) brightness(0.78);
+}
+.world-scene-wrap.energy-low .garden circle,
+.world-scene-wrap.energy-low .plot-flower-border circle {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transform: translateY(4px) rotate(14deg);
+}
+.world-scene-wrap.energy-critical .garden circle,
+.world-scene-wrap.energy-critical .plot-flower-border circle {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transform: translateY(8px) rotate(30deg) scaleY(0.78);
 }
 .scene-world-shell {
   @apply position-absolute overflow-hidden;
@@ -543,7 +588,11 @@ onUnmounted(() => {
 }
 .world-scene-wrap.is-inside .scene-world-shell {
   top: 0;
-  background: linear-gradient(180deg, #fff9ea, #f7e7c9);
+  background: linear-gradient(
+    180deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-amber-100)
+  );
 }
 .world-scene-wrap.is-garden .scene-world-shell {
   top: 0;
@@ -646,13 +695,13 @@ onUnmounted(() => {
   top: 8px;
   right: 8px;
   z-index: 25;
-  color: #2f8068;
-  border: 3px solid #fff;
+  color: var(--lad-palette-mint-strong);
+  border: 3px solid var(--lad-palette-white);
   border-radius: 14px;
-  background: #eefaf4;
+  background: var(--lad-palette-background);
   box-shadow:
-    0 4px 0 #b9dfce,
-    0 8px 16px rgba(42, 83, 68, 0.18);
+    0 4px 0 var(--lad-palette-muted-250),
+    0 8px 16px color-mix(in srgb, var(--lad-palette-muted-700) 18%, transparent);
 }
 .storage-plus {
   width: 17px;
@@ -660,10 +709,10 @@ onUnmounted(() => {
   @apply position-absolute d-grid place-center;
   right: -5px;
   bottom: -5px;
-  color: #fff;
-  border: 2px solid #fff;
+  color: var(--lad-palette-white);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 50%;
-  background: #40b78b;
+  background: var(--lad-palette-mint);
 }
 .furniture-storage {
   width: 126px;
@@ -673,18 +722,29 @@ onUnmounted(() => {
   bottom: 2%;
   z-index: 24;
   padding: 8px 7px 10px;
-  border: 2px solid #cce6d9;
+  border: 2px solid var(--lad-palette-muted-250);
   border-radius: 22px 0 0 22px;
   background:
     radial-gradient(
-      circle at 92% 9%,
-      rgba(255, 214, 116, 0.25) 0 22px,
-      transparent 23px
+      circle at 92% 8%,
+      color-mix(in srgb, var(--lad-palette-yellow) 40%, transparent) 0 25px,
+      transparent 26px
     ),
-    linear-gradient(165deg, #fbfff9, #fff8e9 72%);
+    radial-gradient(
+      circle at 8% 82%,
+      color-mix(in srgb, var(--lad-palette-blue-350) 25%, transparent) 0 35px,
+      transparent 36px
+    ),
+    linear-gradient(
+      165deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100) 52%,
+      var(--lad-palette-background)
+    );
   box-shadow:
-    -7px 0 0 rgba(160, 205, 184, 0.25),
-    -13px 0 25px rgba(54, 67, 58, 0.14);
+    -7px 0 0 color-mix(in srgb, var(--lad-palette-teal-400) 30%, transparent),
+    -13px 0 25px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
   backdrop-filter: blur(12px);
 }
 .furniture-storage::after {
@@ -695,7 +755,7 @@ onUnmounted(() => {
   right: -34px;
   bottom: -26px;
   z-index: -1;
-  border: 9px solid rgba(85, 184, 143, 0.1);
+  border: 9px solid color-mix(in srgb, var(--lad-palette-mint) 10%, transparent);
   border-radius: 50%;
 }
 .furniture-storage > header {
@@ -703,7 +763,8 @@ onUnmounted(() => {
   gap: 4px;
   margin: -3px -2px 8px;
   padding: 6px 5px 8px;
-  border-bottom: 1px dashed rgba(58, 137, 105, 0.25);
+  border-bottom: 1px dashed
+    color-mix(in srgb, var(--lad-palette-teal-600) 25%, transparent);
 }
 .storage-title {
   min-width: 0;
@@ -713,17 +774,17 @@ onUnmounted(() => {
 .storage-title > span:last-child {
   min-width: 0;
   @apply d-flex flex-column;
-  color: #31594e;
+  color: var(--lad-palette-muted-700);
   line-height: 1.08;
 }
 .storage-title strong {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .storage-title small {
   margin-top: 2px;
   overflow: hidden;
-  color: #71817b;
-  font-size: 6px;
+  color: var(--lad-palette-muted);
+  font-size: 0.375rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -731,22 +792,26 @@ onUnmounted(() => {
   width: 29px;
   height: 29px;
   @apply d-grid place-center flex-shrink-0;
-  color: #fff;
-  border: 2px solid #fff;
+  color: var(--lad-palette-white);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 10px 10px 8px 8px;
-  background: linear-gradient(145deg, #66c79f, #369876);
-  box-shadow: 0 3px 0 #277a5d;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-teal-550)
+  );
+  box-shadow: 0 3px 0 var(--lad-palette-teal-700);
   transform: rotate(-4deg);
 }
 .furniture-storage > header button {
   width: 24px;
   height: 24px;
   @apply d-grid place-center flex-shrink-0 cursor-pointer;
-  border: 2px solid #fff;
+  border: 2px solid var(--lad-palette-white);
   border-radius: 50%;
-  background: #fff0d5;
-  color: #a96d25;
-  box-shadow: 0 3px 0 #e6cda5;
+  background: var(--lad-palette-amber-100);
+  color: var(--lad-palette-amber-650);
+  box-shadow: 0 3px 0 var(--lad-palette-amber-200);
 }
 .storage-items {
   @apply d-grid overflow-y-auto;
@@ -758,33 +823,57 @@ onUnmounted(() => {
 }
 .storage-empty {
   min-height: 128px;
-  @apply d-flex flex-column align-center justify-center text-center;
+  @apply position-relative d-flex flex-column align-center justify-center overflow-hidden text-center;
   gap: 4px;
   margin: 0;
   padding: 8px;
-  color: #4e7568;
-  border: 2px dashed #add7c4;
+  color: var(--lad-palette-teal-600);
+  border: 2px dashed var(--lad-palette-teal-400);
   border-radius: 17px;
-  background: rgba(237, 250, 242, 0.78);
+  background:
+    radial-gradient(
+      circle at 82% 16%,
+      color-mix(in srgb, var(--lad-palette-yellow) 40%, transparent),
+      transparent 25%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--lad-palette-background) 95%, transparent),
+      color-mix(in srgb, var(--lad-palette-background) 90%, transparent)
+    );
+  box-shadow: inset 0 0 0 4px
+    color-mix(in srgb, var(--lad-palette-white) 40%, transparent);
   font-weight: 750;
+}
+.storage-empty::after {
+  content: "✦";
+  @apply position-absolute;
+  top: 8px;
+  right: 10px;
+  color: var(--lad-palette-amber-500);
+  font-size: 0.5625rem;
 }
 .storage-empty > span {
   width: 43px;
   height: 43px;
   @apply d-grid place-center;
   margin-bottom: 3px;
-  color: #398f6e;
-  border: 3px solid #fff;
+  color: var(--lad-palette-white);
+  border: 3px solid var(--lad-palette-white);
   border-radius: 15px;
-  background: #dff5e9;
-  box-shadow: 0 4px 0 #bfdccb;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-blue)
+  );
+  box-shadow: 0 4px 0 var(--lad-palette-blue-550);
 }
 .storage-empty strong {
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .storage-empty small {
   max-width: 82px;
-  font-size: 6px;
+  font-size: 0.375rem;
   line-height: 1.3;
 }
 .storage-items > button.stored {
@@ -792,13 +881,17 @@ onUnmounted(() => {
   @apply position-relative d-flex flex-column align-center justify-center cursor-pointer;
   gap: 2px;
   padding: 7px 4px 6px;
-  color: #49645b;
-  border: 1px solid #c8e1d5;
+  color: var(--lad-palette-muted-700);
+  border: 1px solid var(--lad-palette-teal-150);
   border-radius: 17px;
-  background: linear-gradient(155deg, #fff, #edf9f1);
+  background: linear-gradient(
+    155deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
   box-shadow:
-    0 4px 0 #d3e6dc,
-    0 8px 12px rgba(61, 104, 84, 0.08);
+    0 4px 0 var(--lad-palette-teal-150),
+    0 8px 12px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
@@ -806,13 +899,14 @@ onUnmounted(() => {
 .storage-items > button.stored:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 6px 0 #c7dfd2,
-    0 10px 14px rgba(61, 104, 84, 0.11);
+    0 6px 0 var(--lad-palette-teal-150),
+    0 10px 14px
+      color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
 }
 .storage-items > button.stored > strong {
   max-width: 92px;
   overflow: hidden;
-  font-size: 7px;
+  font-size: 0.4375rem;
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -824,8 +918,12 @@ onUnmounted(() => {
   margin-bottom: 1px;
   border-radius: 18px;
   background:
-    radial-gradient(circle, #fff 0 48%, transparent 49%),
-    linear-gradient(145deg, #e8f6ff, #fff1ce);
+    radial-gradient(circle, var(--lad-palette-white) 0 48%, transparent 49%),
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-amber-100)
+    );
 }
 .stored-preview :deep(.room-furniture) {
   width: 62px;
@@ -836,23 +934,31 @@ onUnmounted(() => {
   gap: 1px;
   margin-top: 3px;
   padding: 4px 7px;
-  color: #fff;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #58bd94, #318b6c);
-  box-shadow: 0 3px 0 #267258;
-  font-size: 6px;
-  font-weight: 850;
+  color: var(--lad-palette-white);
+  border-radius: var(--lad-radius-pill);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  );
+  box-shadow: 0 3px 0 var(--lad-palette-teal-700);
+  font-size: 0.375rem;
+  font-weight: var(--lad-font-weight-strong);
 }
 .storage-drop-hint {
   @apply d-flex align-center justify-center text-center;
   gap: 3px;
   margin: 1px 0 0;
   padding: 6px 4px;
-  color: #598074;
-  border: 1px dashed #afd2c2;
+  color: var(--lad-palette-teal-600);
+  border: 1px dashed var(--lad-palette-muted-250);
   border-radius: 11px;
-  background: rgba(239, 250, 243, 0.72);
-  font-size: 6px;
+  background: color-mix(
+    in srgb,
+    var(--lad-palette-background) 70%,
+    transparent
+  );
+  font-size: 0.375rem;
   font-weight: 800;
 }
 .storage-tray-enter-active,
@@ -867,16 +973,17 @@ onUnmounted(() => {
   transform: translateX(12px) scale(0.97);
 }
 .world-scene-wrap.is-dragging-furniture .furniture-storage {
-  border-color: #55b88f;
-  background: #f3fff8;
+  border-color: var(--lad-palette-mint);
+  background: var(--lad-palette-surface);
   box-shadow:
-    inset 0 0 0 3px rgba(85, 184, 143, 0.12),
-    -7px 0 18px rgba(54, 67, 58, 0.16);
+    inset 0 0 0 3px color-mix(in srgb, var(--lad-palette-mint) 12%, transparent),
+    -7px 0 18px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
 }
 .world-scene-wrap.is-dragging-furniture .storage-empty {
-  color: #2f8068;
-  border-color: #55b88f;
-  background: rgba(85, 184, 143, 0.08);
+  color: var(--lad-palette-mint-strong);
+  border-color: var(--lad-palette-mint);
+  background: color-mix(in srgb, var(--lad-palette-mint) 8%, transparent);
 }
 .world-scene-wrap.is-storage-open .scene-actions {
   right: 134px;
@@ -914,39 +1021,39 @@ onUnmounted(() => {
 }
 .plot-flower-border > path {
   fill: none;
-  stroke: #3f915b;
+  stroke: var(--lad-palette-teal-600);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .plot-flower-border circle:nth-of-type(3n + 1) {
-  fill: #ff8e84;
+  fill: var(--lad-palette-red-300);
 }
 .plot-flower-border circle:nth-of-type(3n + 2) {
-  fill: #ffd364;
+  fill: var(--lad-palette-yellow);
 }
 .plot-flower-border circle:nth-of-type(3n) {
-  fill: #ee94b5;
+  fill: var(--lad-palette-rose-250);
 }
 .plot-path ellipse {
-  fill: #e7bb7b;
-  stroke: rgba(132, 91, 57, 0.3);
+  fill: var(--lad-palette-orange-350);
+  stroke: color-mix(in srgb, var(--lad-palette-orange-600) 30%, transparent);
   stroke-width: 2;
 }
 .plot-garden-bed > path:first-child {
-  fill: #8a6243;
-  stroke: #69472f;
+  fill: var(--lad-palette-orange-600);
+  stroke: var(--lad-palette-orange-650);
   stroke-linejoin: round;
   stroke-width: 2;
 }
 .plot-garden-bed > path:nth-child(2) {
   fill: none;
-  stroke: #bf9565;
+  stroke: var(--lad-palette-orange-400-2);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .plot-garden-bed .plot-sprouts {
   fill: none;
-  stroke: #4e9c5e;
+  stroke: var(--lad-palette-teal-550);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
@@ -964,7 +1071,10 @@ onUnmounted(() => {
   animation: house-idle 4.8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
 .dollhouse {
-  filter: drop-shadow(0 8px 6px rgba(79, 75, 59, 0.16));
+  filter: drop-shadow(
+    0 8px 6px
+      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent)
+  );
 }
 .room-wall {
   stroke: var(--house-trim);
@@ -989,42 +1099,42 @@ onUnmounted(() => {
 }
 .floorboards {
   fill: none;
-  stroke: #d79859;
+  stroke: var(--lad-palette-orange-400-2);
   stroke-width: 2;
   opacity: 0.38;
 }
 .baseboard {
   fill: none;
-  stroke: #dd9e69;
+  stroke: var(--lad-palette-orange-350);
   stroke-width: 7;
 }
 .wide-window path:not(.curtain) {
   fill: none;
-  stroke: #fff;
+  stroke: var(--lad-palette-white);
   stroke-width: 3;
 }
 .wide-window .curtain {
   fill: none;
-  stroke: #e88f9a;
+  stroke: var(--lad-palette-rose-250);
   stroke-linecap: round;
   stroke-width: 7;
 }
 .starter-shelf rect:first-child {
-  fill: #a66d4f;
+  fill: var(--lad-palette-orange-500);
 }
 .starter-shelf circle {
-  fill: #f1c15b;
+  fill: var(--lad-palette-yellow);
 }
 .starter-shelf path {
-  fill: #66b577;
-  stroke: #347c50;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-700);
   stroke-width: 2;
 }
 .starter-shelf rect:last-child {
-  fill: #6e8fdc;
+  fill: var(--lad-palette-indigo-350);
 }
 .bookshelf path {
-  stroke: #f1bf63;
+  stroke: var(--lad-palette-yellow);
 }
 .floor-lamp circle {
   @apply pointer-events-none;
@@ -1034,7 +1144,7 @@ onUnmounted(() => {
   animation: roof-breathe 4s ease-in-out infinite;
 }
 .upper-dollhouse-room {
-  stroke: #a96855;
+  stroke: var(--lad-palette-orange-500);
   stroke-linejoin: round;
   stroke-width: 6;
 }
@@ -1045,7 +1155,7 @@ onUnmounted(() => {
   stroke: none;
 }
 .toy-house-shadow {
-  fill: rgba(61, 76, 67, 0.2);
+  fill: color-mix(in srgb, var(--lad-palette-muted-750-2) 20%, transparent);
 }
 .toy-house-body,
 .toy-upper-floor rect:first-child {
@@ -1058,7 +1168,7 @@ onUnmounted(() => {
 }
 .toy-upper-floor > path {
   fill: none;
-  stroke: #dfa06f;
+  stroke: var(--lad-palette-orange-350);
   stroke-width: 6;
 }
 .toy-roof path:first-child,
@@ -1074,12 +1184,12 @@ onUnmounted(() => {
 }
 .toy-roof .roof-detail {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.35);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 35%, transparent);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .toy-door .doorway-back {
-  fill: #654d40;
+  fill: var(--lad-palette-orange-650);
   stroke: var(--house-trim);
   stroke-width: 5;
 }
@@ -1091,19 +1201,19 @@ onUnmounted(() => {
 }
 .toy-door .door-knob,
 .side-door circle {
-  fill: #ffd45f;
-  stroke: #986621;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 2;
 }
 .toy-door .door-handle path {
   fill: none;
-  stroke: #986621;
+  stroke: var(--lad-palette-amber-650);
   stroke-linecap: round;
   stroke-width: 3;
 }
 .toy-door .door-panel-detail {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.25);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 25%, transparent);
   stroke-linejoin: round;
   stroke-width: 2;
 }
@@ -1116,23 +1226,23 @@ onUnmounted(() => {
 .toy-window rect,
 .side-sunroom rect {
   fill: var(--house-window);
-  stroke: #fff;
+  stroke: var(--lad-palette-white);
   stroke-width: 6;
 }
 .toy-window path {
   fill: none;
-  stroke: #fff;
+  stroke: var(--lad-palette-white);
   stroke-width: 3;
 }
 .front-step path {
-  fill: #e4ad68;
-  stroke: #9b694e;
+  fill: var(--lad-palette-orange-350);
+  stroke: var(--lad-palette-orange-600);
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .toy-bush {
-  fill: #62bd77;
-  stroke: #398659;
+  fill: var(--lad-palette-mint-450);
+  stroke: var(--lad-palette-teal-600);
   stroke-width: 3;
 }
 .toy-extension rect:first-child,
@@ -1152,13 +1262,13 @@ onUnmounted(() => {
 }
 .toy-extension rect:last-child,
 .toy-tower rect:not(:first-child) {
-  fill: #8ed5e6;
-  stroke: #fff;
+  fill: var(--lad-palette-blue-250);
+  stroke: var(--lad-palette-white);
   stroke-width: 4;
 }
 .toy-balcony-front {
-  fill: #ffd576;
-  stroke: #a66d4f;
+  fill: var(--lad-palette-amber-250);
+  stroke: var(--lad-palette-orange-500);
   stroke-width: 4;
 }
 .toy-balcony-front path:not(:first-child) {
@@ -1175,13 +1285,13 @@ onUnmounted(() => {
   opacity: 0.72;
 }
 .front-planters path {
-  fill: #9a6549;
-  stroke: #654536;
+  fill: var(--lad-palette-orange-600);
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 2;
 }
 .front-planters circle {
   fill: var(--landscape-accent);
-  stroke: rgba(255, 255, 255, 0.65);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 65%, transparent);
   stroke-width: 1.5;
 }
 .toy-side-body {
@@ -1191,7 +1301,7 @@ onUnmounted(() => {
   stroke-width: 7;
 }
 .toy-side-wall {
-  fill: #e7c58e;
+  fill: var(--lad-palette-amber-200);
   stroke: var(--house-trim);
   stroke-linejoin: round;
   stroke-width: 6;
@@ -1207,17 +1317,17 @@ onUnmounted(() => {
   stroke-width: 11;
 }
 .side-deck {
-  fill: #e3ae6f;
-  stroke: #94634b;
+  fill: var(--lad-palette-orange-350);
+  stroke: var(--lad-palette-orange-600);
   stroke-width: 4;
 }
 .side-pool ellipse:first-child {
-  fill: #f0ca83;
-  stroke: #96664e;
+  fill: var(--lad-palette-amber-250);
+  stroke: var(--lad-palette-orange-600);
   stroke-width: 4;
 }
 .side-pool ellipse:last-child {
-  fill: #7bd3e3;
+  fill: var(--lad-palette-blue-250);
   stroke: none;
 }
 .side-detail path {
@@ -1238,7 +1348,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 .bat {
-  fill: #31283f;
+  fill: var(--lad-palette-text);
   transform-box: fill-box;
   transform-origin: center;
   animation: bat-flutter 1.2s ease-in-out infinite alternate;
@@ -1247,19 +1357,19 @@ onUnmounted(() => {
   animation-delay: -0.55s;
 }
 .pumpkin {
-  fill: #ef873b;
-  stroke: #87452d;
+  fill: var(--lad-palette-orange-400);
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 3;
 }
 .pumpkin-face {
   fill: none;
-  stroke: #543338;
+  stroke: var(--lad-palette-muted-750);
   stroke-linecap: round;
   stroke-width: 2;
 }
 .spooky-vine {
   fill: none;
-  stroke: #697a4b;
+  stroke: var(--lad-palette-muted-600-2);
   stroke-linecap: round;
   stroke-width: 5;
 }
@@ -1270,45 +1380,47 @@ onUnmounted(() => {
   filter: grayscale(0.7);
 }
 .theme-halloween-night .toy-window rect {
-  filter: drop-shadow(0 0 7px #ffd166);
+  filter: drop-shadow(0 0 7px var(--lad-palette-yellow));
 }
 .candy-cloud {
-  fill: #f3a9c9;
-  stroke: #fff0f7;
+  fill: var(--lad-palette-rose-200);
+  stroke: var(--lad-palette-surface);
   stroke-width: 3;
-  filter: drop-shadow(0 4px 2px rgba(168, 104, 151, 0.2));
+  filter: drop-shadow(
+    0 4px 2px color-mix(in srgb, var(--lad-palette-muted-500) 20%, transparent)
+  );
 }
 .candy-right {
-  fill: #a9dff1;
+  fill: var(--lad-palette-blue-250);
 }
 .candy-swirl {
   fill: none;
-  stroke: #fff;
+  stroke: var(--lad-palette-white);
   stroke-linecap: round;
   stroke-width: 6;
 }
 .lollipop {
-  fill: #ef91bd;
-  stroke: #fff;
+  fill: var(--lad-palette-rose-250);
+  stroke: var(--lad-palette-white);
   stroke-width: 4;
 }
 .lollipop-blue {
-  fill: #86d6ec;
+  fill: var(--lad-palette-blue-250);
 }
 .wrapped-candies {
-  fill: #ffd875;
-  stroke: #fff;
+  fill: var(--lad-palette-amber-250);
+  stroke: var(--lad-palette-white);
   stroke-linejoin: round;
   stroke-width: 2;
 }
 .wrapped-candies rect:last-of-type {
-  fill: #88d8e9;
+  fill: var(--lad-palette-blue-250);
 }
 .candy-sprinkles circle:nth-child(odd) {
-  fill: #ffd56d;
+  fill: var(--lad-palette-amber-250);
 }
 .candy-sprinkles circle:nth-child(even) {
-  fill: #79d4e7;
+  fill: var(--lad-palette-blue-250);
 }
 .theme-cotton-candy-dream .far-landscape {
   filter: hue-rotate(310deg) saturate(0.75) brightness(1.08);
@@ -1317,40 +1429,113 @@ onUnmounted(() => {
   fill: url(#cottonRoofPattern);
 }
 .theme-cotton-candy-dream .toy-house-body {
-  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.8));
+  filter: drop-shadow(
+    0 0 7px color-mix(in srgb, var(--lad-palette-white) 80%, transparent)
+  );
 }
 .theme-cotton-candy-dream .toy-window rect {
-  filter: drop-shadow(0 0 5px rgba(255, 224, 117, 0.75));
+  filter: drop-shadow(
+    0 0 5px color-mix(in srgb, var(--lad-palette-amber-250) 75%, transparent)
+  );
+}
+.palace-garland {
+  fill: none;
+  stroke: var(--lad-palette-amber-550);
+  stroke-width: 3;
+}
+.palace-lights circle {
+  fill: var(--lad-palette-amber-250);
+  stroke: var(--lad-palette-amber-100);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px var(--lad-palette-yellow));
+  animation: palace-light 1.8s ease-in-out infinite;
+}
+.palace-lights circle:nth-child(even) {
+  fill: var(--lad-palette-purple-200);
+  animation-delay: -0.9s;
+}
+.palace-crown {
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-150);
+  stroke-linejoin: round;
+  stroke-width: 3;
+  filter: drop-shadow(
+    0 3px 2px color-mix(in srgb, var(--lad-palette-amber-700) 25%, transparent)
+  );
+  animation: palace-crown-float 2.8s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.palace-flags {
+  fill: var(--lad-palette-violet-500);
+  stroke: var(--lad-palette-amber-550);
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.palace-stars {
+  fill: var(--lad-palette-amber-150);
+  filter: drop-shadow(0 0 5px var(--lad-palette-amber-150));
+}
+.palace-stars path {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: palace-star 2.1s ease-in-out infinite;
+}
+.palace-stars path:nth-child(2) {
+  animation-delay: -0.7s;
+}
+.palace-stars path:nth-child(3) {
+  animation-delay: -1.4s;
+}
+.theme-starlight-palace .far-landscape {
+  filter: hue-rotate(12deg) saturate(0.75) brightness(1.04);
+}
+.theme-starlight-palace .toy-roof path:first-child {
+  fill: var(--lad-palette-blue-550);
+  stroke: var(--lad-palette-indigo-750);
+}
+.theme-starlight-palace .toy-house-body {
+  fill: var(--lad-palette-surface);
+  stroke: var(--lad-palette-amber-550);
+  filter: drop-shadow(
+    0 0 8px color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent)
+  );
+}
+.theme-starlight-palace .toy-window rect {
+  fill: var(--lad-palette-amber-250);
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--lad-palette-yellow) 80%, transparent)
+  );
 }
 .exterior-pumpkin-arch path {
   fill: none;
-  stroke: #5c7544;
+  stroke: var(--lad-palette-muted-600-2);
   stroke-width: 7;
 }
 .exterior-pumpkin-arch circle {
-  fill: #ef873b;
-  stroke: #88482e;
+  fill: var(--lad-palette-orange-400);
+  stroke: var(--lad-palette-orange-650);
   stroke-width: 2;
 }
 .exterior-bat-garland > path:first-child {
   fill: none;
-  stroke: #3d314d;
+  stroke: var(--lad-palette-muted-750-2);
   stroke-width: 2;
 }
 .exterior-bat-garland > path:last-child {
-  fill: #493958;
+  fill: var(--lad-palette-muted-750-2);
 }
 .exterior-candy-bushes {
-  fill: #f2a6c9;
-  stroke: #fff;
+  fill: var(--lad-palette-rose-200);
+  stroke: var(--lad-palette-white);
   stroke-width: 2;
 }
 .exterior-candy-bushes circle:nth-child(n + 3) {
-  fill: #a9dff1;
+  fill: var(--lad-palette-blue-250);
 }
 .exterior-candy-fence {
   fill: none;
-  stroke: #ef8bb8;
+  stroke: var(--lad-palette-rose-250);
   stroke-dasharray: 6 4;
   stroke-linecap: round;
   stroke-width: 6;
@@ -1362,7 +1547,9 @@ onUnmounted(() => {
   bottom: 3.5%;
   z-index: 3;
   @apply d-grid place-end-center pointer-events-none;
-  filter: drop-shadow(0 6px 5px rgba(67, 58, 48, 0.16));
+  filter: drop-shadow(
+    0 6px 5px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent)
+  );
 }
 .world-family::before {
   content: "";
@@ -1374,7 +1561,7 @@ onUnmounted(() => {
   z-index: 0;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: rgba(60, 95, 72, 0.13);
+  background: color-mix(in srgb, var(--lad-palette-muted-700) 12%, transparent);
   filter: blur(2px);
 }
 .world-family.inside {
@@ -1416,12 +1603,14 @@ onUnmounted(() => {
   bottom: calc(100% + 4px);
   z-index: 7;
   transform: translateX(-50%);
-  color: #285547;
-  border: 2px solid rgba(255, 255, 255, 0.96);
+  color: var(--lad-palette-muted-700);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
   border-radius: 11px;
-  background: #fffdf8;
-  box-shadow: 0 4px 10px rgba(54, 78, 66, 0.18);
-  font-size: 9px;
+  background: var(--lad-palette-surface);
+  box-shadow: 0 4px 10px
+    color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
+  font-size: 0.5625rem;
   @apply font-weight-black;
   line-height: 1;
   @apply pointer-events-none;
@@ -1435,9 +1624,11 @@ onUnmounted(() => {
   left: 50%;
   bottom: -5px;
   transform: translateX(-50%) rotate(45deg);
-  border-right: 2px solid rgba(255, 255, 255, 0.96);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.96);
-  background: #fffdf8;
+  border-right: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
+  background: var(--lad-palette-surface);
 }
 .member-name-enter-active,
 .member-name-leave-active {
@@ -1516,7 +1707,7 @@ onUnmounted(() => {
 }
 .meadow-highlight {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.24);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 25%, transparent);
   stroke-linecap: round;
   stroke-width: 3;
 }
@@ -1527,10 +1718,10 @@ onUnmounted(() => {
   animation: mountain-breathe 15s ease-in-out infinite;
 }
 .mountain-layer {
-  fill: #b8cfd0;
+  fill: var(--lad-palette-muted-250);
 }
 .mountain-snow {
-  fill: #eff7f4;
+  fill: var(--lad-palette-background);
   opacity: 0.82;
 }
 .hill-layer {
@@ -1538,11 +1729,11 @@ onUnmounted(() => {
   transform-origin: center bottom;
 }
 .hill-back {
-  fill: #a8d4a4;
+  fill: var(--lad-palette-green-250);
   animation: hill-drift-back 15s ease-in-out infinite alternate;
 }
 .hill-front {
-  fill: #82bf84;
+  fill: var(--lad-palette-mint-450);
   animation: hill-drift-front 12s ease-in-out infinite alternate;
 }
 .hill-layer,
@@ -1552,7 +1743,7 @@ onUnmounted(() => {
   will-change: transform;
 }
 .distant-pines {
-  fill: #5f9d72;
+  fill: var(--lad-palette-mint-450);
   opacity: 0.72;
   transform-box: fill-box;
   transform-origin: center bottom;
@@ -1564,18 +1755,18 @@ onUnmounted(() => {
   transition: opacity 650ms ease;
 }
 .sun-halo {
-  fill: #fff1a3;
+  fill: var(--lad-palette-amber-150);
   opacity: 0.35;
 }
 .sun-core {
-  fill: #ffd765;
+  fill: var(--lad-palette-yellow);
   transform-box: fill-box;
   transform-origin: center;
   animation: sun-glow 3.6s ease-in-out infinite;
 }
 .sun-rays {
   fill: none;
-  stroke: #ffd765;
+  stroke: var(--lad-palette-yellow);
   stroke-linecap: round;
   stroke-width: 5;
   transform-box: fill-box;
@@ -1583,14 +1774,14 @@ onUnmounted(() => {
   animation: sun-rays-pulse 3.6s ease-in-out infinite;
 }
 .cloud {
-  fill: #fff;
+  fill: var(--lad-palette-white);
   opacity: 0.65;
   transition:
     fill 650ms ease,
     opacity 650ms ease;
 }
 .cloud.heavy {
-  fill: #afc1c2;
+  fill: var(--lad-palette-muted-250);
   opacity: 0.92;
 }
 .cloud-a {
@@ -1600,12 +1791,12 @@ onUnmounted(() => {
   animation: cloud-drift 10s ease-in-out infinite alternate-reverse;
 }
 .rain-cloud {
-  fill: #84999d;
+  fill: var(--lad-palette-muted-350);
   animation: rain-cloud-drift 4s ease-in-out infinite alternate;
 }
 .rain-drops {
   fill: none;
-  stroke: #69b8da;
+  stroke: var(--lad-palette-blue-350);
   stroke-dasharray: 7 8;
   stroke-linecap: round;
   stroke-width: 5;
@@ -1643,33 +1834,35 @@ onUnmounted(() => {
   animation: sparkle 2s ease-in-out infinite;
 }
 .perfect-shimmer {
-  filter: drop-shadow(0 0 6px rgba(255, 238, 131, 0.72));
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--lad-palette-amber-250) 70%, transparent)
+  );
 }
 .shimmer-star {
-  fill: #fff8b3;
+  fill: var(--lad-palette-amber-150);
   transform-box: fill-box;
   transform-origin: center;
   animation: shimmer-pop 2.8s ease-in-out infinite;
 }
 .shimmer-two {
-  fill: #bdf4ee;
+  fill: var(--lad-palette-blue-150);
   animation-delay: -0.7s;
 }
 .shimmer-three {
-  fill: #ffe58b;
+  fill: var(--lad-palette-amber-250);
   animation-delay: -1.4s;
 }
 .shimmer-four {
-  fill: #d5c4ff;
+  fill: var(--lad-palette-purple-200);
   animation-delay: -2.1s;
 }
 .shimmer-five {
-  fill: #fff;
+  fill: var(--lad-palette-white);
   animation-delay: -0.35s;
 }
 .shimmer-sweep {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.82);
+  stroke: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
   stroke-dasharray: 18 170;
   stroke-linecap: round;
   stroke-width: 6;
@@ -1697,13 +1890,18 @@ onUnmounted(() => {
   padding: 5px 11px;
   @apply d-flex align-center justify-center;
   gap: 7px;
-  color: #315f51;
-  border: 1px solid rgba(44, 79, 65, 0.16);
+  color: var(--lad-palette-muted-700);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   border-radius: 15px;
-  background: rgba(239, 251, 245, 0.94);
+  background: color-mix(
+    in srgb,
+    var(--lad-palette-background) 95%,
+    transparent
+  );
   box-shadow:
-    0 4px 0 #c1e4d2,
-    0 8px 18px rgba(45, 76, 64, 0.14);
+    0 4px 0 var(--lad-palette-teal-150),
+    0 8px 18px color-mix(in srgb, var(--lad-palette-text) 15%, transparent);
   @apply cursor-pointer;
   font: inherit;
   pointer-events: auto;
@@ -1731,20 +1929,21 @@ onUnmounted(() => {
   line-height: 1.05;
 }
 .scene-action strong {
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .scene-action small {
   margin-top: 2px;
-  color: #71857c;
-  font-size: 8px;
+  color: var(--lad-palette-muted);
+  font-size: 0.5rem;
 }
 .scene-action:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #c1e4d2;
+  box-shadow: 0 2px 0 var(--lad-palette-teal-150);
 }
 .scene-action:focus-visible {
-  outline: 3px solid rgba(69, 158, 124, 0.3);
-  outline-offset: 2px;
+  @include focus-ring(
+    color-mix(in srgb, var(--lad-palette-teal-550) 30%, transparent)
+  );
 }
 .scene-action:disabled {
   opacity: 0.76;
@@ -1784,11 +1983,13 @@ onUnmounted(() => {
 @keyframes sun-glow {
   0%,
   100% {
-    filter: drop-shadow(0 0 0 rgba(255, 214, 101, 0));
+    filter: drop-shadow(0 0 0 transparent);
     transform: scale(0.98);
   }
   50% {
-    filter: drop-shadow(0 0 9px rgba(255, 214, 101, 0.68));
+    filter: drop-shadow(
+      0 0 9px color-mix(in srgb, var(--lad-palette-yellow) 70%, transparent)
+    );
     transform: scale(1.05);
   }
 }
@@ -1934,6 +2135,37 @@ onUnmounted(() => {
     transform: translateY(-4px) scaleY(1.12);
   }
 }
+@keyframes palace-light {
+  0%,
+  100% {
+    opacity: 0.68;
+    transform: scale(0.86);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.14);
+  }
+}
+@keyframes palace-crown-float {
+  0%,
+  100% {
+    transform: translateY(1px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+@keyframes palace-star {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.7) rotate(-8deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18) rotate(14deg);
+  }
+}
 @keyframes enter-house {
   from {
     opacity: 0.3;
@@ -2015,7 +2247,7 @@ onUnmounted(() => {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .world-reveal,
   .plot-upgrade,
   .house-view,
@@ -2034,6 +2266,9 @@ onUnmounted(() => {
   .smoke,
   .sparkles,
   .perfect-shimmer *,
+  .palace-lights circle,
+  .palace-crown,
+  .palace-stars path,
   .accessory,
   .interior-item,
   .house-addon,

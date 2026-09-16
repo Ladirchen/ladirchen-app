@@ -1,15 +1,15 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="500" scrollable @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog content-class="energy-summary-dialog-frame" :model-value="modelValue" max-width="460" scrollable @update:model-value="emit('update:modelValue', $event)">
     <v-card class="energy-dialog" rounded="xl">
-      <div class="energy-dialog-header pa-5">
+      <div class="energy-dialog-header pa-4">
         <div class="energy-title-row">
           <div>
-            <p class="eyebrow mb-1">Unsere Familienwelt</p>
-            <h2>Hausenergie heute</h2>
-            <p class="energy-subtitle mt-1">Jeder Grundbeitrag bringt Licht und Leben in euer Zuhause.</p>
+            <p class="dialog-kicker">{{ t('world.energy.eyebrow') }}</p>
+            <h2>{{ t('world.energy.title') }}</h2>
+            <p class="energy-subtitle mt-1">{{ t('world.energy.description') }}</p>
           </div>
           <AnimatedHouseEnergy class="energy-mascot" :size="86" />
-          <v-btn class="close-button" aria-label="Hausenergie schließen" icon="mdi-close" size="small" variant="text" @click="close" />
+          <button class="close-button" :aria-label="t('world.energy.close')" type="button" @click="close"><v-icon icon="mdi-close" /></button>
         </div>
 
         <div class="summary-grid mt-4">
@@ -18,7 +18,7 @@
               <span>{{ store.familyEnergy }}<small>%</small></span>
             </div>
             <div>
-              <span>Gemeinsame Hausenergie</span>
+              <span>{{ t('world.energy.shared') }}</span>
               <strong class="energy-state-title">{{ energyState.title }}<span v-if="store.houseMeetsMinimumEnergy" class="energy-state-spark" aria-hidden="true">✦</span></strong>
               <small>{{ energyState.copy }}</small>
             </div>
@@ -29,36 +29,25 @@
               <v-icon v-else size="25">mdi-progress-clock</v-icon>
             </div>
             <div>
-              <span>Heutiges Tagesziel</span>
-              <strong>{{ store.houseMeetsMinimumEnergy ? 'Erreicht' : `Noch ${60 - store.familyEnergy} %` }}</strong>
-              <small>Ab 60 % zählt der Tag.</small>
+              <span>{{ t('world.energy.dailyGoal') }}</span>
+              <strong>{{ store.houseMeetsMinimumEnergy ? t('world.energy.reached') : t('world.energy.remaining', { value: 60 - store.familyEnergy }) }}</strong>
+              <small>{{ t('world.energy.threshold') }}</small>
             </div>
           </div>
         </div>
       </div>
 
-      <v-card-text class="energy-content pa-5">
-        <div class="threshold-card mb-5">
-          <div class="threshold-heading">
-            <div><span class="section-kicker">HEUTIGES GEMEINSAMES ZIEL</span><strong>Das Haus mit Energie versorgen</strong></div>
-            <span>mindestens 60 %</span>
-          </div>
-          <div class="progress-wrap my-3">
-            <v-progress-linear :color="store.houseMeetsMinimumEnergy ? 'primary' : 'warning'" height="11" :model-value="store.familyEnergy" rounded />
-            <span v-if="store.houseMeetsMinimumEnergy" class="progress-glint" aria-hidden="true" />
-          </div>
-          <p><v-icon :color="store.houseMeetsMinimumEnergy ? 'primary' : 'warning'" size="16">{{ store.houseMeetsMinimumEnergy ? 'mdi-check-circle' : 'mdi-progress-clock' }}</v-icon>{{ store.houseMeetsMinimumEnergy ? 'Geschafft – dieser Tag zählt für eure Serie!' : `Noch ${60 - store.familyEnergy} Prozentpunkte, damit dieser Tag für eure Serie zählt.` }}</p>
-        </div>
-
+      <v-card-text class="energy-content pa-4">
         <HouseProgressPanel
           class="mb-5"
           :completed-weeks="store.completedWeeklyStreak"
           :house-level="store.houseLevel"
+          :show-evolution="false"
         />
 
         <div class="children-heading mb-3">
-          <div><span class="section-kicker">GEMEINSAM GESAMMELT</span><h3>So setzt sie sich zusammen</h3></div>
-          <span class="average-label">Durchschnitt</span>
+          <div><span class="section-kicker">{{ t('world.energy.collected') }}</span><h3>{{ t('world.energy.breakdown') }}</h3></div>
+          <span class="average-label">{{ t('world.energy.average') }}</span>
         </div>
         <div class="child-energy-list">
           <div v-for="(child, childIndex) in children" :key="child.id" class="child-energy-row" :style="{ '--avatar-color': child.color }">
@@ -68,24 +57,19 @@
             <div class="child-energy-copy">
               <div class="child-energy-title"><strong>{{ child.name }}</strong><b>{{ store.contributionProgress(child.id) }} %</b></div>
               <v-progress-linear class="mt-2" color="primary" height="8" :model-value="store.contributionProgress(child.id)" rounded />
-              <p class="child-energy-description"><span>{{ approvedCount(child.id) }} von {{ baseCount(child.id) }}</span> Grundbeiträgen bestätigt</p>
+              <p class="child-energy-description">{{ t('world.energy.approved', { approved: approvedCount(child.id), total: baseCount(child.id) }) }}</p>
             </div>
           </div>
         </div>
 
-        <div class="calculation-note mt-5">
-          <div class="calculation-icon"><v-icon size="23">mdi-calculator-variant-outline</v-icon></div>
-          <p><strong>Ganz einfach gerechnet</strong><span>Die persönlichen Energie-Prozente aller Kinder werden addiert und durch die Anzahl der Kinder geteilt. Spezialaufgaben zählen hier nicht mit.</span></p>
-        </div>
-
-        <v-btn class="understood-button mt-5" color="primary" rounded="lg" size="large" variant="flat" width="100%" @click="close">Verstanden</v-btn>
       </v-card-text>
     </v-card>
   </v-dialog>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
 import { createDefaultAvatarAppearance } from '@/domain/avatar';
@@ -97,14 +81,17 @@ import AnimatedEnergyStar from './AnimatedEnergyStar.vue';
 import AnimatedHouseEnergy from './AnimatedHouseEnergy.vue';
 import HouseProgressPanel from './HouseProgressPanel.vue';
 
-defineProps<{ modelValue: boolean }>();
+const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const store = useFamilyWorldStore();
+const { t } = useI18n();
+const guideStep = ref(-1);
+let guideStartTimer: number | undefined;
 const children = computed(() => store.members.filter((member) => member.role === 'child'));
 const energyState = computed(() => {
-  if (store.familyEnergy === 100) return { title: 'Unser Haus strahlt!', copy: 'Alle Grundbeiträge der Familie sind geschafft.' };
-  if (store.familyEnergy >= 60) return { title: 'Gut versorgt', copy: 'Gemeinsam habt ihr das Tagesziel erreicht.' };
-  return { title: 'Braucht noch Energie', copy: 'Weitere Grundbeiträge bringen Licht und Leben zurück.' };
+  if (store.familyEnergy === 100) return { title: t('world.energy.states.full.title'), copy: t('world.energy.states.full.description') };
+  if (store.familyEnergy >= 60) return { title: t('world.energy.states.good.title'), copy: t('world.energy.states.good.description') };
+  return { title: t('world.energy.states.low.title'), copy: t('world.energy.states.low.description') };
 });
 const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === 'basic' && item.assigneeId === childId);
 const baseCount = (childId: FamilyMemberId) => baseContributions(childId).length;
@@ -119,25 +106,76 @@ const childAppearance = (child: FamilyMember, index: number): AvatarAppearance =
   ];
   return { ...appearance, ...(variants[index % variants.length] ?? {}) };
 };
+const guideSteps = computed(() => [
+  {
+    heading: t('world.energy.guide.calculation.title'),
+    message: t('world.energy.guide.calculation.message', { count: Math.max(1, children.value.length) }),
+  },
+  {
+    heading: t('world.energy.guide.day.title'),
+    message: t('world.energy.guide.day.message'),
+  },
+  {
+    heading: t('world.energy.guide.growth.title'),
+    message: t('world.energy.guide.growth.message'),
+  },
+  {
+    heading: t('world.energy.guide.safe.title'),
+    message: t('world.energy.guide.safe.message'),
+  },
+]);
+const startEnergyGuide = () => {
+  guideStep.value = guideStep.value >= guideSteps.value.length - 1 ? 0 : guideStep.value + 1;
+  const step = guideSteps.value[guideStep.value];
+  if (!step) return;
+  window.dispatchEvent(new CustomEvent('ladi-guide:say', { detail: {
+    heading: step.heading,
+    message: step.message,
+    smart: true,
+    progress: `${guideStep.value + 1} / ${guideSteps.value.length}`,
+    actionLabel: t(guideStep.value === guideSteps.value.length - 1 ? 'world.energy.guide.again' : 'common.next'),
+    actionEvent: 'house-energy-guide:next',
+  } }));
+};
+watch(() => props.modelValue, (isOpen) => {
+  if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
+  if (!isOpen) return;
+  guideStep.value = -1;
+  guideStartTimer = window.setTimeout(() => {
+    startEnergyGuide();
+    guideStartTimer = undefined;
+  }, 280);
+});
+onMounted(() => window.addEventListener('house-energy-guide:next', startEnergyGuide));
+onUnmounted(() => {
+  if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
+  window.removeEventListener('house-energy-guide:next', startEnergyGuide);
+});
 const close = () => emit('update:modelValue', false);
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .energy-dialog {
   max-height: min(820px, 94dvh);
   @apply overflow-hidden;
-  color: #253843;
-  border: 2px solid rgba(224, 142, 99, 0.2);
-  background: #fffdf8 !important;
-  box-shadow:
-    0 10px 0 rgba(119, 85, 47, 0.12),
-    0 28px 70px rgba(62, 85, 75, 0.22) !important;
+  @include dialog-frame(
+    color-mix(in srgb, var(--lad-palette-orange-400-2) 20%, transparent),
+    color-mix(in srgb, var(--lad-palette-orange-650) 12%, transparent)
+  );
 }
 .energy-dialog-header {
   @apply position-relative overflow-hidden;
   flex: 0 0 auto;
-  border-bottom: 1px solid rgba(181, 107, 107, 0.14);
-  background: linear-gradient(145deg, #ffe3e9 0%, #ffedda 48%, #fff4c9 100%);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--lad-palette-orange-500) 15%, transparent);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background) 0%,
+    var(--lad-palette-amber-100) 48%,
+    var(--lad-palette-amber-100) 100%
+  );
 }
 .energy-dialog-header::before,
 .energy-dialog-header::after {
@@ -151,15 +189,16 @@ const close = () => emit('update:modelValue', false);
   height: 190px;
   top: -113px;
   right: -34px;
-  background: rgba(255, 255, 255, 0.34);
-  box-shadow: 0 0 0 22px rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--lad-palette-white) 35%, transparent);
+  box-shadow: 0 0 0 22px
+    color-mix(in srgb, var(--lad-palette-white) 15%, transparent);
 }
 .energy-dialog-header::after {
   width: 105px;
   height: 35px;
   right: 76px;
   bottom: -21px;
-  background: rgba(255, 255, 255, 0.32);
+  background: color-mix(in srgb, var(--lad-palette-white) 30%, transparent);
   filter: blur(2px);
 }
 .energy-title-row {
@@ -173,14 +212,11 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-dialog-header h2 {
   @apply ma-0;
-  font-size: 27px;
-  letter-spacing: -0.04em;
+  @include heading(var(--lad-font-size-page), 1.1, -0.04em);
 }
 .energy-subtitle {
   max-width: 260px;
-  color: #65766f;
-  font-size: 12px;
-  line-height: 1.4;
+  @include body-copy(var(--lad-font-size-body));
 }
 .close-button {
   @apply position-absolute;
@@ -205,12 +241,16 @@ const close = () => emit('update:modelValue', false);
   padding: 11px;
   @apply d-flex align-center;
   gap: 10px;
-  border: 2px solid rgba(110, 82, 72, 0.11);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.76);
+  @include raised-surface(
+    color-mix(in srgb, var(--lad-palette-orange-650) 10%, transparent),
+    color-mix(in srgb, var(--lad-palette-orange-600) 8%, transparent),
+    var(--lad-radius-medium),
+    0.3125rem
+  );
+  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
   box-shadow:
-    0 5px 0 rgba(126, 88, 57, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    0 5px 0 color-mix(in srgb, var(--lad-palette-orange-600) 8%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
 }
 .summary-tile--energy {
   @apply position-relative overflow-hidden;
@@ -225,7 +265,7 @@ const close = () => emit('update:modelValue', false);
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.78),
+    color-mix(in srgb, var(--lad-palette-white) 80%, transparent),
     transparent
   );
   transform: skewX(-18deg);
@@ -243,18 +283,18 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile span {
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .summary-tile strong {
   margin-top: 1px;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.2;
 }
 .summary-tile small {
   margin-top: 3px;
   @apply overflow-hidden;
-  color: #64756e;
-  font-size: 8px;
+  color: var(--lad-palette-muted-600);
+  font-size: 0.5rem;
   line-height: 1.3;
 }
 .energy-state-title {
@@ -262,8 +302,8 @@ const close = () => emit('update:modelValue', false);
   gap: 4px;
 }
 .energy-state-spark {
-  color: #efa827 !important;
-  font-size: 12px !important;
+  color: var(--lad-palette-amber-450) !important;
+  font-size: 0.75rem !important;
   animation: energy-state-spark 2.4s ease-in-out infinite;
 }
 .energy-orb {
@@ -274,11 +314,11 @@ const close = () => emit('update:modelValue', false);
   border-radius: 50%;
   background: conic-gradient(
     var(--lad-mint) var(--energy),
-    rgba(77, 149, 119, 0.12) 0
+    color-mix(in srgb, var(--lad-palette-teal-550) 12%, transparent) 0
   );
   box-shadow:
-    0 4px 0 rgba(43, 143, 106, 0.13),
-    0 0 0 5px rgba(255, 255, 255, 0.52);
+    0 4px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
   animation: energy-orb-breathe 2.9s ease-in-out infinite;
 }
 .energy-orb::before {
@@ -287,118 +327,62 @@ const close = () => emit('update:modelValue', false);
   content: "";
   grid-area: 1 / 1;
   border-radius: 50%;
-  background: #fffdf8;
+  background: var(--lad-palette-surface);
 }
 .energy-orb span {
   z-index: 1;
   grid-area: 1 / 1;
   color: var(--lad-mint-dark);
-  font-size: 20px;
-  font-weight: 950;
+  font-size: 1.25rem;
+  font-weight: var(--lad-font-weight-black);
 }
 .energy-orb small {
   @apply d-inline;
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 .summary-icon {
-  width: 44px;
-  height: 44px;
-  @apply d-grid place-center;
-  flex: 0 0 44px;
-  color: #b27518;
-  border: 2px solid rgba(255, 255, 255, 0.86);
-  border-radius: 14px;
-  background: #ffedb5;
-  box-shadow: 0 4px 0 rgba(181, 111, 18, 0.13);
-  transform: rotate(-4deg);
+  @include icon-tile(
+    2.75rem,
+    0.875rem,
+    var(--lad-palette-amber-150),
+    color-mix(in srgb, var(--lad-palette-amber-600) 12%, transparent),
+    -4deg
+  );
+  flex-basis: 44px;
+  color: var(--lad-palette-amber-600);
 }
 .summary-icon.is-achieved {
-  background: linear-gradient(145deg, #fff8cf, #ffe59b);
-  box-shadow: 0 4px 0 rgba(181, 111, 18, 0.13);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-amber-100),
+    var(--lad-palette-amber-150)
+  );
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-amber-600) 12%, transparent);
 }
 .energy-content {
   min-height: 0;
   flex: 1 1 auto;
   @apply overflow-y-auto;
-  background: linear-gradient(180deg, #fffdf8, #f1faf5);
-}
-.threshold-card {
-  padding: 15px;
-  border: 2px solid rgba(242, 175, 66, 0.25);
-  border-radius: 20px;
-  background:
-    radial-gradient(
-      circle at 92% 12%,
-      rgba(255, 255, 255, 0.65),
-      transparent 25%
-    ),
-    linear-gradient(135deg, #fff9ed, #fff3d6 62%, #effaf4);
-  box-shadow:
-    0 6px 0 rgba(179, 126, 45, 0.1),
-    0 12px 24px rgba(97, 91, 60, 0.06);
-}
-.threshold-heading {
-  @apply d-flex align-end justify-space-between ga-3;
-}
-.threshold-heading > div span,
-.threshold-heading > div strong {
-  @apply d-block;
-}
-.threshold-heading > div strong {
-  margin-top: 2px;
-  font-size: 13px;
-}
-.threshold-heading > span {
-  padding: 5px 8px;
-  color: #865a14;
-  border-radius: 999px;
-  background: #ffe8ad;
-  font-size: 8px;
-  @apply font-weight-black text-no-wrap;
+  background: linear-gradient(
+    180deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
 }
 .section-kicker {
-  color: #278568;
-  font-size: 8px;
-  font-weight: 950;
-  letter-spacing: 0.1em;
-}
-.progress-wrap {
-  @apply position-relative overflow-hidden;
-  border-radius: 999px;
-}
-.progress-glint {
-  width: 52px;
-  height: 24px;
-  @apply position-absolute;
-  top: -6px;
-  left: -58px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.86),
-    transparent
-  );
-  transform: skewX(-20deg);
-  animation: progress-glint 3.2s ease-in-out infinite;
-}
-.threshold-card p {
-  @apply ma-0 d-flex align-center;
-  gap: 5px;
-  color: #52655d;
-  font-size: 9px;
-  font-weight: 750;
-  line-height: 1.4;
+  @include overline(var(--lad-palette-mint-strong), var(--lad-font-size-micro));
 }
 .children-heading {
   @apply d-flex align-end justify-space-between ga-3;
 }
 .energy-dialog h3 {
   margin: 1px 0 0;
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 .average-label {
   color: var(--lad-muted);
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 800;
 }
 .child-energy-list {
@@ -410,22 +394,27 @@ const close = () => emit('update:modelValue', false);
   padding: 11px 12px;
   @apply d-flex align-center;
   gap: 12px;
-  border: 2px solid rgba(74, 145, 114, 0.16);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
   border-radius: 18px;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.94),
-    color-mix(in srgb, var(--avatar-color, #6f8df5) 7%, white)
+    color-mix(in srgb, var(--lad-palette-white) 95%, transparent),
+    color-mix(
+      in srgb,
+      var(--avatar-color, var(--lad-palette-indigo-350)) 7%,
+      white
+    )
   );
   box-shadow:
-    0 5px 0 rgba(57, 137, 106, 0.09),
-    0 10px 20px rgba(71, 107, 92, 0.06);
+    0 5px 0 color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent),
+    0 10px 20px color-mix(in srgb, var(--lad-palette-muted-700) 5%, transparent);
   transition:
     transform 0.2s ease,
     border-color 0.2s ease;
 }
 .child-energy-row:hover {
-  border-color: rgba(62, 188, 140, 0.34);
+  border-color: color-mix(in srgb, var(--lad-palette-mint) 35%, transparent);
   transform: translateY(-2px);
 }
 .child-avatar {
@@ -433,11 +422,20 @@ const close = () => emit('update:modelValue', false);
   height: 58px;
   @apply d-grid place-center overflow-hidden;
   flex: 0 0 58px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   border-radius: 19px;
-  background: color-mix(in srgb, var(--avatar-color, #6f8df5) 18%, white);
+  background: color-mix(
+    in srgb,
+    var(--avatar-color, var(--lad-palette-indigo-350)) 18%,
+    white
+  );
   box-shadow: 0 4px 0
-    color-mix(in srgb, var(--avatar-color, #6f8df5) 18%, transparent);
+    color-mix(
+      in srgb,
+      var(--avatar-color, var(--lad-palette-indigo-350)) 18%,
+      transparent
+    );
   transform: rotate(-2deg);
 }
 .child-energy-copy {
@@ -448,63 +446,26 @@ const close = () => emit('update:modelValue', false);
   @apply d-flex align-center justify-space-between ga-2;
 }
 .child-energy-row strong {
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .child-energy-row b {
   padding: 4px 8px;
   color: var(--lad-mint-dark);
-  border-radius: 999px;
-  background: #e4f6ec;
-  font-size: 11px;
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-background);
+  font-size: 0.6875rem;
 }
 .child-energy-description {
   @apply ma-0 mt-2;
-  color: #62766d;
-  font-size: 10px;
+  color: var(--lad-palette-teal-600);
+  font-size: 0.625rem;
   font-weight: 650;
   line-height: 1.35;
 }
 .child-energy-description span {
   @apply d-inline;
-  color: #278568;
-  font-weight: 900;
-}
-.calculation-note {
-  padding: 13px;
-  @apply d-flex align-start;
-  gap: 11px;
-  border: 1px solid rgba(87, 153, 202, 0.1);
-  border-radius: 18px;
-  background: linear-gradient(135deg, #edf7ff, #f4fbff);
-}
-.calculation-icon {
-  width: 40px;
-  height: 40px;
-  @apply d-grid place-center;
-  flex: 0 0 40px;
-  color: #3e88c5;
-  border-radius: 13px;
-  background: #dcefff;
-}
-.calculation-note p,
-.calculation-note strong,
-.calculation-note span {
-  @apply d-block;
-}
-.calculation-note p {
-  @apply ma-0;
-}
-.calculation-note strong {
-  font-size: 11px;
-}
-.calculation-note span {
-  margin-top: 2px;
-  color: var(--lad-muted);
-  font-size: 9px;
-  line-height: 1.45;
-}
-.understood-button {
-  box-shadow: 0 4px 0 #238463;
+  color: var(--lad-palette-mint-strong);
+  font-weight: var(--lad-font-weight-heavy);
 }
 @keyframes energy-orb-breathe {
   0%,
@@ -538,17 +499,176 @@ const close = () => emit('update:modelValue', false);
     transform: rotate(25deg) scale(1.2);
   }
 }
-@keyframes progress-glint {
-  0%,
-  35% {
-    left: -58px;
-  }
-  72%,
-  100% {
-    left: 110%;
-  }
+.energy-dialog {
+  height: min(660px, calc(100dvh - 28px));
+  max-height: min(660px, calc(100dvh - 28px));
+  @apply d-flex flex-column;
+  @include dialog-frame;
 }
-@media (max-width: 420px) {
+.energy-dialog-header {
+  border: 0;
+  background: var(--lad-palette-surface);
+}
+.energy-dialog-header::before,
+.energy-dialog-header::after {
+  display: none;
+}
+.energy-title-row {
+  min-height: 126px;
+  padding: 18px;
+  @apply align-center;
+  @include dialog-title-panel;
+}
+.energy-title-row::before,
+.energy-title-row::after {
+  content: "";
+  @apply position-absolute pointer-events-none;
+  border-radius: 50%;
+}
+.energy-title-row::before {
+  width: 120px;
+  height: 120px;
+  top: -72px;
+  right: -28px;
+  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+  box-shadow: 0 0 0 17px
+    color-mix(in srgb, var(--lad-palette-background) 40%, transparent);
+}
+.energy-title-row::after {
+  width: 84px;
+  height: 26px;
+  right: 44px;
+  bottom: -16px;
+  background: color-mix(in srgb, var(--lad-palette-blue-150) 60%, transparent);
+}
+.energy-title-row > div:first-child {
+  max-width: 245px;
+  @apply position-relative;
+  z-index: 1;
+}
+.dialog-kicker {
+  margin: 0 0 5px;
+  @include overline(var(--lad-blue), 0.5625rem);
+}
+.energy-dialog-header h2 {
+  font-size: 1.5625rem;
+}
+.energy-subtitle {
+  max-width: 225px;
+  font-size: 0.6875rem;
+}
+.energy-mascot {
+  width: 78px !important;
+  height: 78px !important;
+  @apply d-grid place-center;
+  top: 24px;
+  right: 45px;
+  z-index: 2;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-blue) 12%, transparent);
+}
+.close-button {
+  top: 8px;
+  right: 8px;
+  @include dialog-close-button;
+}
+.summary-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.summary-tile {
+  min-height: 72px;
+  padding: 8px;
+  gap: 8px;
+  border-color: color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
+  background:
+    radial-gradient(
+      circle at 90% 8%,
+      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
+      transparent 27%
+    ),
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-background) 62%,
+      var(--lad-palette-amber-100)
+    );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent);
+}
+.summary-tile--goal {
+  border-color: color-mix(
+    in srgb,
+    var(--lad-palette-purple-350) 18%,
+    transparent
+  );
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background) 58%,
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-muted-500) 10%, transparent);
+}
+.energy-orb {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+}
+.energy-orb::before {
+  width: 37px;
+  height: 37px;
+}
+.energy-orb span {
+  font-size: 1rem;
+}
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+  color: var(--lad-palette-white);
+  border: 3px solid var(--lad-palette-white);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-pink-300),
+    var(--lad-palette-violet-400)
+  );
+  box-shadow: 0 4px 0 var(--lad-palette-violet-500);
+}
+.summary-icon.is-achieved {
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-pink-300),
+    var(--lad-palette-violet-400)
+  );
+  box-shadow: 0 4px 0 var(--lad-palette-violet-500);
+}
+.energy-content {
+  background: linear-gradient(
+    180deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
+}
+.energy-content :deep(.house-progress-panel) {
+  border-color: color-mix(in srgb, var(--lad-palette-blue) 15%, transparent);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
+  box-shadow: 0 7px 0
+    color-mix(in srgb, var(--lad-palette-blue) 10%, transparent);
+}
+:global(.energy-summary-dialog-frame) {
+  width: min(460px, calc(100vw - 32px));
+  height: min(660px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+}
+@include respond-down(mobile) {
   .summary-grid {
     grid-template-columns: 1fr;
   }
@@ -561,11 +681,10 @@ const close = () => emit('update:modelValue', false);
     transform-origin: right top;
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .energy-orb,
   .summary-tile--energy::after,
-  .energy-state-spark,
-  .progress-glint {
+  .energy-state-spark {
     animation: none;
   }
   .child-energy-row {

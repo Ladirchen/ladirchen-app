@@ -5,8 +5,8 @@ export interface LadiStage {
   readonly id: LadiStageId;
   readonly tier: LadiTier;
   readonly minimumScore: number;
-  readonly name: string;
-  readonly description: string;
+  readonly nameKey: string;
+  readonly descriptionKey: string;
 }
 
 export const LADI_STAGES: readonly LadiStage[] = [
@@ -14,43 +14,43 @@ export const LADI_STAGES: readonly LadiStage[] = [
     id: 'super-ladi',
     tier: 'super',
     minimumScore: 4.8,
-    name: 'Super-Ladi',
-    description: 'Fast perfekte Mitarbeit! Mit Umhang und L-Wappen fliegt Super-Ladi zur nächsten Mission.',
+    nameKey: 'ladi.stages.super.name',
+    descriptionKey: 'ladi.stages.super.description',
   },
   {
     id: 'aurora-ladi',
     tier: 'aurora',
     minimumScore: 4.3,
-    name: 'Sonnenbrillen-Ladi',
-    description: 'Ab 4,3 Sternen ist Ladi ziemlich stolz und setzt seine coolste Sonnenbrille auf.',
+    nameKey: 'ladi.stages.aurora.name',
+    descriptionKey: 'ladi.stages.aurora.description',
   },
   {
     id: 'sun-ladi',
     tier: 'sun',
     minimumScore: 4,
-    name: 'Sonnen-Ladi',
-    description: 'Ladis gesparte Münze leuchtet jetzt wie eine kleine Sonne.',
+    nameKey: 'ladi.stages.sun.name',
+    descriptionKey: 'ladi.stages.sun.description',
   },
   {
     id: 'garden-ladi',
     tier: 'garden',
     minimumScore: 3,
-    name: 'Blätter-Ladi',
-    description: 'Geduld zahlt sich aus: Ladis Ast bekommt seine ersten grünen Blätter.',
+    nameKey: 'ladi.stages.garden.name',
+    descriptionKey: 'ladi.stages.garden.description',
   },
   {
     id: 'starter-ladi',
     tier: 'spark',
     minimumScore: 2.5,
-    name: 'Start-Ladi',
-    description: 'Ladi ist aufgestanden und hält seine erste Ladirchen-Münze wieder ganz fest.',
+    nameKey: 'ladi.stages.starter.name',
+    descriptionKey: 'ladi.stages.starter.description',
   },
   {
     id: 'idle-ladi',
     tier: 'spark',
     minimumScore: Number.NEGATIVE_INFINITY,
-    name: 'Faul-Ladi',
-    description: 'Ladi hängt gelangweilt am Ast. Ein paar erledigte Beiträge muntern ihn wieder auf.',
+    nameKey: 'ladi.stages.idle.name',
+    descriptionKey: 'ladi.stages.idle.description',
   },
 ];
 

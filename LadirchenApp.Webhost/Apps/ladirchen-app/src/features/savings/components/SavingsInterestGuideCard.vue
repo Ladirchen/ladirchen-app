@@ -2,10 +2,14 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
+import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
+const { locale, t } = useI18n();
+const { goal: localizeGoal } = useLocalizedDomainContent();
 const conversationStep = ref(-1);
 
 const streakInterest = computed(() => store.currentDailyStreak * store.streakBonusRate);
@@ -14,7 +18,7 @@ const weeklyInterest = (saved: number, target = Number.POSITIVE_INFINITY) => sav
   : Math.min(target - saved, Math.max(1, Math.round(saved * (store.savingsInterestRate / 100))));
 const goalInterestRows = computed(() => {
   const rows = store.ownSavingGoals.map((goal) => ({
-    ...goal,
+    ...localizeGoal(goal),
     weeklyInterest: weeklyInterest(goal.saved, goal.target),
   }));
   const highestInterest = Math.max(0, ...rows.map((goal) => goal.weeklyInterest));
@@ -25,30 +29,30 @@ const estimatedWeeklyInterest = computed(() =>
 );
 const answers = computed(() => [
   {
-    title: 'Ladis Fleiß-Bonus',
-    text: `Du hast ${store.totalSaved} Ladirchen in deinen Zielen. Mit deinem aktuellen Fleiß-Bonus kommen voraussichtlich etwa ${estimatedWeeklyInterest.value} Ladirchen pro Woche dazu – ganz automatisch.`,
+    title: t('savings.interestGuide.bonusTitle'),
+    text: t('savings.interestGuide.bonusMessage', { saved: store.totalSaved, interest: estimatedWeeklyInterest.value }),
   },
   {
-    title: 'Jeder Wunsch bekommt Zinsen',
+    title: t('savings.interestGuide.goalsTitle'),
     text: goalInterestRows.value.length
-      ? goalInterestRows.value.map((goal) => `${goal.title}: etwa ${goal.weeklyInterest} Ladirchen`).join(' · ') + '. Die Zinsen landen direkt auf dem jeweiligen Wunschkonto.'
-      : 'Sobald Ladirchen auf einem Wunschkonto liegen, berechne ich die Zinsen für dieses Ziel und zahle sie direkt dort ein.',
+      ? t('savings.interestGuide.goalsMessage', { goals: goalInterestRows.value.map(goal => t('savings.interestGuide.goalItem', { title: goal.title, interest: goal.weeklyInterest })).join(' · ') })
+      : t('savings.interestGuide.goalsEmpty'),
   },
   {
-    title: 'Dranbleiben lohnt sich',
-    text: `Deine Tagesserie läuft seit ${store.currentDailyStreak} Tagen. Sie bringt dir gerade ${formatRate(streakInterest.value)} zusätzliche Prozentpunkte. Jeder erfolgreiche Tag kann deinen Bonus wachsen lassen.`,
+    title: t('savings.interestGuide.streakTitle'),
+    text: t('savings.interestGuide.streakMessage', { days: store.currentDailyStreak, rate: formatRate(streakInterest.value) }),
   },
   {
-    title: 'Sorgfältig helfen',
-    text: `Du hast ${store.dailyEnergy} Prozent deiner Aufgaben geschafft und im Schnitt ${store.averageTaskRating.toFixed(1)} Sterne erhalten. Regelmäßiges und sorgfältiges Helfen stärkt deinen Fleiß-Bonus.`,
+    title: t('savings.interestGuide.careTitle'),
+    text: t('savings.interestGuide.careMessage', { completion: store.dailyEnergy, rating: formatRate(store.averageTaskRating) }),
   },
   {
-    title: 'Ladis Spartipp',
-    text: 'Lege lieber öfter ein paar Ladirchen zurück, statt auf den einen großen Sprung zu warten. Viele kleine Schritte bringen dich sicher zu deinem Wunsch.',
+    title: t('savings.interestGuide.tipTitle'),
+    text: t('savings.interestGuide.tipMessage'),
   },
 ]);
 
-const formatRate = (value: number) => value.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+const formatRate = (value: number) => value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 const nextAnswer = () => {
   conversationStep.value = conversationStep.value >= answers.value.length - 1
     ? 0
@@ -60,7 +64,7 @@ const nextAnswer = () => {
     message: answer.text,
     smart: true,
     progress: `${conversationStep.value + 2} / ${answers.value.length + 1}`,
-    actionLabel: conversationStep.value === answers.value.length - 1 ? 'Noch einmal' : 'Weiter',
+    actionLabel: t(conversationStep.value === answers.value.length - 1 ? 'savings.piggy.guide.again' : 'common.next'),
     actionEvent: 'savings-interest:next',
   } }));
 };
@@ -75,24 +79,31 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .interest-guide-controller {
   display: none;
 }
 .interest-guide-card {
   padding: 19px;
   @apply position-relative overflow-hidden;
-  border: 2px solid rgba(226, 164, 49, 0.3);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-amber-450) 30%, transparent);
   background:
     radial-gradient(
       circle at 92% 5%,
-      rgba(255, 220, 95, 0.34),
+      color-mix(in srgb, var(--lad-palette-yellow) 35%, transparent),
       transparent 28%
     ),
-    linear-gradient(145deg, #fffdf3, #edf9f3);
+    linear-gradient(
+      145deg,
+      var(--lad-palette-surface),
+      var(--lad-palette-background)
+    );
   box-shadow:
-    0 7px 0 rgba(201, 137, 38, 0.14),
-    0 15px 28px rgba(83, 105, 84, 0.09) !important;
+    0 7px 0 color-mix(in srgb, var(--lad-palette-amber-550) 15%, transparent),
+    0 15px 28px
+      color-mix(in srgb, var(--lad-palette-muted-600-2) 8%, transparent) !important;
 }
 .interest-guide-card::before {
   content: "";
@@ -105,7 +116,7 @@ onUnmounted(() => {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.74),
+    color-mix(in srgb, var(--lad-palette-white) 75%, transparent),
     transparent
   );
   animation: interest-shine 4.6s ease-in-out infinite;
@@ -115,8 +126,8 @@ onUnmounted(() => {
   @apply position-absolute pointer-events-none;
   top: 10px;
   right: 13px;
-  color: #e7a52c;
-  font-size: 15px;
+  color: var(--lad-palette-amber-450);
+  font-size: 0.9375rem;
   animation: interest-twinkle 1.8s ease-in-out infinite;
 }
 .interest-heading {
@@ -128,14 +139,18 @@ onUnmounted(() => {
   width: 56px;
   height: 56px;
   @apply position-relative d-grid place-center flex-shrink-0;
-  color: #fff4a9;
-  border: 3px solid #fff;
+  color: var(--lad-palette-amber-150);
+  border: 3px solid var(--lad-palette-white);
   border-radius: 19px;
-  background: linear-gradient(145deg, #66c29c, #318c6c);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-teal-400),
+    var(--lad-palette-mint-strong)
+  );
   box-shadow:
-    0 5px 0 #247257,
-    0 9px 16px rgba(36, 114, 87, 0.14);
-  font-size: 29px;
+    0 5px 0 var(--lad-palette-teal-700),
+    0 9px 16px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent);
+  font-size: 1.8125rem;
   transform: rotate(-5deg);
   animation: interest-icon-float 3s ease-in-out infinite;
 }
@@ -145,19 +160,19 @@ onUnmounted(() => {
   @apply position-absolute d-grid place-center;
   right: -9px;
   bottom: -7px;
-  color: #8c5b0f;
-  border: 2px solid #fff;
+  color: var(--lad-palette-amber-700);
+  border: 2px solid var(--lad-palette-white);
   border-radius: 50%;
-  background: #ffd45b;
-  box-shadow: 0 2px 0 #c5861e;
-  font-size: 15px;
+  background: var(--lad-palette-yellow);
+  box-shadow: 0 2px 0 var(--lad-palette-amber-550);
+  font-size: 0.9375rem;
   font-style: normal;
-  font-weight: 950;
+  font-weight: var(--lad-font-weight-black);
   animation: interest-plus-pop 2.2s ease-in-out infinite;
 }
 .interest-heading h2 {
   @apply ma-0;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.2;
   letter-spacing: -0.025em;
 }
@@ -165,7 +180,7 @@ onUnmounted(() => {
   max-width: 290px;
   margin-top: 5px;
   color: var(--lad-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.45;
 }
 .interest-rate {
@@ -174,13 +189,19 @@ onUnmounted(() => {
   padding: 11px 8px 8px;
   @apply position-relative d-flex flex-column align-center justify-center flex-shrink-0 text-center;
   z-index: 1;
-  color: #247b5d;
-  border: 3px solid rgba(255, 255, 255, 0.9);
+  color: var(--lad-palette-teal-700);
+  border: 3px solid
+    color-mix(in srgb, var(--lad-palette-white) 90%, transparent);
   border-radius: 24px;
-  background: linear-gradient(145deg, #fffdf2, #e4f8ed);
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-background)
+  );
   box-shadow:
-    0 4px 0 rgba(44, 135, 99, 0.13),
-    0 8px 15px rgba(44, 135, 99, 0.08);
+    0 4px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
+    0 8px 15px
+      color-mix(in srgb, var(--lad-palette-mint-strong) 8%, transparent);
 }
 .interest-rate > * {
   @apply position-relative;
@@ -190,38 +211,40 @@ onUnmounted(() => {
   @apply position-absolute;
   top: 7px;
   right: 9px;
-  color: #e4a52d;
-  font-size: 9px;
+  color: var(--lad-palette-amber-450);
+  font-size: 0.5625rem;
   font-style: normal;
   opacity: 0.72;
 }
 .interest-rate small {
-  color: #6a837a;
-  font-size: 8px;
-  font-weight: 900;
+  color: var(--lad-palette-muted);
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-heavy);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .interest-rate strong {
   @apply d-block;
   margin-top: 1px;
-  font-size: 23px;
+  font-size: 1.4375rem;
   line-height: 1.05;
 }
 .interest-rate span {
   @apply d-block;
   margin-top: 3px;
-  font-size: 9px;
-  font-weight: 900;
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-heavy);
 }
 .interest-progress {
   padding: 14px;
   @apply position-relative;
   z-index: 1;
-  border: 2px solid rgba(255, 255, 255, 0.84);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-white) 85%, transparent);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 3px 0 rgba(65, 126, 96, 0.07);
+  background: color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
 }
 .bonus-preview {
   @apply d-flex align-center justify-space-between;
@@ -229,11 +252,11 @@ onUnmounted(() => {
 }
 .bonus-preview span {
   color: var(--lad-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .bonus-preview strong {
-  color: #277c5f;
-  font-size: 16px;
+  color: var(--lad-palette-teal-700);
+  font-size: 1rem;
   animation: bonus-number-pulse 2.5s ease-in-out infinite;
 }
 .interest-factors {
@@ -244,13 +267,19 @@ onUnmounted(() => {
 .interest-factors span {
   padding: 8px 5px;
   @apply text-center;
-  color: #596b65;
-  border: 1px solid rgba(70, 138, 111, 0.08);
+  color: var(--lad-palette-teal-600);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
   border-radius: 12px;
-  background: linear-gradient(145deg, #f5faf7, #fff8df);
-  box-shadow: 0 2px 0 rgba(65, 122, 96, 0.06);
-  font-size: 9px;
-  font-weight: 850;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-surface),
+    var(--lad-palette-amber-100)
+  );
+  box-shadow: 0 2px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 5%, transparent);
+  font-size: 0.5625rem;
+  font-weight: var(--lad-font-weight-strong);
   animation: factor-float 3.4s ease-in-out infinite;
 }
 .interest-factors span:nth-child(2) {
@@ -265,19 +294,28 @@ onUnmounted(() => {
 .interest-factors b {
   @apply d-block;
   margin-bottom: 2px;
-  color: #26775c;
-  font-size: 10px;
+  color: var(--lad-palette-teal-700);
+  font-size: 0.625rem;
 }
 .goal-interest-breakdown {
   padding: 13px;
   @apply position-relative;
   z-index: 1;
-  border: 2px solid rgba(73, 151, 198, 0.17);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-blue) 18%, transparent);
   border-radius: 19px;
   background:
-    radial-gradient(circle at 92% 4%, rgba(255, 219, 91, 0.2), transparent 28%),
-    linear-gradient(145deg, #eef8ff, #f1faf5);
-  box-shadow: 0 5px 0 rgba(58, 127, 174, 0.1);
+    radial-gradient(
+      circle at 92% 4%,
+      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      145deg,
+      var(--lad-palette-background),
+      var(--lad-palette-background)
+    );
+  box-shadow: 0 5px 0
+    color-mix(in srgb, var(--lad-palette-blue-strong) 10%, transparent);
 }
 .goal-interest-heading {
   @apply d-flex align-end justify-space-between;
@@ -289,22 +327,22 @@ onUnmounted(() => {
   @apply d-block;
 }
 .goal-interest-heading small {
-  color: #4e8fdd;
-  font-size: 8px;
-  font-weight: 950;
+  color: var(--lad-palette-blue);
+  font-size: 0.5rem;
+  font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .goal-interest-heading strong {
   margin-top: 2px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .goal-interest-heading > b {
   padding: 5px 8px;
-  color: #28785c;
-  border-radius: 999px;
-  background: #ddf4e8;
-  font-size: 8px;
+  color: var(--lad-palette-teal-700);
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-background);
+  font-size: 0.5rem;
   white-space: nowrap;
 }
 .goal-interest-list {
@@ -317,24 +355,39 @@ onUnmounted(() => {
   @apply position-relative d-grid align-center;
   grid-template-columns: 42px minmax(0, 1fr) auto;
   gap: 8px;
-  border: 2px solid rgba(77, 151, 122, 0.13);
+  border: 2px solid
+    color-mix(in srgb, var(--lad-palette-teal-550) 12%, transparent);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 3px 0 rgba(57, 126, 99, 0.08);
+  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-teal-600) 8%, transparent);
 }
 .goal-interest-row.is-top-interest {
-  border-color: rgba(228, 168, 47, 0.24);
-  background: linear-gradient(145deg, #fff, #fff6cf);
+  border-color: color-mix(
+    in srgb,
+    var(--lad-palette-amber-450) 25%,
+    transparent
+  );
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-amber-100)
+  );
 }
 .goal-interest-icon {
   width: 40px;
   height: 40px;
   @apply d-grid place-center;
-  border: 2px solid #fff;
+  border: 2px solid var(--lad-palette-white);
   border-radius: 13px;
-  background: linear-gradient(145deg, #e9f7ff, #fff0b9);
-  box-shadow: 0 3px 0 rgba(57, 127, 166, 0.1);
-  font-size: 22px;
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-background),
+    var(--lad-palette-amber-150)
+  );
+  box-shadow: 0 3px 0
+    color-mix(in srgb, var(--lad-palette-blue-550) 10%, transparent);
+  font-size: 1.375rem;
   transform: rotate(-4deg);
   animation: goal-interest-float 3s ease-in-out infinite;
 }
@@ -348,26 +401,26 @@ onUnmounted(() => {
 }
 .goal-interest-copy strong {
   overflow: hidden;
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .goal-interest-copy small {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 8px;
+  font-size: 0.5rem;
 }
 .goal-interest-value {
   @apply text-right;
 }
 .goal-interest-value b {
-  color: #277c5f;
-  font-size: 14px;
+  color: var(--lad-palette-teal-700);
+  font-size: 0.875rem;
 }
 .goal-interest-value small {
   margin-top: 2px;
-  color: #658078;
-  font-size: 7px;
+  color: var(--lad-palette-muted);
+  font-size: 0.4375rem;
   font-weight: 800;
 }
 .goal-interest-row > i {
@@ -375,19 +428,20 @@ onUnmounted(() => {
   top: -7px;
   right: 8px;
   padding: 3px 6px;
-  color: #85570f;
-  border: 1px solid rgba(222, 159, 42, 0.24);
-  border-radius: 999px;
-  background: #ffe9a8;
-  font-size: 6px;
+  color: var(--lad-palette-amber-700);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-amber-500) 25%, transparent);
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-amber-150);
+  font-size: 0.375rem;
   font-style: normal;
-  font-weight: 950;
+  font-weight: var(--lad-font-weight-black);
   text-transform: uppercase;
 }
 .goal-interest-breakdown > p {
   margin: 10px 2px 0;
-  color: #597069;
-  font-size: 9px;
+  color: var(--lad-palette-teal-600);
+  font-size: 0.5625rem;
   font-weight: 750;
   line-height: 1.4;
 }
@@ -463,7 +517,7 @@ onUnmounted(() => {
     transform: translateY(-2px) rotate(3deg);
   }
 }
-@media (max-width: 390px) {
+@include respond-down(narrow) {
   .interest-heading {
     flex-wrap: wrap;
   }
@@ -474,7 +528,7 @@ onUnmounted(() => {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .interest-guide-card::before,
   .interest-guide-card::after,
   .interest-icon,

@@ -4,7 +4,7 @@
     :class="{ reacting: isReacting }"
     :style="petStyle"
     role="img"
-    :aria-label="`${pet.name}, eine animierte ${pet.kindLabel}`"
+    :aria-label="t('familyPets.animatedAria', { name: pet.name, kind: t(`familyPets.kinds.${pet.kind}`) })"
     :title="pet.name"
     @click="react"
   >
@@ -66,8 +66,11 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import type { FamilyPet } from '@/domain/types';
+
+const { t } = useI18n();
 
 const props = withDefaults(defineProps<{
   pet: FamilyPet;
@@ -97,7 +100,8 @@ const petStyle = computed(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@use "@/styles/mixins" as *;
 .animated-pet {
   @apply d-inline-grid;
   flex: 0 0 auto;
@@ -114,10 +118,12 @@ const petStyle = computed(() => {
 }
 svg {
   @apply w-100 h-100 overflow-visible;
-  filter: drop-shadow(0 5px 3px rgba(55, 57, 55, 0.16));
+  filter: drop-shadow(
+    0 5px 3px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent)
+  );
 }
 .pet-shadow {
-  fill: rgba(48, 65, 57, 0.17);
+  fill: color-mix(in srgb, var(--lad-palette-text) 18%, transparent);
   animation: shadow-breathe 11s var(--pet-phase) ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
@@ -127,23 +133,23 @@ svg {
 .leg,
 .pet-paw {
   fill: var(--pet-color);
-  stroke: #4d4744;
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .belly {
-  fill: rgba(255, 255, 255, 0.31);
+  fill: color-mix(in srgb, var(--lad-palette-white) 30%, transparent);
 }
 .ear {
   fill: var(--pet-color);
-  stroke: #4d4744;
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 3;
 }
 .inner-ear {
-  fill: #f3a1aa;
+  fill: var(--lad-palette-rose-250);
 }
 .dog-ear {
   transform-box: fill-box;
@@ -153,45 +159,45 @@ svg {
   animation: ear-twitch 15s var(--pet-phase) ease-in-out infinite;
 }
 .face-patch {
-  fill: rgba(255, 255, 255, 0.18);
+  fill: color-mix(in srgb, var(--lad-palette-white) 18%, transparent);
 }
 .eye-white {
-  fill: #fffdf4;
-  stroke: #4d4744;
+  fill: var(--lad-palette-surface);
+  stroke: var(--lad-palette-muted-750-2);
   stroke-width: 2;
 }
 .pupil {
-  fill: #393430;
+  fill: var(--lad-palette-muted-750);
 }
 .eye-shine {
   fill: white;
 }
 .nose {
-  fill: #ed7f8f;
-  stroke: #4d4744;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
 .dog-muzzle {
-  fill: #f5d7af;
-  stroke: #4d4744;
+  fill: var(--lad-palette-amber-200);
+  stroke: var(--lad-palette-muted-750-2);
   stroke-width: 1.5;
 }
 .dog-nose {
-  fill: #3e3530;
-  stroke: #4d4744;
+  fill: var(--lad-palette-muted-750);
+  stroke: var(--lad-palette-muted-750-2);
   stroke-width: 1.2;
 }
 .dog-tongue {
-  fill: #ef8791;
-  stroke: #4d4744;
+  fill: var(--lad-palette-red-300);
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linejoin: round;
   stroke-width: 1.4;
 }
 .mouth,
 .whiskers {
   fill: none;
-  stroke: #4d4744;
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linecap: round;
   stroke-width: 2;
 }
@@ -225,23 +231,23 @@ svg {
 }
 .pet-paw path {
   fill: none;
-  stroke: #4d4744;
+  stroke: var(--lad-palette-muted-750-2);
   stroke-linecap: round;
   stroke-width: 1.4;
 }
 .collar {
   fill: none;
-  stroke: #63c9bf;
+  stroke: var(--lad-palette-teal-400);
   stroke-linecap: round;
   stroke-width: 4;
 }
 .tag {
-  fill: #ffd15f;
-  stroke: #8d642a;
+  fill: var(--lad-palette-yellow);
+  stroke: var(--lad-palette-amber-650);
   stroke-width: 1.5;
 }
 .tag-star {
-  fill: #fff8cc;
+  fill: var(--lad-palette-amber-100);
 }
 
 @keyframes pet-hop {
@@ -347,7 +353,7 @@ svg {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@include reduced-motion {
   .animated-pet,
   .pet-shadow,
   .pet-tail,
