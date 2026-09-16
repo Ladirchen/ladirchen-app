@@ -58,12 +58,12 @@ const {
 @use "@/styles/mixins" as *;
 .global-ladi-guide {
   @apply position-fixed pointer-events-none;
-  right: max(4px, calc((100vw - 500px) / 2 + 4px));
+  right: calc(var(--lad-shell-inline-offset, 0px) + 4px);
   bottom: 86px;
   z-index: 3000;
 }
 .global-ladi-guide.hidden {
-  right: max(-1px, calc((100vw - 500px) / 2 - 1px));
+  right: calc(var(--lad-shell-inline-offset, 0px) - 1px);
 }
 .guide-ladi {
   width: 94px;

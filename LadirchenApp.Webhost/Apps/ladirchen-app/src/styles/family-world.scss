@@ -1,6 +1,8 @@
 @use "./mixins" as *;
+@use "./tokens" as tokens;
 
 .family-world-background {
+  --lad-shell-inline-offset: max(0px, calc((100vw - 31.25rem) / 2));
   font-family: var(--lad-font-body);
   min-height: 100dvh;
   padding: 1.75rem 1rem;
@@ -62,7 +64,7 @@
     height: rem(86);
     @apply position-absolute;
     top: -0.5rem;
-    left: -rem(22);
+    left: rem(-20);
     max-width: none;
   }
   .header-stats {
@@ -171,6 +173,12 @@
   .family-world-content {
     min-height: 0;
     padding-bottom: 5rem;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .family-world-content::-webkit-scrollbar {
+    display: none;
   }
   .family-world-route {
     min-height: 100%;
@@ -191,8 +199,8 @@
     .family-world-logo img {
       width: rem(79);
       height: rem(79);
-      top: -rem(7);
-      left: -1.25rem;
+      top: rem(-7);
+      left: rem(-18.5);
     }
     .header-stats {
       width: min(53%, rem(194));
@@ -301,6 +309,38 @@
   }
 }
 
+@media
+  (min-width: tokens.breakpoint(shell)) and (max-width: tokens.breakpoint(tablet)),
+  (min-width: tokens.breakpoint(tablet)) and (max-width: tokens.breakpoint(tablet-landscape)) and (hover: none) and (pointer: coarse) {
+  .family-world-background {
+    --lad-shell-inline-offset: 0px;
+    padding: 0;
+  }
+
+  .family-world-background .family-world-shell {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .family-world-background .page-padding {
+    padding-inline: clamp(1.5rem, 4vw, 3.5rem);
+  }
+}
+
+@media
+  (min-width: tokens.breakpoint(tablet)) and (max-width: tokens.breakpoint(tablet-landscape)) and (orientation: landscape) {
+  .family-world-background,
+  .family-world-background .family-world-shell {
+    width: 100dvw;
+    max-width: 100dvw;
+    overflow: hidden;
+  }
+}
+
 @keyframes coin-to-piggy {
   0% {
     opacity: 0;
@@ -342,6 +382,7 @@
 
 @include respond-down(shell) {
   .family-world-background {
+    --lad-shell-inline-offset: 0px;
     @apply pa-0;
   }
   .family-world-background .family-world-shell {

@@ -27,7 +27,7 @@
           </div>
         </header>
 
-        <main class="family-world-content flex-grow-1 overflow-auto">
+        <main ref="contentElement" class="family-world-content flex-grow-1 overflow-auto">
           <RouterView v-slot="{ Component, route }">
             <Transition name="family-world-page" mode="out-in">
               <div
@@ -123,6 +123,8 @@ const { locale, t } = useI18n();
 const appHydrated = ref(false);
 const introFinished = ref(false);
 let clockTimer: ReturnType<typeof window.setInterval> | undefined;
+let orientationMedia: MediaQueryList | undefined;
+const contentElement = ref<HTMLElement | null>(null);
 void store.hydrateFamilyAggregates().finally(() => { appHydrated.value = true; });
 const streakDialog = ref(false);
 const headerBalanceMemberId = computed(() => store.viewerRole === 'guardian' ? store.signedInMemberId : store.activeChildId);
@@ -166,12 +168,18 @@ const handleIntroFinished = () => {
   introFinished.value = true;
   store.revealNextContributionReward();
 };
+const resetContentScroll = () => {
+  window.requestAnimationFrame(() => contentElement.value?.scrollTo({ top: 0, left: 0 }));
+};
 onMounted(() => {
   store.refreshCurrentTime();
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
+  orientationMedia = window.matchMedia('(orientation: landscape)');
+  orientationMedia.addEventListener('change', resetContentScroll);
 });
 onBeforeUnmount(() => {
   if (clockTimer !== undefined) {window.clearInterval(clockTimer);}
+  orientationMedia?.removeEventListener('change', resetContentScroll);
 });
 
 </script>

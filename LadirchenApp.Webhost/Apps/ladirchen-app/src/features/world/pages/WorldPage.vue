@@ -1,6 +1,6 @@
 <template>
   <div class="page world-page">
-    <section class="world-hero px-4 pt-5">
+    <section class="world-hero px-4">
       <div class="d-flex align-start justify-space-between ga-3">
         <div v-if="store.viewerRole === 'child'">
           <p class="eyebrow">{{ t('world.hero.childEyebrow', { name: store.activeChild.name }) }}</p>
@@ -247,7 +247,9 @@ const giveDirectGift = () => {
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
+@use "@/styles/tokens" as tokens;
 .world-hero {
+  padding-top: 20px;
   padding-bottom: 16px;
   @apply position-relative overflow-hidden;
   color: var(--lad-text);
@@ -316,6 +318,26 @@ const giveDirectGift = () => {
   right: 5px;
   color: var(--lad-mint-dark);
   transform: translateY(-50%);
+}
+@media
+  (min-width: tokens.breakpoint(tablet)) and (max-width: tokens.breakpoint(tablet-landscape)) and (orientation: landscape) {
+  .world-hero {
+    height: calc(100dvh - 8.75rem);
+    min-height: 0;
+    padding-top: 0.75rem;
+    padding-bottom: 0.5rem;
+    @apply d-flex flex-column;
+  }
+  .world-hero :deep(.world-scene-wrap) {
+    width: min(100%, calc((100dvh - 13rem) * 1.354));
+    min-height: 0;
+    margin-inline: auto;
+    flex: 1 1 auto;
+  }
+  .world-hero :deep(.scene-drag-layer),
+  .world-hero :deep(.world-scene) {
+    height: 100%;
+  }
 }
 @include respond-down(mobile) {
   .energy-trigger {
