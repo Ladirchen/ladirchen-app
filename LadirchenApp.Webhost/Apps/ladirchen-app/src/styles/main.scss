@@ -9,7 +9,7 @@
 :root {
   --lad-font-body: var(--v-font-family, "Roboto", sans-serif);
   --lad-font-heading: var(--lad-font-body);
-  --lad-font-mono: var(--v-font-mono, "Roboto Mono", monospace);
+  --lad-font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   --lad-font-size-micro: 0.5rem;
   --lad-font-size-caption: 0.625rem;
   --lad-font-size-body: 0.75rem;
@@ -32,36 +32,153 @@
   --lad-motion-fast: 160ms;
   --lad-motion-normal: 180ms;
 
-  /* Semantic surface and state palette. Illustration-only colours stay local. */
-  --lad-color-success: var(--lad-palette-mint-strong);
-  --lad-color-success-strong: var(--lad-palette-teal-700);
-  --lad-color-success-soft: var(--lad-palette-background);
+  /* Semantic foundations used by application UI. Raw palette tokens are reserved
+     for the artwork renderers listed in the palette validation script. */
+  --lad-bg: var(--lad-palette-background);
+  --lad-surface: var(--lad-palette-surface);
+  --lad-surface-soft: var(--lad-palette-background);
+  --lad-surface-raised: var(--lad-palette-white);
+  --lad-text: var(--lad-palette-text);
+  --lad-text-inverse: var(--lad-palette-white);
+  --lad-muted: var(--lad-palette-muted);
+  --lad-text-subtle: var(--lad-palette-muted-350);
+  --lad-text-supporting: var(--lad-palette-muted-600);
+  --lad-text-strong: var(--lad-palette-muted-700);
+  --lad-text-warm: var(--lad-palette-muted-750-2);
+  --lad-text-warm-strong: var(--lad-palette-muted-750);
+  --lad-neutral-soft: var(--lad-palette-muted-250);
+  --lad-neutral-accent: var(--lad-palette-muted-400);
+  --lad-neutral-decorative: var(--lad-palette-muted-500);
+  --lad-neutral-success: var(--lad-palette-muted-600-2);
+
+  --lad-color-primary-soft: var(--lad-palette-teal-150);
+  --lad-color-primary-highlight: var(--lad-palette-teal-400);
+  --lad-color-primary-muted: var(--lad-palette-teal-550);
+  --lad-color-primary-supporting: var(--lad-palette-teal-600);
+  --lad-color-primary-deep: var(--lad-palette-teal-700);
+  --lad-color-primary: var(--lad-palette-mint);
+  --lad-color-primary-strong: var(--lad-palette-mint-strong);
+  --lad-color-primary-decorative: var(--lad-palette-mint-450);
+
+  --lad-color-info-soft: var(--lad-palette-blue-150);
+  --lad-color-info-highlight: var(--lad-palette-blue-250);
+  --lad-color-info-subtle: var(--lad-palette-blue-350);
+  --lad-color-info-muted: var(--lad-palette-blue-450);
+  --lad-color-info-shadow: var(--lad-palette-blue-550);
+  --lad-color-info-deep: var(--lad-palette-blue-600);
   --lad-color-info: var(--lad-palette-blue);
   --lad-color-info-strong: var(--lad-palette-blue-strong);
-  --lad-color-info-soft: var(--lad-palette-background);
-  --lad-color-warning: var(--lad-palette-amber-450);
-  --lad-color-warning-strong: var(--lad-palette-amber-700);
-  --lad-color-warning-soft: var(--lad-palette-amber-100);
-  --lad-color-danger: var(--lad-palette-red-400);
-  --lad-color-danger-soft: var(--lad-palette-amber-100);
-  --lad-color-reward: var(--lad-palette-amber-450);
-  --lad-color-reward-strong: var(--lad-palette-amber-700);
-  --lad-color-reward-soft: var(--lad-palette-amber-100);
-  --lad-color-bonus: var(--lad-palette-violet-400);
-  --lad-color-bonus-soft: var(--lad-palette-background);
 
-  --lad-border-subtle: color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
-  --lad-border-info: color-mix(in srgb, var(--lad-palette-blue) 20%, transparent);
-  --lad-border-success: color-mix(in srgb, var(--lad-palette-mint) 30%, transparent);
-  --lad-border-warning: color-mix(in srgb, var(--lad-palette-amber-450) 30%, transparent);
-  --lad-shadow-soft: 0 10px 24px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
-  --lad-shadow-dialog: 0 28px 70px color-mix(in srgb, var(--lad-palette-muted-700) 20%, transparent);
-  --lad-shadow-raised-success: color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
-  --lad-shadow-raised-info: color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent);
-  --lad-shadow-raised-warning: color-mix(in srgb, var(--lad-palette-amber-550) 12%, transparent);
-  --lad-gradient-surface: linear-gradient(145deg, var(--lad-surface), var(--lad-palette-background));
-  --lad-gradient-info: linear-gradient(145deg, var(--lad-palette-background), var(--lad-palette-background));
-  --lad-gradient-success: linear-gradient(145deg, var(--lad-palette-background), var(--lad-palette-surface));
-  --lad-gradient-reward: linear-gradient(145deg, var(--lad-palette-surface), var(--lad-palette-background));
-  --lad-gradient-bonus: linear-gradient(145deg, var(--lad-palette-white), var(--lad-palette-background));
+  --lad-color-reward-soft: var(--lad-palette-amber-100);
+  --lad-color-reward-pale: var(--lad-palette-amber-150);
+  --lad-color-reward-muted: var(--lad-palette-amber-200);
+  --lad-color-reward-highlight: var(--lad-palette-amber-250);
+  --lad-color-reward: var(--lad-palette-yellow);
+  --lad-color-reward-border: var(--lad-palette-amber-450);
+  --lad-color-reward-accent: var(--lad-palette-amber-500);
+  --lad-color-reward-shadow: var(--lad-palette-amber-550);
+  --lad-color-reward-deep: var(--lad-palette-amber-600);
+  --lad-color-reward-ink: var(--lad-palette-amber-650);
+  --lad-color-reward-strong: var(--lad-palette-amber-700);
+
+  --lad-color-danger-pale: var(--lad-palette-red-100);
+  --lad-color-danger-soft: var(--lad-palette-red-300);
+  --lad-color-danger: var(--lad-palette-red-400);
+  --lad-color-danger-muted: var(--lad-palette-red-500);
+  --lad-color-danger-strong: var(--lad-palette-red-600);
+
+  --lad-color-bonus-soft: var(--lad-palette-purple-200);
+  --lad-color-bonus-highlight: var(--lad-palette-purple-350);
+  --lad-color-bonus: var(--lad-palette-violet-400);
+  --lad-color-bonus-muted: var(--lad-palette-violet-500);
+  --lad-color-bonus-strong: var(--lad-palette-violet-650);
+  --lad-color-bonus-deep: var(--lad-palette-violet-850);
+  --lad-color-bonus-info: var(--lad-palette-indigo-350);
+  --lad-color-bonus-info-strong: var(--lad-palette-indigo-650);
+  --lad-color-bonus-info-deep: var(--lad-palette-indigo-750);
+
+  --lad-color-accent-warm-soft: var(--lad-palette-orange-350);
+  --lad-color-accent-warm: var(--lad-palette-orange-400);
+  --lad-color-accent-warm-muted: var(--lad-palette-orange-400-2);
+  --lad-color-accent-warm-supporting: var(--lad-palette-orange-500);
+  --lad-color-accent-warm-strong: var(--lad-palette-orange-600);
+  --lad-color-accent-warm-deep: var(--lad-palette-orange-650);
+  --lad-color-accent-warm-ink: var(--lad-palette-orange-750);
+  --lad-color-accent-coral: var(--lad-palette-coral);
+  --lad-color-accent-rose-soft: var(--lad-palette-rose-200);
+  --lad-color-accent-rose: var(--lad-palette-rose-250);
+  --lad-color-accent-rose-strong: var(--lad-palette-rose-300);
+  --lad-color-accent-pink: var(--lad-palette-pink-300);
+  --lad-color-accent-pink-strong: var(--lad-palette-pink-650);
+  --lad-color-nature-soft: var(--lad-palette-green-250);
+  --lad-color-nature: var(--lad-palette-green-500);
+  --lad-color-nature-strong: var(--lad-palette-green-700);
+
+  /* Stable compatibility aliases for established component mixins. */
+  --lad-mint: var(--lad-color-primary);
+  --lad-mint-dark: var(--lad-color-primary-strong);
+  --lad-blue: var(--lad-color-info);
+  --lad-blue-dark: var(--lad-color-info-strong);
+  --lad-yellow: var(--lad-color-reward);
+  --lad-coral: var(--lad-color-accent-coral);
+  --lad-border: var(--lad-color-primary-soft);
+  --lad-border-on-accent: var(--lad-palette-white);
+  --lad-shadow: color-mix(in srgb, var(--lad-text) 12%, transparent);
+
+  /* Semantic surface and state palette. Illustration-only colours stay local. */
+  --lad-color-success: var(--lad-color-primary-strong);
+  --lad-color-success-strong: var(--lad-color-primary-deep);
+  --lad-color-success-soft: var(--lad-surface-soft);
+  --lad-color-warning: var(--lad-color-reward-border);
+  --lad-color-warning-strong: var(--lad-color-reward-strong);
+  --lad-color-warning-soft: var(--lad-color-reward-soft);
+
+  --lad-border-subtle: color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
+  --lad-border-info: color-mix(in srgb, var(--lad-color-info) 20%, transparent);
+  --lad-border-success: color-mix(in srgb, var(--lad-color-primary) 30%, transparent);
+  --lad-border-warning: color-mix(in srgb, var(--lad-color-reward-border) 30%, transparent);
+  --lad-shadow-soft: 0 0.625rem 1.5rem color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
+  --lad-shadow-dialog: 0 1.75rem 4.375rem color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
+  --lad-shadow-raised-success: color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
+  --lad-shadow-raised-info: color-mix(in srgb, var(--lad-color-info-strong) 12%, transparent);
+  --lad-shadow-raised-warning: color-mix(in srgb, var(--lad-color-reward-shadow) 12%, transparent);
+  --lad-gradient-surface: linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft));
+  --lad-gradient-info: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface-soft));
+  --lad-gradient-success: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface));
+  --lad-gradient-reward: linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft));
+  --lad-gradient-bonus: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
+
+  /* Persistent product-area tones shared by navigation and branded surfaces. */
+  --lad-tone-world-accent: var(--lad-color-info-muted);
+  --lad-tone-world-tint: var(--lad-color-info-highlight);
+  --lad-tone-world-companion: var(--lad-color-primary-soft);
+  --lad-tone-world-lift: var(--lad-color-info-deep);
+  --lad-tone-contributions-accent: var(--lad-color-nature);
+  --lad-tone-contributions-tint: var(--lad-color-nature-soft);
+  --lad-tone-contributions-companion: var(--lad-color-reward-soft);
+  --lad-tone-contributions-lift: var(--lad-color-nature-strong);
+  --lad-tone-wishes-accent: var(--lad-color-info);
+  --lad-tone-wishes-tint: var(--lad-color-info-soft);
+  --lad-tone-wishes-companion: var(--lad-color-bonus-soft);
+  --lad-tone-wishes-lift: var(--lad-color-info-strong);
+  --lad-tone-shop-accent: var(--lad-color-reward-border);
+  --lad-tone-shop-tint: var(--lad-color-reward-soft);
+  --lad-tone-shop-companion: var(--lad-color-accent-warm-soft);
+  --lad-tone-shop-lift: var(--lad-color-reward-shadow);
+  --lad-tone-family-accent: color-mix(in srgb, var(--lad-color-bonus) 68%, var(--lad-color-info-muted));
+  --lad-tone-family-tint: var(--lad-color-bonus-soft);
+  --lad-tone-family-companion: var(--lad-color-info-soft);
+  --lad-tone-family-lift: var(--lad-color-bonus-muted);
+  --lad-tone-profile-accent: color-mix(in srgb, var(--lad-color-accent-pink) 62%, var(--lad-color-accent-warm-soft));
+  --lad-tone-profile-tint: var(--lad-color-accent-rose-soft);
+  --lad-tone-profile-companion: var(--lad-color-reward-soft);
+  --lad-tone-profile-lift: var(--lad-color-accent-rose);
+  --lad-tone-streak-accent: var(--lad-color-accent-warm);
+  --lad-tone-streak-tint: var(--lad-color-accent-warm-soft);
+  --lad-tone-streak-companion: var(--lad-color-reward-soft);
+  --lad-tone-streak-lift: var(--lad-color-accent-warm-strong);
+  --lad-tone-balance-accent: var(--lad-color-reward-accent);
+  --lad-tone-balance-tint: var(--lad-color-reward-pale);
+  --lad-tone-balance-companion: var(--lad-color-primary-soft);
+  --lad-tone-balance-lift: var(--lad-color-reward-strong);
 }

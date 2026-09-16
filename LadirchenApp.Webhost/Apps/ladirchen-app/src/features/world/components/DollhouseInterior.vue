@@ -1,9 +1,10 @@
 <template>
   <div
     class="dollhouse-layout"
-    :class="[{ compact, editable, 'single-zone': isSingleZone, 'contextual-zone': isContextualZone, 'is-dragging-furniture': draggingFurniture }, `room-count-${visibleZoneIds.length}`, energyClass]"
+    :class="[{ compact, editable, 'single-zone': isSingleZone, 'contextual-zone': isContextualZone, 'has-pixi-background': activeSceneDesign, 'is-dragging-furniture': draggingFurniture }, `room-count-${visibleZoneIds.length}`, energyClass]"
     :style="contextGridStyle"
   >
+    <PixiRoomScene v-if="activeSceneDesign" :key="`${activeSceneDesign.id}-${resolveHouseEnergyVisualLevel(energy)}`" class="pixi-scene-background" :design="activeSceneDesign" :energy="energy" />
     <section
       v-for="room in displayedRooms"
       :key="room.id"
@@ -17,24 +18,20 @@
       <div class="room-window" aria-hidden="true"><i /><i /><i /><i /></div>
       <div class="room-baseboard" aria-hidden="true" />
       <div class="room-floor" aria-hidden="true" />
+      <div class="room-partition" aria-hidden="true" />
       <div v-if="energy < 70" class="room-wear" aria-hidden="true"><i v-for="mark in 6" :key="mark" /></div>
       <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true" />
       <div v-if="room.id === 'children-room'" class="room-detail bunting" aria-hidden="true"><i v-for="index in 5" :key="index" /></div>
       <div v-if="room.id === 'creative-room'" class="room-detail paint-dots" aria-hidden="true"><i v-for="index in 6" :key="index" /></div>
       <div v-if="room.id === 'living-room'" class="ladi-perch" :class="{ occupied: isLadiOnPerch }" aria-hidden="true">
-        <svg preserveAspectRatio="none" viewBox="0 0 150 120">
-          <path class="perch-rope" d="M38 0q-2 54 7 101M112 0q2 54-7 101" />
-          <path class="perch-branch" d="M19 105q37-10 67 0 24 7 47-3" />
-          <path class="perch-twig" d="M34 103 23 89m91 15 13-14M82 104l9-16" />
-          <path class="perch-leaf" d="M19 88q15-9 17 5-13 8-17-5Zm105 0q-13-10-17 4 11 10 17-4Zm-31-4q9-12 17-1-5 12-17 1Z" />
-        </svg>
+        <img :src="WORLD_DECORATION_SPRITE_URLS['ladi-perch']" alt="">
       </div>
       <HouseLayoutEntity
         v-for="placement in visiblePlacements(room.id)"
         :key="placement.id"
         :accessory="accessoryFor(placement)"
         :drag-offset="dragOffset(placement.id)"
-        :editable="editable || (storageOpen && placement.entityType === 'furniture')"
+        :editable="accessoryFor(placement)?.mobility !== 'fixed' && (editable || (storageOpen && placement.entityType === 'furniture'))"
         :member="memberFor(placement)"
         :pet="petFor(placement)"
         :perched="ladiIsPerched(placement)"
@@ -61,13 +58,12 @@
       <header v-if="showRoomLabels"><span>🌿</span><strong>{{ t('catalog.rooms.garden') }}</strong></header>
       <div class="garden-sky" aria-hidden="true"><i /></div>
       <div class="garden-mountains" aria-hidden="true"><i /><i /><i /></div>
-      <div class="garden-hills" aria-hidden="true"><i /><i /></div>
-      <div class="garden-hedge" aria-hidden="true" />
-      <div class="garden-lawn" aria-hidden="true" />
+      <div class="garden-trellis" aria-hidden="true"><i v-for="index in 6" :key="index" /></div>
+      <div class="garden-plant-shelf" aria-hidden="true"><span v-for="index in 3" :key="index"><i /></span></div>
+      <div class="garden-patio" aria-hidden="true" />
       <div v-if="showsTerraceTransition" class="terrace-transition" :class="{ 'opens-to-garden': selectedZoneId === 'garden' }" aria-hidden="true">
         <span class="terrace-frame"><i class="terrace-glass terrace-glass--fixed" /><i class="terrace-glass terrace-glass--door" /><b class="terrace-handle" /></span>
         <span class="terrace-threshold" />
-        <span class="terrace-planter"><i /><i /><i /></span>
       </div>
       <div class="garden-path" aria-hidden="true"><i /><i /><i /><i /></div>
       <div class="garden-flower-bed" aria-hidden="true"><i /><i /><i /><i /><i /></div>
@@ -76,7 +72,7 @@
         :key="placement.id"
         :accessory="accessoryFor(placement)"
         :drag-offset="dragOffset(placement.id)"
-        :editable="editable || (storageOpen && placement.entityType === 'furniture')"
+        :editable="accessoryFor(placement)?.mobility !== 'fixed' && (editable || (storageOpen && placement.entityType === 'furniture'))"
         :member="memberFor(placement)"
         :pet="petFor(placement)"
         :perched="false"
@@ -97,30 +93,23 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
+import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import { isHouseZoneId } from '@/application/contracts/family-aggregate-validation';
-import type { HouseRoomDefinition, HouseZoneId } from '@/domain/house';
-import type { FamilyMember, FamilyMemberId, FamilyPet, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId } from '@/domain/types';
+import { furnitureVisualDefinitionFor, resolveHouseEnergyVisualLevel } from '@/domain/house';
+import type { HouseAccessory, HouseLayoutPlacement, HouseRoomDefinition, HouseZoneId, RoomDesignDefinition } from '@/domain/house';
+import type { FamilyMember, FamilyPet } from '@/domain/family/types';
+import type { FamilyMemberId, HouseLayoutPlacementId } from '@/domain/shared/identifiers';
+import { WORLD_DECORATION_SPRITE_URLS } from '@/shared/assets/world-sprite-assets';
 
 import HouseLayoutEntity from './HouseLayoutEntity.vue';
+import { useDollhouseDrag } from '../composables/use-dollhouse-drag';
+
+const PixiRoomScene = defineAsyncComponent(() => import('./PixiRoomScene.vue'));
 
 const { t } = useI18n();
-
-interface DragPayload {
-  captureTarget: HTMLElement;
-  lastX: number;
-  lastY: number;
-  placementId: HouseLayoutPlacementId;
-  pointerId: number;
-  startX: number;
-  startY: number;
-  offsetX: number;
-  offsetY: number;
-}
 
 const props = withDefaults(defineProps<{
   accessories: HouseAccessory[];
@@ -132,6 +121,7 @@ const props = withDefaults(defineProps<{
   members: FamilyMember[];
   pets: FamilyPet[];
   placements: HouseLayoutPlacement[];
+  roomDesigns: ReadonlyArray<RoomDesignDefinition>;
   rooms: ReadonlyArray<HouseRoomDefinition>;
   score: number;
   selectedZoneId?: HouseZoneId | 'all';
@@ -147,7 +137,6 @@ const emit = defineEmits<{
   store: [accessoryId: HouseAccessory['id']];
 }>();
 
-const drag = ref<DragPayload | null>(null);
 const ladiMotivation = ref('');
 const perchMessage = ref('');
 let motivationTimer: number | undefined;
@@ -180,6 +169,9 @@ const showsTerraceTransition = computed(() => gardenIsVisible.value && displayed
 const visibleZoneIds = computed<HouseZoneId[]>(() => orderedZoneIds.value.filter((zoneId) => contextualZoneIds.value.includes(zoneId)));
 const isContextualZone = computed(() => props.contextualNeighbors && props.selectedZoneId !== 'all' && visibleZoneIds.value.length > 1);
 const isSingleZone = computed(() => props.selectedZoneId !== 'all' && !isContextualZone.value);
+const activeSceneDesign = computed(() => props.selectedZoneId === 'all'
+  ? undefined
+  : props.roomDesigns.find(design => design.zoneId === props.selectedZoneId));
 const contextGridStyle = computed(() => {
   if (!isContextualZone.value) return undefined;
   const selectedZoneId = props.selectedZoneId;
@@ -194,7 +186,12 @@ const selectPreviewZone = (zoneId: HouseZoneId) => {
 };
 const visiblePlacements = (zoneId: HouseZoneId) => props.placements
   .filter((placement) => placement.zoneId === zoneId)
+  .filter(() => !isPreviewZone(zoneId))
   .filter((placement) => placement.entityType !== 'furniture' || Boolean(accessoryFor(placement)?.owned && accessoryFor(placement)?.equipped))
+  .filter((placement) => {
+    const visual = accessoryFor(placement)?.visual;
+    return !visual || furnitureVisualDefinitionFor(visual).renderInLayout !== false;
+  })
   .sort((left, right) => left.y - right.y);
 const accessoryFor = (placement: HouseLayoutPlacement) => placement.entityType === 'furniture'
   ? props.accessories.find((accessory) => accessory.id === placement.entityId)
@@ -203,16 +200,7 @@ const memberFor = (placement: HouseLayoutPlacement): (FamilyMember & { resolvedA
   if (placement.entityType !== 'member') return undefined;
   const member = props.members.find((item) => item.id === placement.entityId);
   if (!member) return undefined;
-  const index = props.members.filter((item) => item.role === member.role).findIndex((item) => item.id === member.id);
-  if (member.appearance) return { ...member, resolvedAppearance: member.appearance };
-  if (member.role === 'guardian') return { ...member, resolvedAppearance: createGuardianAvatarAppearance(index % 2 === 0 ? 'adult' : 'grandpa') };
-  const fallback = createDefaultAvatarAppearance();
-  const variants: ReadonlyArray<Partial<AvatarAppearance>> = [
-    { hair: 'ponytail', outfitColorId: 'outfit-blue' },
-    { hair: 'short', hairColorId: 'hair-black', outfit: 'overalls', outfitColorId: 'outfit-gold' },
-    { hair: 'curls', hairColorId: 'hair-brown', outfit: 'space', outfitColorId: 'outfit-ocean' },
-  ];
-  return { ...member, resolvedAppearance: { ...fallback, ...(variants[index % variants.length] ?? {}) } };
+  return { ...member, resolvedAppearance: resolveFamilyMemberAvatarAppearance(member, props.members) };
 };
 const petFor = (placement: HouseLayoutPlacement): FamilyPet | undefined => placement.entityType === 'pet'
   ? props.pets.find((pet) => pet.id === placement.entityId)
@@ -223,124 +211,9 @@ const isLadiOnPerch = computed(() => ladiPlacement.value?.zoneId === 'living-roo
   && Math.abs(ladiPlacement.value.y - 30) <= 8);
 const ladiIsPerched = (placement: HouseLayoutPlacement) => placement.entityType === 'ladi' && isLadiOnPerch.value;
 const ladiSpeech = computed(() => ladiMotivation.value || perchMessage.value);
-const draggingFurniture = computed(() => {
-  const placement = props.placements.find(item => item.id === drag.value?.placementId);
-  return placement?.entityType === 'furniture';
-});
 const energyClass = computed(() => props.energy < 30 ? 'energy-critical' : props.energy < 55 ? 'energy-low' : props.energy < 70 ? 'energy-tired' : 'energy-bright');
-const dragOffset = (placementId: HouseLayoutPlacementId) => drag.value?.placementId === placementId
-  ? { x: drag.value.offsetX, y: drag.value.offsetY }
-  : undefined;
-const startDrag = (event: PointerEvent, placement: HouseLayoutPlacement) => {
-  if (!props.editable && !(props.storageOpen && placement.entityType === 'furniture')) return;
-  event.preventDefault();
-  event.stopPropagation();
-  const target = event.currentTarget;
-  if (!(target instanceof HTMLElement)) {return;}
-  stopDragTracking();
-  drag.value = {
-    captureTarget: target,
-    lastX: event.clientX,
-    lastY: event.clientY,
-    placementId: placement.id,
-    pointerId: event.pointerId,
-    startX: event.clientX,
-    startY: event.clientY,
-    offsetX: 0,
-    offsetY: 0,
-  };
-  emit('drag-state', placement.entityType);
-  try {
-    target.setPointerCapture(event.pointerId);
-  } catch {
-    // Global listeners below still keep mouse and touch drags reliable.
-  }
-  window.addEventListener('pointermove', trackDrag);
-  window.addEventListener('pointerup', finishDrag);
-  window.addEventListener('pointercancel', cancelDrag);
-  window.addEventListener('blur', cancelDrag);
-};
-const trackDrag = (event: PointerEvent) => {
-  if (!drag.value || event.pointerId !== drag.value.pointerId) return;
-  event.preventDefault();
-  drag.value.lastX = event.clientX;
-  drag.value.lastY = event.clientY;
-  drag.value.offsetX = event.clientX - drag.value.startX;
-  drag.value.offsetY = event.clientY - drag.value.startY;
-};
-const commitDrag = (clientX: number, clientY: number) => {
-  const activeDrag = drag.value;
-  if (!activeDrag) return;
-  const elementsAtDropPoint = document.elementsFromPoint(clientX, clientY);
-  const placement = props.placements.find((item) => item.id === activeDrag.placementId);
-  const isOverStorage = elementsAtDropPoint.some((element) => element.closest('[data-furniture-storage]'));
-  if (isOverStorage) {
-    try {
-      if (placement?.entityType === 'furniture') emit('store', placement.entityId);
-      else emit('reset', activeDrag.placementId);
-    } finally {
-      drag.value = null;
-      emit('drag-state', null);
-      stopDragTracking(activeDrag);
-    }
-    return;
-  }
-  const zone = elementsAtDropPoint
-    .map((element) => element.closest<HTMLElement>('[data-zone-id]'))
-    .find((element) => isHouseZoneId(element?.dataset.zoneId) && unlockedZones.value.includes(element.dataset.zoneId));
-  try {
-    const zoneId = zone?.dataset.zoneId;
-    if (!zone || !isHouseZoneId(zoneId)) {
-      emit('reset', activeDrag.placementId);
-      return;
-    }
-    const bounds = zone.getBoundingClientRect();
-    const isFloorEntity = placement?.entityType === 'member' || placement?.entityType === 'pet' || placement?.entityType === 'ladi';
-    const accessory = placement ? accessoryFor(placement) : undefined;
-    const isWallDecoration = accessory?.visual === 'wall-art' || accessory?.visual === 'bat-garland';
-    const rawX = ((clientX - bounds.left) / bounds.width) * 100;
-    const rawY = ((clientY - bounds.top) / bounds.height) * 100;
-    const snapsToLadiPerch = placement?.entityType === 'ladi'
-      && zoneId === 'living-room'
-      && rawX >= 6 && rawX <= 31
-      && rawY >= 12 && rawY <= 47;
-    const horizontalInset = isFloorEntity ? 7 : 3;
-    const minimumY = isFloorEntity && !snapsToLadiPerch ? 62 : isWallDecoration ? 12 : 52;
-    const maximumY = isWallDecoration ? 46 : 94;
-    const x = snapsToLadiPerch ? 18 : Math.min(100 - horizontalInset, Math.max(horizontalInset, rawX));
-    const y = snapsToLadiPerch ? 30 : Math.min(maximumY, Math.max(minimumY, rawY));
-    emit('move', activeDrag.placementId, zoneId, x, y);
-  } finally {
-    drag.value = null;
-    emit('drag-state', null);
-    stopDragTracking(activeDrag);
-  }
-};
-const finishDrag = (event: PointerEvent) => {
-  if (!drag.value || event.pointerId !== drag.value.pointerId) return;
-  event.preventDefault();
-  commitDrag(event.clientX, event.clientY);
-};
-const finishDragAtLastPosition = (event: PointerEvent) => {
-  if (!drag.value || event.pointerId !== drag.value.pointerId) return;
-  commitDrag(drag.value.lastX, drag.value.lastY);
-};
-const stopDragTracking = (activeDrag = drag.value) => {
-  window.removeEventListener('pointermove', trackDrag);
-  window.removeEventListener('pointerup', finishDrag);
-  window.removeEventListener('pointercancel', cancelDrag);
-  window.removeEventListener('blur', cancelDrag);
-  if (activeDrag?.captureTarget.hasPointerCapture(activeDrag.pointerId)) {
-    activeDrag.captureTarget.releasePointerCapture(activeDrag.pointerId);
-  }
-};
-const cancelDrag = () => {
-  const activeDrag = drag.value;
-  drag.value = null;
-  emit('drag-state', null);
-  stopDragTracking(activeDrag);
-  if (activeDrag) emit('reset', activeDrag.placementId);
-};
+const { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag } =
+  useDollhouseDrag(props, emit, unlockedZones, accessoryFor);
 const motivateLadi = () => {
   ladiMotivation.value = props.score < 2.5
     ? t('world.interior.motivation.wakeUp')
@@ -366,7 +239,6 @@ const schedulePerchMessage = () => {
 };
 onMounted(schedulePerchMessage);
 onUnmounted(() => {
-  stopDragTracking();
   if (motivationTimer !== undefined) window.clearTimeout(motivationTimer);
   if (perchMessageTimer !== undefined) window.clearTimeout(perchMessageTimer);
   if (perchScheduleTimer !== undefined) window.clearTimeout(perchScheduleTimer);
@@ -405,7 +277,7 @@ onUnmounted(() => {
   min-height: 390px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--room-wall) 88%, white) 0 48%,
+    color-mix(in srgb, var(--room-wall) 88%, var(--lad-palette-white)) 0 48%,
     var(--room-floor) 48% 100%
   );
 }
@@ -445,12 +317,40 @@ onUnmounted(() => {
 .dollhouse-layout.contextual-zone {
   grid-template-columns: var(--context-columns);
   gap: 0;
-  padding: 0;
+  @apply pa-0;
   background: transparent;
+}
+.pixi-scene-background {
+  @apply position-absolute;
+  inset: 0;
+  z-index: 0;
+}
+.dollhouse-layout.has-pixi-background {
+  background: var(--lad-palette-background);
+}
+.dollhouse-layout.has-pixi-background .dollhouse-room {
+  z-index: 1;
+  background: transparent;
+}
+.dollhouse-layout.has-pixi-background .room-window,
+.dollhouse-layout.has-pixi-background .room-baseboard,
+.dollhouse-layout.has-pixi-background .room-floor,
+.dollhouse-layout.has-pixi-background .room-partition,
+.dollhouse-layout.has-pixi-background .room-wear,
+.dollhouse-layout.has-pixi-background .room-detail,
+.dollhouse-layout.has-pixi-background .garden-sky,
+.dollhouse-layout.has-pixi-background .garden-mountains,
+.dollhouse-layout.has-pixi-background .garden-trellis,
+.dollhouse-layout.has-pixi-background .garden-plant-shelf,
+.dollhouse-layout.has-pixi-background .garden-patio,
+.dollhouse-layout.has-pixi-background .terrace-transition,
+.dollhouse-layout.has-pixi-background .garden-path,
+.dollhouse-layout.has-pixi-background .garden-flower-bed {
+  @apply d-none;
 }
 .dollhouse-layout.is-dragging-furniture,
 .dollhouse-layout.is-dragging-furniture .dollhouse-room {
-  overflow: visible;
+  @apply overflow-visible;
 }
 .dollhouse-layout.contextual-zone .dollhouse-room {
   grid-column: auto;
@@ -459,7 +359,7 @@ onUnmounted(() => {
   border-radius: 0;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--room-wall) 88%, white) 0 45%,
+    color-mix(in srgb, var(--room-wall) 88%, var(--lad-palette-white)) 0 45%,
     var(--room-floor) 45% 100%
   );
   box-shadow: none;
@@ -472,6 +372,43 @@ onUnmounted(() => {
 }
 .dollhouse-layout.contextual-zone .dollhouse-room + .dollhouse-room {
   border-left-width: 5px;
+}
+.room-partition {
+  @apply d-none;
+}
+.dollhouse-layout.contextual-zone:not(.has-pixi-background) .room-partition {
+  width: 0.5rem;
+  height: 54%;
+  @apply d-block;
+  @apply position-absolute;
+  top: 0;
+  right: -0.25rem;
+  z-index: 30;
+  border-radius: 0 0 0.3rem 0.3rem;
+  background: linear-gradient(
+    90deg,
+    var(--lad-palette-orange-650),
+    var(--lad-palette-amber-150) 35% 68%,
+    var(--lad-palette-orange-650)
+  );
+  box-shadow:
+    -0.2rem 0 0
+      color-mix(in srgb, var(--lad-palette-orange-750) 10%, transparent),
+    0.2rem 0 0 color-mix(in srgb, var(--lad-palette-white) 35%, transparent);
+  pointer-events: none;
+}
+.dollhouse-layout.contextual-zone:not(.has-pixi-background)
+  .room-partition::after {
+  width: 1rem;
+  height: 0.45rem;
+  content: "";
+  @apply position-absolute;
+  right: -0.25rem;
+  bottom: -0.2rem;
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-palette-orange-650);
+  box-shadow: 0 0.18rem 0
+    color-mix(in srgb, var(--lad-palette-orange-750) 14%, transparent);
 }
 .dollhouse-layout.contextual-zone .dollhouse-room.is-focused {
   z-index: 2;
@@ -519,7 +456,7 @@ onUnmounted(() => {
   .dollhouse-room.is-focused
   .room-window::after {
   content: "";
-  position: absolute;
+  @apply position-absolute;
   right: -13px;
   bottom: -11px;
   left: -13px;
@@ -535,7 +472,7 @@ onUnmounted(() => {
 }
 .dollhouse-layout.contextual-zone .dollhouse-room.is-peek::before {
   content: "";
-  position: absolute;
+  @apply position-absolute;
   inset: 0;
   z-index: 35;
   background: linear-gradient(
@@ -591,7 +528,7 @@ onUnmounted(() => {
   border-radius: 17px 17px 10px 10px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--room-wall) 88%, white) 0 64%,
+    color-mix(in srgb, var(--room-wall) 88%, var(--lad-palette-white)) 0 64%,
     var(--room-floor) 64% 100%
   );
   box-shadow: inset 0 2px 0
@@ -753,22 +690,22 @@ onUnmounted(() => {
 .energy-critical :deep(.entity-pet) {
   filter: saturate(0.58) brightness(0.88);
 }
-.energy-low .terrace-planter i,
-.energy-low .garden-flower-bed i {
+.energy-low .garden-flower-bed i,
+.energy-low .garden-plant-shelf i {
   transform: translateY(5px) rotate(18deg);
   filter: saturate(0.65);
 }
-.energy-critical .terrace-planter i,
-.energy-critical .garden-flower-bed i {
+.energy-critical .garden-flower-bed i,
+.energy-critical .garden-plant-shelf i {
   transform: translateY(9px) rotate(38deg);
   filter: saturate(0.35) brightness(0.8);
 }
-.energy-low .garden-lawn {
-  filter: saturate(0.78);
+.energy-low .garden-patio {
+  filter: saturate(0.8);
 }
-.energy-critical .garden-lawn,
-.energy-critical .garden-hedge {
-  filter: saturate(0.5) brightness(0.86);
+.energy-critical .garden-patio,
+.energy-critical .garden-trellis {
+  filter: saturate(0.55) brightness(0.9);
 }
 .energy-low :deep(.plant-leaves),
 .energy-low :deep(.flower-heads) {
@@ -839,8 +776,8 @@ onUnmounted(() => {
   background: var(--lad-palette-yellow);
 }
 .ladi-perch {
-  width: 116px;
-  height: 43%;
+  width: 126px;
+  height: 46%;
   @apply position-absolute;
   top: 0;
   left: 18%;
@@ -848,34 +785,14 @@ onUnmounted(() => {
   transform: translateX(-50%);
   pointer-events: none;
 }
-.ladi-perch svg {
+.ladi-perch img {
   width: 100%;
   height: 100%;
-  overflow: visible;
-}
-.perch-rope {
-  fill: none;
-  stroke: var(--lad-palette-muted-600);
-  stroke-dasharray: 3 3;
-  stroke-linecap: round;
-  stroke-width: 2.5;
-}
-.perch-branch,
-.perch-twig {
-  fill: none;
-  stroke: var(--lad-palette-orange-650);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 8;
-}
-.perch-twig {
-  stroke-width: 4;
-}
-.perch-leaf {
-  fill: var(--lad-palette-mint-450);
-  stroke: var(--lad-palette-muted-600-2);
-  stroke-linejoin: round;
-  stroke-width: 2;
+  @apply d-block;
+  object-fit: fill;
+  filter: drop-shadow(
+    0 4px 3px color-mix(in srgb, var(--lad-palette-orange-750) 20%, transparent)
+  );
 }
 .ladi-perch.occupied {
   animation: perch-sway 4.8s ease-in-out infinite;
@@ -885,14 +802,14 @@ onUnmounted(() => {
   min-height: 235px;
   border: 0;
   background: linear-gradient(
-    var(--lad-palette-background) 0 54%,
-    var(--lad-palette-green-250) 54% 100%
+    var(--lad-palette-background) 0 57%,
+    var(--lad-palette-surface) 57% 100%
   );
   box-shadow: none;
   isolation: isolate;
 }
 .garden-zone::after {
-  display: none;
+  @apply d-none;
 }
 .garden-sky {
   @apply position-absolute inset-0;
@@ -1000,79 +917,148 @@ onUnmounted(() => {
   right: -4%;
   opacity: 0.9;
 }
-.garden-hills {
-  height: 31%;
-  @apply position-absolute;
-  right: -12%;
-  bottom: 34%;
-  left: -12%;
+.garden-trellis {
+  width: 43%;
+  height: 38%;
+  @apply position-absolute overflow-hidden;
+  top: 18%;
+  right: 5%;
   z-index: 0;
-  transform-origin: center bottom;
-  animation: garden-hill-drift 12s ease-in-out infinite alternate;
-}
-.garden-hills i {
-  width: 68%;
-  height: 100%;
-  @apply position-absolute;
-  bottom: 0;
-  border-radius: 50% 50% 0 0 / 76% 76% 0 0;
-  background: var(--lad-palette-green-250);
-}
-.garden-hills i:first-child {
-  left: 0;
-}
-.garden-hills i:last-child {
-  right: 0;
-  background: var(--lad-palette-mint-450);
-  transform: translateY(18%);
-}
-.garden-hedge {
-  height: 16%;
-  @apply position-absolute;
-  left: -2%;
-  right: -2%;
-  bottom: 35%;
-  z-index: 0;
+  border: 0.25rem solid var(--lad-palette-orange-500);
+  border-radius: 0.75rem;
   background:
-    radial-gradient(
-        circle at 15px 2px,
-        var(--lad-palette-mint-450) 14px,
-        transparent 15px
-      )
-      0 0/31px 28px repeat-x,
-    linear-gradient(transparent 22px, var(--lad-palette-mint-450) 23px);
-  opacity: 0.82;
-}
-.garden-lawn {
-  height: 43%;
-  @apply position-absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-  background:
-    radial-gradient(
-      ellipse at 22% 4%,
-      color-mix(in srgb, var(--lad-palette-white) 20%, transparent) 0 15%,
-      transparent 16%
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 0.6875rem,
+      color-mix(in srgb, var(--lad-palette-orange-500) 45%, transparent) 0.75rem
+        0.875rem
     ),
     repeating-linear-gradient(
-      168deg,
-      transparent 0 54px,
-      color-mix(in srgb, var(--lad-palette-muted-600-2) 8%, transparent) 55px
-        57px
+      -45deg,
+      transparent 0 0.6875rem,
+      color-mix(in srgb, var(--lad-palette-orange-500) 45%, transparent) 0.75rem
+        0.875rem
     ),
-    linear-gradient(var(--lad-palette-green-250), var(--lad-palette-green-250));
+    color-mix(in srgb, var(--lad-palette-background) 70%, transparent);
+  box-shadow: 0 0.25rem 0
+    color-mix(in srgb, var(--lad-palette-orange-750) 10%, transparent);
+}
+.garden-trellis i {
+  width: 1rem;
+  height: 0.625rem;
+  @apply position-absolute;
+  border-radius: 70% 30% 65% 35%;
+  background: var(--lad-palette-mint-450);
+  transform: rotate(-25deg);
+}
+.garden-trellis i:nth-child(1) {
+  top: 10%;
+  left: 8%;
+}
+.garden-trellis i:nth-child(2) {
+  top: 31%;
+  left: 28%;
+  transform: rotate(20deg);
+}
+.garden-trellis i:nth-child(3) {
+  top: 9%;
+  right: 24%;
+}
+.garden-trellis i:nth-child(4) {
+  top: 50%;
+  right: 9%;
+  transform: rotate(28deg);
+}
+.garden-trellis i:nth-child(5) {
+  bottom: 8%;
+  left: 16%;
+}
+.garden-trellis i:nth-child(6) {
+  right: 36%;
+  bottom: 17%;
+  transform: rotate(16deg);
+}
+.garden-plant-shelf {
+  width: 38%;
+  height: 1.125rem;
+  @apply position-absolute d-flex align-end justify-space-around;
+  top: 47%;
+  right: 7%;
+  z-index: 1;
+  border: 0.1875rem solid var(--lad-palette-orange-650);
+  border-radius: 0.375rem;
+  background: var(--lad-palette-orange-400-2);
+  box-shadow: 0 0.375rem 0
+    color-mix(in srgb, var(--lad-palette-orange-750) 16%, transparent);
+}
+.garden-plant-shelf span {
+  width: 1.375rem;
+  height: 1rem;
+  @apply position-relative;
+  bottom: 0.5rem;
+  border: 0.125rem solid var(--lad-palette-orange-650);
+  border-radius: 0.25rem 0.25rem 0.5rem 0.5rem;
+  background: var(--lad-palette-amber-200);
+}
+.garden-plant-shelf i {
+  width: 1.5rem;
+  height: 1.75rem;
+  @apply position-absolute;
+  left: -0.1875rem;
+  bottom: 0.625rem;
+  background:
+    radial-gradient(
+      ellipse at 30% 62%,
+      var(--lad-palette-mint-450) 0 29%,
+      transparent 31%
+    ),
+    radial-gradient(
+      ellipse at 70% 58%,
+      var(--lad-palette-teal-400) 0 28%,
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 50% 25%,
+      var(--lad-palette-green-250) 0 31%,
+      transparent 33%
+    );
+  transform-origin: bottom center;
+}
+.garden-patio {
+  height: 48%;
+  @apply position-absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  border-top: 0.1875rem solid
+    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+  background:
+    linear-gradient(
+        32deg,
+        transparent 47%,
+        color-mix(in srgb, var(--lad-palette-teal-600) 10%, transparent) 48% 51%,
+        transparent 52%
+      )
+      0 0/3.5rem 2.25rem,
+    linear-gradient(
+        -32deg,
+        transparent 47%,
+        color-mix(in srgb, var(--lad-palette-teal-600) 10%, transparent) 48% 51%,
+        transparent 52%
+      )
+      0 0/3.5rem 2.25rem,
+    linear-gradient(var(--lad-palette-background), var(--lad-palette-surface));
 }
 .garden-zone:has(.terrace-transition) {
-  overflow: visible;
+  @apply overflow-visible;
 }
 .terrace-transition {
-  width: 98px;
-  height: 178px;
+  width: 106px;
+  height: 184px;
   @apply position-absolute pointer-events-none;
-  left: -49px;
-  bottom: 5%;
+  left: -53px;
+  bottom: 4%;
   z-index: 34;
   filter: drop-shadow(
     0 7px 5px
@@ -1081,130 +1067,107 @@ onUnmounted(() => {
 }
 .terrace-frame {
   @apply position-absolute;
-  inset: 0 7px 27px;
-  border: 6px solid var(--lad-palette-amber-100);
-  border-bottom-width: 9px;
-  border-radius: 18px 18px 5px 5px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--lad-palette-blue-250) 70%, transparent),
-    color-mix(in srgb, var(--lad-palette-background) 90%, transparent)
-  );
+  inset: 0 7px 20px;
+  border: 5px solid var(--lad-palette-muted-600-2);
+  border-radius: 9px 9px 3px 3px;
+  background: var(--lad-palette-blue-150);
   box-shadow:
-    0 0 0 3px var(--lad-palette-orange-500),
+    0 0 0 3px var(--lad-palette-background),
+    0 0 0 5px color-mix(in srgb, var(--lad-palette-muted-700) 18%, transparent),
     inset 0 0 0 2px
       color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
-  perspective: 170px;
+  perspective: 190px;
 }
 .terrace-frame::before {
-  width: 5px;
+  width: 4px;
   content: "";
   @apply position-absolute;
   top: 0;
   bottom: 0;
   left: calc(50% - 2px);
   z-index: 2;
-  background: var(--lad-palette-amber-100);
+  background: var(--lad-palette-muted-600-2);
   box-shadow: 0 0 0 1px
-    color-mix(in srgb, var(--lad-palette-orange-600) 20%, transparent);
+    color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
 }
 .terrace-frame::after {
   height: 4px;
   content: "";
   @apply position-absolute;
   right: 0;
-  bottom: 43%;
+  bottom: 49%;
   left: 0;
   z-index: 2;
-  background: var(--lad-palette-amber-100);
+  background: var(--lad-palette-muted-600-2);
   box-shadow: 0 0 0 1px
-    color-mix(in srgb, var(--lad-palette-orange-600) 18%, transparent);
+    color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
 }
 .terrace-glass {
   @apply position-absolute;
   top: 3px;
   bottom: 3px;
-  width: calc(50% - 5px);
+  width: calc(50% - 4px);
+  border: 1px solid
+    color-mix(in srgb, var(--lad-palette-white) 70%, transparent);
   background:
     linear-gradient(
-      150deg,
-      color-mix(in srgb, var(--lad-palette-white) 60%, transparent) 0 24%,
-      transparent 25% 58%,
-      color-mix(in srgb, var(--lad-palette-blue-350) 18%, transparent) 59%
+      145deg,
+      color-mix(in srgb, var(--lad-palette-white) 72%, transparent) 0 17%,
+      transparent 18% 46%,
+      color-mix(in srgb, var(--lad-palette-blue-350) 20%, transparent) 47% 52%,
+      transparent 53%
     ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--lad-palette-blue-150) 70%, transparent),
-      color-mix(in srgb, var(--lad-palette-background) 60%, transparent)
+      color-mix(in srgb, var(--lad-palette-blue-150) 82%, transparent),
+      color-mix(in srgb, var(--lad-palette-surface) 70%, transparent)
     );
+  backdrop-filter: blur(1px);
 }
 .terrace-glass--fixed {
-  left: 3px;
+  left: 2px;
 }
 .terrace-glass--door {
-  right: 3px;
+  right: 2px;
   transform-origin: right center;
-  transform: rotateY(-20deg);
-  box-shadow: -4px 1px 4px
-    color-mix(in srgb, var(--lad-palette-muted-700) 12%, transparent);
+  transform: rotateY(-9deg);
+  box-shadow: -3px 1px 4px
+    color-mix(in srgb, var(--lad-palette-muted-700) 14%, transparent);
 }
 .opens-to-garden .terrace-glass--door {
-  transform: rotateY(-42deg);
+  transform: rotateY(-56deg);
+  box-shadow: -8px 2px 7px
+    color-mix(in srgb, var(--lad-palette-muted-700) 18%, transparent);
 }
 .terrace-handle {
   width: 4px;
-  height: 12px;
+  height: 15px;
   @apply position-absolute;
-  top: 49%;
-  right: 11px;
+  top: 48%;
+  right: 9px;
   z-index: 4;
   border-radius: var(--lad-radius-pill);
-  background: var(--lad-palette-orange-500);
-  box-shadow: 0 0 0 2px var(--lad-palette-amber-200);
+  background: var(--lad-palette-orange-650);
+  box-shadow:
+    0 0 0 2px var(--lad-palette-amber-200),
+    0 2px 2px color-mix(in srgb, var(--lad-palette-muted-700) 18%, transparent);
 }
 .terrace-threshold {
-  height: 25px;
+  height: 18px;
   @apply position-absolute;
-  right: -5px;
+  right: 0;
   bottom: 3px;
-  left: -5px;
-  border: 3px solid var(--lad-palette-orange-500);
-  border-radius: 48% 52% 9px 9px;
+  left: 0;
+  border: 3px solid var(--lad-palette-muted-600-2);
+  border-radius: 4px 4px 9px 9px;
   background: repeating-linear-gradient(
     90deg,
-    var(--lad-palette-orange-350) 0 16px,
-    var(--lad-palette-orange-400-2) 17px 19px
+    var(--lad-palette-amber-200) 0 15px,
+    var(--lad-palette-orange-350) 16px 18px
   );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-palette-orange-750) 15%, transparent);
-  transform: perspective(70px) rotateX(43deg);
-}
-.terrace-planter {
-  width: 41px;
-  height: 15px;
-  @apply position-absolute d-flex align-start justify-center;
-  right: -13px;
-  bottom: 30px;
-  gap: 1px;
-  border-radius: 3px 3px 9px 9px;
-  background: var(--lad-palette-orange-500);
-  box-shadow: inset 0 3px 0 var(--lad-palette-orange-350);
-}
-.terrace-planter i {
-  width: 10px;
-  height: 16px;
-  margin-top: -13px;
-  border-radius: 60% 40%;
-  background: var(--lad-palette-mint-450);
-  transform: rotate(-18deg);
-}
-.terrace-planter i:nth-child(2) {
-  height: 20px;
-  background: var(--lad-palette-mint-450);
-  transform: translateY(-4px);
-}
-.terrace-planter i:last-child {
-  transform: rotate(18deg);
+  box-shadow: 0 4px 0
+    color-mix(in srgb, var(--lad-palette-muted-700) 16%, transparent);
+  transform: perspective(76px) rotateX(46deg);
 }
 .garden-path {
   @apply position-absolute d-flex align-end;
@@ -1230,9 +1193,9 @@ onUnmounted(() => {
 }
 .garden-flower-bed {
   @apply position-absolute d-flex align-end;
-  bottom: 8px;
-  left: 8%;
-  z-index: 1;
+  bottom: 48px;
+  left: 10%;
+  z-index: 2;
 }
 .garden-flower-bed::before {
   content: "";
@@ -1277,14 +1240,6 @@ onUnmounted(() => {
   }
   50% {
     transform: scaleX(1.012) translateY(1px);
-  }
-}
-@keyframes garden-hill-drift {
-  from {
-    transform: translateX(-3px);
-  }
-  to {
-    transform: translateX(4px);
   }
 }
 @keyframes garden-sun-glow {
@@ -1354,6 +1309,9 @@ onUnmounted(() => {
 .compact .ladi-motivation {
   bottom: 8px;
 }
+.dollhouse-layout.contextual-zone.has-pixi-background > .dollhouse-room {
+  background: transparent;
+}
 @include respond-down(mobile) {
   .dollhouse-layout:not(.compact) {
     grid-template-columns: 1fr;
@@ -1370,7 +1328,6 @@ onUnmounted(() => {
   .garden-sky i,
   .garden-sky i::before,
   .garden-mountains,
-  .garden-hills,
   .ladi-perch {
     animation: none;
   }

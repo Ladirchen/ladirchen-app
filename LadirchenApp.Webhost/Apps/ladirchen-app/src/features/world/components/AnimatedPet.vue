@@ -68,7 +68,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import type { FamilyPet } from '@/domain/types';
+import type { FamilyPet } from '@/domain/family/types';
 
 const { t } = useI18n();
 
@@ -170,7 +170,7 @@ svg {
   fill: var(--lad-palette-muted-750);
 }
 .eye-shine {
-  fill: white;
+  fill: var(--lad-palette-white);
 }
 .nose {
   fill: var(--lad-palette-red-300);

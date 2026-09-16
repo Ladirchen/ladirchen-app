@@ -30,7 +30,9 @@
         type="button"
         @click="scope = option.value"
       >
-        <v-icon :icon="option.icon" size="25" />
+        <span class="scope-option-icon" aria-hidden="true">
+          <v-icon :icon="option.icon" size="25" />
+        </span>
         <strong>{{ option.title }}</strong>
         <span>{{ option.description }}</span>
         <b v-if="option.value === 'open'">{{ openCount }}</b>
@@ -75,7 +77,8 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import type { ContributionKind } from '@/domain/types';
+import type { ContributionKind } from '@/domain/contributions/types';
+import { UI_ICONS } from '@/shared/ui-icons';
 
 type ContributionScope = 'all' | 'mine' | 'open';
 type KindFilter = 'all' | ContributionKind;
@@ -93,9 +96,9 @@ const scopeOptions = computed<Array<{
   title: string;
   value: ContributionScope;
 }>>(() => [
-  { value: 'mine', title: t('contributions.filter.scope.mine.title'), description: t('contributions.filter.scope.mine.description'), icon: 'mdi-account-star-outline' },
-  { value: 'open', title: t('contributions.filter.scope.open.title'), description: t('contributions.filter.scope.open.description'), icon: 'mdi-hand-wave-outline' },
-  { value: 'all', title: t('contributions.filter.scope.all.title'), description: t('contributions.filter.scope.all.description'), icon: 'mdi-view-grid-outline' },
+  { value: 'mine', title: t('contributions.filter.scope.mine.title'), description: t('contributions.filter.scope.mine.description'), icon: UI_ICONS.contributionScope.mine },
+  { value: 'open', title: t('contributions.filter.scope.open.title'), description: t('contributions.filter.scope.open.description'), icon: UI_ICONS.contributionScope.open },
+  { value: 'all', title: t('contributions.filter.scope.all.title'), description: t('contributions.filter.scope.all.description'), icon: UI_ICONS.contributionScope.all },
 ]);
 
 const kindOptions = computed<Array<{ icon: string; title: string; value: KindFilter }>>(() => [
@@ -105,8 +108,8 @@ const kindOptions = computed<Array<{ icon: string; title: string; value: KindFil
 ]);
 
 const statusOptions = computed<Array<{ icon: string; title: string; value: StatusFilter }>>(() => [
-  { value: 'open', title: t('contributions.filter.statuses.open'), icon: 'mdi-progress-clock' },
-  { value: 'completed', title: t('contributions.filter.statuses.completed'), icon: 'mdi-check-circle-outline' },
+  { value: 'open', title: t('contributions.filter.statuses.open'), icon: UI_ICONS.contributionStatus.open },
+  { value: 'completed', title: t('contributions.filter.statuses.completed'), icon: UI_ICONS.contributionStatus.completed },
 ]);
 
 const selectStatus = (value: StatusFilter) => {
@@ -119,31 +122,31 @@ const selectStatus = (value: StatusFilter) => {
 @use "@/styles/mixins" as *;
 
 .contribution-filter {
-  position: relative;
+  @apply position-relative;
   isolation: isolate;
   padding: 0.9375rem;
-  overflow: hidden;
+  @apply overflow-hidden;
   @include raised-surface(
-    color-mix(in srgb, var(--lad-palette-mint) 25%, transparent),
-    color-mix(in srgb, var(--lad-palette-mint) 12%, transparent),
+    color-mix(in srgb, var(--lad-color-primary) 25%, transparent),
+    color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
     1.75rem,
     0.4375rem
   );
   background:
     radial-gradient(
       circle at 92% 7%,
-      color-mix(in srgb, var(--lad-palette-yellow) 20%, transparent) 0 2.375rem,
+      color-mix(in srgb, var(--lad-color-reward) 20%, transparent) 0 2.375rem,
       transparent 2.4375rem
     ),
     linear-gradient(
       145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-amber-100)
+      var(--lad-surface-soft),
+      var(--lad-color-reward-soft)
     );
   box-shadow:
-    0 0.4375rem 0 color-mix(in srgb, var(--lad-palette-mint) 12%, transparent),
+    0 0.4375rem 0 color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
     0 0.875rem 1.5rem
-      color-mix(in srgb, var(--lad-palette-teal-700) 8%, transparent);
+      color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .filter-heading {
   margin-bottom: 0.8125rem;
@@ -166,12 +169,12 @@ const selectStatus = (value: StatusFilter) => {
     1rem,
     linear-gradient(
       145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-amber-150)
+      var(--lad-surface-soft),
+      var(--lad-color-reward-pale)
     ),
-    color-mix(in srgb, var(--lad-palette-mint-strong) 20%, transparent),
+    color-mix(in srgb, var(--lad-color-primary-strong) 20%, transparent),
     -4deg,
-    0.1875rem solid var(--lad-palette-white)
+    0.1875rem solid var(--lad-surface-raised)
   );
   flex-basis: 2.8125rem;
 }
@@ -185,18 +188,18 @@ const selectStatus = (value: StatusFilter) => {
   transform-origin: center;
 }
 .filter-eye > ellipse {
-  fill: var(--lad-palette-white);
-  stroke: var(--lad-palette-muted-350);
+  fill: var(--lad-surface-raised);
+  stroke: var(--lad-text-subtle);
   stroke-width: 1.2;
 }
 .filter-pupil {
-  fill: var(--lad-palette-text);
+  fill: var(--lad-text);
   transform-box: fill-box;
   transform-origin: center;
   animation: filter-look 8.6s ease-in-out infinite;
 }
 .filter-glint {
-  fill: white;
+  fill: var(--lad-surface-raised);
 }
 .filter-eye--left {
   animation: filter-wink 7.4s 1.1s ease-in-out infinite;
@@ -210,7 +213,7 @@ const selectStatus = (value: StatusFilter) => {
   gap: 0.5rem;
   padding-bottom: 0.4375rem;
   border-bottom: 0.5rem solid
-    color-mix(in srgb, var(--lad-palette-amber-200) 35%, transparent);
+    color-mix(in srgb, var(--lad-color-reward-muted) 35%, transparent);
   border-radius: 0 0 1.375rem 1.375rem;
 }
 .scope-options button {
@@ -220,14 +223,14 @@ const selectStatus = (value: StatusFilter) => {
   @apply position-relative d-flex flex-column align-center justify-center;
   gap: 0.1875rem;
   color: var(--lad-text);
-  border: 0.125rem solid var(--lad-palette-teal-150);
+  border: 0.125rem solid var(--lad-color-primary-soft);
   border-radius: 1.4375rem 1.4375rem 1.0625rem 1.0625rem;
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
+    var(--lad-surface-raised),
+    var(--lad-surface-soft)
   );
-  box-shadow: 0 0.3125rem 0 var(--lad-palette-teal-150);
+  box-shadow: 0 0.3125rem 0 var(--lad-color-primary-soft);
   @apply cursor-pointer;
   font: inherit;
   transition:
@@ -237,22 +240,22 @@ const selectStatus = (value: StatusFilter) => {
     box-shadow 150ms ease;
 }
 .scope-options button:nth-child(2) {
-  border-color: var(--lad-palette-amber-200);
+  border-color: var(--lad-color-reward-muted);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-amber-100)
+    var(--lad-surface-raised),
+    var(--lad-color-reward-soft)
   );
-  box-shadow: 0 0.3125rem 0 var(--lad-palette-amber-200);
+  box-shadow: 0 0.3125rem 0 var(--lad-color-reward-muted);
 }
 .scope-options button:nth-child(3) {
-  border-color: var(--lad-palette-blue-150);
+  border-color: var(--lad-color-info-soft);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
+    var(--lad-surface-raised),
+    var(--lad-surface-soft)
   );
-  box-shadow: 0 0.3125rem 0 var(--lad-palette-purple-200);
+  box-shadow: 0 0.3125rem 0 var(--lad-color-bonus-soft);
 }
 .scope-options button:hover {
   transform: translateY(-0.1875rem);
@@ -260,58 +263,58 @@ const selectStatus = (value: StatusFilter) => {
 .scope-options button:active {
   transform: translateY(0.125rem);
   box-shadow: 0 0.125rem 0
-    color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
+    color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
 }
 .scope-options button.active {
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
   transform: translateY(-0.3125rem) rotate(-1deg);
-  border-color: var(--lad-palette-mint);
+  border-color: var(--lad-color-primary);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
+    var(--lad-surface-raised),
+    var(--lad-surface-soft)
   );
   box-shadow:
-    0 0.5rem 0 var(--lad-palette-muted-250),
+    0 0.5rem 0 var(--lad-neutral-soft),
     0 0.75rem 1rem
-      color-mix(in srgb, var(--lad-palette-teal-700) 10%, transparent);
+      color-mix(in srgb, var(--lad-color-primary-deep) 10%, transparent);
 }
 .scope-options button:nth-child(2).active {
-  color: var(--lad-palette-amber-650);
+  color: var(--lad-color-reward-ink);
   transform: translateY(-0.3125rem) rotate(1deg);
-  border-color: var(--lad-palette-amber-450);
+  border-color: var(--lad-color-reward-border);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-amber-150)
+    var(--lad-surface-raised),
+    var(--lad-color-reward-pale)
   );
   box-shadow:
-    0 0.5rem 0 var(--lad-palette-orange-350),
+    0 0.5rem 0 var(--lad-color-accent-warm-soft),
     0 0.75rem 1rem
-      color-mix(in srgb, var(--lad-palette-amber-650) 10%, transparent);
+      color-mix(in srgb, var(--lad-color-reward-ink) 10%, transparent);
 }
 .scope-options button:nth-child(3).active {
-  color: var(--lad-palette-violet-500);
-  border-color: var(--lad-palette-purple-350);
+  color: var(--lad-color-bonus-muted);
+  border-color: var(--lad-color-bonus-highlight);
   background: linear-gradient(
     155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
+    var(--lad-surface-raised),
+    var(--lad-surface-soft)
   );
   box-shadow:
-    0 0.5rem 0 var(--lad-palette-purple-200),
+    0 0.5rem 0 var(--lad-color-bonus-soft),
     0 0.75rem 1rem
-      color-mix(in srgb, var(--lad-palette-violet-650) 10%, transparent);
+      color-mix(in srgb, var(--lad-color-bonus-strong) 10%, transparent);
 }
 .scope-options button :deep(.v-icon) {
   width: 2.5rem;
   height: 2.5rem;
   margin-bottom: 0.1875rem;
-  border: 0.1875rem solid var(--lad-palette-white);
+  border: 0.1875rem solid var(--lad-border-on-accent);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lad-palette-white) 65%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
   box-shadow: 0 0.25rem 0
-    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
 }
 .scope-options button strong {
   font-size: 0.625rem;
@@ -330,12 +333,71 @@ const selectStatus = (value: StatusFilter) => {
   top: 0.375rem;
   right: 0.375rem;
   @apply d-grid place-center;
-  color: var(--lad-palette-amber-700);
-  border: 0.125rem solid var(--lad-palette-white);
+  color: var(--lad-color-reward-strong);
+  border: 0.125rem solid var(--lad-border-on-accent);
   border-radius: 0.5rem;
-  background: var(--lad-palette-amber-150);
-  box-shadow: 0 0.125rem 0 var(--lad-palette-orange-350);
+  background: var(--lad-color-reward-pale);
+  box-shadow: 0 0.125rem 0 var(--lad-color-accent-warm-soft);
   font-size: 0.5625rem;
+}
+.scope-option-icon {
+  margin-bottom: 0.1875rem;
+  color: var(--lad-text-inverse);
+  @include icon-tile(
+    2.625rem,
+    0.9375rem,
+    linear-gradient(
+      145deg,
+      var(--lad-color-primary-highlight),
+      var(--lad-color-primary-strong)
+    ),
+    var(--lad-color-primary-deep),
+    -4deg,
+    0.1875rem solid var(--lad-border-on-accent),
+    0.25rem,
+    0 0.4375rem 0.75rem
+      color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent)
+  );
+}
+.scope-options .scope-option-icon :deep(.v-icon) {
+  width: 1.5rem;
+  height: 1.5rem;
+  @apply ma-0;
+  color: inherit;
+  background-color: currentColor;
+  opacity: 1;
+  filter: drop-shadow(
+    0 0.0625rem 0.0625rem color-mix(in srgb, var(--lad-text) 22%, transparent)
+  );
+}
+.scope-options button .scope-option-icon {
+  color: var(--lad-text-inverse);
+  font-size: 1rem;
+  line-height: 1;
+}
+.scope-options button:nth-child(2) .scope-option-icon {
+  background: linear-gradient(
+    145deg,
+    var(--lad-color-reward-accent),
+    var(--lad-color-reward-strong)
+  );
+  box-shadow:
+    0 0.25rem 0 var(--lad-color-reward-deep),
+    0 0.4375rem 0.75rem
+      color-mix(in srgb, var(--lad-color-reward-deep) 20%, transparent);
+  transform: rotate(4deg);
+}
+.scope-options button:nth-child(3) .scope-option-icon {
+  background: linear-gradient(
+    145deg,
+    var(--lad-color-info-highlight),
+    var(--lad-color-info-strong)
+  );
+  box-shadow:
+    0 0.25rem 0 var(--lad-color-info-deep),
+    0 0.4375rem 0.75rem
+      color-mix(in srgb, var(--lad-color-info-deep) 20%, transparent);
+  transform: rotate(-3deg);
 }
 .kind-filter {
   margin-top: 0.8125rem;
@@ -343,9 +405,9 @@ const selectStatus = (value: StatusFilter) => {
   @apply d-flex align-center;
   gap: 0.5625rem;
   border: 0.0625rem dashed
-    color-mix(in srgb, var(--lad-palette-muted-700) 20%, transparent);
+    color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
   border-radius: 1rem;
-  background: color-mix(in srgb, var(--lad-palette-white) 50%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 50%, transparent);
 }
 .kind-filter--type {
   margin-top: 0.4375rem;
@@ -364,13 +426,13 @@ const selectStatus = (value: StatusFilter) => {
 .status-options button {
   padding: 0.4375rem 0.5625rem;
   @apply d-inline-flex align-center ga-1;
-  color: var(--lad-palette-muted-700);
+  color: var(--lad-text-strong);
   border: 0.0625rem solid
-    color-mix(in srgb, var(--lad-palette-teal-600) 15%, transparent);
+    color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
   border-radius: var(--lad-radius-pill);
-  background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
   box-shadow: 0 0.125rem 0
-    color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+    color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   @apply cursor-pointer;
   font: inherit;
   font-size: 0.5rem;
@@ -378,16 +440,16 @@ const selectStatus = (value: StatusFilter) => {
 }
 .kind-options button.active,
 .status-options button.active {
-  color: var(--lad-palette-teal-700);
+  color: var(--lad-color-primary-deep);
   transform: translateY(-0.0625rem);
-  border-color: var(--lad-palette-teal-400);
-  background: white;
-  box-shadow: 0 0.25rem 0 var(--lad-palette-teal-150);
+  border-color: var(--lad-color-primary-highlight);
+  background: var(--lad-surface-raised);
+  box-shadow: 0 0.25rem 0 var(--lad-color-primary-soft);
 }
 .status-options button:last-child.active {
-  color: var(--lad-palette-blue-600);
-  border-color: var(--lad-palette-blue-250);
-  box-shadow: 0 0.25rem 0 var(--lad-palette-blue-150);
+  color: var(--lad-color-info-deep);
+  border-color: var(--lad-color-info-highlight);
+  box-shadow: 0 0.25rem 0 var(--lad-color-info-soft);
 }
 @keyframes filter-wink {
   0%,

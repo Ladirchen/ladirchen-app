@@ -1,15 +1,18 @@
-import { createGuardianAvatarAppearance, normalizeAvatarAppearance } from '@/domain/avatar';
-import { HOUSE_THEMES } from '@/domain/house-catalog';
-import type { HouseStageLevel } from '@/domain/house';
-import type { ContributionId, FamilyCurrency, FamilyMember, FamilyPet, GuardianGift, HouseLayoutPlacement, SubscriptionTier, ViewerRole } from '@/domain/types';
-import { DEFAULT_FAMILY_TIME_ZONE } from '@/domain/time-zone';
-import { createContributions, createFamilyBalances, createFamilyMembers, createFamilyPets, createHouseAccessories, createHouseLayoutPlacements, createPromotions, createSavingGoals, createShopRewards, FAMILY_MEMBER_IDS, SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
+import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
+import { characterCollidesWithFurniture, DEFAULT_ROOM_DESIGNS, furnitureVisualDefinitionFor, HOUSE_THEMES } from '@/domain/house';
+import type { HouseStageLevel, HouseZoneId, RoomDesignId } from '@/domain/house';
+import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from '@/domain/family/types';
+import { DEFAULT_FAMILY_TIME_ZONE } from '@/domain/family/time-zone';
+import type { HouseLayoutPlacement } from '@/domain/house/entities';
+import type { FamilyCurrency, GuardianGift } from '@/domain/savings/types';
+import type { ContributionId } from '@/domain/shared/identifiers';
+import type { TranslationKey } from '@/locales/translation-keys';
+import type { FamilyWorldInitialData, FamilyWorldInitialDataFactory } from '@/application/ports/family-world-initial-data';
 
-const AUTH_STATE_KEY = 'ladirchen:auth-state';
-const authIsActive = (): boolean => {
-  if (typeof localStorage === 'undefined') {return true;}
-  const stored = localStorage.getItem(AUTH_STATE_KEY);
-  return stored === null || stored === 'authenticated';
+let configuredInitialDataFactory: FamilyWorldInitialDataFactory | undefined;
+
+export const configureFamilyWorldInitialData = (factory: FamilyWorldInitialDataFactory): void => {
+  configuredInitialDataFactory = factory;
 };
 
 export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] => {
@@ -20,16 +23,15 @@ export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] 
       return {
         ...member,
         participatesInWeeklyGoal: member.participatesInWeeklyGoal ?? true,
-        ...(member.appearance ? { appearance: normalizeAvatarAppearance(member.appearance) } : {}),
+        appearance: resolveFamilyMemberAvatarAppearance(member, members),
       };
     }
     const isFirstGuardian = member.id === guardians[0]?.id;
-    const fallbackAppearance = createGuardianAvatarAppearance(isFirstGuardian ? 'adult' : 'grandpa');
     return {
       ...member,
       guardianAccess: member.guardianAccess ?? (!hasAdministrator && isFirstGuardian ? 'admin' : 'supporter'),
       participatesInWeeklyGoal: member.participatesInWeeklyGoal ?? false,
-      appearance: normalizeAvatarAppearance(member.appearance, fallbackAppearance),
+      appearance: resolveFamilyMemberAvatarAppearance(member, members),
     };
   });
 };
@@ -39,23 +41,42 @@ export const normalizeFamilyPets = (pets: ReadonlyArray<FamilyPet>): FamilyPet[]
 
 const initialStateValue = <T>(value: T): T => value;
 
-export const mergeHouseLayout = (stored: ReadonlyArray<HouseLayoutPlacement>): HouseLayoutPlacement[] => {
+const createDefaultSelectedRoomDesignIds = (): Partial<Record<HouseZoneId, RoomDesignId>> => {
+  const selections: Partial<Record<HouseZoneId, RoomDesignId>> = {};
+  for (const design of DEFAULT_ROOM_DESIGNS) { selections[design.zoneId] = design.id; }
+  return selections;
+};
+
+export const mergeHouseLayout = (
+  stored: ReadonlyArray<HouseLayoutPlacement>,
+  initialData: FamilyWorldInitialData,
+): HouseLayoutPlacement[] => {
+  const defaultPlacements = initialData.houseLayout;
+  const accessories = initialData.accessories;
   const storedById = new Map(stored.map(placement => [placement.id, placement]));
-  return createHouseLayoutPlacements().map((placement) => {
+  const fixedAccessoryIds = new Set(accessories
+    .filter(accessory => accessory.mobility === 'fixed')
+    .map(accessory => accessory.id));
+  const mergedPlacements = defaultPlacements.map((placement) => {
+    if (placement.entityType === 'furniture' && fixedAccessoryIds.has(placement.entityId)) { return placement; }
     const saved = storedById.get(placement.id);
     if (!saved) {return placement;}
     const isCharacter = placement.entityType === 'member' || placement.entityType === 'pet';
     const isLadi = placement.entityType === 'ladi';
     const savedLadiWasPerched = isLadi && saved.y < 62;
-    const isWallDecoration = placement.entityType === 'furniture' &&
-      (placement.entityId === 'wall-art' || placement.entityId === 'halloween-bat-garland');
-    const savedYIsValid = isWallDecoration
-      ? saved.y >= 12 && saved.y <= 46
+    const accessory = placement.entityType === 'furniture'
+      ? accessories.find(item => item.id === placement.entityId)
+      : undefined;
+    const visualDefinition = accessory?.visual ? furnitureVisualDefinitionFor(accessory.visual) : undefined;
+    const minimumY = visualDefinition?.minimumY;
+    const locksScale = visualDefinition?.locksScale ?? false;
+    const savedYIsValid = minimumY !== undefined
+      ? saved.y >= minimumY && saved.y <= (visualDefinition?.maximumY ?? 94)
       : isLadi
         ? (saved.y >= 22 && saved.y <= 38) || saved.y >= 62
-        : saved.y >= (isCharacter ? 62 : 52);
+        : saved.y >= (isCharacter || locksScale ? 62 : 52);
     const coordinates = {
-      scale: Math.max(.5, Math.min(1.35, saved.scale)),
+      scale: locksScale ? placement.scale : Math.max(.5, Math.min(1.35, saved.scale)),
       x: savedLadiWasPerched ? placement.x : Math.max(4, Math.min(96, saved.x)),
       y: savedYIsValid ? Math.max(8, Math.min(94, saved.y)) : placement.y,
       zoneId: saved.zoneId,
@@ -68,9 +89,22 @@ export const mergeHouseLayout = (stored: ReadonlyArray<HouseLayoutPlacement>): H
       ...coordinates,
     };
   });
+  return mergedPlacements.map((placement) => {
+    if (placement.entityType === 'furniture' || !characterCollidesWithFurniture(
+      placement.id,
+      placement.zoneId,
+      placement.x,
+      placement.y,
+      mergedPlacements,
+      accessories,
+    )) { return placement; }
+    return defaultPlacements.find(defaultPlacement => defaultPlacement.id === placement.id) ?? placement;
+  });
 };
 
-export const createFamilyWorldState = () => {
+export const createFamilyWorldState = (providedInitialData?: FamilyWorldInitialData) => {
+  const initialData = providedInitialData ?? configuredInitialDataFactory?.create();
+  if (!initialData) {throw new Error('Family world initial data must be configured before the store is created.');}
   const viewerRole = initialStateValue<ViewerRole>('child');
   const familyCurrencyCode = initialStateValue<FamilyCurrency>('CHF');
   const simulatedEnergy = initialStateValue<number | null>(null);
@@ -82,16 +116,18 @@ export const createFamilyWorldState = () => {
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const subscriptionTier = initialStateValue<SubscriptionTier>('pro');
   const snackbarParams: Record<string, number | string> = {};
+  const snackbar: { visible: boolean; messageKey: TranslationKey | ''; params: Record<string, number | string> } =
+    { visible: false, messageKey: '', params: snackbarParams };
   return {
     currentTimeMilliseconds: Date.now(),
-    isAuthenticated: authIsActive(),
-    signedInMemberId: FAMILY_MEMBER_IDS.laura,
+    isAuthenticated: true,
+    signedInMemberId: initialData.signedInMemberId,
     viewerRole,
-    activeChildId: createFamilyMembers().find(member => member.role === 'child')?.id ?? FAMILY_MEMBER_IDS.laura,
-    activeGoalId: SAVING_GOAL_IDS.bike,
+    activeChildId: initialData.activeChildId,
+    activeGoalId: initialData.activeGoalId,
     onboardingCompleted: false,
     familySetupOpen: false,
-    balances: createFamilyBalances(),
+    balances: initialData.balances,
     familyCurrencyCode,
     familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
     ladirchenPerCurrencyUnit: 10,
@@ -111,19 +147,21 @@ export const createFamilyWorldState = () => {
     houseLevel,
     houseThemeId: HOUSE_THEMES[0]?.id ?? 'sunny-dollhouse',
     ownedHouseThemeIds: HOUSE_THEMES.filter(theme => theme.ownedByDefault).map(theme => theme.id),
+    ownedRoomDesignIds: DEFAULT_ROOM_DESIGNS.map(design => design.id),
+    selectedRoomDesignIds: createDefaultSelectedRoomDesignIds(),
     subscriptionTier,
-    houseLayout: createHouseLayoutPlacements(),
+    houseLayout: initialData.houseLayout,
     homeCustomizationHydrated: false,
     familyAggregatesHydrated: false,
     revealVersion: 0,
-    snackbar: { visible: false, messageKey: '', params: snackbarParams },
-    members: normalizeFamilyMembers(createFamilyMembers()),
-    pets: normalizeFamilyPets(createFamilyPets()),
-    contributions: createContributions(),
-    goals: createSavingGoals(),
-    accessories: createHouseAccessories(),
-    promotions: createPromotions(),
-    shopRewards: createShopRewards(),
+    snackbar,
+    members: normalizeFamilyMembers(initialData.members),
+    pets: normalizeFamilyPets(initialData.pets),
+    contributions: initialData.contributions,
+    goals: initialData.goals,
+    accessories: initialData.accessories,
+    promotions: initialData.promotions,
+    shopRewards: initialData.shopRewards,
   };
 };
 

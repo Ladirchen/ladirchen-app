@@ -1,5 +1,5 @@
 import type { SavingsState } from '../savings-contract';
-import type { FamilyCurrency, GoalVisibility, GuardianGift, SavingGoal } from '@/domain/types';
+import type { FamilyCurrency, GoalVisibility, GuardianGift, SavingGoal } from '@/domain/savings/types';
 import {
   exhaustiveValues,
   hasLocalizedValue,

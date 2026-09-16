@@ -6,13 +6,18 @@
 
 // Composables
 import { createVuetify } from 'vuetify';
+import { aliases, mdi } from 'vuetify/iconsets/mdi-unocss';
 // Styles
-import '@mdi/font/css/materialdesignicons.css';
 import 'vuetify/styles';
 import { applicationColorPalette } from '@/theme/color-palette';
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
+  icons: {
+    aliases,
+    defaultSet: 'mdi',
+    sets: { mdi },
+  },
   theme: {
     defaultTheme: 'ladirchen',
     themes: {

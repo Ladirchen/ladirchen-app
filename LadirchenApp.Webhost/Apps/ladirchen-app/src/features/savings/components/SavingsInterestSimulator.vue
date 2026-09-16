@@ -27,7 +27,7 @@
     <v-slider v-model="simulatedStreak" color="info" hide-details max="30" min="0" step="1" />
 
     <div class="payout-estimate mt-4">
-      <div><span>{{ t('savings.simulator.nextPayout') }}</span><strong>+{{ simulatedWeeklyInterest }} L</strong></div>
+      <div><span>{{ t('savings.simulator.nextPayout') }}</span><strong><LadirchenAmount prefix="+" :value="simulatedWeeklyInterest" /></strong></div>
       <small>{{ t('savings.simulator.calculation', { saved: store.totalSaved }) }}</small>
     </div>
 
@@ -36,43 +36,34 @@
       <v-btn color="primary" :disabled="simulatedWeeklyInterest <= 0" rounded="lg" size="small" variant="flat" @click="simulatePayout">{{ t('savings.simulator.simulate') }}</v-btn>
     </div>
 
-    <AnimatePresence>
-      <motion.div
+    <Transition name="payout">
+      <div
         v-if="payoutVisible"
         :key="payoutVersion"
         class="payout-success mt-4"
-        :initial="{ opacity: 0, y: 14, scale: .92 }"
-        :animate="{ opacity: 1, y: 0, scale: 1 }"
-        :exit="{ opacity: 0, y: -8, scale: .96 }"
-        :transition="{ type: 'spring', stiffness: 360, damping: 24 }"
         aria-live="polite"
       >
         <div class="payout-visual" aria-hidden="true">
-          <motion.div
-            class="payout-coin"
-            :initial="{ x: -58, y: -18, rotate: -160, scale: .55, opacity: 1 }"
-            :animate="{ x: [-58, -4, 42], y: [-18, -13, 8], rotate: [-160, 160, 420], scale: [.55, .72, .12], opacity: [1, 1, 0] }"
-            :transition="{ duration: 1.05, times: [0, .58, 1], ease: [.22, .8, .26, 1], delay: .12 }"
-          ><LadirchenCoin /></motion.div>
+          <div class="payout-coin"><LadirchenCoin /></div>
           <AnimatedPiggyBank receiving :size="65" />
         </div>
         <div><strong>{{ t('savings.simulator.payout', { amount: lastPayout }) }}</strong><span>{{ t('savings.simulator.payoutDescription') }}</span></div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
+    </Transition>
   </v-card>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { AnimatePresence, motion } from 'motion-v';
 import { useI18n } from 'vue-i18n';
 
 import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
 import LadiMascot from '@/shared/components/LadiMascot.vue';
 
 import AnimatedPiggyBank from './AnimatedPiggyBank.vue';
 import { getLadiStage } from '@/domain/ladi';
-import { familyParticipationInterestStrategy } from '@/domain/savings-interest';
+import { familyParticipationInterestStrategy } from '@/domain/savings/interest';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
@@ -142,7 +133,7 @@ onUnmounted(() => {
 @use "@/styles/mixins" as *;
 .interest-simulator {
   border: 1px solid var(--lad-border-info);
-  background: var(--lad-gradient-info) !important;
+  background: var(--lad-gradient-info);
 }
 h3 {
   @apply ma-0;
@@ -199,7 +190,7 @@ h3 {
 .payout-estimate {
   padding: 11px 12px;
   border-radius: 14px;
-  background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
+  background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
 }
 .payout-estimate > div {
   @apply d-flex align-center justify-space-between ga-3;
@@ -256,6 +247,36 @@ h3 {
   @apply position-absolute;
   z-index: 2;
   left: 9px;
+  animation: payout-coin-flight 1.05s 0.12s cubic-bezier(0.22, 0.8, 0.26, 1)
+    both;
+}
+.payout-enter-active,
+.payout-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.payout-enter-from {
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+}
+.payout-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.96);
+}
+@keyframes payout-coin-flight {
+  0% {
+    opacity: 1;
+    transform: translate(-58px, -18px) rotate(-160deg) scale(0.55);
+  }
+  58% {
+    opacity: 1;
+    transform: translate(-4px, -13px) rotate(160deg) scale(0.72);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(42px, 8px) rotate(420deg) scale(0.12);
+  }
 }
 @include respond-down(small) {
   .simulator-preview {
@@ -266,6 +287,15 @@ h3 {
   }
   .simulator-actions {
     @apply align-stretch flex-column-reverse;
+  }
+}
+@include reduced-motion {
+  .payout-enter-active,
+  .payout-leave-active {
+    transition: none;
+  }
+  .payout-coin {
+    animation: none;
   }
 }
 </style>

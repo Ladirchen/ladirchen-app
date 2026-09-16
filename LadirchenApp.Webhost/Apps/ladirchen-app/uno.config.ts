@@ -1,8 +1,32 @@
-import { defineConfig, transformerDirectives } from "unocss";
+import { defineConfig, presetIcons, transformerDirectives } from "unocss";
 import { presetVuetify } from "unocss-preset-vuetify";
+import { aliases as vuetifyIconAliases } from "vuetify/iconsets/mdi-unocss";
+
+const vuetifyIconSafelist = Object.values(vuetifyIconAliases).filter(
+  (icon): icon is string => typeof icon === "string",
+);
+
+const applicationIconSafelist = [
+  "i-mdi:account-star-outline",
+  "i-mdi:calendar-star",
+  "i-mdi:chart-line",
+  "i-mdi:check-circle-outline",
+  "i-mdi:creation-outline",
+  "i-mdi:door-open",
+  "i-mdi:flower-outline",
+  "i-mdi:gift-outline",
+  "i-mdi:hand-heart-outline",
+  "i-mdi:home-city-outline",
+  "i-mdi:progress-clock",
+  "i-mdi:sofa-outline",
+  "i-mdi:star-four-points",
+  "i-mdi:view-grid-plus-outline",
+  "i-mdi:wallet-plus-outline",
+];
 
 export default defineConfig({
   presets: [
+    presetIcons({ scale: 1.2 }),
     presetVuetify({
       font: {
         heading: "Roboto, sans-serif",
@@ -32,6 +56,8 @@ export default defineConfig({
   ],
   transformers: [transformerDirectives()],
   safelist: [
+    ...vuetifyIconSafelist,
+    ...applicationIconSafelist,
     ...Array.from({ length: 6 }, (_, i) => `elevation-${i}`),
     ...["", "-0", "-sm", "-lg", "-xl", "-pill", "-circle", "-shaped"].map((suffix) => `rounded${suffix}`),
   ],

@@ -3,7 +3,7 @@ import type { StateGuard } from '@/application/contracts/family-aggregate-valida
 import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
 import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
 import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
-import type { FamilyId } from '@/domain/types';
+import type { FamilyId } from '@/domain/shared/identifiers';
 
 export class AggregateApiError extends Error {
   public constructor(

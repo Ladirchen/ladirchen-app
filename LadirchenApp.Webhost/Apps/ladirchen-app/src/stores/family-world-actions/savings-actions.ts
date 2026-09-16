@@ -1,6 +1,6 @@
-import { createDomainId } from '@/domain/types';
-import type { FamilyCurrency, FamilyMemberId, NewGoal, SavingGoalId, SavingGoalOwnerId } from '@/domain/types';
-import { SAVING_GOAL_IDS } from '@/infrastructure/fixtures/family-world-fixtures';
+import type { FamilyCurrency, NewGoal, SavingGoalOwnerId } from '@/domain/savings/types';
+import { createDomainId } from '@/domain/shared/identifiers';
+import type { FamilyMemberId, SavingGoalId } from '@/domain/shared/identifiers';
 import { createUuid, supportedFamilyCurrencies } from './family-world-store-utils';
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-world-store-context';
 
@@ -184,7 +184,7 @@ export const savingsActions = {
   },
   dismissGuardianGift(this: FamilyWorldStoreContext) {
     this.guardianGiftAnimation.visible = false;
-    setTimeout(() => this.revealNextGuardianGift(), 250);
+    this.$familyWorld.scheduler.schedule(() => this.revealNextGuardianGift(), 250);
   },
   saveToGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
     const goal = this.goals.find((item) => item.id === id);
@@ -218,7 +218,7 @@ export const savingsActions = {
     this.balances[this.activeChildId] = this.balance + returned;
     this.goals.splice(goalIndex, 1);
     if (this.activeGoalId === id) {
-      this.activeGoalId = this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? SAVING_GOAL_IDS.bike;
+      this.activeGoalId = this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? this.activeGoalId;
     }
     this.persistSavings();
     this.notify(forfeitedBonus > 0 ? 'notifications.goals.cancelledWithBonus' : 'notifications.goals.cancelled', { amount: returned });

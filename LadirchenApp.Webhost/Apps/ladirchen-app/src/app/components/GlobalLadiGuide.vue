@@ -1,17 +1,7 @@
 <template>
   <aside class="global-ladi-guide" :class="[`mood-${mood}`, { hidden: isHidden, 'gift-celebration': giftCelebration }]" :aria-label="t('guide.aria')">
     <button v-if="isHidden" class="guide-branch" type="button" :aria-label="t('guide.reveal')" @click="revealGuide">
-      <svg aria-hidden="true" viewBox="0 0 58 68">
-        <path class="branch-vine" d="M64 11C48 10 43 17 36 23c-6 6-12 8-20 8" />
-        <ellipse class="branch-leaf branch-leaf--top" cx="36" cy="20" rx="10" ry="6" />
-        <ellipse class="branch-leaf branch-leaf--side" cx="18" cy="31" rx="10" ry="6" />
-        <g class="branch-charm">
-          <path d="M28 27v10" />
-          <circle cx="28" cy="47" r="11" />
-          <text x="28" y="52">L</text>
-        </g>
-        <path class="branch-spark" d="m10 10 1.8 4 4.2 1.8-4.2 1.8-1.8 4-1.8-4L4 15.8 8.2 14Z" />
-      </svg>
+      <img :src="WORLD_DECORATION_SPRITE_URLS['guide-branch']" alt="">
     </button>
     <template v-else>
       <Transition name="guide-speech">
@@ -43,260 +33,25 @@
       <span v-if="giftCelebration" class="guide-high-five" aria-hidden="true">✋</span>
       <span v-if="giftCelebration" class="guide-flying-gift" aria-hidden="true">🎁</span>
       <button class="guide-ladi" :class="randomMotion" type="button" :aria-expanded="Boolean(speech)" :aria-label="t('guide.openExplanation')" @click="speakCurrentPageIntro">
-        <LadiMascot :score="ladiScore" :show-coin="false" :show-scene-base="false" :show-score="false" :smart="store.piggyBankOpen || isSmart" :size="80" />
+        <LadiMascot :score="ladiScore" :show-score="false" :smart="store.piggyBankOpen || isSmart" :size="80" />
       </button>
     </template>
   </aside>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import LadiMascot from '@/shared/components/LadiMascot.vue';
+import { WORLD_DECORATION_SPRITE_URLS } from '@/shared/assets/world-sprite-assets';
+import { useGlobalLadiGuide } from '../composables/use-global-ladi-guide';
 import { useI18n } from 'vue-i18n';
 
-import LadiMascot from '@/shared/components/LadiMascot.vue';
-import { useFamilyWorldStore } from '@/stores/family-world';
-
-type GuideMood = 'gentle' | 'calm' | 'happy';
-
-interface LadiGuideEventDetail {
-  heading?: string;
-  message: string;
-  pageIntro?: boolean;
-  smart?: boolean;
-  progress?: string;
-  actionLabel?: string;
-  actionEvent?: string;
-  celebration?: 'gift';
-}
-
-const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === 'string';
-const isOptionalBoolean = (value: unknown): boolean => value === undefined || typeof value === 'boolean';
-const isLadiGuideEventDetail = (value: unknown): value is LadiGuideEventDetail => {
-  if (typeof value !== 'object' || value === null || !('message' in value)) {return false;}
-  return typeof value.message === 'string' && value.message.trim().length > 0 &&
-    isOptionalString('heading' in value ? value.heading : undefined) &&
-    isOptionalBoolean('pageIntro' in value ? value.pageIntro : undefined) &&
-    isOptionalBoolean('smart' in value ? value.smart : undefined) &&
-    isOptionalString('progress' in value ? value.progress : undefined) &&
-    isOptionalString('actionLabel' in value ? value.actionLabel : undefined) &&
-    isOptionalString('actionEvent' in value ? value.actionEvent : undefined) &&
-    (!('celebration' in value) || value.celebration === undefined || value.celebration === 'gift');
-};
-
-const store = useFamilyWorldStore();
-const route = useRoute();
 const { t } = useI18n();
-const speech = ref('');
-const customHeading = ref('');
-const choosingMood = ref(false);
-const mood = ref<GuideMood>('calm');
-const randomMotion = ref('');
-const isHidden = ref(false);
-const isSmart = ref(false);
-const speechProgress = ref('');
-const speechActionLabel = ref('');
-const speechActionEvent = ref('');
-const giftCelebration = ref(false);
-const moodPromptPending = ref(true);
-const pageIntroHeading = ref(t('guide.defaultHeading'));
-const pageIntroMessage = ref(t('guide.defaultMessage'));
-let speechTimer: number | undefined;
-let motionTimer: number | undefined;
-let initialMoodTimer: number | undefined;
-let celebrationTimer: number | undefined;
 
-const moodOptions = computed<ReadonlyArray<{ id: GuideMood; icon: string; label: string }>>(() => [
-  { id: 'gentle', icon: '😌', label: t('guide.mood.gentle') },
-  { id: 'calm', icon: '🙂', label: t('guide.mood.calm') },
-  { id: 'happy', icon: '😄', label: t('guide.mood.happy') },
-]);
-const pageMessages = computed<Record<string, { heading: string; message: string }>>(() => ({
-  '/': { heading: t('guide.pages.world.heading'), message: t('guide.pages.world.message') },
-  '/beitraege': { heading: t('guide.pages.contributions.heading'), message: t('guide.pages.contributions.message') },
-  '/wuensche': { heading: t('guide.pages.wishes.heading'), message: t('guide.pages.wishes.message') },
-  '/shop': { heading: t('guide.pages.shop.heading'), message: t('guide.pages.shop.message') },
-  '/familie': { heading: t('guide.pages.family.heading'), message: t('guide.pages.family.message') },
-  '/ich': { heading: t('guide.pages.profile.heading'), message: t('guide.pages.profile.message') },
-}));
-const fallbackPageMessage = () => ({ heading: t('guide.defaultHeading'), message: t('guide.defaultMessage') });
-
-const ladiScore = computed(() => mood.value === 'gentle' ? 2.8 : mood.value === 'happy' ? 4.6 : 3.7);
-const speechHeading = computed(() => customHeading.value || (mood.value === 'gentle' ? t('guide.gentleHeading') : t('guide.defaultHeading')));
-const moodStorageKey = computed(() => `ladirchen:guide-mood:${store.activeChildId}`);
-const hiddenStorageKey = computed(() => `ladirchen:guide-hidden:${store.activeChildId}`);
-
-const clearSpeechTimer = () => {
-  if (speechTimer !== undefined) window.clearTimeout(speechTimer);
-  speechTimer = undefined;
-};
-const closeSpeech = () => {
-  speech.value = '';
-  isSmart.value = false;
-  speechProgress.value = '';
-  speechActionLabel.value = '';
-  speechActionEvent.value = '';
-};
-const showSpeech = (message: string, heading = '', smart = false, detail?: Pick<LadiGuideEventDetail, 'progress' | 'actionLabel' | 'actionEvent' | 'celebration'>) => {
-  clearSpeechTimer();
-  choosingMood.value = false;
-  isSmart.value = smart;
-  speechProgress.value = detail?.progress || '';
-  speechActionLabel.value = detail?.actionLabel || '';
-  speechActionEvent.value = detail?.actionEvent || '';
-  customHeading.value = heading;
-  speech.value = message;
-  if (detail?.celebration === 'gift') {
-    giftCelebration.value = true;
-    randomMotion.value = 'does-highfive';
-    if (celebrationTimer !== undefined) window.clearTimeout(celebrationTimer);
-    celebrationTimer = window.setTimeout(() => {
-      giftCelebration.value = false;
-      randomMotion.value = '';
-    }, 2400);
-  }
-  if (!smart) speechTimer = window.setTimeout(closeSpeech, 11000);
-};
-const triggerSpeechAction = () => {
-  if (!speechActionEvent.value) return;
-  window.dispatchEvent(new CustomEvent(speechActionEvent.value));
-};
-const speakCurrentPageIntro = () => {
-  if (choosingMood.value) return;
-  if (store.piggyBankOpen) {
-    showSpeech(t('guide.balance.message'), t('guide.balance.heading'), true);
-    return;
-  }
-  const fallback = pageMessages.value[route.path] ?? fallbackPageMessage();
-  if (route.path === '/wuensche') {
-    showSpeech(
-      pageIntroMessage.value || fallback.message,
-      pageIntroHeading.value || fallback.heading,
-      true,
-      { progress: '1 / 6', actionLabel: t('common.next'), actionEvent: 'savings-interest:start' },
-    );
-    return;
-  }
-  showSpeech(pageIntroMessage.value || fallback.message, pageIntroHeading.value || fallback.heading);
-};
-const selectMood = (nextMood: GuideMood) => {
-  mood.value = nextMood;
-  localStorage.setItem(moodStorageKey.value, nextMood);
-  choosingMood.value = false;
-  moodPromptPending.value = false;
-  customHeading.value = nextMood === 'happy' ? t('guide.mood.happyHeading') : nextMood === 'gentle' ? t('guide.gentleHeading') : t('guide.mood.calmHeading');
-  speech.value = nextMood === 'happy'
-    ? t('guide.mood.happyMessage')
-    : nextMood === 'gentle'
-      ? t('guide.mood.gentleMessage')
-      : t('guide.mood.calmMessage');
-  clearSpeechTimer();
-  speechTimer = window.setTimeout(speakCurrentPageIntro, 1700);
-};
-const handleGuideEvent = (event: Event) => {
-  if (!(event instanceof CustomEvent) || !isLadiGuideEventDetail(event.detail)) {return;}
-  const detail = event.detail;
-  if (detail.pageIntro) {
-    pageIntroHeading.value = detail.heading || t('guide.defaultHeading');
-    pageIntroMessage.value = detail.message;
-    if (choosingMood.value) return;
-  }
-  if (moodPromptPending.value) return;
-  showSpeech(detail.message, detail.heading, detail.smart, detail);
-};
-const handleGuidedClick = (event: MouseEvent) => {
-  if (moodPromptPending.value) return;
-  if (event.target instanceof Element && event.target.closest('[data-ladi-ignore]')) return;
-  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-ladi-tip]') : null;
-  const message = target?.dataset.ladiTip?.trim();
-  if (message) showSpeech(message, target?.dataset.ladiHeading);
-};
-const loadMood = () => {
-  const saved = localStorage.getItem(moodStorageKey.value);
-  mood.value = saved === 'gentle' || saved === 'happy' || saved === 'calm' ? saved : 'calm';
-};
-const hideGuide = () => {
-  closeSpeech();
-  choosingMood.value = false;
-  isHidden.value = true;
-  localStorage.setItem(hiddenStorageKey.value, 'true');
-};
-const revealGuide = () => {
-  isHidden.value = false;
-  localStorage.removeItem(hiddenStorageKey.value);
-  randomMotion.value = 'does-emerge';
-  customHeading.value = t('guide.welcomeBack.heading');
-  speech.value = mood.value === 'gentle' ? t('guide.welcomeBack.gentle') : t('guide.welcomeBack.message');
-  if (motionTimer !== undefined) window.clearTimeout(motionTimer);
-  motionTimer = window.setTimeout(() => {
-    randomMotion.value = '';
-    scheduleRandomMotion();
-  }, 1250);
-};
-const scheduleRandomMotion = () => {
-  motionTimer = window.setTimeout(() => {
-    const motions = ['does-wave', 'does-hop', 'does-peek'] as const;
-    randomMotion.value = motions[Math.floor(Math.random() * motions.length)] ?? 'does-wave';
-    motionTimer = window.setTimeout(() => {
-      randomMotion.value = '';
-      scheduleRandomMotion();
-    }, 950);
-  }, 3200 + Math.round(Math.random() * 4200));
-};
-
-watch(() => store.activeChildId, () => {
-  loadMood();
-  isHidden.value = localStorage.getItem(hiddenStorageKey.value) === 'true';
-});
-watch(() => route.path, () => {
-  closeSpeech();
-  if (!moodPromptPending.value) choosingMood.value = false;
-  const intro = pageMessages.value[route.path] ?? fallbackPageMessage();
-  pageIntroHeading.value = intro.heading;
-  pageIntroMessage.value = intro.message;
-});
-watch(() => store.piggyBankOpen, (isOpen) => {
-  if (isOpen && moodPromptPending.value) {
-    if (initialMoodTimer !== undefined) window.clearTimeout(initialMoodTimer);
-    initialMoodTimer = undefined;
-    moodPromptPending.value = false;
-  }
-  closeSpeech();
-  choosingMood.value = false;
-  if (isOpen) {
-    showSpeech(t('guide.balance.openMessage'), t('guide.balance.heading'), true);
-  }
-});
-onMounted(() => {
-  loadMood();
-  isHidden.value = localStorage.getItem(hiddenStorageKey.value) === 'true';
-  const intro = pageMessages.value[route.path] ?? fallbackPageMessage();
-  pageIntroHeading.value = intro.heading;
-  pageIntroMessage.value = intro.message;
-  window.addEventListener('ladi-guide:say', handleGuideEvent);
-  document.addEventListener('click', handleGuidedClick, true);
-  scheduleRandomMotion();
-  if (!isHidden.value) {
-    choosingMood.value = true;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    initialMoodTimer = window.setTimeout(() => {
-      clearSpeechTimer();
-      customHeading.value = t('guide.mood.promptHeading');
-      speech.value = t('guide.mood.promptMessage');
-      initialMoodTimer = undefined;
-    }, reduceMotion ? 650 : 2650);
-  } else {
-    moodPromptPending.value = false;
-  }
-});
-onUnmounted(() => {
-  clearSpeechTimer();
-  if (motionTimer !== undefined) window.clearTimeout(motionTimer);
-  if (initialMoodTimer !== undefined) window.clearTimeout(initialMoodTimer);
-  if (celebrationTimer !== undefined) window.clearTimeout(celebrationTimer);
-  window.removeEventListener('ladi-guide:say', handleGuideEvent);
-  document.removeEventListener('click', handleGuidedClick, true);
-});
+const {
+  choosingMood, closeSpeech, giftCelebration, hideGuide, isHidden, isSmart, ladiScore, mood, moodOptions,
+  moodPromptPending, randomMotion, revealGuide, selectMood, speakCurrentPageIntro, speech, speechActionLabel,
+  speechHeading, speechProgress, store, triggerSpeechAction,
+} = useGlobalLadiGuide();
 </script>
 
 <style lang="scss" scoped>
@@ -368,17 +123,11 @@ onUnmounted(() => {
     color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
   border-right: 0;
   border-radius: 24px 0 0 24px;
-  background:
-    radial-gradient(
-      circle at 18% 20%,
-      color-mix(in srgb, var(--lad-palette-yellow) 40%, transparent),
-      transparent 29%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-white),
-      var(--lad-palette-background)
-    );
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-background)
+  );
   box-shadow:
     0 5px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent),
     0 10px 20px
@@ -391,73 +140,21 @@ onUnmounted(() => {
 .guide-branch:focus-visible {
   width: 63px;
   outline: 0;
-  background:
-    radial-gradient(
-      circle at 18% 20%,
-      color-mix(in srgb, var(--lad-palette-yellow) 60%, transparent),
-      transparent 30%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-white),
-      var(--lad-palette-teal-150)
-    );
-}
-.guide-branch svg {
-  width: 58px;
-  height: 68px;
-  overflow: visible;
-}
-.branch-vine {
-  fill: none;
-  stroke: var(--lad-palette-teal-600);
-  stroke-linecap: round;
-  stroke-width: 5;
-}
-.branch-leaf {
-  fill: var(--lad-palette-mint-450);
-  stroke: var(--lad-palette-white);
-  stroke-width: 2;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.branch-leaf--top {
-  transform: rotate(-31deg);
-}
-.branch-leaf--side {
-  fill: var(--lad-palette-green-250);
-  transform: rotate(24deg);
-}
-.branch-charm {
-  transform-box: fill-box;
-  transform-origin: 28px 27px;
-  animation: branch-charm-swing 2.7s ease-in-out infinite;
-}
-.branch-charm path {
-  fill: none;
-  stroke: var(--lad-palette-teal-600);
-  stroke-linecap: round;
-  stroke-width: 2.5;
-}
-.branch-charm circle {
-  fill: var(--lad-palette-yellow);
-  stroke: var(--lad-palette-amber-150);
-  stroke-width: 3;
-  filter: drop-shadow(
-    0 3px 1px color-mix(in srgb, var(--lad-palette-amber-650) 25%, transparent)
+  background: linear-gradient(
+    145deg,
+    var(--lad-palette-white),
+    var(--lad-palette-teal-150)
   );
 }
-.branch-charm text {
-  fill: var(--lad-palette-amber-700);
-  font-size: 0.875rem;
-  font-weight: var(--lad-font-weight-black);
-  text-anchor: middle;
-}
-.branch-spark {
-  fill: var(--lad-palette-amber-450);
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: branch-spark-pop 2.2s ease-in-out infinite;
+.guide-branch img {
+  width: 72px;
+  height: 72px;
+  display: block;
+  object-fit: contain;
+  transform: translateX(7px);
+  filter: drop-shadow(
+    0 3px 2px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent)
+  );
 }
 .guide-speech {
   width: 280px;
@@ -761,26 +458,6 @@ onUnmounted(() => {
     transform: translate(-210px, -95px) rotate(-20deg) scale(0.7);
   }
 }
-@keyframes branch-charm-swing {
-  0%,
-  100% {
-    transform: rotate(-7deg);
-  }
-  50% {
-    transform: rotate(8deg);
-  }
-}
-@keyframes branch-spark-pop {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.7) rotate(0);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.12) rotate(24deg);
-  }
-}
 @include respond-down(guide) {
   .global-ladi-guide {
     right: 2px;
@@ -805,8 +482,6 @@ onUnmounted(() => {
   .guide-ladi.does-highfive,
   .guide-high-five,
   .guide-flying-gift,
-  .branch-charm,
-  .branch-spark,
   .guide-speech-enter-active,
   .guide-speech-leave-active {
     animation: none;

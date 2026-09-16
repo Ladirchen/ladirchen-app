@@ -15,8 +15,8 @@ import App from "./App.vue";
 import { installCssColorPalette } from "./theme/color-palette";
 
 // Styles
-import "unfonts.css";
 import "virtual:uno.css";
+import "./styles/fonts.scss";
 import "./styles/main.scss";
 
 installCssColorPalette();

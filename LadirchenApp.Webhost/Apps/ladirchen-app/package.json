@@ -9,14 +9,16 @@
     "preview": "vp preview",
     "build-only": "vp build",
     "colors:check": "node ./scripts/color-palette.mjs",
+    "generate:design": "node ./scripts/generate-design.mjs",
+    "i18n:check": "node ./scripts/i18n.mjs",
+    "styles:check": "node ./scripts/style-quality.mjs",
     "type-check": "vue-tsc --build --force",
-    "lint": "node ./scripts/color-palette.mjs && eslint",
-    "lint:fix": "eslint --fix"
+    "lint": "node ./scripts/color-palette.mjs && node ./scripts/i18n.mjs && node ./scripts/style-quality.mjs && eslint",
+    "lint:fix": "eslint --fix",
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource/roboto": "catalog:dependencies",
-    "@fontsource/roboto-mono": "catalog:dependencies",
-    "@mdi/font": "catalog:dependencies",
     "motion-v": "catalog:dependencies",
     "pinia": "catalog:dependencies",
     "pixi.js": "catalog:dependencies",
@@ -26,6 +28,7 @@
     "vuetify": "catalog:dependencies"
   },
   "devDependencies": {
+    "@iconify-json/mdi": "catalog:devDependencies",
     "@tsconfig/node22": "catalog:devDependencies",
     "@types/node": "catalog:devDependencies",
     "@unocss/transformer-directives": "catalog:devDependencies",
@@ -38,10 +41,10 @@
     "typescript": "catalog:devDependencies",
     "unocss": "catalog:devDependencies",
     "unocss-preset-vuetify": "catalog:devDependencies",
-    "unplugin-fonts": "catalog:devDependencies",
     "vite": "catalog:devDependencies",
     "vite-plugin-vuetify": "catalog:devDependencies",
     "vite-plus": "catalog:devDependencies",
+    "vitest": "catalog:devDependencies",
     "vue-tsc": "catalog:devDependencies"
   },
   "packageManager": "pnpm@11.24.0",

@@ -1,18 +1,26 @@
 import { useI18n } from 'vue-i18n';
 
-import type { Contribution, HouseAccessory, Promotion, SavingGoal, ShopReward } from '@/domain/types';
+import type { Contribution, Promotion } from '@/domain/contributions/types';
+import type { HouseAccessory } from '@/domain/house/entities';
+import type { SavingGoal } from '@/domain/savings/types';
+import type { ShopReward } from '@/domain/shop/types';
+import { appendTranslationKey } from '@/locales/translation-keys';
+import type { TranslationField, TranslationKey, TranslationNamespaceKey } from '@/locales/translation-keys';
 
-type TranslatableEntity = { readonly translationKey?: string };
+type TranslatableEntity<Namespace extends TranslationNamespaceKey> = { readonly translationKey?: Namespace };
 
 export const useLocalizedDomainContent = () => {
   const { t, te } = useI18n();
 
-  const resolveField = (entity: TranslatableEntity, field: string, fallback: string): string => {
-    const key = entity.translationKey ? `${entity.translationKey}.${field}` : undefined;
+  const resolveField = <
+    Namespace extends TranslationNamespaceKey,
+    Field extends TranslationField<Namespace>,
+  >(entity: TranslatableEntity<Namespace>, field: Field, fallback: string): string => {
+    const key = entity.translationKey ? appendTranslationKey(entity.translationKey, field) : undefined;
     return key && te(key) ? t(key) : fallback;
   };
 
-  const resolveKey = (key: string | undefined, fallback: string, params?: Record<string, number | string>): string =>
+  const resolveKey = (key: TranslationKey | undefined, fallback: string, params?: Record<string, number | string>): string =>
     key && te(key) ? t(key, params ?? {}) : fallback;
 
   const contribution = (item: Contribution): Contribution => ({
