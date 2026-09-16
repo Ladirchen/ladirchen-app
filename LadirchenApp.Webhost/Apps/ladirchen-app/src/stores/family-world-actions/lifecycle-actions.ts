@@ -21,6 +21,7 @@ export const lifecycleActions = {
         this.pets = normalizeFamilyPets(profile.state.pets);
         this.onboardingCompleted = profile.state.onboardingCompleted;
         this.subscriptionTier = profile.state.subscriptionTier;
+        this.familyTimeZone = profile.state.timeZone;
       }
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
@@ -49,7 +50,6 @@ export const lifecycleActions = {
       }
       if (progression) {
         this.completedWeeklyStreak = progression.state.completedWeeklyStreak;
-        this.currentWeekDays = progression.state.currentWeekDays;
         this.currentWeekTarget = progression.state.currentWeekTarget;
         this.houseLevel = progression.state.houseLevel;
       }
@@ -112,7 +112,7 @@ export const lifecycleActions = {
   persistFamilyProfile(this: FamilyWorldStoreContext) {
     familyProfileService.scheduleSave({
       familyId: familyContext.activeFamilyId,
-      state: { members: this.members, onboardingCompleted: this.onboardingCompleted, pets: this.pets, subscriptionTier: this.subscriptionTier },
+      state: { members: this.members, onboardingCompleted: this.onboardingCompleted, pets: this.pets, subscriptionTier: this.subscriptionTier, timeZone: this.familyTimeZone },
       updatedBy: this.signedInMemberId,
     }, () => this.notify('notifications.save.profile'));
   },
@@ -148,7 +148,6 @@ export const lifecycleActions = {
       familyId: familyContext.activeFamilyId,
       state: {
         completedWeeklyStreak: this.completedWeeklyStreak,
-        currentWeekDays: this.currentWeekDays,
         currentWeekTarget: this.currentWeekTarget,
         houseLevel: this.houseLevel,
       },

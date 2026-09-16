@@ -213,6 +213,7 @@ import LadiMascot from '@/shared/components/LadiMascot.vue';
 import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
 import type { ContributionId, FamilyMemberId } from '@/domain/types';
 import { getLadiStage } from '@/domain/ladi';
+import { isPromotionAvailable } from '@/domain/promotions';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 const store = useFamilyWorldStore();
@@ -239,7 +240,7 @@ const emptyTaskMessage = computed(() => {
 });
 const activePromotion = computed(() =>
   store.promotions.find((promotion) =>
-    promotion.active && store.contributions.some(
+    isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) && store.contributions.some(
       (contribution) => contribution.id === promotion.contributionId && contribution.assigneeId === store.activeChildId,
     ),
   ),

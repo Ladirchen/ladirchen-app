@@ -1,19 +1,19 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="460" @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog content-class="series-summary-dialog-frame" :model-value="modelValue" max-width="480" @update:model-value="emit('update:modelValue', $event)">
     <v-card class="streak-dialog" rounded="xl">
-      <div class="streak-header pa-5">
+      <div class="streak-header pa-4">
         <div class="streak-title-row">
           <div>
-            <p class="eyebrow mb-1">Jeden Tag gemeinsam</p>
+            <p class="dialog-kicker">Gemeinsam dranbleiben</p>
             <h2>Tagesserie</h2>
             <p class="streak-subtitle mt-1">Sammelt gemeinsam Feuer für euer Zuhause.</p>
           </div>
           <div class="streak-hero" aria-hidden="true">
             <span class="hero-spark hero-spark--one">✦</span>
             <span class="hero-spark hero-spark--two">✦</span>
-            <AnimatedStreakFlame :size="70" />
+            <AnimatedStreakFlame :size="80" />
           </div>
-          <v-btn class="close-button" aria-label="Wochenübersicht schließen" icon="mdi-close" size="small" variant="text" @click="close" />
+          <button class="close-button" aria-label="Wochenübersicht schließen" type="button" @click="close"><v-icon icon="mdi-close" /></button>
         </div>
 
         <div class="summary-grid mt-4">
@@ -28,15 +28,22 @@
         </div>
       </div>
 
-      <div class="streak-content pa-5">
-        <div class="week-heading">
+      <div class="streak-content pa-4">
+        <div v-if="store.viewerRole === 'child'" class="ladi-level">
+          <LadiMascot :score="store.averageTaskRating" :show-score="false" :size="88" />
+          <div>
+            <p class="section-kicker">MEIN LADI-LEVEL</p>
+            <strong>{{ ladiStage.name }}</strong>
+            <span>{{ ladiStage.description }}</span>
+          </div>
+        </div>
+
+        <div class="week-heading" :class="{ 'mt-4': store.viewerRole === 'child' }">
           <div><span class="section-kicker">EUER WOCHENWEG</span><strong>Ein Tag nach dem anderen</strong></div>
-          <span v-if="remainingDays > 0">Noch {{ remainingDays }}</span>
-          <span v-else class="week-complete">Komplett!</span>
         </div>
 
         <div aria-label="Fortschritt dieser Woche" class="week-days mt-3">
-          <div v-for="day in weekDays" :key="day.label" :class="['week-day', `week-day--${day.status}`]" :aria-label="`${day.fullLabel}: ${statusLabel(day.status)}`">
+          <div v-for="(day, index) in weekDays" :key="day.label" :class="['week-day', `week-day--${day.status}`]" :style="{ '--day-index': index }" :aria-label="`${day.fullLabel}: ${statusLabel(day.status)}`">
             <span>{{ day.label }}</span>
             <div class="day-symbol">
               <v-icon v-if="day.status === 'done'" size="19">mdi-check-bold</v-icon>
@@ -45,31 +52,12 @@
             </div>
             <small>{{ statusLabel(day.status) }}</small>
           </div>
-        </div>
-
-        <div class="week-progress mt-4">
-          <v-progress-linear color="primary" height="10" :model-value="weekProgress" rounded />
-          <p class="week-message mt-3">{{ weekMessage }}</p>
-        </div>
-
-        <div class="energy-card mt-5">
-          <div class="energy-illustration" aria-hidden="true">
-            <v-icon size="31">mdi-home-heart</v-icon>
-            <span>⚡</span>
-          </div>
-          <div class="energy-copy">
-            <span class="section-kicker">HEUTIGES GEMEINSAMES ZIEL</span>
-            <div class="energy-row">
-              <strong>Hausenergie sammeln</strong>
-              <b>{{ store.familyEnergy }} %</b>
-            </div>
-            <v-progress-linear :color="store.houseMeetsMinimumEnergy ? 'primary' : 'warning'" height="9" :model-value="store.familyEnergy" rounded />
-            <p v-if="store.houseMeetsMinimumEnergy" class="energy-success mt-2"><v-icon size="15">mdi-check-circle</v-icon> Geschafft – heute zählt für eure Serie!</p>
-            <p v-else class="energy-hint mt-2">Ab <b>60 %</b> zählt der Tag. Bestätigt dafür gemeinsam eure Grundbeiträge.</p>
+          <div class="week-motivation">
+            <AnimatedStreakFlame :size="27" />
+            <span><strong>{{ weekMessage }}</strong><small>Jeder geschaffte Tag bringt neue Energie in euer Zuhause.</small></span>
           </div>
         </div>
 
-        <v-btn class="mt-5" color="primary" rounded="lg" size="large" variant="flat" width="100%" @click="close">Weiter gemeinsam sammeln</v-btn>
       </div>
     </v-card>
   </v-dialog>
@@ -79,6 +67,10 @@
 import { computed } from 'vue';
 
 import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
+import LadiMascot from '@/shared/components/LadiMascot.vue';
+import { getLadiStage } from '@/domain/ladi';
+import { approvedContributionDatesInCurrentWeek } from '@/domain/weekly-progress';
+import { addCalendarDays, calendarDateInTimeZone, startOfIsoWeek } from '@/domain/zoned-calendar';
 import { useFamilyWorldStore } from '@/stores/family-world';
 
 type DayStatus = 'done' | 'today' | 'upcoming';
@@ -86,31 +78,34 @@ type DayStatus = 'done' | 'today' | 'upcoming';
 defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const store = useFamilyWorldStore();
-const labels = [
-  { label: 'Mo', fullLabel: 'Montag' },
-  { label: 'Di', fullLabel: 'Dienstag' },
-  { label: 'Mi', fullLabel: 'Mittwoch' },
-  { label: 'Do', fullLabel: 'Donnerstag' },
-  { label: 'Fr', fullLabel: 'Freitag' },
-  { label: 'Sa', fullLabel: 'Samstag' },
-  { label: 'So', fullLabel: 'Sonntag' },
-];
-
-const weekDays = computed(() => labels.map((day, index) => ({
+const labels = computed(() => {
+  const monday = startOfIsoWeek(new Date(store.currentTimeMilliseconds), store.familyTimeZone);
+  const shortFormatter = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', weekday: 'short' });
+  const longFormatter = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', weekday: 'long' });
+  return Array.from({ length: 7 }, (_, index) => {
+    const calendarDate = addCalendarDays(monday, index);
+    const date = new Date(`${calendarDate}T12:00:00.000Z`);
+    return { calendarDate, label: shortFormatter.format(date), fullLabel: longFormatter.format(date) };
+  });
+});
+const completedDates = computed(() => approvedContributionDatesInCurrentWeek(
+  store.contributions,
+  store.familyTimeZone,
+  new Date(store.currentTimeMilliseconds),
+));
+const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
+const weekDays = computed(() => labels.value.map(day => ({
   ...day,
-  status: (index < store.currentWeekDays
+  status: (completedDates.value.has(day.calendarDate)
     ? 'done'
-    : index === store.currentWeekDays && store.currentWeekDays < store.currentWeekTarget
+    : day.calendarDate === today.value
       ? 'today'
       : 'upcoming') as DayStatus,
 })));
-const weekProgress = computed(() => Math.min(100, (store.currentWeekDays / store.currentWeekTarget) * 100));
-const remainingDays = computed(() => Math.max(0, store.currentWeekTarget - store.currentWeekDays));
-const weekMessage = computed(() => remainingDays.value === 0
-  ? 'Die Woche ist vollständig. Jetzt wird die nächste Hausentwicklung enthüllt!'
-  : remainingDays.value === 1
-    ? 'Nur noch ein Tag bis zum Wochenabschluss – die nächste Hausentwicklung bleibt eine Überraschung.'
-    : `Noch ${remainingDays.value} Tage bis zum Wochenabschluss – die nächste Hausentwicklung bleibt eine Überraschung.`);
+const ladiStage = computed(() => getLadiStage(store.averageTaskRating));
+const weekMessage = computed(() => store.currentWeekDays >= store.currentWeekTarget
+  ? 'Starke Woche – ihr habt gemeinsam durchgehalten!'
+  : 'Heute zählt für eure gemeinsame Serie!');
 
 const statusLabel = (status: DayStatus) => {
   if (status === 'done') return 'Geschafft';
@@ -122,73 +117,109 @@ const close = () => emit('update:modelValue', false);
 
 <style scoped>
 .streak-dialog {
-  max-height: min(820px, 94dvh);
-  @apply overflow-hidden;
+  max-height: calc(100dvh - 28px);
+  @apply d-flex flex-column overflow-hidden;
   color: #253843;
+  border: 2px solid rgba(78, 143, 221, 0.16);
   background: #fffdf8 !important;
+  box-shadow:
+    0 10px 0 rgba(58, 127, 174, 0.12),
+    0 28px 70px rgba(62, 85, 75, 0.22) !important;
 }
 .streak-header {
-  @apply position-relative overflow-hidden;
+  @apply position-relative;
   flex: 0 0 auto;
-  background: linear-gradient(145deg, #ffe2e9 0%, #ffedda 48%, #fff4c9 100%);
-  border-bottom: 1px solid rgba(181, 107, 107, 0.14);
-}
-.streak-header::before,
-.streak-header::after {
-  content: "";
-  @apply position-absolute;
-  border-radius: 50%;
-  @apply pointer-events-none;
-}
-.streak-header::before {
-  width: 190px;
-  height: 190px;
-  top: -112px;
-  right: -35px;
-  background: rgba(255, 255, 255, 0.33);
-  box-shadow: 0 0 0 22px rgba(255, 255, 255, 0.15);
-}
-.streak-header::after {
-  width: 100px;
-  height: 35px;
-  right: 77px;
-  bottom: -20px;
-  background: rgba(255, 255, 255, 0.32);
-  filter: blur(2px);
+  background: #fffdf8;
 }
 .streak-title-row {
-  min-height: 104px;
-  @apply position-relative;
+  min-height: 126px;
+  padding: 18px;
+  @apply position-relative d-flex align-center overflow-hidden;
   z-index: 1;
-  @apply d-flex align-start;
+  border: 2px solid rgba(78, 143, 221, 0.15);
+  border-radius: 23px;
+  background: linear-gradient(145deg, #fffdf8, #e7f3ff);
+  box-shadow: 0 5px 0 rgba(78, 143, 221, 0.12);
+}
+.streak-title-row::before,
+.streak-title-row::after {
+  content: "";
+  @apply position-absolute pointer-events-none;
+  border-radius: 50%;
+}
+.streak-title-row::before {
+  width: 120px;
+  height: 120px;
+  top: -72px;
+  right: -28px;
+  background: rgba(214, 235, 255, 0.62);
+  box-shadow: 0 0 0 17px rgba(226, 240, 255, 0.45);
+}
+.streak-title-row::after {
+  width: 84px;
+  height: 26px;
+  right: 44px;
+  bottom: -16px;
+  background: rgba(213, 234, 255, 0.55);
 }
 .streak-title-row > div:first-child {
-  max-width: 255px;
+  max-width: 245px;
+  @apply position-relative;
+  z-index: 1;
+}
+.dialog-kicker {
+  margin: 0 0 5px;
+  color: #4e8fdd;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 .streak-dialog h2 {
   @apply ma-0;
-  font-size: 27px;
+  font-size: 25px;
   letter-spacing: -0.04em;
 }
 .streak-subtitle {
-  max-width: 235px;
+  max-width: 225px;
   color: #65766f;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
 }
 .close-button {
-  @apply position-absolute;
-  top: -7px;
-  right: -8px;
-  z-index: 3;
+  width: 36px;
+  height: 36px;
+  @apply position-absolute d-grid place-center cursor-pointer;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  color: #35574f;
+  border: 2px solid #fff;
+  border-radius: 13px;
+  background: #f4f8f6;
+  box-shadow: 0 4px 0 rgba(82, 123, 106, 0.13);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.close-button:hover {
+  transform: translateY(-2px) rotate(4deg);
+  box-shadow: 0 6px 0 rgba(82, 123, 106, 0.13);
+}
+.close-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(82, 123, 106, 0.13);
 }
 .streak-hero {
-  width: 92px;
-  height: 92px;
-  @apply position-absolute;
-  top: 13px;
-  right: 20px;
-  @apply d-grid place-center;
+  width: 82px;
+  height: 82px;
+  @apply position-absolute d-grid place-center;
+  top: 23px;
+  right: 44px;
+  z-index: 2;
+  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 0 rgba(78, 143, 221, 0.12);
 }
 .hero-spark {
   @apply position-absolute;
@@ -207,34 +238,42 @@ const close = () => emit('update:modelValue', false);
   animation-delay: -0.8s;
 }
 .summary-grid {
-  @apply position-relative;
+  @apply position-relative d-grid;
   z-index: 1;
-  @apply d-grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 9px;
 }
 .summary-tile {
-  @apply min-w-0 pa-3 d-flex align-center;
-  gap: 10px;
-  border: 1px solid rgba(110, 82, 72, 0.13);
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.69);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  min-height: 68px;
+  @apply min-w-0 pa-2 d-flex align-center;
+  gap: 8px;
+  border: 2px solid rgba(73, 151, 198, 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 90% 8%, rgba(255, 215, 88, 0.2), transparent 27%),
+    linear-gradient(145deg, #eaf7ff, #edf9f3 62%, #fff4cf);
+  box-shadow: 0 5px 0 rgba(58, 127, 174, 0.12);
+}
+.summary-tile--week {
+  border-color: rgba(167, 118, 194, 0.17);
+  background: linear-gradient(145deg, #fff1f8, #f1f0ff 58%, #fff6d8);
+  box-shadow: 0 5px 0 rgba(143, 98, 157, 0.11);
 }
 .summary-icon {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   @apply d-grid place-center;
-  flex: 0 0 42px;
+  flex: 0 0 40px;
+  color: #fff !important;
+  border: 3px solid #fff;
   border-radius: 14px;
-}
-.summary-tile--streak .summary-icon {
-  color: #f09c31;
-  background: #fff0bc;
+  background: linear-gradient(145deg, #6bc3a0, #4387d2) !important;
+  box-shadow: 0 4px 0 #3574aa !important;
+  transform: rotate(-5deg);
 }
 .summary-tile--week .summary-icon {
-  color: #238765;
-  background: #e2f5ea;
+  background: linear-gradient(145deg, #d589c7, #826ec5) !important;
+  box-shadow: 0 4px 0 #6d58a8 !important;
 }
 .summary-tile span,
 .summary-tile strong {
@@ -252,8 +291,9 @@ const close = () => emit('update:modelValue', false);
 .streak-content {
   min-height: 0;
   flex: 1 1 auto;
-  @apply overflow-y-auto;
-  background: linear-gradient(180deg, #fffdf8, #f2fbf6);
+  @apply d-flex flex-column overflow-hidden;
+  gap: 12px;
+  background: linear-gradient(180deg, #fffdf8, #f4faf7);
 }
 .week-heading {
   @apply d-flex align-end justify-space-between;
@@ -264,8 +304,8 @@ const close = () => emit('update:modelValue', false);
   @apply d-block;
 }
 .week-heading > div strong {
-  margin-top: 2px;
-  font-size: 15px;
+  margin-top: 3px;
+  font-size: 18px;
 }
 .section-kicker {
   color: #278568;
@@ -273,53 +313,50 @@ const close = () => emit('update:modelValue', false);
   font-weight: 950;
   letter-spacing: 0.11em;
 }
-.week-heading > span {
-  padding: 6px 10px;
-  color: #78510f;
-  border-radius: 999px;
-  background: #ffe6a8;
-  font-size: 9px;
-  @apply font-weight-black;
-}
-.week-heading > .week-complete {
-  color: #176348;
-  background: #dff5e8;
-}
 .week-days {
-  padding: 12px 7px 10px;
+  padding: 18px 11px 12px;
   @apply d-grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   @apply ga-1;
-  border: 1px solid rgba(79, 124, 105, 0.11);
-  border-radius: 19px;
-  background: rgba(255, 255, 255, 0.76);
+  border: 2px solid rgba(78, 143, 221, 0.17);
+  border-radius: 23px;
+  background:
+    radial-gradient(
+      circle at 88% 2%,
+      rgba(255, 218, 90, 0.24),
+      transparent 30%
+    ),
+    linear-gradient(145deg, #f8fcff, #eef9f5);
+  box-shadow:
+    0 7px 0 rgba(78, 143, 221, 0.1),
+    0 14px 24px rgba(61, 112, 89, 0.07);
 }
 .week-day {
   @apply min-w-0 position-relative text-center;
 }
-.week-day:not(:last-child)::after {
+.week-day:not(:nth-child(7))::after {
   content: "";
-  width: calc(100% - 30px);
-  height: 3px;
+  width: calc(100% - 35px);
+  height: 4px;
   @apply position-absolute;
-  top: 29px;
-  left: calc(50% + 17px);
+  top: 34px;
+  left: calc(50% + 20px);
   z-index: 0;
   border-radius: 999px;
   background: #e4ede8;
 }
-.week-day--done:not(:last-child)::after {
+.week-day--done:not(:nth-child(7))::after {
   background: #80cfaf;
 }
 .week-day > span {
   color: #40524b;
-  font-size: 9px;
+  font-size: 10px;
   @apply font-weight-black;
 }
 .day-symbol {
-  width: 32px;
-  height: 32px;
-  margin: 5px auto;
+  width: 40px;
+  height: 40px;
+  margin: 6px auto;
   @apply position-relative;
   z-index: 1;
   @apply d-grid place-center;
@@ -331,15 +368,19 @@ const close = () => emit('update:modelValue', false);
 .week-day small {
   @apply d-block overflow-hidden;
   color: var(--lad-muted);
-  font-size: 7px;
+  font-size: 8px;
   text-overflow: ellipsis;
   @apply text-no-wrap;
 }
 .week-day--done .day-symbol {
   color: white;
-  border-color: #177153;
-  background: linear-gradient(145deg, #42bf91, #238765);
-  box-shadow: 0 3px 0 #145b45;
+  border: 3px solid #eafff6;
+  background: linear-gradient(145deg, #4dcca0, #218461);
+  box-shadow:
+    0 4px 0 #145b45,
+    0 8px 13px rgba(28, 119, 87, 0.16);
+  animation: day-done-arrive 0.65s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--day-index) * 70ms);
 }
 .week-day--done .day-symbol :deep(.v-icon) {
   color: white !important;
@@ -347,11 +388,12 @@ const close = () => emit('update:modelValue', false);
 }
 .week-day--today .day-symbol {
   color: #99600c;
-  border-color: #e7aa3b;
-  background: #fff1bd;
+  border: 3px solid #fff9dc;
+  background: linear-gradient(145deg, #fff5c8, #ffd46a);
   box-shadow:
-    0 0 0 5px rgba(255, 201, 92, 0.18),
-    0 3px 0 #cc8726;
+    0 0 0 6px rgba(255, 201, 92, 0.18),
+    0 4px 0 #cc8726;
+  animation: day-today-pulse 2.2s ease-in-out infinite;
 }
 .week-day--done small {
   color: #164f3e;
@@ -361,82 +403,66 @@ const close = () => emit('update:modelValue', false);
   color: #99600c;
   @apply font-weight-black;
 }
-.week-progress {
-  padding: 12px 13px;
-  border-radius: 15px;
-  background: linear-gradient(
-    90deg,
-    rgba(225, 247, 235, 0.72),
-    rgba(255, 244, 203, 0.58)
-  );
+.week-motivation {
+  min-height: 48px;
+  padding: 7px 11px;
+  @apply d-flex align-center;
+  grid-column: 1 / -1;
+  gap: 9px;
+  margin-top: 8px;
+  color: #275d4d;
+  border: 1px solid rgba(62, 170, 127, 0.17);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #e7f8f0, #fff5cf);
+  box-shadow: 0 3px 0 rgba(47, 139, 103, 0.09);
 }
-.week-message {
-  margin-bottom: 0;
-  color: #52655d;
-  @apply text-center;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.4;
+.week-motivation span,
+.week-motivation strong,
+.week-motivation small {
+  @apply d-block;
 }
-.energy-card {
-  padding: 14px;
-  @apply d-flex align-center ga-3;
-  border: 1px solid rgba(62, 188, 140, 0.2);
-  border-radius: 20px;
-  background: linear-gradient(145deg, #ecfaf3, #f9fff8);
-  box-shadow: 0 4px 0 rgba(57, 137, 106, 0.08);
+.week-motivation strong {
+  font-size: 11px;
 }
-.energy-illustration {
-  width: 58px;
-  height: 58px;
-  @apply position-relative d-grid place-center;
-  flex: 0 0 58px;
-  color: #268765;
-  border-radius: 18px;
-  background: #d9f4e6;
+.week-motivation small {
+  margin-top: 2px;
+  color: #647971;
+  font-size: 8px;
+  line-height: 1.3;
 }
-.energy-illustration > span {
+.ladi-level {
+  min-height: 118px;
+  padding: 13px 17px;
+  @apply position-relative d-flex align-center overflow-hidden;
+  gap: 16px;
+  border: 2px solid rgba(78, 143, 221, 0.16);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #fff, #eef7ff);
+  box-shadow: 0 7px 0 rgba(78, 143, 221, 0.11);
+}
+.ladi-level::after {
+  content: "✦";
   @apply position-absolute;
-  top: -6px;
-  right: -5px;
-  width: 25px;
-  height: 25px;
-  @apply d-grid place-center;
-  border: 3px solid #f7fff9;
-  border-radius: 50%;
-  background: #fff0ad;
-  font-size: 12px;
+  top: 9px;
+  right: 12px;
+  color: #e6a52d;
 }
-.energy-copy {
+.ladi-level > div:last-child {
   @apply min-w-0;
-  flex: 1;
 }
-.energy-row {
-  margin: 2px 0 7px;
-  @apply d-flex align-center justify-space-between;
-  gap: 10px;
+.ladi-level strong,
+.ladi-level span {
+  @apply d-block;
 }
-.energy-row strong {
-  color: var(--lad-text);
-  font-size: 13px;
+.ladi-level strong {
+  margin-top: 2px;
+  font-size: 17px;
 }
-.energy-row b {
-  color: #1c8d67;
-  font-size: 18px;
-}
-.energy-success,
-.energy-hint {
-  margin-bottom: 0;
-  color: #287458;
-  font-size: 9px;
-  font-weight: 750;
-  line-height: 1.35;
-}
-.energy-success {
-  @apply d-flex align-center ga-1;
-}
-.energy-hint {
+.ladi-level span {
+  margin-top: 4px;
   color: var(--lad-muted);
+  font-size: 10px;
+  line-height: 1.45;
 }
 @keyframes spark-pulse {
   0%,
@@ -449,46 +475,43 @@ const close = () => emit('update:modelValue', false);
     transform: scale(1.15) rotate(18deg);
   }
 }
-.streak-dialog {
-  border: 2px solid rgba(236, 158, 42, 0.2);
-  box-shadow:
-    0 10px 0 rgba(119, 85, 47, 0.12),
-    0 28px 70px rgba(62, 85, 75, 0.22) !important;
+@keyframes day-done-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.7) rotate(-12deg);
+  }
+  70% {
+    transform: translateY(-2px) scale(1.08) rotate(4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.streak-header {
-  border-bottom-width: 2px;
-  background:
-    radial-gradient(
-      circle at 85% 12%,
-      rgba(255, 255, 255, 0.72),
-      transparent 22%
-    ),
-    linear-gradient(145deg, #ffe2cf, #fff0b8 62%, #eaf8ef);
-}
-.summary-tile {
-  border-width: 2px;
-  box-shadow:
-    0 5px 0 rgba(135, 91, 46, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-.summary-icon {
-  border: 2px solid rgba(255, 255, 255, 0.84);
-  box-shadow: 0 4px 0 rgba(192, 119, 22, 0.14);
-  transform: rotate(-4deg);
-}
-.week-days {
-  border-width: 2px;
-  box-shadow: 0 6px 0 rgba(60, 139, 106, 0.1);
-}
-.energy-card {
-  border-width: 2px;
-  box-shadow:
-    0 6px 0 rgba(59, 134, 105, 0.12),
-    0 12px 24px rgba(64, 101, 88, 0.08) !important;
+@keyframes day-today-pulse {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+    box-shadow:
+      0 0 0 5px rgba(255, 201, 92, 0.15),
+      0 4px 0 #cc8726;
+  }
+  50% {
+    transform: translateY(-3px) rotate(3deg);
+    box-shadow:
+      0 0 0 9px rgba(255, 201, 92, 0.09),
+      0 6px 0 #cc8726;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-spark {
+  .hero-spark,
+  .week-day--done .day-symbol,
+  .week-day--today .day-symbol {
     animation: none;
   }
+}
+:global(.series-summary-dialog-frame) {
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
 }
 </style>

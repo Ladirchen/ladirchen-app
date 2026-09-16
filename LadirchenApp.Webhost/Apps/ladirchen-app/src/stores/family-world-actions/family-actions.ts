@@ -9,6 +9,9 @@ import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-
 import { familyMemberColorPalette } from '@/theme/color-palette';
 
 export const familyActions = {
+  refreshCurrentTime(this: FamilyWorldStoreContext) {
+    this.currentTimeMilliseconds = Date.now();
+  },
   switchSession(this: FamilyWorldStoreContext, memberId: FamilyMemberId, revealRewards = true) {
     const member = this.members.find((item) => item.id === memberId);
     if (!member) {return;}

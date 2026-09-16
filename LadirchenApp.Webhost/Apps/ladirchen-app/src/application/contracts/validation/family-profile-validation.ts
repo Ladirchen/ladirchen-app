@@ -3,6 +3,7 @@ import type { StateGuard } from './runtime-validation';
 import { exhaustiveValues, hasUniqueIds, isArrayOf, isDomainId, isFamilyMemberId, isHexColor, isKnownString, isNonEmptyString, isNonNegativeInteger, isOptionalBoolean, isOptionalString, isRecord } from './runtime-validation';
 import { isAvatarAppearance } from '@/domain/avatar';
 import type { FamilyMember, FamilyPet, FamilyPetKindId, GuardianAccessLevel, SubscriptionTier, ViewerRole } from '@/domain/types';
+import { isIanaTimeZone } from '@/domain/time-zone';
 
 const viewerRoles = exhaustiveValues<ViewerRole>({ child: true, guardian: true });
 const subscriptionTiers = exhaustiveValues<SubscriptionTier>({ free: true, pro: true });
@@ -42,4 +43,5 @@ export const isFamilyProfileState: StateGuard<FamilyProfileState> = (value): val
   isArrayOf(value.members, isFamilyMember) && hasUniqueIds(value.members) &&
   typeof value.onboardingCompleted === 'boolean' &&
   isArrayOf(value.pets, isFamilyPet) && hasUniqueIds(value.pets) &&
-  isSubscriptionTier(value.subscriptionTier);
+  isSubscriptionTier(value.subscriptionTier) &&
+  isIanaTimeZone(value.timeZone);
