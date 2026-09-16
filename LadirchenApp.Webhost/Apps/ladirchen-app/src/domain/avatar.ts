@@ -1,3 +1,5 @@
+import { avatarHairColorPalette, avatarOutfitColorPalette, avatarSkinTonePalette } from '@/theme/color-palette';
+
 export type AvatarFace = 'happy' | 'freckles' | 'wink' | 'surprised' | 'confident' | 'dreamy' | 'silly' | 'sparkle';
 export type AvatarFaceShape = 'soft' | 'round' | 'oval' | 'angular';
 export type AvatarHair = 'short' | 'curls' | 'ponytail' | 'bob' | 'undercut' | 'bun' | 'braids' | 'waves' | 'afro' | 'space-buns';
@@ -7,39 +9,9 @@ export type AvatarAccessoryId = 'none' | 'glasses' | 'headphones' | 'cat-ears' |
 export type AvatarFunAccessoryId = 'none' | 'mustache' | 'whiskers' | 'rainbow' | 'clown-nose' | 'pirate' | 'monster-horns';
 export type AvatarSeasonalAccessoryId = 'none' | 'witch' | 'pumpkin' | 'santa' | 'reindeer' | 'bat' | 'elf' | 'snow-monster';
 
-export const avatarSkinToneColors = {
-  'skin-light': '#f8d6bd',
-  'skin-medium': '#efba91',
-  'skin-tan': '#c9865a',
-  'skin-deep': '#75452f',
-} as const;
-
-export const avatarHairColors = {
-  'hair-black': '#33251f',
-  'hair-brown': '#69432b',
-  'hair-auburn': '#b66b32',
-  'hair-blonde': '#e7c36c',
-  'hair-purple': '#7a55b2',
-  'hair-blue': '#3b8aaa',
-  'hair-gray': '#817d78',
-  'hair-silver': '#aaa69f',
-  'hair-white': '#dedbd2',
-} as const;
-
-export const avatarOutfitColors = {
-  'outfit-blue': '#6f8df5',
-  'outfit-green': '#42ad83',
-  'outfit-coral': '#f07e70',
-  'outfit-gold': '#e6a83f',
-  'outfit-purple': '#8e67c4',
-  'outfit-navy': '#394f68',
-  'outfit-lavender': '#9a78b8',
-  'outfit-slate': '#557187',
-  'outfit-emerald': '#4d9c7c',
-  'outfit-rose': '#dd7b91',
-  'outfit-mint': '#58aa82',
-  'outfit-ocean': '#3b8aaa',
-} as const;
+export const avatarSkinToneColors = avatarSkinTonePalette;
+export const avatarHairColors = avatarHairColorPalette;
+export const avatarOutfitColors = avatarOutfitColorPalette;
 
 export type AvatarSkinToneId = keyof typeof avatarSkinToneColors;
 export type AvatarHairColorId = keyof typeof avatarHairColors;
@@ -68,6 +40,67 @@ export type PersistedAvatarAppearance = Partial<AvatarAppearance> & {
   skinColor?: string;
 };
 
+const avatarOptionIds = {
+  accessoryId: ['none', 'glasses', 'headphones', 'cat-ears', 'cap', 'crown', 'star-glasses', 'flower-crown', 'propeller-cap'],
+  age: ['child', 'adult', 'senior'],
+  face: ['happy', 'freckles', 'wink', 'surprised', 'confident', 'dreamy', 'silly', 'sparkle'],
+  faceShape: ['soft', 'round', 'oval', 'angular'],
+  funAccessoryId: ['none', 'mustache', 'whiskers', 'rainbow', 'clown-nose', 'pirate', 'monster-horns'],
+  hair: ['short', 'curls', 'ponytail', 'bob', 'undercut', 'bun', 'braids', 'waves', 'afro', 'space-buns'],
+  outfit: ['hoodie', 'overalls', 'explorer', 'space', 'party', 'sporty', 'pajamas', 'superhero', 'dinosaur', 'monster', 'vampire', 'shark', 'robot', 'fairy', 'blouse', 'shirt', 'cardigan', 'blazer'],
+  seasonalAccessoryId: ['none', 'witch', 'pumpkin', 'santa', 'reindeer', 'bat', 'elf', 'snow-monster'],
+} as const;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === 'string';
+const isOption = <TOption extends string>(value: unknown, options: readonly TOption[]): value is TOption =>
+  typeof value === 'string' && options.some(option => option === value);
+const isOptionalOption = (value: unknown, options: readonly string[]): boolean =>
+  value === undefined || isOption(value, options);
+
+export const isAvatarSkinToneId = (value: unknown): value is AvatarSkinToneId =>
+  isOption(value, Object.keys(avatarSkinToneColors));
+export const isAvatarHairColorId = (value: unknown): value is AvatarHairColorId =>
+  isOption(value, Object.keys(avatarHairColors));
+export const isAvatarOutfitColorId = (value: unknown): value is AvatarOutfitColorId =>
+  isOption(value, Object.keys(avatarOutfitColors));
+
+export const isAvatarAppearance = (value: unknown): value is AvatarAppearance =>
+  isRecord(value) &&
+  isOption(value.age, avatarOptionIds.age) &&
+  isOption(value.face, avatarOptionIds.face) &&
+  isOption(value.faceShape, avatarOptionIds.faceShape) &&
+  isOption(value.hair, avatarOptionIds.hair) &&
+  isOption(value.outfit, avatarOptionIds.outfit) &&
+  isOption(value.accessoryId, avatarOptionIds.accessoryId) &&
+  isOption(value.funAccessoryId, avatarOptionIds.funAccessoryId) &&
+  isOption(value.seasonalAccessoryId, avatarOptionIds.seasonalAccessoryId) &&
+  isAvatarSkinToneId(value.skinToneId) &&
+  isAvatarHairColorId(value.hairColorId) &&
+  isAvatarOutfitColorId(value.outfitColorId);
+
+/** Accepts current appearances and the supported legacy colour/accessory fields. */
+export const isPersistedAvatarAppearance = (value: unknown): value is PersistedAvatarAppearance =>
+  isRecord(value) &&
+  isOptionalOption(value.age, avatarOptionIds.age) &&
+  isOptionalOption(value.face, avatarOptionIds.face) &&
+  isOptionalOption(value.faceShape, avatarOptionIds.faceShape) &&
+  isOptionalOption(value.hair, avatarOptionIds.hair) &&
+  isOptionalOption(value.outfit, avatarOptionIds.outfit) &&
+  isOptionalOption(value.accessoryId, avatarOptionIds.accessoryId) &&
+  isOptionalOption(value.funAccessoryId, avatarOptionIds.funAccessoryId) &&
+  isOptionalOption(value.seasonalAccessoryId, avatarOptionIds.seasonalAccessoryId) &&
+  isOptionalOption(value.skinToneId, Object.keys(avatarSkinToneColors)) &&
+  isOptionalOption(value.hairColorId, Object.keys(avatarHairColors)) &&
+  isOptionalOption(value.outfitColorId, Object.keys(avatarOutfitColors)) &&
+  isOptionalOption(value.accessory, avatarOptionIds.accessoryId) &&
+  isOptionalOption(value.fun, avatarOptionIds.funAccessoryId) &&
+  isOptionalOption(value.season, avatarOptionIds.seasonalAccessoryId) &&
+  isOptionalString(value.skinColor) &&
+  isOptionalString(value.hairColor) &&
+  isOptionalString(value.outfitColor);
+
 export const createDefaultAvatarAppearance = (): AvatarAppearance => ({
   age: 'child',
   skinToneId: 'skin-medium',
@@ -87,10 +120,11 @@ const normalizeColorId = <T extends string>(
   legacyColor: string | undefined,
   colors: Record<T, string>,
   fallbackId: T,
+  isColorId: (value: unknown) => value is T,
 ): T => {
   if (currentId) {return currentId;}
-  const legacyId = Object.entries(colors).find(([, color]) => color === legacyColor)?.[0] as T | undefined;
-  return legacyId ?? fallbackId;
+  const legacyId = Object.entries(colors).find(([, color]) => color === legacyColor)?.[0];
+  return isColorId(legacyId) ? legacyId : fallbackId;
 };
 
 export const normalizeAvatarAppearance = (
@@ -104,10 +138,10 @@ export const normalizeAvatarAppearance = (
     ...currentAppearance,
     accessoryId: appearance.accessoryId ?? accessory ?? fallback.accessoryId,
     funAccessoryId: appearance.funAccessoryId ?? fun ?? fallback.funAccessoryId,
-    hairColorId: normalizeColorId(appearance.hairColorId, hairColor, avatarHairColors, fallback.hairColorId),
-    outfitColorId: normalizeColorId(appearance.outfitColorId, outfitColor, avatarOutfitColors, fallback.outfitColorId),
+    hairColorId: normalizeColorId(appearance.hairColorId, hairColor, avatarHairColors, fallback.hairColorId, isAvatarHairColorId),
+    outfitColorId: normalizeColorId(appearance.outfitColorId, outfitColor, avatarOutfitColors, fallback.outfitColorId, isAvatarOutfitColorId),
     seasonalAccessoryId: appearance.seasonalAccessoryId ?? season ?? fallback.seasonalAccessoryId,
-    skinToneId: normalizeColorId(appearance.skinToneId, skinColor, avatarSkinToneColors, fallback.skinToneId),
+    skinToneId: normalizeColorId(appearance.skinToneId, skinColor, avatarSkinToneColors, fallback.skinToneId, isAvatarSkinToneId),
   };
 };
 

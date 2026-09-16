@@ -25,11 +25,16 @@
         :effects="store.activeWorldEffects"
         :energy="store.familyEnergy"
         :house-level="store.houseLevel"
+        :house-layout="store.houseLayout"
         :house-theme-id="store.houseThemeId"
+        :ladi-score="store.averageTaskRating"
         :members="store.members"
         :pets="store.pets"
+        :rooms="store.unlockedHouseRooms"
+        :can-arrange-house="store.canArrangeHouse"
         :reveal-version="store.revealVersion"
         :viewer-member-id="store.signedInMemberId"
+        @move-entity="store.moveHouseEntity"
       />
     </section>
 

@@ -1,18 +1,15 @@
 <template>
-  <div class="world-scene-wrap" :style="sceneStyle">
+  <div class="world-scene-wrap" :class="{ 'is-inside': view === 'inside', 'is-garden': view === 'garden', 'is-entering': entering }" :style="sceneStyle">
     <motion.div
       class="scene-drag-layer"
-      drag="x"
+      :drag="false"
       :drag-constraints="{ left: 0, right: 0 }"
       :drag-elastic=".16"
       :drag-momentum="false"
-      :while-drag="reducedMotion ? undefined : { scale: .985, rotate: dragDirection * 1.2 }"
       :transition="{ type: 'spring', stiffness: 390, damping: 30 }"
-      :on-drag="trackDrag"
-      :on-drag-end="finishDrag"
     >
       <PixiWorldFoundation :energy="energy" :view="view" />
-      <svg class="world-scene" viewBox="10 8 440 325" role="img" :aria-label="ariaLabel">
+      <svg class="world-scene" :class="`theme-${activeThemeId}`" viewBox="10 8 440 325" role="img" :aria-label="ariaLabel">
         <defs>
           <linearGradient id="meadowGround" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stop-color="#8fca86" />
@@ -93,6 +90,7 @@
               <g class="toy-roof">
                 <path :d="houseLevel >= 1 ? 'M143 91 230 36l88 55-13 17-75-45-74 45Z' : 'M112 155 230 78l119 77-15 18-104-66-103 66Z'" />
                 <path class="roof-highlight" :d="houseLevel >= 1 ? 'M230 36l88 55-7 9-81-49Z' : 'M230 78l119 77-8 10-111-70Z'" />
+                <path class="roof-detail" :d="houseLevel >= 1 ? 'M170 82l60-33 61 34M184 89l46-25 47 25' : 'M143 145l87-51 88 51M160 151l70-41 71 41'" />
               </g>
 
               <g class="toy-door">
@@ -102,6 +100,7 @@
               </g>
               <g class="toy-window left-window"><rect x="157" y="174" width="43" height="39" rx="9" /><path d="M178 178v31m-17-15h35" /></g>
               <g class="toy-window right-window"><rect x="263" y="174" width="43" height="39" rx="9" /><path d="M284 178v31m-17-15h35" /></g>
+              <g class="front-porch-detail" aria-hidden="true"><path d="M194 185v67m73-67v67M188 185h85" /><circle cx="188" cy="183" r="5" /><circle cx="273" cy="183" r="5" /></g>
 
               <g v-if="houseLevel >= 2" class="house-addon toy-extension">
                 <rect x="90" y="196" width="55" height="58" rx="10" />
@@ -120,71 +119,24 @@
               <g class="front-step"><path d="M195 255h71l15 15h-101Z" /><path d="M188 265h86l12 12H176Z" /></g>
               <g class="toy-bush bush-left"><circle cx="135" cy="242" r="19" /><circle cx="118" cy="250" r="15" /></g>
               <g class="toy-bush bush-right"><circle cx="327" cy="241" r="18" /><circle cx="343" cy="250" r="14" /></g>
+              <g class="front-planters" aria-hidden="true"><path d="M151 216h54l-5 14h-44Zm105 0h54l-5 14h-44Z" /><circle cx="164" cy="214" r="5" /><circle cx="178" cy="212" r="6" /><circle cx="193" cy="214" r="5" /><circle cx="270" cy="214" r="5" /><circle cx="284" cy="212" r="6" /><circle cx="298" cy="214" r="5" /></g>
             </g>
 
-            <g v-else-if="view === 'side'" class="house house-side">
-              <ellipse class="toy-house-shadow" cx="232" cy="271" rx="126" ry="21" />
-              <path class="toy-side-body" d="M139 148h151l45 28v80H139Z" />
-              <path class="toy-side-wall" d="m290 148 45 28v80l-45-13Z" />
-              <path class="toy-side-roof" d="M112 151 218 74l106 72 37 28-17 16-48-31-78-56-91 66Z" />
-              <g class="toy-window side-wide"><rect x="178" y="171" width="68" height="47" rx="11" /><path d="M212 176v37m-29-18h58" /></g>
-              <g class="side-door"><path d="M266 194q0-10 10-10h22q10 0 10 10v61h-42Z" /><circle cx="296" cy="220" r="4" /></g>
-              <g v-if="houseLevel >= 1" class="house-addon side-upper"><rect x="177" y="103" width="83" height="50" rx="9" /><g class="toy-window"><rect x="199" y="113" width="39" height="29" rx="7" /></g></g>
-              <g v-if="houseLevel >= 2" class="house-addon side-sunroom"><rect x="87" y="197" width="59" height="58" rx="12" /><path d="m80 199 36-30 37 30" /><rect x="99" y="210" width="34" height="29" rx="8" /></g>
-              <g v-if="houseLevel >= 3" class="house-addon side-deck"><path d="M314 235h66v13h-66Z" /><path d="M326 247v25m42-25v25" /></g>
-              <g v-if="houseLevel >= 4" class="house-addon side-pool"><ellipse cx="355" cy="260" rx="36" ry="13" /><ellipse cx="355" cy="257" rx="27" ry="8" /></g>
-              <g class="toy-bush bush-left"><circle cx="129" cy="239" r="19" /><circle cx="111" cy="249" r="14" /></g>
-            </g>
-
-            <g v-else class="house house-inside dollhouse">
-              <ellipse class="room-shadow" cx="232" cy="279" fill="#456052" opacity=".2" rx="145" ry="20" />
-
-              <g class="ground-room">
-                <path class="room-wall" d="M111 126Q111 116 122 116H338Q349 116 349 127V230H111Z" fill="var(--house-wall)" />
-                <path class="room-side" d="m349 127 24 15v102l-24-14Z" fill="#e6c08a" />
-                <path class="room-floor" d="M111 230h238l24 15-63 37H89Z" fill="var(--house-floor)" />
-                <path class="floorboards" d="m111 244 224 1m-197-15-18 39m72-39-7 52m61-52 8 47m46-47 21 29" />
-                <path class="baseboard" d="M113 225h234" />
-                <path class="room-frame" d="M111 230V126Q111 116 122 116h216q11 0 11 11v103m0 0 24 15M111 230l-22 52h221l63-37" />
-
-                <g class="wide-window">
-                  <rect x="205" y="137" width="54" height="45" rx="7" fill="#fff" />
-                  <rect x="211" y="143" width="42" height="33" rx="4" :fill="hasEffect('lights') ? '#ffe27c' : '#96d8e8'" />
-                  <path d="M232 143v33m-21-16h42" />
-                  <path class="curtain" d="M204 137c-9 14-7 35 0 47m56-47c9 14 7 35 0 47" />
-                </g>
-
-                <g class="starter-shelf">
-                  <rect x="287" y="151" width="38" height="8" rx="4" />
-                  <circle cx="297" cy="143" r="8" />
-                  <path d="M297 136c-6-8 4-13 6-4 5-6 10 3 2 7" />
-                  <rect x="311" y="137" width="8" height="14" rx="2" />
-                </g>
-
-                <HouseFurniture v-for="item in equippedInteriorItems" :key="item.id" :item="item" />
-              </g>
-
-              <g v-if="houseLevel >= 1" class="house-addon upper-dollhouse-room">
-                <path d="M139 76q0-8 9-8h164q9 0 9 9v49H139Z" fill="var(--house-wall-upper)" />
-                <path d="M139 121h182v9H139Z" fill="#a86c59" />
-                <rect x="205" y="83" width="49" height="30" rx="6" fill="#fff" />
-                <rect x="211" y="89" width="37" height="18" rx="3" fill="#9bd9e6" />
-                <path d="M230 89v18" stroke="#fff" stroke-width="3" />
-                <g class="upper-room-toys"><path d="M158 104h31v17h-31Z" fill="#80a8e4" /><circle cx="166" cy="101" fill="#f3b44f" r="7" /><path d="m283 106 8-14 8 14v15h-16Z" fill="#7dc895" /></g>
-              </g>
-
-              <g class="dollhouse-roof" :class="{ raised: houseLevel >= 1 }">
-                <path :d="houseLevel >= 1 ? 'M121 68 230 18l111 50-15 15-96-42-95 42Z' : 'M91 116 230 53l139 63-17 18-122-55-122 55Z'" fill="var(--house-roof)" />
-                <path :d="houseLevel >= 1 ? 'm230 18 111 50-9 9-102-44Z' : 'm230 53 139 63-10 11-129-57Z'" fill="var(--house-roof-shade)" />
-              </g>
-
-              <g v-if="houseLevel >= 2" class="house-addon attic-star"><circle cx="230" cy="58" r="17" fill="#ffe27b" /><path d="m230 46 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" fill="#fff7cd" /></g>
-              <g v-if="houseLevel >= 3" class="house-addon toy-balcony"><path d="M321 119h43v56h-43Z" fill="#fff0ce" /><path d="M316 119h54l-7-13h-40Z" fill="#6f8edb" /><path d="M326 145h33m-28-14v39m23-39v39" stroke="#d47a63" stroke-width="4" /></g>
-              <g v-if="houseLevel >= 4" class="house-addon rooftop-flag"><path d="M231 18V1m0 1 30 9-30 9" fill="#ffd05b" stroke="#96602c" stroke-linejoin="round" stroke-width="3" /></g>
-            </g>
           </g>
 
-          <g v-if="view !== 'inside' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="#8d5d49" /><circle cx="288" cy="122" fill="#fff" opacity=".55" r="8" /><circle cx="296" cy="110" fill="#fff" opacity=".38" r="11" /></g>
+          <g v-if="view === 'front' && activeThemeId === 'halloween-night'" class="edition-decor halloween-edition" aria-label="Halloween-Nacht Hausedition">
+            <path class="bat bat-one" d="M155 111q8-10 16 0 8-10 16 0-8-2-16 10-8-12-16-10Z" /><path class="bat bat-two" d="M317 105q6-8 13 0 6-8 13 0-7-1-13 9-6-10-13-9Z" />
+            <circle class="pumpkin" cx="191" cy="255" r="11" /><circle class="pumpkin" cx="275" cy="256" r="10" /><path class="pumpkin-face" d="m186 252 3 3 3-3m-5 8q4 3 8 0m75-8 3 3 3-3m-5 8q4 3 8 0" />
+            <path class="spooky-vine" d="M144 213q-20-22 0-43m174 44q20-24 2-45" />
+          </g>
+          <g v-if="view === 'front' && activeThemeId === 'cotton-candy-dream'" class="edition-decor candy-edition" aria-label="Zuckerwatte-Traum Hausedition">
+            <g class="candy-cloud candy-left"><circle cx="119" cy="238" r="17" /><circle cx="135" cy="229" r="20" /><circle cx="151" cy="240" r="16" /></g>
+            <g class="candy-cloud candy-right"><circle cx="314" cy="238" r="17" /><circle cx="331" cy="228" r="20" /><circle cx="348" cy="240" r="16" /></g>
+            <path class="candy-swirl" d="M217 122q25-23 38 0-8 17-27 6 4-10 14-6" />
+            <path class="lollipop" d="M112 208v35m-10-38q10-17 20 0-10 17-20 0Z" />
+          </g>
+
+          <g v-if="view === 'front' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="#8d5d49" /><circle cx="288" cy="122" fill="#fff" opacity=".55" r="8" /><circle cx="296" cy="110" fill="#fff" opacity=".38" r="11" /></g>
           <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)"><ellipse fill="#438c58" rx="20" ry="8" /><circle cx="-9" cy="-8" fill="#ff8378" r="6" /><circle cx="4" cy="-11" fill="#ffd161" r="6" /><circle cx="13" cy="-5" fill="#f5a0b9" r="5" /></g>
           <g v-if="energy >= 85 && energy < 100" class="sparkles" fill="#fff4a2">
             <path d="m330 154 4 10 10 4-10 4-4 10-4-10-10-4 10-4z" /><path d="m353 179 3 7 7 3-7 3-3 7-3-7-7-3 7-3z" /><path d="m115 181 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" />
@@ -198,14 +150,49 @@
             <path class="shimmer-sweep" d="M138 139c54-47 146-62 204-22" />
           </g>
 
-          <g v-if="isEquipped('flower-boxes') && view !== 'inside'" class="accessory flowers"><rect x="250" y="213" width="24" height="5" rx="2" fill="#9c684b" /><circle cx="255" cy="210" fill="#ff8a83" r="4" /><circle cx="263" cy="208" fill="#ffd264" r="4" /><circle cx="271" cy="210" fill="#e98db0" r="4" /></g>
-          <g v-if="isEquipped('garden-lights')" class="accessory lights"><path d="m123 235 29 15m-22-11v15m13-10v15" stroke="#6b624c" stroke-width="2" /><circle cx="130" cy="240" fill="#ffe270" r="4" /><circle cx="143" cy="246" fill="#ffe270" r="4" /></g>
-          <g v-if="isEquipped('hammock')" class="accessory hammock"><path d="m111 205 57 29" stroke="#e87363" stroke-width="5" /><path d="m112 198-8 41m65-14 8 42" stroke="#705441" stroke-width="3" /></g>
-          <g v-if="isEquipped('telescope')" class="accessory telescope"><path d="m350 192 18-8" stroke="#496272" stroke-width="7" /><path d="m358 190-8 25m8-25 9 20" stroke="#496272" stroke-width="3" /></g>
         </g>
       </svg>
 
-      <div class="world-family" :class="{ inside: view === 'inside', 'guardian-active': activeFamilyMember?.role === 'guardian' }" aria-label="Familienmitglieder in der Familienwelt">
+      <div v-if="view === 'front'" class="front-garden-items" aria-label="Gartenausstattung im Vorgarten">
+        <HouseLayoutEntity
+          v-for="placement in frontGardenPlacements"
+          :key="placement.id"
+          :accessory="accessoryFor(placement)"
+          :editable="false"
+          :placement="placement"
+          :score="ladiScore"
+        />
+      </div>
+
+      <div
+        v-if="view !== 'front'"
+        :key="view"
+        class="scene-world-shell"
+        :class="{ 'garden-view': view === 'garden' }"
+        @pointerdown.stop
+      >
+        <nav class="scene-room-switcher" aria-label="Raumansicht auswählen">
+          <button :class="{ active: selectedRoomView === 'all' }" type="button" @click="selectZone('all')"><v-icon size="13">mdi-home-group</v-icon><span>Alle</span></button>
+          <button v-for="room in rooms" :key="room.id" :class="{ active: selectedRoomView === room.id }" type="button" @click="selectZone(room.id)"><span>{{ room.icon }}</span><span>{{ room.name }}</span></button>
+          <button :class="{ active: selectedRoomView === 'garden' }" type="button" @click="selectZone('garden')"><span>🌿</span><span>Garten</span></button>
+        </nav>
+        <DollhouseInterior
+          :accessories="accessories"
+          compact
+          :editable="canArrangeHouse"
+          include-garden
+          :members="members"
+          :pets="pets"
+          :placements="houseLayout"
+          :rooms="rooms"
+          :score="ladiScore"
+          :selected-zone-id="selectedRoomView"
+          :show-room-labels="false"
+          @move="forwardEntityMove"
+        />
+      </div>
+
+      <div v-if="view === 'front'" class="world-family" :class="{ 'guardian-active': activeFamilyMember?.role === 'guardian' }" aria-label="Familienmitglieder in der Familienwelt">
         <div class="world-family-background" aria-label="Weitere Familienmitglieder im Hintergrund">
           <div v-for="group in backgroundMemberGroups" :key="group.side" :class="['world-family-side', `world-family-side--${group.side}`]">
             <div
@@ -240,44 +227,60 @@
         </div>
       </div>
 
-      <div class="world-pets" :class="{ inside: view === 'inside' }" aria-label="Haustiere in der Familienwelt">
+      <div v-if="view === 'front'" class="world-pets" aria-label="Haustiere in der Familienwelt">
         <div v-for="pet in pets" :key="pet.id" class="world-pet">
           <Transition name="member-name">
             <span v-if="activePetId === pet.id" class="pet-name-bubble" role="status">{{ pet.name }}</span>
           </Transition>
-          <AnimatedPet :pet="pet" :size="view === 'inside' ? 52 : 48" @interact="showPetName(pet.id)" />
+          <AnimatedPet :pet="pet" :size="48" @interact="showPetName(pet.id)" />
         </div>
       </div>
     </motion.div>
 
-    <button class="scene-rotate" :aria-label="`Haus drehen, aktuelle Ansicht ${viewLabel}`" type="button" @click.stop="changeView(1)">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.7 8.2A7.5 7.5 0 1 0 19 15m-.3-6.8V4.5m0 3.7H15" /></svg>
-      <span><strong>Drehen</strong><small>{{ viewLabel }}</small></span>
-    </button>
+    <div class="scene-actions">
+      <template v-if="view === 'front'">
+        <button class="scene-action" :disabled="entering" aria-label="Haus betreten" type="button" @click.stop="enterHouse">
+          <v-icon icon="mdi-door-open" size="20" />
+          <span><strong>Eintreten</strong><small>Tür öffnen</small></span>
+        </button>
+        <button class="scene-action" :disabled="entering" aria-label="Garten betreten" type="button" @click.stop="enterGarden">
+          <v-icon icon="mdi-flower" size="20" />
+          <span><strong>In den Garten</strong><small>Gartenwelt</small></span>
+        </button>
+      </template>
+      <button v-else class="scene-action" aria-label="Zurück vor das Haus" type="button" @click.stop="leaveScene">
+        <v-icon icon="mdi-arrow-left" size="20" />
+        <span><strong>Nach draußen</strong><small>Vorgarten</small></span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onUnmounted, ref } from 'vue';
-import { motion, useReducedMotion } from 'motion-v';
-import type { PanInfo } from 'motion-v';
+import { motion } from 'motion-v';
 
 import PixiWorldFoundation from '@/components/PixiWorldFoundation.vue';
 import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
 import AnimatedPet from './AnimatedPet.vue';
-import HouseFurniture from './HouseFurniture.vue';
+import DollhouseInterior from './DollhouseInterior.vue';
+import HouseLayoutEntity from './HouseLayoutEntity.vue';
 import { HOUSE_THEMES } from '../data/house-catalog';
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import type { HouseAccessoryId, HouseStageLevel, HouseThemeId } from '@/domain/house';
-import type { FamilyMember, FamilyMemberId, FamilyPet, FamilyPetId, HouseAccessory, WorldEffect } from '@/domain/types';
+import type { HouseRoomDefinition, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
+import type { FamilyMember, FamilyMemberId, FamilyPet, FamilyPetId, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId, WorldEffect } from '@/domain/types';
 
-type HouseView = 'front' | 'side' | 'inside';
+type HouseView = 'front' | 'inside' | 'garden';
 
 const props = defineProps<{
   energy: number;
   houseLevel: HouseStageLevel;
   houseThemeId?: HouseThemeId;
+  houseLayout: HouseLayoutPlacement[];
+  rooms: ReadonlyArray<HouseRoomDefinition>;
+  ladiScore: number;
+  canArrangeHouse: boolean;
   effects: WorldEffect[];
   accessories: HouseAccessory[];
   members: FamilyMember[];
@@ -285,17 +288,19 @@ const props = defineProps<{
   revealVersion: number;
   viewerMemberId: FamilyMemberId;
 }>();
+const emit = defineEmits<{
+  'move-entity': [placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number];
+}>();
 
-const views: HouseView[] = ['front', 'side', 'inside'];
-const viewIndex = ref(0);
-const dragDirection = ref(0);
+const view = ref<HouseView>('front');
+const selectedRoomView = ref<HouseZoneId | 'all'>('living-room');
+const entering = ref(false);
 const speakingMemberId = ref<FamilyMemberId | null>(null);
 const activePetId = ref<FamilyPetId | null>(null);
 let memberNameTimer: number | undefined;
 let petNameTimer: number | undefined;
-const reducedMotion = useReducedMotion();
-const view = computed<HouseView>(() => views[viewIndex.value] ?? 'front');
-const viewLabels: Record<HouseView, string> = { front: 'Vorne', side: 'Seite', inside: 'Innen' };
+let entranceTimer: number | undefined;
+const viewLabels: Record<HouseView, string> = { front: 'Vorne', inside: 'Innen', garden: 'Garten' };
 const viewLabel = computed(() => viewLabels[view.value]);
 const weatherLabel = computed(() => props.energy >= 70 ? 'sonnig' : props.energy >= 40 ? 'wolkig' : 'regnerisch');
 const sunOpacity = computed(() => Math.max(.08, props.energy / 100));
@@ -328,6 +333,7 @@ const backgroundMemberGroups = computed(() => {
   ];
 });
 const activeTheme = computed(() => HOUSE_THEMES.find((theme) => theme.id === props.houseThemeId) ?? HOUSE_THEMES[0]);
+const activeThemeId = computed(() => activeTheme.value?.id ?? 'sunny-dollhouse');
 const sceneStyle = computed(() => ({
   '--house-wall': activeTheme.value?.wall ?? '#fff8df',
   '--house-wall-upper': activeTheme.value?.wallUpper ?? '#f2dcf2',
@@ -335,18 +341,26 @@ const sceneStyle = computed(() => ({
   '--house-roof': activeTheme.value?.roof ?? '#ec6e66',
   '--house-roof-shade': activeTheme.value?.roofShade ?? '#c64f56',
   '--house-trim': activeTheme.value?.trim ?? '#a96855',
+  '--house-door': activeTheme.value?.door ?? '#75a982',
+  '--house-window': activeTheme.value?.window ?? '#8ed5e6',
+  '--landscape-accent': activeTheme.value?.landscapeAccent ?? '#62bd77',
   '--world-saturation': `${.55 + props.energy / 200}`,
   '--world-brightness': `${.82 + props.energy / 550}`,
 }));
-const equippedInteriorItems = computed(() => props.accessories.filter(
-  (accessory) => accessory.placement === 'inside' && accessory.equipped && accessory.visual && accessory.scene,
-));
 const ariaLabel = computed(
-  () => `Drehbare Familienwelt, Hausstufe ${props.houseLevel + 1}, ${viewLabel.value}, ${props.energy} Prozent Hausenergie, ${weatherLabel.value}`,
+  () => `Familienwelt, Hausstufe ${props.houseLevel + 1}, ${viewLabel.value}, ${props.energy} Prozent Hausenergie, ${weatherLabel.value}`,
 );
 
 const hasEffect = (effect: WorldEffect) => props.effects.includes(effect);
-const isEquipped = (id: HouseAccessoryId) => props.accessories.some((accessory) => accessory.id === id && accessory.equipped);
+const accessoryFor = (placement: HouseLayoutPlacement) => placement.entityType === 'furniture'
+  ? props.accessories.find((accessory) => accessory.id === placement.entityId)
+  : undefined;
+const frontGardenPlacements = computed(() => props.houseLayout
+  .filter((placement) => placement.zoneId === 'garden' && placement.entityType === 'furniture')
+  .filter((placement) => {
+    const accessory = accessoryFor(placement);
+    return Boolean(accessory?.owned && accessory.equipped);
+  }));
 const appearanceFor = (member: FamilyMember, index: number): AvatarAppearance => {
   if (member.appearance) return member.appearance;
   if (member.role === 'guardian') {
@@ -373,19 +387,33 @@ const showPetName = (petId: FamilyPetId) => {
   if (petNameTimer !== undefined) window.clearTimeout(petNameTimer);
   petNameTimer = window.setTimeout(() => { activePetId.value = null; }, 1900);
 };
-const changeView = (direction: number) => {
-  viewIndex.value = (viewIndex.value + direction + views.length) % views.length;
+const forwardEntityMove = (placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) => {
+  emit('move-entity', placementId, zoneId, x, y);
 };
-const trackDrag = (_event: PointerEvent, info: PanInfo) => {
-  dragDirection.value = Math.sign(info.offset.x);
+const enterHouse = () => {
+  if (entering.value) return;
+  entering.value = true;
+  entranceTimer = window.setTimeout(() => {
+    selectedRoomView.value = 'living-room';
+    view.value = 'inside';
+    entering.value = false;
+  }, 760);
 };
-const finishDrag = (_event: PointerEvent, info: PanInfo) => {
-  if (Math.abs(info.offset.x) >= 35 || Math.abs(info.velocity.x) >= 450) changeView(info.offset.x < 0 ? 1 : -1);
-  dragDirection.value = 0;
+const enterGarden = () => {
+  selectedRoomView.value = 'garden';
+  view.value = 'garden';
+};
+const selectZone = (zoneId: HouseZoneId | 'all') => {
+  selectedRoomView.value = zoneId;
+  view.value = zoneId === 'garden' ? 'garden' : 'inside';
+};
+const leaveScene = () => {
+  view.value = 'front';
 };
 onUnmounted(() => {
   if (memberNameTimer !== undefined) window.clearTimeout(memberNameTimer);
   if (petNameTimer !== undefined) window.clearTimeout(petNameTimer);
+  if (entranceTimer !== undefined) window.clearTimeout(entranceTimer);
 });
 </script>
 
@@ -398,17 +426,139 @@ onUnmounted(() => {
   @apply select-none;
 }
 .scene-drag-layer {
-  @apply position-relative cursor-grab;
+  @apply position-relative;
   touch-action: pan-y;
-}
-.scene-drag-layer:active {
-  @apply cursor-grabbing;
 }
 .world-scene {
   @apply w-100 position-relative overflow-visible;
   height: auto;
   z-index: 1;
   opacity: 0.16;
+}
+.front-garden-items {
+  @apply position-absolute pointer-events-none;
+  inset: 42% 2% 7%;
+  z-index: 2;
+}
+.front-garden-items :deep(.layout-entity) {
+  width: 58px;
+  height: 58px;
+}
+.front-garden-items :deep(.room-furniture) {
+  filter: drop-shadow(0 5px 4px rgba(54, 72, 55, 0.18));
+}
+.scene-world-shell {
+  @apply position-absolute overflow-hidden;
+  top: 21%;
+  right: 0;
+  bottom: 2%;
+  left: 0;
+  z-index: 5;
+  padding-top: 29px;
+  pointer-events: auto;
+  animation: enter-house 420ms cubic-bezier(0.18, 0.78, 0.22, 1) both;
+}
+.scene-world-shell :deep(.dollhouse-layout) {
+  min-height: 229px;
+  padding: 0;
+  gap: 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.scene-world-shell :deep(.dollhouse-room) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.scene-world-shell :deep(.compact.single-zone .dollhouse-room),
+.scene-world-shell
+  :deep(.compact.room-count-1:not(:has(.garden-zone)) .dollhouse-room),
+.scene-world-shell :deep(.compact.single-zone .garden-zone) {
+  min-height: 229px;
+}
+.scene-world-shell :deep(.compact:not(.single-zone) .entity-furniture) {
+  width: 61px;
+  height: 61px;
+}
+.scene-world-shell :deep(.compact:not(.single-zone) .entity-member) {
+  width: 42px;
+  height: 56px;
+}
+.scene-world-shell :deep(.compact:not(.single-zone) .entity-pet) {
+  width: 40px;
+  height: 40px;
+}
+.scene-world-shell :deep(.compact:not(.single-zone) .entity-ladi) {
+  width: 52px;
+  height: 52px;
+}
+.scene-world-shell :deep(.compact.single-zone .entity-furniture) {
+  width: 98px;
+  height: 98px;
+}
+.scene-world-shell :deep(.compact.single-zone .entity-member) {
+  width: 61px;
+  height: 82px;
+}
+.scene-world-shell :deep(.compact.single-zone .entity-pet) {
+  width: 57px;
+  height: 57px;
+}
+.scene-world-shell :deep(.compact.single-zone .entity-ladi) {
+  width: 78px;
+  height: 78px;
+}
+.scene-world-shell.garden-view :deep(.dollhouse-layout),
+.scene-world-shell.garden-view :deep(.garden-zone) {
+  background: transparent;
+}
+.scene-world-shell.garden-view :deep(.garden-zone) {
+  min-height: 229px;
+}
+.scene-room-switcher {
+  @apply position-absolute d-flex align-center overflow-x-auto;
+  top: 4px;
+  right: 7px;
+  left: 7px;
+  z-index: 15;
+  gap: 3px;
+  scrollbar-width: none;
+}
+.scene-room-switcher::-webkit-scrollbar {
+  display: none;
+}
+.scene-room-switcher button {
+  min-width: max-content;
+  padding: 3px 6px;
+  @apply d-flex align-center;
+  gap: 3px;
+  color: #786a61;
+  border: 1px solid rgba(70, 56, 47, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-size: 6px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.scene-room-switcher button.active {
+  color: #fff;
+  border-color: var(--house-trim);
+  background: var(--house-trim);
+  box-shadow: 0 2px 0 rgba(51, 39, 33, 0.18);
+}
+.world-scene-wrap.is-inside .house-inside {
+  opacity: 0;
+}
+.world-scene-wrap.is-entering .toy-door path:first-child {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: front-door-open 700ms cubic-bezier(0.42, 0, 0.2, 1) both;
+}
+.world-scene-wrap.is-entering .toy-door circle {
+  animation: door-knob-turn 700ms ease both;
 }
 .island {
   transform-origin: 230px 210px;
@@ -579,10 +729,16 @@ onUnmounted(() => {
   fill: var(--house-roof-shade);
   stroke: none;
 }
+.toy-roof .roof-detail {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-linecap: round;
+  stroke-width: 3;
+}
 .toy-door path:first-child,
 .side-door path:first-child {
-  fill: #75a982;
-  stroke: #426e59;
+  fill: var(--house-door);
+  stroke: var(--house-trim);
   stroke-width: 5;
 }
 .toy-door circle,
@@ -593,13 +749,13 @@ onUnmounted(() => {
 }
 .toy-door path:last-child {
   fill: none;
-  stroke: #a86851;
+  stroke: var(--house-trim);
   stroke-linecap: round;
   stroke-width: 8;
 }
 .toy-window rect,
 .side-sunroom rect {
-  fill: #8ed5e6;
+  fill: var(--house-window);
   stroke: #fff;
   stroke-width: 6;
 }
@@ -648,6 +804,26 @@ onUnmounted(() => {
 .toy-balcony-front path:not(:first-child) {
   fill: none;
 }
+.front-porch-detail {
+  fill: var(--house-trim);
+}
+.front-porch-detail path {
+  fill: none;
+  stroke: var(--house-trim);
+  stroke-linecap: round;
+  stroke-width: 4;
+  opacity: 0.72;
+}
+.front-planters path {
+  fill: #9a6549;
+  stroke: #654536;
+  stroke-width: 2;
+}
+.front-planters circle {
+  fill: var(--landscape-accent);
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 1.5;
+}
 .toy-side-body {
   fill: var(--house-wall);
   stroke: var(--house-trim);
@@ -683,6 +859,113 @@ onUnmounted(() => {
 .side-pool ellipse:last-child {
   fill: #7bd3e3;
   stroke: none;
+}
+.side-detail path {
+  fill: none;
+  stroke: var(--house-trim);
+  stroke-linecap: round;
+  stroke-width: 3;
+  opacity: 0.5;
+}
+.side-detail circle {
+  fill: var(--landscape-accent);
+}
+.edition-decor,
+.exterior-pumpkin-arch,
+.exterior-bat-garland,
+.exterior-candy-bushes,
+.exterior-candy-fence {
+  pointer-events: none;
+}
+.bat {
+  fill: #31283f;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bat-flutter 1.2s ease-in-out infinite alternate;
+}
+.bat-two {
+  animation-delay: -0.55s;
+}
+.pumpkin {
+  fill: #ef873b;
+  stroke: #87452d;
+  stroke-width: 3;
+}
+.pumpkin-face {
+  fill: none;
+  stroke: #543338;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+.spooky-vine {
+  fill: none;
+  stroke: #697a4b;
+  stroke-linecap: round;
+  stroke-width: 5;
+}
+.theme-halloween-night .far-landscape {
+  filter: hue-rotate(34deg) saturate(0.7) brightness(0.82);
+}
+.theme-halloween-night .scene-sun {
+  filter: grayscale(0.7);
+}
+.theme-halloween-night .toy-window rect {
+  filter: drop-shadow(0 0 7px #ffd166);
+}
+.candy-cloud {
+  fill: #f3a9c9;
+  stroke: #fff0f7;
+  stroke-width: 3;
+}
+.candy-right {
+  fill: #a9dff1;
+}
+.candy-swirl {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-width: 6;
+}
+.lollipop {
+  fill: #ef91bd;
+  stroke: #fff;
+  stroke-width: 4;
+}
+.theme-cotton-candy-dream .far-landscape {
+  filter: hue-rotate(310deg) saturate(0.75) brightness(1.08);
+}
+.exterior-pumpkin-arch path {
+  fill: none;
+  stroke: #5c7544;
+  stroke-width: 7;
+}
+.exterior-pumpkin-arch circle {
+  fill: #ef873b;
+  stroke: #88482e;
+  stroke-width: 2;
+}
+.exterior-bat-garland > path:first-child {
+  fill: none;
+  stroke: #3d314d;
+  stroke-width: 2;
+}
+.exterior-bat-garland > path:last-child {
+  fill: #493958;
+}
+.exterior-candy-bushes {
+  fill: #f2a6c9;
+  stroke: #fff;
+  stroke-width: 2;
+}
+.exterior-candy-bushes circle:nth-child(n + 3) {
+  fill: #a9dff1;
+}
+.exterior-candy-fence {
+  fill: none;
+  stroke: #ef8bb8;
+  stroke-dasharray: 6 4;
+  stroke-linecap: round;
+  stroke-width: 6;
 }
 .world-family {
   width: 215px;
@@ -1011,17 +1294,21 @@ onUnmounted(() => {
 .house-addon {
   animation: accessory-pop 650ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
-.scene-rotate {
-  min-width: 92px;
+.scene-actions {
+  @apply position-absolute d-flex justify-center;
+  right: 7px;
+  bottom: 3px;
+  left: 7px;
+  z-index: 8;
+  gap: 7px;
+  pointer-events: none;
+}
+.scene-action {
+  min-width: 104px;
   height: 42px;
   padding: 5px 11px;
-  @apply position-absolute;
-  right: 50%;
-  bottom: 3px;
-  z-index: 4;
   @apply d-flex align-center justify-center;
   gap: 7px;
-  transform: translateX(50%);
   color: #315f51;
   border: 1px solid rgba(44, 79, 65, 0.16);
   border-radius: 15px;
@@ -1031,12 +1318,13 @@ onUnmounted(() => {
     0 8px 18px rgba(45, 76, 64, 0.14);
   @apply cursor-pointer;
   font: inherit;
+  pointer-events: auto;
   backdrop-filter: blur(10px);
   transition:
     transform 150ms ease,
     box-shadow 150ms ease;
 }
-.scene-rotate svg {
+.scene-action svg {
   width: 19px;
   height: 19px;
   fill: none;
@@ -1045,30 +1333,34 @@ onUnmounted(() => {
   stroke-linejoin: round;
   stroke-width: 2.3;
 }
-.scene-rotate span,
-.scene-rotate strong,
-.scene-rotate small {
+.scene-action span,
+.scene-action strong,
+.scene-action small {
   @apply d-block;
 }
-.scene-rotate span {
+.scene-action span {
   @apply text-left;
   line-height: 1.05;
 }
-.scene-rotate strong {
+.scene-action strong {
   font-size: 10px;
 }
-.scene-rotate small {
+.scene-action small {
   margin-top: 2px;
   color: #71857c;
   font-size: 8px;
 }
-.scene-rotate:active {
-  transform: translateX(50%) translateY(2px);
+.scene-action:active {
+  transform: translateY(2px);
   box-shadow: 0 2px 0 #c1e4d2;
 }
-.scene-rotate:focus-visible {
+.scene-action:focus-visible {
   outline: 3px solid rgba(69, 158, 124, 0.3);
   outline-offset: 2px;
+}
+.scene-action:disabled {
+  opacity: 0.76;
+  cursor: wait;
 }
 
 @keyframes garden-grow {
@@ -1244,6 +1536,44 @@ onUnmounted(() => {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+@keyframes bat-flutter {
+  from {
+    transform: translateY(0) scaleY(0.82);
+  }
+  to {
+    transform: translateY(-4px) scaleY(1.12);
+  }
+}
+@keyframes enter-house {
+  from {
+    opacity: 0.3;
+    transform: scale(0.82) translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes front-door-open {
+  0%,
+  12% {
+    transform: perspective(220px) rotateY(0);
+  }
+  100% {
+    transform: perspective(220px) rotateY(-82deg);
+    filter: brightness(0.82);
+  }
+}
+@keyframes door-knob-turn {
+  0%,
+  22% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-11px);
+    opacity: 0.35;
   }
 }
 @keyframes house-turn {
