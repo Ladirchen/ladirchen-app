@@ -1,21 +1,34 @@
-import { createI18n } from "vue-i18n";
+import { createI18n } from 'vue-i18n';
 
-const messages = {
-  en: {
-    message: {
-      hello: "hello world",
-    },
-  },
-  ja: {
-    message: {
-      hello: "こんにちは、世界",
-    },
-  },
+import { DEFAULT_LOCALE, isSupportedLocale, localeMessages } from '@/locales';
+import type { SupportedLocale } from '@/locales';
+
+export type { SupportedLocale } from '@/locales';
+
+const LOCALE_STORAGE_KEY = 'ladirchen:locale';
+const resolveInitialLocale = (): SupportedLocale => {
+  const storedLocale = typeof localStorage === 'undefined' ? null : localStorage.getItem(LOCALE_STORAGE_KEY);
+  if (isSupportedLocale(storedLocale)) {return storedLocale;}
+  if (typeof navigator !== 'undefined') {
+    const language = navigator.language.toLowerCase().split('-')[0];
+    if (isSupportedLocale(language)) {return language;}
+  }
+  return DEFAULT_LOCALE;
 };
 
-export default createI18n({
+const i18n = createI18n({
   legacy: false,
-  locale: "en",
-  fallbackLocale: "en",
-  messages,
+  locale: resolveInitialLocale(),
+  fallbackLocale: DEFAULT_LOCALE,
+  messages: localeMessages,
 });
+
+export const setActiveLocale = (locale: SupportedLocale): void => {
+  i18n.global.locale.value = locale;
+  if (typeof localStorage !== 'undefined') {localStorage.setItem(LOCALE_STORAGE_KEY, locale);}
+  if (typeof document !== 'undefined') {document.documentElement.lang = locale;}
+};
+
+if (typeof document !== 'undefined') {document.documentElement.lang = i18n.global.locale.value;}
+
+export default i18n;

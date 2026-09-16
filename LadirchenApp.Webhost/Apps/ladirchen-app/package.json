@@ -16,6 +16,7 @@
     "@fontsource/roboto": "catalog:dependencies",
     "@fontsource/roboto-mono": "catalog:dependencies",
     "@mdi/font": "catalog:dependencies",
+    "motion-v": "catalog:dependencies",
     "pinia": "catalog:dependencies",
     "vue": "catalog:dependencies",
     "vue-i18n": "catalog:dependencies",
