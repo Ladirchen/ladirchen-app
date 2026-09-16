@@ -2,10 +2,12 @@
 # Assumes a local Kubernetes cluster is already running and configured as the current context.
 
 # Tilt always strips .git from the docker_build context, so GitVersion can't run inside the container; compute it on the host instead.
-dotnet = str(local(
-  'if command -v dotnet >/dev/null 2>&1; then command -v dotnet; elif [ -x "$HOME/.dotnet/dotnet" ]; then printf "%s" "$HOME/.dotnet/dotnet"; else echo "The .NET SDK is required but dotnet was not found." >&2; exit 127; fi',
-  quiet=True,
-)).strip()
+# local() spawns cmd.exe on Windows and sh elsewhere, so detect the dotnet path in pure Starlark to stay cross-platform.
+if os.name == 'nt':
+  dotnet_candidate = os.path.join(os.getenv('USERPROFILE', ''), '.dotnet', 'dotnet.exe')
+else:
+  dotnet_candidate = os.path.join(os.getenv('HOME', ''), '.dotnet', 'dotnet')
+dotnet = dotnet_candidate if os.path.exists(dotnet_candidate) else 'dotnet'
 local(dotnet + " tool restore", quiet=True)
 build_version = str(local(dotnet + " tool run dotnet-gitversion /showvariable FullSemVer", quiet=True)).strip()
 
