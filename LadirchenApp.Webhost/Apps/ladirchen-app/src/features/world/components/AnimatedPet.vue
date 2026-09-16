@@ -8,9 +8,10 @@
     :title="pet.name"
     @click="react"
   >
-    <svg viewBox="0 0 96 104" aria-hidden="true">
+    <svg viewBox="0 0 96 104" aria-hidden="true" :class="`pet-kind--${pet.kind}`">
       <ellipse class="pet-shadow" cx="49" cy="96" rx="30" ry="7" />
-      <path class="pet-tail" d="M70 75c20 0 19-25 6-24-9 1-5 13 2 10" />
+      <path v-if="pet.kind === 'dog'" class="pet-tail dog-tail" d="M69 76c13 3 20-7 17-18" />
+      <path v-else class="pet-tail" d="M70 75c20 0 19-25 6-24-9 1-5 13 2 10" />
       <g class="pet-body">
         <ellipse class="body" cx="48" cy="72" rx="29" ry="25" />
         <path class="belly" d="M38 58c-8 9-8 25 2 32 10 7 21 1 22-10 1-13-10-23-24-22Z" />
@@ -18,10 +19,18 @@
         <path class="leg right" d="M58 79q-1 9 3 16h14q3-9-6-18Z" />
       </g>
       <g class="pet-head">
-        <path class="ear ear-left" d="M22 31 25 8l20 18Z" />
-        <path class="ear ear-right" d="m53 25 19-17 3 25Z" />
-        <path class="inner-ear left" d="m27 25 1-10 9 10Z" />
-        <path class="inner-ear right" d="m61 24 8-9 2 13Z" />
+        <template v-if="pet.kind === 'dog'">
+          <path class="ear dog-ear dog-ear-left" d="M28 24C17 18 12 25 17 39c3 9 10 13 17 7Z" />
+          <path class="ear dog-ear dog-ear-right" d="M67 23c11-6 17 1 13 15-3 10-10 14-18 8Z" />
+          <path class="inner-ear dog-inner-ear-left" d="M25 28c-6-3-8 1-5 9 2 5 5 7 9 4Z" />
+          <path class="inner-ear dog-inner-ear-right" d="M70 27c6-3 9 1 6 9-2 5-5 7-10 4Z" />
+        </template>
+        <template v-else>
+          <path class="ear ear-left" d="M22 31 25 8l20 18Z" />
+          <path class="ear ear-right" d="m53 25 19-17 3 25Z" />
+          <path class="inner-ear left" d="m27 25 1-10 9 10Z" />
+          <path class="inner-ear right" d="m61 24 8-9 2 13Z" />
+        </template>
         <path class="head" d="M21 36q3-18 27-19 26 0 29 22 3 24-28 28-31-3-28-31Z" />
         <path class="face-patch" d="M45 21c10-4 24 2 27 14-4 8-12 9-21 5-8-4-11-12-6-19Z" />
         <g class="pet-eyes">
@@ -32,9 +41,17 @@
           <circle class="eye-shine" cx="40" cy="41" r="1.5" />
           <circle class="eye-shine" cx="58" cy="41" r="1.5" />
         </g>
-        <path class="nose" d="m43 52 5-3 5 3-5 5Z" />
-        <path class="mouth" d="M48 56q-4 6-9 1m9-1q4 6 9 1" />
-        <path class="whiskers" d="M38 53 17 49m21 9-22 2m42-7 21-4m-21 9 22 2" />
+        <template v-if="pet.kind === 'dog'">
+          <ellipse class="dog-muzzle" cx="48" cy="55" rx="14" ry="10" />
+          <ellipse class="dog-nose" cx="48" cy="51" rx="6" ry="4.5" />
+          <path class="mouth" d="M48 55v4m0 0q-5 5-9 0m9 0q5 5 9 0" />
+          <path class="dog-tongue" d="M45 61q3 7 6 0" />
+        </template>
+        <template v-else>
+          <path class="nose" d="m43 52 5-3 5 3-5 5Z" />
+          <path class="mouth" d="M48 56q-4 6-9 1m9-1q4 6 9 1" />
+          <path class="whiskers" d="M38 53 17 49m21 9-22 2m42-7 21-4m-21 9 22 2" />
+        </template>
         <g class="pet-paw">
           <ellipse cx="69" cy="64" rx="10" ry="13" />
           <path d="M64 61q5 4 10 0m-8 6q4 3 8 0" />
@@ -128,6 +145,13 @@ svg {
 .inner-ear {
   fill: #f3a1aa;
 }
+.dog-ear {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+.dog-ear-right {
+  animation: ear-twitch 15s var(--pet-phase) ease-in-out infinite;
+}
 .face-patch {
   fill: rgba(255, 255, 255, 0.18);
 }
@@ -148,6 +172,22 @@ svg {
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
+.dog-muzzle {
+  fill: #f5d7af;
+  stroke: #4d4744;
+  stroke-width: 1.5;
+}
+.dog-nose {
+  fill: #3e3530;
+  stroke: #4d4744;
+  stroke-width: 1.2;
+}
+.dog-tongue {
+  fill: #ef8791;
+  stroke: #4d4744;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
 .mouth,
 .whiskers {
   fill: none;
@@ -163,6 +203,10 @@ svg {
   transform-box: fill-box;
   transform-origin: left center;
   animation: tail-swish 10s var(--pet-phase) ease-in-out infinite;
+}
+.dog-tail {
+  stroke-width: 9;
+  animation: dog-tail-wag 2.2s var(--pet-phase) ease-in-out infinite;
 }
 .ear-right {
   transform-box: fill-box;
@@ -252,6 +296,15 @@ svg {
     transform: rotate(-9deg);
   }
 }
+@keyframes dog-tail-wag {
+  0%,
+  100% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(17deg);
+  }
+}
 @keyframes ear-twitch {
   0%,
   74%,
@@ -299,6 +352,7 @@ svg {
   .pet-shadow,
   .pet-tail,
   .ear-right,
+  .dog-ear-right,
   .pet-eyes,
   .pet-paw {
     animation: none;
