@@ -27,7 +27,11 @@ export type FurnitureVisualId =
   | 'flower-box'
   | 'string-lights'
   | 'hammock'
-  | 'telescope';
+  | 'telescope'
+  | 'pumpkin-arch'
+  | 'bat-garland'
+  | 'candy-bush'
+  | 'candy-fence';
 
 export type HouseAccessoryId =
   | 'flower-boxes'
@@ -58,17 +62,22 @@ export type HouseAccessoryId =
   | 'garden-chair'
   | 'garden-table'
   | 'garden-trampoline'
-  | 'garden-sunshade';
+  | 'garden-sunshade'
+  | 'halloween-pumpkin-arch'
+  | 'halloween-bat-garland'
+  | 'candy-cloud-bushes'
+  | 'candy-striped-fence';
 
 export type HouseAccessoryPlacement = 'inside' | 'outside';
 export type HouseRoomId = 'living-room' | 'kitchen' | 'children-room' | 'bedroom' | 'creative-room';
 export type HouseZoneId = HouseRoomId | 'garden';
-export type FurnitureSetId = 'cozy-living-set' | 'family-kitchen-set' | 'adventure-kids-set' | 'calm-bedroom-set' | 'creative-studio-set' | 'pet-comfort-set' | 'summer-garden-set' | 'garden-play-set';
+export type FurnitureSetId = 'cozy-living-set' | 'family-kitchen-set' | 'adventure-kids-set' | 'calm-bedroom-set' | 'creative-studio-set' | 'pet-comfort-set' | 'summer-garden-set' | 'garden-play-set' | 'halloween-exterior-set' | 'cotton-candy-exterior-set';
 export type HouseLayoutEntityType = 'furniture' | 'member' | 'pet' | 'ladi';
 export type HouseStageId = 'starter-home' | 'family-home' | 'garden-home' | 'tower-home' | 'dream-home';
 export type HouseStageLevel = 0 | 1 | 2 | 3 | 4;
 export type HouseRoomCount = 1 | 2 | 3 | 4 | 5;
-export type HouseThemeId = 'sunny-dollhouse';
+export type HouseThemeId = 'sunny-dollhouse' | 'halloween-night' | 'cotton-candy-dream';
+export type HouseEditionKind = 'standard' | 'seasonal' | 'fantasy';
 export type HexColor = `#${string}`;
 
 export interface FurniturePlacement {
@@ -108,10 +117,18 @@ export interface FurnitureSetDefinition {
 export interface HouseThemeDefinition {
   readonly id: HouseThemeId;
   readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly price: number;
+  readonly kind: HouseEditionKind;
+  readonly ownedByDefault: boolean;
   readonly wall: HexColor;
   readonly wallUpper: HexColor;
   readonly floor: HexColor;
   readonly roof: HexColor;
   readonly roofShade: HexColor;
   readonly trim: HexColor;
+  readonly door: HexColor;
+  readonly window: HexColor;
+  readonly landscapeAccent: HexColor;
 }
