@@ -1,8 +1,21 @@
-import vuetify from "eslint-config-vuetify";
+import vuetify from 'eslint-config-vuetify';
 
-export default vuetify({
-  ts: true,
-  rules: {
-    "@stylistic/quotes": ["error", "single"],
+export default vuetify(
+  {
+    antfu: false,
+    perfectionist: false,
+    stylistic: false,
+    ts: true,
+    unicorn: false,
   },
-});
+  {
+    files: ['**/*.vue'],
+    rules: {
+      'vue/attributes-order': 'off',
+      'vue/custom-event-name-casing': ['error', 'kebab-case', { ignores: ['/^update:/u'] }],
+      'vue/max-attributes-per-line': 'off',
+      'vue/padding-line-between-tags': 'off',
+      'vue/script-indent': 'off',
+    },
+  },
+);
