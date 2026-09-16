@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="500" scrollable @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog :model-value="modelValue" max-width="680" scrollable @update:model-value="emit('update:modelValue', $event)">
     <v-card class="avatar-builder" rounded="xl">
       <header class="studio-header px-5 pt-4">
         <div><p class="eyebrow mb-0">{{ t('avatar.builder.eyebrow') }}</p><h2>{{ t('avatar.builder.title', { name: userName }) }}</h2></div>
@@ -8,7 +8,7 @@
 
       <section class="studio-preview mx-5 mt-3" :aria-label="t('avatar.builder.previewAria')">
         <div class="preview-decoration preview-star-one" /><div class="preview-decoration preview-star-two" />
-        <AvatarFigure :appearance="draft" :size="190" />
+        <AvatarFigure :appearance="draft" :size="156" />
         <div class="preview-tools">
           <strong>{{ userName }}</strong><span>{{ t('avatar.builder.previewHint') }}</span>
           <div class="random-actions"><button type="button" @click="randomLook(false)">{{ t('avatar.builder.random') }}</button><button class="fun-random" type="button" @click="randomLook(true)">{{ t('avatar.builder.funRandom') }}</button></div>
@@ -176,8 +176,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .avatar-builder {
-  height: min(660px, calc(100dvh - 28px));
-  max-height: min(660px, calc(100dvh - 28px));
+  height: min(720px, calc(100dvh - 28px));
+  max-height: min(720px, calc(100dvh - 28px));
   @apply d-flex flex-column overflow-hidden;
   background: var(--lad-surface);
 }
@@ -190,9 +190,9 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   letter-spacing: -0.035em;
 }
 .studio-preview {
-  min-height: 196px;
+  min-height: 166px;
   @apply position-relative d-grid flex-shrink-0;
-  grid-template-columns: 210px 1fr;
+  grid-template-columns: 180px 1fr;
   @apply align-center overflow-hidden;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
@@ -723,12 +723,12 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 @include respond-down(studio) {
   .studio-preview {
-    min-height: 185px;
-    grid-template-columns: 170px 1fr;
+    min-height: 148px;
+    grid-template-columns: 140px 1fr;
   }
   .studio-preview :deep(.avatar-figure) {
-    width: 158px;
-    height: 158px;
+    width: 128px;
+    height: 128px;
   }
   .preview-tools > strong {
     font-size: rem(18);
@@ -759,12 +759,13 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 @include respond-down(narrow) {
   .studio-preview {
+    min-height: 138px;
     grid-template-columns: 1fr;
     @apply pa-2;
   }
   .studio-preview :deep(.avatar-figure) {
-    width: 140px;
-    height: 140px;
+    width: 118px;
+    height: 118px;
   }
   .preview-tools {
     @apply d-none;

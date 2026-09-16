@@ -185,3 +185,13 @@
   --lad-tone-balance-companion: var(--lad-color-primary-soft);
   --lad-tone-balance-lift: var(--lad-color-reward-strong);
 }
+
+@media (max-width: tokens.breakpoint(phone)) {
+  :root {
+    --lad-font-size-micro: tokens.rem(10);
+    --lad-font-size-caption: tokens.rem(11);
+    --lad-font-size-body: tokens.rem(13);
+    --lad-font-size-section: tokens.rem(20);
+    --lad-font-size-page: tokens.rem(29);
+  }
+}

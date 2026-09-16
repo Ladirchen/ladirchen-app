@@ -9,7 +9,7 @@
       </div>
       <div class="family-hero-avatars" :aria-label="t('family.hero.membersAria')">
         <span v-for="(member, memberIndex) in store.members.slice(0, 3)" :key="member.id">
-          <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="58" />
+          <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="66" />
         </span>
         <i v-if="store.members.length > 3">+{{ store.members.length - 3 }}</i>
       </div>
@@ -34,7 +34,7 @@
       <div class="member-grid">
         <BrandedCard v-for="(member, memberIndex) in store.members" :key="member.id" class="member-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
-            <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="46" />
+            <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="56" />
             <div class="flex-grow-1 min-w-0">
               <strong>{{ member.name }}</strong>
               <p class="text-caption text-medium-emphasis">{{ member.role === 'guardian' ? t('family.roles.guardian') : goalTitle(member.id) }}</p>
@@ -92,7 +92,7 @@
       <div class="pet-grid">
         <BrandedCard v-for="pet in store.pets" :key="pet.id" class="pet-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
-            <AnimatedPet :pet="pet" :size="58" />
+            <AnimatedPet :pet="pet" :size="64" />
             <div><strong>{{ pet.name }}</strong><p class="text-caption text-medium-emphasis">{{ t(`familyPets.kinds.${pet.kind}`) }}</p></div>
           </div>
         </BrandedCard>
@@ -245,8 +245,8 @@ onMounted(() => {
   z-index: 1;
 }
 .family-hero-avatars > span {
-  width: 52px;
-  height: 67px;
+  width: 58px;
+  height: 74px;
   @apply d-grid place-center overflow-hidden;
   margin-left: -17px;
   border: 3px solid var(--lad-border-on-accent);
@@ -354,7 +354,7 @@ onMounted(() => {
 .weekly-participation span {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 0.5rem;
+  font-size: rem(10);
 }
 .invite-actions {
   grid-template-columns: 1fr 1.4fr;
@@ -405,6 +405,19 @@ onMounted(() => {
   .family-section-heading {
     @apply align-start;
     @apply flex-column;
+  }
+}
+@include respond-up(shell) {
+  .family-hero-copy {
+    max-width: 31rem;
+  }
+  .family-hero-avatars {
+    min-width: 10rem;
+    transform: scale(1.12);
+    transform-origin: right center;
+  }
+  .member-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
