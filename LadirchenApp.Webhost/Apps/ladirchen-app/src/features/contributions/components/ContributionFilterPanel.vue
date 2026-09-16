@@ -124,19 +124,19 @@ const selectStatus = (value: StatusFilter) => {
 .contribution-filter {
   @apply position-relative;
   isolation: isolate;
-  padding: 0.9375rem;
+  padding: rem(15);
   @apply overflow-hidden;
   @include raised-surface(
     color-mix(in srgb, var(--lad-color-primary) 25%, transparent),
     color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
     1.75rem,
-    0.4375rem
+    rem(7)
   );
   background:
     radial-gradient(
       circle at 92% 7%,
-      color-mix(in srgb, var(--lad-color-reward) 20%, transparent) 0 2.375rem,
-      transparent 2.4375rem
+      color-mix(in srgb, var(--lad-color-reward) 20%, transparent) 0 rem(38),
+      transparent rem(39)
     ),
     linear-gradient(
       145deg,
@@ -144,14 +144,14 @@ const selectStatus = (value: StatusFilter) => {
       var(--lad-color-reward-soft)
     );
   box-shadow:
-    0 0.4375rem 0 color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
-    0 0.875rem 1.5rem
+    0 rem(7) 0 color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
+    0 rem(14) 1.5rem
       color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .filter-heading {
-  margin-bottom: 0.8125rem;
+  margin-bottom: rem(13);
   @apply d-flex align-center;
-  gap: 0.625rem;
+  gap: rem(10);
 }
 .filter-heading h2 {
   @apply ma-0;
@@ -159,13 +159,13 @@ const selectStatus = (value: StatusFilter) => {
   letter-spacing: -0.02em;
 }
 .filter-heading p {
-  margin: 0.0625rem 0 0;
+  margin: rem(1) 0 0;
   color: var(--lad-muted);
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .filter-mascot {
   @include icon-tile(
-    2.8125rem,
+    rem(45),
     1rem,
     linear-gradient(
       145deg,
@@ -174,13 +174,13 @@ const selectStatus = (value: StatusFilter) => {
     ),
     color-mix(in srgb, var(--lad-color-primary-strong) 20%, transparent),
     -4deg,
-    0.1875rem solid var(--lad-surface-raised)
+    rem(3) solid var(--lad-surface-raised)
   );
-  flex-basis: 2.8125rem;
+  flex-basis: rem(45);
 }
 .filter-eyes {
   width: 2rem;
-  height: 1.5625rem;
+  height: rem(25);
   @apply overflow-visible;
 }
 .filter-eye {
@@ -211,26 +211,26 @@ const selectStatus = (value: StatusFilter) => {
   @apply d-grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
-  padding-bottom: 0.4375rem;
+  padding-bottom: rem(7);
   border-bottom: 0.5rem solid
     color-mix(in srgb, var(--lad-color-reward-muted) 35%, transparent);
-  border-radius: 0 0 1.375rem 1.375rem;
+  border-radius: 0 0 rem(22) rem(22);
 }
 .scope-options button {
   @apply min-w-0;
   min-height: 6.25rem;
-  padding: 0.625rem 0.3125rem 0.5625rem;
+  padding: rem(10) rem(5) rem(9);
   @apply position-relative d-flex flex-column align-center justify-center;
-  gap: 0.1875rem;
+  gap: rem(3);
   color: var(--lad-text);
-  border: 0.125rem solid var(--lad-color-primary-soft);
-  border-radius: 1.4375rem 1.4375rem 1.0625rem 1.0625rem;
+  border: rem(2) solid var(--lad-color-primary-soft);
+  border-radius: rem(23) rem(23) rem(17) rem(17);
   background: linear-gradient(
     155deg,
     var(--lad-surface-raised),
     var(--lad-surface-soft)
   );
-  box-shadow: 0 0.3125rem 0 var(--lad-color-primary-soft);
+  box-shadow: 0 rem(5) 0 var(--lad-color-primary-soft);
   @apply cursor-pointer;
   font: inherit;
   transition:
@@ -246,7 +246,7 @@ const selectStatus = (value: StatusFilter) => {
     var(--lad-surface-raised),
     var(--lad-color-reward-soft)
   );
-  box-shadow: 0 0.3125rem 0 var(--lad-color-reward-muted);
+  box-shadow: 0 rem(5) 0 var(--lad-color-reward-muted);
 }
 .scope-options button:nth-child(3) {
   border-color: var(--lad-color-info-soft);
@@ -255,19 +255,19 @@ const selectStatus = (value: StatusFilter) => {
     var(--lad-surface-raised),
     var(--lad-surface-soft)
   );
-  box-shadow: 0 0.3125rem 0 var(--lad-color-bonus-soft);
+  box-shadow: 0 rem(5) 0 var(--lad-color-bonus-soft);
 }
 .scope-options button:hover {
-  transform: translateY(-0.1875rem);
+  transform: translateY(-rem(3));
 }
 .scope-options button:active {
-  transform: translateY(0.125rem);
-  box-shadow: 0 0.125rem 0
+  transform: translateY(rem(2));
+  box-shadow: 0 rem(2) 0
     color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
 }
 .scope-options button.active {
   color: var(--lad-color-primary-deep);
-  transform: translateY(-0.3125rem) rotate(-1deg);
+  transform: translateY(-rem(5)) rotate(-1deg);
   border-color: var(--lad-color-primary);
   background: linear-gradient(
     155deg,
@@ -281,7 +281,7 @@ const selectStatus = (value: StatusFilter) => {
 }
 .scope-options button:nth-child(2).active {
   color: var(--lad-color-reward-ink);
-  transform: translateY(-0.3125rem) rotate(1deg);
+  transform: translateY(-rem(5)) rotate(1deg);
   border-color: var(--lad-color-reward-border);
   background: linear-gradient(
     155deg,
@@ -309,43 +309,43 @@ const selectStatus = (value: StatusFilter) => {
 .scope-options button :deep(.v-icon) {
   width: 2.5rem;
   height: 2.5rem;
-  margin-bottom: 0.1875rem;
-  border: 0.1875rem solid var(--lad-border-on-accent);
+  margin-bottom: rem(3);
+  border: rem(3) solid var(--lad-border-on-accent);
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
   box-shadow: 0 0.25rem 0
     color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
 }
 .scope-options button strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.2;
 }
 .scope-options button span {
   color: var(--lad-muted);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   line-height: 1.2;
 }
 .scope-options button b {
-  min-width: 1.3125rem;
-  height: 1.3125rem;
-  padding: 0 0.3125rem;
+  min-width: rem(21);
+  height: rem(21);
+  padding: 0 rem(5);
   @apply position-absolute;
-  top: 0.375rem;
-  right: 0.375rem;
+  top: rem(6);
+  right: rem(6);
   @apply d-grid place-center;
   color: var(--lad-color-reward-strong);
-  border: 0.125rem solid var(--lad-border-on-accent);
+  border: rem(2) solid var(--lad-border-on-accent);
   border-radius: 0.5rem;
   background: var(--lad-color-reward-pale);
-  box-shadow: 0 0.125rem 0 var(--lad-color-accent-warm-soft);
-  font-size: 0.5625rem;
+  box-shadow: 0 rem(2) 0 var(--lad-color-accent-warm-soft);
+  font-size: rem(9);
 }
 .scope-option-icon {
-  margin-bottom: 0.1875rem;
+  margin-bottom: rem(3);
   color: var(--lad-text-inverse);
   @include icon-tile(
-    2.625rem,
-    0.9375rem,
+    rem(42),
+    rem(15),
     linear-gradient(
       145deg,
       var(--lad-color-primary-highlight),
@@ -353,9 +353,9 @@ const selectStatus = (value: StatusFilter) => {
     ),
     var(--lad-color-primary-deep),
     -4deg,
-    0.1875rem solid var(--lad-border-on-accent),
+    rem(3) solid var(--lad-border-on-accent),
     0.25rem,
-    0 0.4375rem 0.75rem
+    0 rem(7) 0.75rem
       color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent)
   );
 }
@@ -367,7 +367,7 @@ const selectStatus = (value: StatusFilter) => {
   background-color: currentColor;
   opacity: 1;
   filter: drop-shadow(
-    0 0.0625rem 0.0625rem color-mix(in srgb, var(--lad-text) 22%, transparent)
+    0 rem(1) rem(1) color-mix(in srgb, var(--lad-text) 22%, transparent)
   );
 }
 .scope-options button .scope-option-icon {
@@ -383,7 +383,7 @@ const selectStatus = (value: StatusFilter) => {
   );
   box-shadow:
     0 0.25rem 0 var(--lad-color-reward-deep),
-    0 0.4375rem 0.75rem
+    0 rem(7) 0.75rem
       color-mix(in srgb, var(--lad-color-reward-deep) 20%, transparent);
   transform: rotate(4deg);
 }
@@ -395,22 +395,22 @@ const selectStatus = (value: StatusFilter) => {
   );
   box-shadow:
     0 0.25rem 0 var(--lad-color-info-deep),
-    0 0.4375rem 0.75rem
+    0 rem(7) 0.75rem
       color-mix(in srgb, var(--lad-color-info-deep) 20%, transparent);
   transform: rotate(-3deg);
 }
 .kind-filter {
-  margin-top: 0.8125rem;
-  padding: 0.625rem;
+  margin-top: rem(13);
+  padding: rem(10);
   @apply d-flex align-center;
-  gap: 0.5625rem;
-  border: 0.0625rem dashed
+  gap: rem(9);
+  border: rem(1) dashed
     color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
   border-radius: 1rem;
   background: color-mix(in srgb, var(--lad-surface-raised) 50%, transparent);
 }
 .kind-filter--type {
-  margin-top: 0.4375rem;
+  margin-top: rem(7);
 }
 .kind-filter-label {
   flex: 0 0 auto;
@@ -420,18 +420,18 @@ const selectStatus = (value: StatusFilter) => {
 .kind-options,
 .status-options {
   @apply d-flex flex-wrap;
-  gap: 0.375rem;
+  gap: rem(6);
 }
 .kind-options button,
 .status-options button {
-  padding: 0.4375rem 0.5625rem;
+  padding: rem(7) rem(9);
   @apply d-inline-flex align-center ga-1;
   color: var(--lad-text-strong);
-  border: 0.0625rem solid
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
   border-radius: var(--lad-radius-pill);
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
-  box-shadow: 0 0.125rem 0
+  box-shadow: 0 rem(2) 0
     color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   @apply cursor-pointer;
   font: inherit;
@@ -441,7 +441,7 @@ const selectStatus = (value: StatusFilter) => {
 .kind-options button.active,
 .status-options button.active {
   color: var(--lad-color-primary-deep);
-  transform: translateY(-0.0625rem);
+  transform: translateY(-rem(1));
   border-color: var(--lad-color-primary-highlight);
   background: var(--lad-surface-raised);
   box-shadow: 0 0.25rem 0 var(--lad-color-primary-soft);
@@ -483,24 +483,24 @@ const selectStatus = (value: StatusFilter) => {
   }
   28%,
   45% {
-    transform: translateX(-0.125rem);
+    transform: translateX(-rem(2));
   }
   58%,
   75% {
-    transform: translateX(0.125rem);
+    transform: translateX(rem(2));
   }
 }
 @include respond-down(compact) {
   .scope-options button {
     min-height: 5rem;
-    padding-inline: 0.1875rem;
+    padding-inline: rem(3);
   }
   .scope-options button strong {
-    font-size: 0.625rem;
+    font-size: rem(10);
   }
   .kind-filter {
     @apply align-start flex-column;
-    gap: 0.4375rem;
+    gap: rem(7);
   }
 }
 @include reduced-motion {

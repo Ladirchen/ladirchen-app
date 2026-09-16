@@ -42,6 +42,8 @@ Scaffolded with Vuetify CLI.
 
 Domain implementations are grouped by capability under `src/domain/avatar`, `contributions`, `family`, `house`, `ladi`, `savings`, `shop`, and `shared`. Cross-layer code imports the owning domain module directly; each domain may expose a local `index.ts` entry point when several files form one public API.
 
+Feature modules do not import other feature modules. Reusable presentation and visual assets belong in `src/shared/`; feature behavior is composed through explicit props and events. ESLint enforces this dependency boundary.
+
 ## ✨ Enabled Features
 
 - ESLint

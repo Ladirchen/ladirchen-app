@@ -3,7 +3,7 @@
     <span class="bonus-rocket" aria-hidden="true"><v-icon icon="i-mdi:rocket-launch" size="19" /></span>
     <span class="bonus-copy"><small>{{ t('contributions.activeBonus.label') }}</small><strong>{{ t('contributions.activeBonus.multiplier', { value: multiplier }) }}</strong></span>
     <span class="bonus-factor">×{{ multiplier }}</span>
-    <PromotionCountdown class="bonus-countdown" :deadline="deadline" />
+    <PromotionCountdown class="bonus-countdown" :deadline="deadline" :time-zone="timeZone" />
   </div>
 </template>
 
@@ -11,12 +11,14 @@
 import { useI18n } from 'vue-i18n';
 
 import PromotionCountdown from './PromotionCountdown.vue';
+import type { IanaTimeZone } from '@/domain/family/types';
 
 const { t } = useI18n();
 
 defineProps<{
   deadline: string;
   multiplier: number;
+  timeZone: IanaTimeZone;
 }>();
 </script>
 
@@ -53,7 +55,7 @@ defineProps<{
   top: 3px;
   right: 7px;
   color: var(--lad-color-reward-accent);
-  font-size: 0.625rem;
+  font-size: rem(10);
   animation: bonus-spark 1.7s ease-in-out infinite;
 }
 .bonus-rocket {
@@ -81,14 +83,14 @@ defineProps<{
 }
 .bonus-copy small {
   color: var(--lad-color-primary-supporting);
-  font-size: 0.4375rem;
+  font-size: rem(7);
   font-weight: var(--lad-font-weight-heavy);
   text-transform: uppercase;
   letter-spacing: 0.035em;
 }
 .bonus-copy strong {
   margin-top: 1px;
-  font-size: 0.625rem;
+  font-size: rem(10);
   line-height: 1.15;
 }
 .bonus-factor {
@@ -105,7 +107,7 @@ defineProps<{
     var(--lad-color-info-shadow)
   );
   box-shadow: 0 3px 0 var(--lad-color-info-deep);
-  font-size: 1.125rem;
+  font-size: rem(18);
   font-weight: var(--lad-font-weight-black);
   line-height: 1;
   animation: bonus-factor-pulse 1.9s ease-in-out infinite;

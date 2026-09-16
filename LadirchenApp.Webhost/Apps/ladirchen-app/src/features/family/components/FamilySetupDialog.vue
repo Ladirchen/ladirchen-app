@@ -72,9 +72,9 @@
       </v-card-text>
 
       <v-card-actions class="setup-actions pa-5 pt-3">
-        <v-btn :disabled="step === 1" rounded="lg" variant="text" @click="step -= 1">{{ t('family.setup.back') }}</v-btn>
+        <v-btn :disabled="step === SETUP_STEPS.children" rounded="lg" variant="text" @click="step -= 1">{{ t('family.setup.back') }}</v-btn>
         <v-spacer />
-        <v-btn v-if="step < 3" color="primary" :disabled="!currentStepIsValid" rounded="lg" variant="flat" @click="step += 1">{{ t('common.next') }}</v-btn>
+        <v-btn v-if="step < SETUP_STEPS.guardians" color="primary" :disabled="!currentStepIsValid" rounded="lg" variant="flat" @click="step += 1">{{ t('common.next') }}</v-btn>
         <v-btn v-else class="raised-button" color="primary" :disabled="!setupIsValid" rounded="lg" variant="flat" @click="finishSetup">{{ t('family.setup.start') }}</v-btn>
       </v-card-actions>
     </v-card>
@@ -88,12 +88,14 @@ import { useI18n } from 'vue-i18n';
 import { createDefaultAvatarAppearance } from '@/domain/avatar';
 import type { FamilyMember, FamilyPet, FamilyPetKindId } from '@/domain/family/types';
 import { createDomainId } from '@/domain/shared/identifiers';
+import { percentageOfTotal } from '@/domain/shared/numbers';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { familyMemberColorPalette } from '@/theme/color-palette';
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
-const step = ref(1);
+const SETUP_STEPS = Object.freeze({ children: 1, guardians: 3, pets: 2 });
+const step = ref(SETUP_STEPS.children);
 const children = ref<FamilyMember[]>([]);
 const guardians = ref<FamilyMember[]>([]);
 const pets = ref<FamilyPet[]>([]);
@@ -111,13 +113,13 @@ const SetupSectionHeader = defineComponent({
   ]),
 });
 
-const stepProgress = computed(() => (step.value / 3) * 100);
+const stepProgress = computed(() => percentageOfTotal(step.value, SETUP_STEPS.guardians));
 const childrenAreValid = computed(() => children.value.length > 0 && children.value.every((child) => child.name.trim()));
 const petsAreValid = computed(() => pets.value.every((pet) => pet.name.trim() && pet.kind.trim()));
 const guardiansAreValid = computed(() => guardians.value.length > 0 && guardians.value.every((guardian) => guardian.name.trim()));
 const currentStepIsValid = computed(() => {
-  if (step.value === 1) return childrenAreValid.value;
-  if (step.value === 2) return petsAreValid.value;
+  if (step.value === SETUP_STEPS.children) return childrenAreValid.value;
+  if (step.value === SETUP_STEPS.pets) return petsAreValid.value;
   return guardiansAreValid.value;
 });
 const setupIsValid = computed(() => childrenAreValid.value && petsAreValid.value && guardiansAreValid.value);
@@ -127,7 +129,7 @@ const resetDraft = () => {
   children.value = store.members.filter((member) => member.role === 'child').map((member) => ({ ...member }));
   guardians.value = store.members.filter((member) => member.role === 'guardian').map((member) => ({ ...member }));
   pets.value = store.pets.map((pet) => ({ ...pet }));
-  step.value = 1;
+  step.value = SETUP_STEPS.children;
 };
 const addChild = () => children.value.push({ id: createDomainId.familyMember(newId('child', children.value.length)), name: '', avatar: '🧒', color: familyMemberColorPalette.laura, role: 'child', participatesInWeeklyGoal: true, weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
 const addGuardian = () => guardians.value.push({ id: createDomainId.familyMember(newId('guardian', guardians.value.length)), name: '', avatar: '🧑', color: familyMemberColorPalette.defaultGuardian, role: 'guardian', guardianAccess: 'supporter', participatesInWeeklyGoal: false, weeklyStreak: 0 });
@@ -157,25 +159,25 @@ watch(() => store.familySetupOpen, (isOpen) => {
     var(--lad-surface-soft),
     var(--lad-surface-soft)
   );
-  border-bottom: 0.0625rem solid var(--lad-border);
+  border-bottom: rem(1) solid var(--lad-border);
 }
 .setup-header h2 {
   @apply ma-0;
-  font-size: 1.4375rem;
+  font-size: rem(23);
   letter-spacing: -0.035em;
 }
 .setup-person {
-  border: 0.0625rem solid var(--lad-border);
+  border: rem(1) solid var(--lad-border);
 }
 .setup-avatar,
 .setup-section-icon {
   @apply d-grid place-center flex-shrink-0;
-  border-radius: 0.875rem;
+  border-radius: rem(14);
   font-size: 1.5rem;
 }
 .setup-avatar {
-  width: 2.8125rem;
-  height: 2.8125rem;
+  width: rem(45);
+  height: rem(45);
 }
 .setup-section-icon {
   width: 3rem;
@@ -184,13 +186,13 @@ watch(() => store.familySetupOpen, (isOpen) => {
 }
 .setup-section-title {
   @apply ma-0;
-  font-size: 1.125rem;
+  font-size: rem(18);
 }
 .pet-fields {
   grid-template-columns: 1fr 1fr;
 }
 .setup-actions {
-  border-top: 0.0625rem solid var(--lad-border);
+  border-top: rem(1) solid var(--lad-border);
 }
 @include respond-down(phone) {
   .pet-fields {

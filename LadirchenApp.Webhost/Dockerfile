@@ -12,6 +12,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 # GitVersion can't run in this container (no .git), so the version is computed on the host and passed in.
 ARG BUILD_VERSION=0.0.0
+ARG ENABLE_VUE_DEVTOOLS=false
+ENV ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS
 RUN apk add --no-cache bash curl && curl -fsSL https://vite.plus | bash
 ENV PATH="/root/.local/share/vite-plus/bin:${PATH}"
 WORKDIR /src

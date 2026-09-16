@@ -13,7 +13,10 @@ docker_build(
   "ladirchen-app-webhost",
   context=".",
   dockerfile="LadirchenApp.Webhost/Dockerfile",
-  build_args={"BUILD_VERSION": build_version},
+  build_args={
+    "BUILD_VERSION": build_version,
+    "ENABLE_VUE_DEVTOOLS": "true",
+  },
 )
 
 k8s_yaml(["k8s/deployment.yaml", "k8s/service.yaml"])

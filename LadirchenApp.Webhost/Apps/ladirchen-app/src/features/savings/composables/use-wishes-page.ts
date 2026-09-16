@@ -4,10 +4,16 @@ import { useI18n } from 'vue-i18n';
 
 import type { PageViewOption } from '@/shared/components/ui/PageViewSwitch.vue';
 import type { GoalVisibility, NewGoal, SavingGoal, SavingGoalOwnerId } from '@/domain/savings/types';
+import { calculateSavingsCredit } from '@/domain/savings/interest';
+import { SAVINGS_RULES } from '@/domain/savings/rules';
 import type { FamilyMemberId, SavingGoalId } from '@/domain/shared/identifiers';
+import { percentageOfTotal } from '@/domain/shared/numbers';
 import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
 import { useFamilyWorldStore } from '@/stores/family-world';
 import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+
+const SAVE_ANIMATION_DURATION_MS = 620;
+const SUPPORT_ANIMATION_DURATION_MS = 950;
 
 export const useWishesPage = () => {
 const store = useFamilyWorldStore();
@@ -21,9 +27,9 @@ const goalDialog = ref(false);
 const newGoalOwnerId = ref<SavingGoalOwnerId>(store.activeChildId);
 const supportDialog = ref(false);
 const supportGoalId = ref<SavingGoalId>();
-const supportAmount = ref(25);
+const supportAmount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
 const supportSending = ref(false);
-const saveAmount = ref(25);
+const saveAmount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
 const saveMotion = ref(false);
 let saveTimer: number | undefined;
 let supportTimer: number | undefined;
@@ -76,11 +82,10 @@ const supportExplanation = computed(() => store.viewerRole === 'child'
   ? t('wishes.support.childExplanation')
   : t('wishes.support.guardianExplanation'));
 
-const progress = (saved: number, target: number) => Math.min(100, (saved / target) * 100);
+const progress = (saved: number, target: number) => percentageOfTotal(saved, target);
 const depositedAmount = (goal: SavingGoal) => Math.max(0, goal.saved - (goal.interestEarned ?? 0));
-const weeklyInterestForGoal = (goal: SavingGoal) => goal.saved <= 0 || goal.saved >= goal.target
-  ? 0
-  : Math.min(goal.target - goal.saved, Math.max(1, Math.round(goal.saved * (store.savingsInterestRate / 100))));
+const weeklyInterestForGoal = (goal: SavingGoal) =>
+  calculateSavingsCredit(goal.saved, goal.target, store.savingsInterestRate);
 const formatInterestRate = (value: number) => value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 const ownerName = (ownerId: SavingGoalOwnerId) => ownerId === 'family' ? t('wishes.owner.myFamily') : store.members.find((member) => member.id === ownerId)?.name ?? t('wishes.owner.family');
 const visibilityLabel = (visibility: GoalVisibility) => {
@@ -92,21 +97,29 @@ const saveToGoal = () => {
   saveTimer = window.setTimeout(() => {
     store.saveToGoal(store.activeGoal.id, saveAmount.value);
     saveDialog.value = false;
-    saveAmount.value = 25;
+    saveAmount.value = SAVINGS_RULES.defaultTransferAmount;
     saveMotion.value = false;
     saveTimer = undefined;
-  }, 620);
+  }, SAVE_ANIMATION_DURATION_MS);
 };
 const openSave = (goalId: SavingGoalId) => {
   store.activeGoalId = goalId;
-  saveAmount.value = Math.min(25, store.availableBalance, Math.max(0, store.activeGoal.target - store.activeGoal.saved));
+  saveAmount.value = Math.min(
+    SAVINGS_RULES.defaultTransferAmount,
+    store.availableBalance,
+    Math.max(0, store.activeGoal.target - store.activeGoal.saved),
+  );
   saveDialog.value = true;
 };
 const openSupport = (goalId: SavingGoalId) => {
   supportGoalId.value = goalId;
   const goal = store.goals.find((item) => item.id === goalId);
   const remaining = goal ? Math.max(0, goal.target - goal.saved) : 0;
-  supportAmount.value = Math.max(0, Math.min(25, store.viewerRole === 'child' ? store.availableBalance : remaining, remaining));
+  supportAmount.value = Math.max(0, Math.min(
+    SAVINGS_RULES.defaultTransferAmount,
+    store.viewerRole === 'child' ? store.availableBalance : remaining,
+    remaining,
+  ));
   supportDialog.value = true;
 };
 const giveSupport = () => {
@@ -126,7 +139,7 @@ const giveSupport = () => {
     supportDialog.value = false;
     supportSending.value = false;
     supportTimer = undefined;
-  }, 950);
+  }, SUPPORT_ANIMATION_DURATION_MS);
 };
 const openGoalDialog = (ownerId: SavingGoalOwnerId) => {
   newGoalOwnerId.value = ownerId;

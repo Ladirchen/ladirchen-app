@@ -9,7 +9,7 @@
       </div>
       <div class="family-hero-avatars" :aria-label="t('family.hero.membersAria')">
         <span v-for="(member, memberIndex) in store.members.slice(0, 3)" :key="member.id">
-          <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="58" />
+          <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="66" />
         </span>
         <i v-if="store.members.length > 3">+{{ store.members.length - 3 }}</i>
       </div>
@@ -34,7 +34,7 @@
       <div class="member-grid">
         <BrandedCard v-for="(member, memberIndex) in store.members" :key="member.id" class="member-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
-            <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="46" />
+            <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="56" />
             <div class="flex-grow-1 min-w-0">
               <strong>{{ member.name }}</strong>
               <p class="text-caption text-medium-emphasis">{{ member.role === 'guardian' ? t('family.roles.guardian') : goalTitle(member.id) }}</p>
@@ -92,7 +92,7 @@
       <div class="pet-grid">
         <BrandedCard v-for="pet in store.pets" :key="pet.id" class="pet-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
-            <AnimatedPet :pet="pet" :size="58" />
+            <AnimatedPet :pet="pet" :size="64" />
             <div><strong>{{ pet.name }}</strong><p class="text-caption text-medium-emphasis">{{ t(`familyPets.kinds.${pet.kind}`) }}</p></div>
           </div>
         </BrandedCard>
@@ -121,9 +121,9 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
 import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
-import AnimatedPet from '@/features/world/components/AnimatedPet.vue';
+import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
 import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import type { FamilyMember, GuardianAccessLevel } from '@/domain/family/types';
@@ -209,7 +209,7 @@ onMounted(() => {
   top: 15px;
   right: 18px;
   color: var(--lad-color-reward-border);
-  font-size: 0.8125rem;
+  font-size: rem(13);
   animation: family-spark 2.2s ease-in-out infinite;
 }
 .family-hero-copy {
@@ -219,7 +219,7 @@ onMounted(() => {
 .family-hero-kicker {
   margin: 0 0 5px;
   color: var(--lad-color-info);
-  font-size: 0.625rem;
+  font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -227,7 +227,7 @@ onMounted(() => {
 .family-hero h1 {
   @apply ma-0;
   color: var(--lad-text);
-  font-size: 1.8125rem;
+  font-size: rem(29);
   line-height: 1;
   letter-spacing: -0.05em;
 }
@@ -235,7 +235,7 @@ onMounted(() => {
   @apply d-block;
   margin-top: 9px;
   color: var(--lad-muted);
-  font-size: 0.6875rem;
+  font-size: rem(11);
   line-height: 1.45;
 }
 .family-hero-avatars {
@@ -245,8 +245,8 @@ onMounted(() => {
   z-index: 1;
 }
 .family-hero-avatars > span {
-  width: 52px;
-  height: 67px;
+  width: 58px;
+  height: 74px;
   @apply d-grid place-center overflow-hidden;
   margin-left: -17px;
   border: 3px solid var(--lad-border-on-accent);
@@ -285,7 +285,7 @@ onMounted(() => {
   border-radius: 10px;
   background: var(--lad-color-primary);
   box-shadow: 0 3px 0 var(--lad-color-primary-supporting);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-style: normal;
   font-weight: var(--lad-font-weight-black);
 }
@@ -302,7 +302,7 @@ onMounted(() => {
 .family-section-heading p {
   margin: 0 0 3px;
   color: var(--lad-color-bonus-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -316,7 +316,7 @@ onMounted(() => {
   @apply d-block;
   margin-top: 3px;
   color: var(--lad-muted);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .member-grid {
   @apply d-grid;
@@ -349,12 +349,12 @@ onMounted(() => {
   @apply d-block;
 }
 .weekly-participation strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .weekly-participation span {
   margin-top: 2px;
   color: var(--lad-muted);
-  font-size: 0.5rem;
+  font-size: rem(10);
 }
 .invite-actions {
   grid-template-columns: 1fr 1.4fr;
@@ -405,6 +405,19 @@ onMounted(() => {
   .family-section-heading {
     @apply align-start;
     @apply flex-column;
+  }
+}
+@include respond-up(shell) {
+  .family-hero-copy {
+    max-width: 31rem;
+  }
+  .family-hero-avatars {
+    min-width: 10rem;
+    transform: scale(1.12);
+    transform-origin: right center;
+  }
+  .member-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

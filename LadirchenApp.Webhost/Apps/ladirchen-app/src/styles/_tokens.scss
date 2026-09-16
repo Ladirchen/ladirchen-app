@@ -1,5 +1,10 @@
 @use "sass:map";
+@use "sass:math";
 @use "sass:meta";
+
+@function rem($pixels) {
+  @return math.div($pixels, 16) * 1rem;
+}
 
 $breakpoints: (
   compact: 23.75em,
@@ -11,6 +16,8 @@ $breakpoints: (
   guide: 33.25em,
   studio: 35em,
   shell: 37.5em,
+  tablet: 64em,
+  tablet-landscape: 85.5em,
 );
 
 @function breakpoint($value) {

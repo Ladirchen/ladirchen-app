@@ -5,12 +5,16 @@ import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
 import type { WorldEffect } from '@/domain/contributions/types';
 import type { FamilyMember, FamilyPet } from '@/domain/family/types';
-import { HOUSE_STAGES, HOUSE_THEMES } from '@/domain/house';
+import { HOUSE_ENERGY_THRESHOLDS, HOUSE_STAGES, HOUSE_THEMES } from '@/domain/house';
+import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
 import type { HouseAccessory, HouseAccessoryId, HouseLayoutPlacement, HouseRoomDefinition, HouseStageLevel, HouseThemeId, HouseZoneId, RoomDesignDefinition } from '@/domain/house';
 import type { FamilyMemberId, FamilyPetId, HouseLayoutPlacementId } from '@/domain/shared/identifiers';
-import { HOUSE_EXTERIOR_ASSET_URLS, houseExteriorBackgroundAssetId, houseExteriorHouseAssetId } from '@/features/world/house-exterior-assets';
+import { HOUSE_EXTERIOR_ASSET_URLS, houseExteriorBackgroundAssetId, houseExteriorHouseAssetId } from '@/shared/visuals/house/house-exterior-assets';
 
 type HouseView = 'front' | 'inside' | 'garden';
+
+const MEMBER_LABEL_DURATION_MS = 1900;
+const MINIMUM_SUN_OPACITY = 0.08;
 
 export interface FamilyWorldSceneProps {
   energy: number;
@@ -47,9 +51,15 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
   let memberNameTimer: number | undefined;
   let petNameTimer: number | undefined;
   const viewLabel = computed(() => t(`world.scene.views.${view.value}`));
-  const weatherLabel = computed(() => t(`world.scene.weather.${props.energy >= 70 ? 'sunny' : props.energy >= 40 ? 'cloudy' : 'rainy'}`));
-  const houseEnergyClass = computed(() => props.energy < 30 ? 'energy-critical' : props.energy < 55 ? 'energy-low' : props.energy < 70 ? 'energy-tired' : 'energy-bright');
-  const sunOpacity = computed(() => Math.max(.08, props.energy / 100));
+  const weatherLabel = computed(() => t(`world.scene.weather.${props.energy >= HOUSE_ENERGY_THRESHOLDS.bright
+    ? 'sunny'
+    : props.energy >= HOUSE_ENERGY_THRESHOLDS.cloudy ? 'cloudy' : 'rainy'}`));
+  const houseEnergyClass = computed(() => props.energy < HOUSE_ENERGY_THRESHOLDS.critical
+    ? 'energy-critical'
+    : props.energy < HOUSE_ENERGY_THRESHOLDS.low
+      ? 'energy-low'
+      : props.energy < HOUSE_ENERGY_THRESHOLDS.bright ? 'energy-tired' : 'energy-bright');
+  const sunOpacity = computed(() => Math.max(MINIMUM_SUN_OPACITY, props.energy / PERCENTAGE_BASE));
   const familyChildren = computed(() => props.members.filter(member => member.role === 'child'));
   const familyGuardians = computed(() => props.members.filter(member => member.role === 'guardian'));
   const familyLineup = computed(() => {
@@ -113,12 +123,12 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
   const showMemberName = (memberId: FamilyMemberId) => {
     speakingMemberId.value = memberId;
     if (memberNameTimer !== undefined) {window.clearTimeout(memberNameTimer);}
-    memberNameTimer = window.setTimeout(() => { speakingMemberId.value = null; }, 1900);
+    memberNameTimer = window.setTimeout(() => { speakingMemberId.value = null; }, MEMBER_LABEL_DURATION_MS);
   };
   const showPetName = (petId: FamilyPetId) => {
     activePetId.value = petId;
     if (petNameTimer !== undefined) {window.clearTimeout(petNameTimer);}
-    petNameTimer = window.setTimeout(() => { activePetId.value = null; }, 1900);
+    petNameTimer = window.setTimeout(() => { activePetId.value = null; }, MEMBER_LABEL_DURATION_MS);
   };
   const forwardEntityMove = (placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) => emit('move-entity', placementId, zoneId, x, y);
   const forwardEntityReset = (placementId: HouseLayoutPlacementId) => emit('reset-entity', placementId);

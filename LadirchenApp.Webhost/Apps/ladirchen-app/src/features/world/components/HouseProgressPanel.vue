@@ -75,7 +75,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
     color-mix(in srgb, var(--lad-color-reward-shadow) 8%, transparent),
     1.25rem,
     0.25rem,
-    0.0625rem
+    rem(1)
   );
   background: linear-gradient(
     135deg,
@@ -117,7 +117,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   @apply position-absolute;
   z-index: 3;
   color: var(--lad-color-reward-accent);
-  font-size: 0.875rem;
+  font-size: rem(14);
   animation: house-spark 1.8s ease-in-out infinite;
 }
 .house-spark--one {
@@ -145,7 +145,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   gap: 5px;
 }
 .house-stage-title strong {
-  font-size: 0.875rem;
+  font-size: rem(14);
 }
 .house-stage-title span {
   padding: 3px 7px;
@@ -157,7 +157,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 }
 .house-stage-copy > p {
   @apply ma-0;
-  @include body-copy(0.5625rem, 1.35);
+  @include body-copy(rem(9), 1.35);
 }
 .house-stage-copy > b {
   @apply d-block;
@@ -204,7 +204,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 }
 .evolution-heading > div:last-child strong {
   margin-top: 1px;
-  font-size: 0.8125rem;
+  font-size: rem(13);
 }
 .evolution-icon {
   width: 40px;
@@ -227,13 +227,13 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 }
 .evolution-steps span {
   color: var(--lad-color-primary-strong);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
 }
 .evolution-steps p {
   margin: 3px 0 0;
   color: var(--lad-neutral-success);
-  font-size: 0.46875rem;
+  font-size: rem(7.5);
   line-height: 1.35;
 }
 .evolution-note {

@@ -43,7 +43,7 @@
 import { useI18n } from 'vue-i18n';
 
 import type { HouseAccessory } from '@/domain/house';
-import RoomFurniture from './RoomFurniture.vue';
+import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
 
 defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; open: boolean }>();
 const emit = defineEmits<{ place: [accessory: HouseAccessory]; 'update:open': [open: boolean] }>();
@@ -51,6 +51,8 @@ const { t } = useI18n();
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/mixins" as *;
+
 .furniture-storage-trigger {
   width: 43px;
   height: 43px;
@@ -141,13 +143,13 @@ const { t } = useI18n();
   line-height: 1.08;
 }
 .storage-title strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .storage-title small {
   margin-top: 2px;
   @apply overflow-hidden;
   color: var(--lad-palette-muted);
-  font-size: 0.375rem;
+  font-size: rem(6);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -214,7 +216,7 @@ const { t } = useI18n();
   top: 8px;
   right: 10px;
   color: var(--lad-palette-amber-500);
-  font-size: 0.5625rem;
+  font-size: rem(9);
 }
 .storage-empty > span {
   width: 43px;
@@ -236,7 +238,7 @@ const { t } = useI18n();
 }
 .storage-empty small {
   max-width: 82px;
-  font-size: 0.375rem;
+  font-size: rem(6);
   line-height: 1.3;
 }
 .storage-items > button.stored {
@@ -269,7 +271,7 @@ const { t } = useI18n();
 .storage-items > button.stored > strong {
   max-width: 92px;
   @apply overflow-hidden;
-  font-size: 0.4375rem;
+  font-size: rem(7);
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -305,7 +307,7 @@ const { t } = useI18n();
     var(--lad-palette-mint-strong)
   );
   box-shadow: 0 3px 0 var(--lad-palette-teal-700);
-  font-size: 0.375rem;
+  font-size: rem(6);
   font-weight: var(--lad-font-weight-strong);
 }
 .storage-drop-hint {
@@ -321,7 +323,7 @@ const { t } = useI18n();
     var(--lad-palette-background) 70%,
     transparent
   );
-  font-size: 0.375rem;
+  font-size: rem(6);
   font-weight: 800;
 }
 .storage-tray-enter-active,

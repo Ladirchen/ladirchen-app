@@ -1,3 +1,5 @@
+@use "./tokens";
+
 @layer vuetify-overrides {
   code,
   pre,
@@ -11,19 +13,19 @@
   --lad-font-heading: var(--lad-font-body);
   --lad-font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   --lad-font-size-micro: 0.5rem;
-  --lad-font-size-caption: 0.625rem;
+  --lad-font-size-caption: tokens.rem(10);
   --lad-font-size-body: 0.75rem;
-  --lad-font-size-section: 1.125rem;
-  --lad-font-size-page: 1.6875rem;
+  --lad-font-size-section: tokens.rem(18);
+  --lad-font-size-page: tokens.rem(27);
   --lad-font-weight-strong: 850;
   --lad-font-weight-heavy: 900;
   --lad-font-weight-black: 950;
   --lad-radius-small: 0.75rem;
-  --lad-radius-medium: 1.125rem;
+  --lad-radius-medium: tokens.rem(18);
   --lad-radius-large: 1.5rem;
   --lad-radius-pill: 999rem;
-  --lad-border-hairline: 0.0625rem;
-  --lad-border-strong: 0.125rem;
+  --lad-border-hairline: tokens.rem(1);
+  --lad-border-strong: tokens.rem(2);
   --lad-space-1: 0.25rem;
   --lad-space-2: 0.5rem;
   --lad-space-3: 0.75rem;
@@ -31,6 +33,7 @@
   --lad-space-5: 1.5rem;
   --lad-motion-fast: 160ms;
   --lad-motion-normal: 180ms;
+  --lad-easing-pop: cubic-bezier(0.2, 0.9, 0.2, 1);
 
   /* Semantic foundations used by application UI. Raw palette tokens are reserved
      for the artwork renderers listed in the palette validation script. */
@@ -137,8 +140,8 @@
   --lad-border-info: color-mix(in srgb, var(--lad-color-info) 20%, transparent);
   --lad-border-success: color-mix(in srgb, var(--lad-color-primary) 30%, transparent);
   --lad-border-warning: color-mix(in srgb, var(--lad-color-reward-border) 30%, transparent);
-  --lad-shadow-soft: 0 0.625rem 1.5rem color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
-  --lad-shadow-dialog: 0 1.75rem 4.375rem color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
+  --lad-shadow-soft: 0 tokens.rem(10) 1.5rem color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
+  --lad-shadow-dialog: 0 1.75rem tokens.rem(70) color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
   --lad-shadow-raised-success: color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
   --lad-shadow-raised-info: color-mix(in srgb, var(--lad-color-info-strong) 12%, transparent);
   --lad-shadow-raised-warning: color-mix(in srgb, var(--lad-color-reward-shadow) 12%, transparent);
@@ -181,4 +184,14 @@
   --lad-tone-balance-tint: var(--lad-color-reward-pale);
   --lad-tone-balance-companion: var(--lad-color-primary-soft);
   --lad-tone-balance-lift: var(--lad-color-reward-strong);
+}
+
+@media (max-width: tokens.breakpoint(phone)) {
+  :root {
+    --lad-font-size-micro: tokens.rem(10);
+    --lad-font-size-caption: tokens.rem(11);
+    --lad-font-size-body: tokens.rem(13);
+    --lad-font-size-section: tokens.rem(20);
+    --lad-font-size-page: tokens.rem(29);
+  }
 }

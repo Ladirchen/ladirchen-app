@@ -271,8 +271,8 @@
 import { motion } from 'motion-v';
 import { useI18n } from 'vue-i18n';
 
-import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
-import AnimatedPet from './AnimatedPet.vue';
+import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
+import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
 import DollhouseInterior from './DollhouseInterior.vue';
 import FurnitureStoragePanel from './FurnitureStoragePanel.vue';
 import HouseThemeDecoration from './HouseThemeDecoration.vue';
@@ -294,12 +294,41 @@ const {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .world-scene-wrap {
+  --world-furniture-overview-size: 60px;
+  --world-furniture-room-size: 96px;
+  --world-furniture-focused-size: 116px;
   @apply w-100;
   margin-top: 10px;
   padding-bottom: 8px;
   @apply position-relative overflow-hidden;
+  container: world-scene / inline-size;
   touch-action: pan-y;
   @apply select-none;
+}
+.scene-world-shell :deep(.layout-entity.entity-furniture) {
+  --world-entity-responsive-scale: 0.8;
+}
+.scene-world-shell :deep(.room-furniture--kitchen-counter) {
+  transform: translateX(-16px);
+}
+.scene-world-shell :deep(.room-furniture--retro-fridge) {
+  transform: translateX(16px);
+}
+@container world-scene (min-width: 42rem) {
+  .scene-world-shell :deep(.layout-entity) {
+    --world-entity-responsive-scale: 1.2;
+  }
+  .scene-world-shell :deep(.layout-entity.entity-furniture) {
+    --world-entity-responsive-scale: 1.2;
+  }
+}
+@container world-scene (min-width: 50rem) {
+  .scene-world-shell :deep(.layout-entity) {
+    --world-entity-responsive-scale: 1.35;
+  }
+  .scene-world-shell :deep(.layout-entity.entity-furniture) {
+    --world-entity-responsive-scale: 1.35;
+  }
 }
 .scene-drag-layer {
   @apply position-relative;
@@ -535,8 +564,8 @@ const {
   min-height: 229px;
 }
 .scene-world-shell :deep(.compact:not(.single-zone) .entity-furniture) {
-  width: 68px;
-  height: 68px;
+  width: var(--world-furniture-overview-size);
+  height: var(--world-furniture-overview-size);
 }
 .scene-world-shell :deep(.compact:not(.single-zone) .entity-member) {
   width: 42px;
@@ -551,8 +580,8 @@ const {
   height: 52px;
 }
 .scene-world-shell :deep(.compact.single-zone .entity-furniture) {
-  width: 112px;
-  height: 112px;
+  width: var(--world-furniture-room-size);
+  height: var(--world-furniture-room-size);
 }
 .scene-world-shell :deep(.compact.single-zone .entity-member) {
   width: 61px;
@@ -568,8 +597,8 @@ const {
 }
 .scene-world-shell
   :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-furniture) {
-  width: 136px;
-  height: 136px;
+  width: var(--world-furniture-focused-size);
+  height: var(--world-furniture-focused-size);
 }
 .scene-world-shell
   :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-member) {
@@ -606,10 +635,10 @@ const {
   transform-origin: 230px 210px;
 }
 .world-reveal {
-  animation: house-reveal 850ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation: house-reveal 850ms var(--lad-easing-pop) both;
 }
 .plot-upgrade {
-  animation: garden-grow 700ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: garden-grow 700ms var(--lad-easing-pop);
 }
 .plot-flower-border > path {
   fill: none;
@@ -1086,7 +1115,7 @@ const {
   background: var(--lad-palette-surface);
   box-shadow: 0 4px 10px
     color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
-  font-size: 0.5625rem;
+  font-size: rem(9);
   @apply font-weight-black;
   line-height: 1;
   @apply pointer-events-none;
@@ -1307,10 +1336,10 @@ const {
 }
 .accessory,
 .interior-item {
-  animation: accessory-pop 450ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: accessory-pop 450ms var(--lad-easing-pop);
 }
 .house-addon {
-  animation: accessory-pop 650ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: accessory-pop 650ms var(--lad-easing-pop);
 }
 .scene-actions {
   @apply position-absolute d-flex justify-center;
@@ -1366,7 +1395,7 @@ const {
   line-height: 1.05;
 }
 .scene-action strong {
-  font-size: 0.625rem;
+  font-size: rem(10);
 }
 .scene-action small {
   margin-top: 2px;

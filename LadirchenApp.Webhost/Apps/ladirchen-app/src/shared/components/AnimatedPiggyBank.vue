@@ -92,7 +92,7 @@ const piggyStyle = computed(() => ({
 }
 .animated-piggy.receiving {
   animation:
-    piggy-celebrate 800ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    piggy-celebrate 800ms var(--lad-easing-pop),
     piggy-breathe 8s 800ms ease-in-out infinite;
 }
 .animated-piggy.play-hop {
@@ -186,7 +186,7 @@ svg {
 .piggy-coin {
   @apply position-absolute;
   top: -0.25rem;
-  left: calc(50% - 0.78125rem);
+  left: calc(50% - rem(12.5));
   z-index: 3;
   opacity: 0;
 }
