@@ -1,0 +1,22 @@
+@use "sass:map";
+@use "sass:meta";
+
+$breakpoints: (
+  compact: 23.75em,
+  narrow: 24.375em,
+  small: 25em,
+  mobile: 26.25em,
+  phone: 26.875em,
+  catalog: 28.75em,
+  guide: 33.25em,
+  studio: 35em,
+  shell: 37.5em,
+);
+
+@function breakpoint($value) {
+  @if meta.type-of($value) == string and map.has-key($breakpoints, $value) {
+    @return map.get($breakpoints, $value);
+  }
+
+  @return $value;
+}

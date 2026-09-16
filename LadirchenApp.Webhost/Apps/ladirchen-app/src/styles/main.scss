@@ -2,6 +2,66 @@
   code,
   pre,
   .v-code {
-    font-family: var(--v-font-mono);
+    font-family: var(--lad-font-mono);
   }
+}
+
+:root {
+  --lad-font-body: var(--v-font-family, "Roboto", sans-serif);
+  --lad-font-heading: var(--lad-font-body);
+  --lad-font-mono: var(--v-font-mono, "Roboto Mono", monospace);
+  --lad-font-size-micro: 0.5rem;
+  --lad-font-size-caption: 0.625rem;
+  --lad-font-size-body: 0.75rem;
+  --lad-font-size-section: 1.125rem;
+  --lad-font-size-page: 1.6875rem;
+  --lad-font-weight-strong: 850;
+  --lad-font-weight-heavy: 900;
+  --lad-font-weight-black: 950;
+  --lad-radius-small: 0.75rem;
+  --lad-radius-medium: 1.125rem;
+  --lad-radius-large: 1.5rem;
+  --lad-radius-pill: 999rem;
+  --lad-border-hairline: 0.0625rem;
+  --lad-border-strong: 0.125rem;
+  --lad-space-1: 0.25rem;
+  --lad-space-2: 0.5rem;
+  --lad-space-3: 0.75rem;
+  --lad-space-4: 1rem;
+  --lad-space-5: 1.5rem;
+  --lad-motion-fast: 160ms;
+  --lad-motion-normal: 180ms;
+
+  /* Semantic surface and state palette. Illustration-only colours stay local. */
+  --lad-color-success: var(--lad-palette-mint-strong);
+  --lad-color-success-strong: var(--lad-palette-teal-700);
+  --lad-color-success-soft: var(--lad-palette-background);
+  --lad-color-info: var(--lad-palette-blue);
+  --lad-color-info-strong: var(--lad-palette-blue-strong);
+  --lad-color-info-soft: var(--lad-palette-background);
+  --lad-color-warning: var(--lad-palette-amber-450);
+  --lad-color-warning-strong: var(--lad-palette-amber-700);
+  --lad-color-warning-soft: var(--lad-palette-amber-100);
+  --lad-color-danger: var(--lad-palette-red-400);
+  --lad-color-danger-soft: var(--lad-palette-amber-100);
+  --lad-color-reward: var(--lad-palette-amber-450);
+  --lad-color-reward-strong: var(--lad-palette-amber-700);
+  --lad-color-reward-soft: var(--lad-palette-amber-100);
+  --lad-color-bonus: var(--lad-palette-violet-400);
+  --lad-color-bonus-soft: var(--lad-palette-background);
+
+  --lad-border-subtle: color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+  --lad-border-info: color-mix(in srgb, var(--lad-palette-blue) 20%, transparent);
+  --lad-border-success: color-mix(in srgb, var(--lad-palette-mint) 30%, transparent);
+  --lad-border-warning: color-mix(in srgb, var(--lad-palette-amber-450) 30%, transparent);
+  --lad-shadow-soft: 0 10px 24px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
+  --lad-shadow-dialog: 0 28px 70px color-mix(in srgb, var(--lad-palette-muted-700) 20%, transparent);
+  --lad-shadow-raised-success: color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
+  --lad-shadow-raised-info: color-mix(in srgb, var(--lad-palette-blue-strong) 12%, transparent);
+  --lad-shadow-raised-warning: color-mix(in srgb, var(--lad-palette-amber-550) 12%, transparent);
+  --lad-gradient-surface: linear-gradient(145deg, var(--lad-surface), var(--lad-palette-background));
+  --lad-gradient-info: linear-gradient(145deg, var(--lad-palette-background), var(--lad-palette-background));
+  --lad-gradient-success: linear-gradient(145deg, var(--lad-palette-background), var(--lad-palette-surface));
+  --lad-gradient-reward: linear-gradient(145deg, var(--lad-palette-surface), var(--lad-palette-background));
+  --lad-gradient-bonus: linear-gradient(145deg, var(--lad-palette-white), var(--lad-palette-background));
 }

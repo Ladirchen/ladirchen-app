@@ -1,5 +1,5 @@
 <template>
-  <div class="world-scene-wrap" :class="{ 'is-inside': view === 'inside', 'is-garden': view === 'garden', 'is-entering': entering }" :style="sceneStyle">
+  <div class="world-scene-wrap" :class="{ 'is-inside': view === 'inside', 'is-garden': view === 'garden', 'is-entering': entering, 'is-storage-open': storageOpen, 'is-dragging-furniture': draggingEntityType === 'furniture' }" :style="sceneStyle">
     <motion.div
       class="scene-drag-layer"
       :drag="false"
@@ -24,9 +24,17 @@
             <stop offset="0" stop-color="#fff8df" />
             <stop offset="1" stop-color="#f8e7bd" />
           </linearGradient>
+          <pattern id="cottonRoofPattern" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+            <rect width="24" height="24" fill="#f5a8ce" />
+            <path d="M-6 6 6-6m0 24L30-6M18 30 30 18" stroke="#fff1fa" stroke-width="8" />
+            <circle cx="7" cy="7" r="2.5" fill="#8bd8ec" />
+          </pattern>
           <filter id="sceneShadow" height="160%" width="160%" x="-30%" y="-30%">
             <feDropShadow dx="0" dy="12" flood-color="#335443" flood-opacity=".2" stdDeviation="8" />
           </filter>
+          <clipPath id="frontDoorOpeningClip">
+            <path d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
+          </clipPath>
         </defs>
 
         <g class="scene-sun" :style="{ opacity: sunOpacity }" aria-hidden="true">
@@ -94,9 +102,24 @@
               </g>
 
               <g class="toy-door">
-                <path d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
-                <circle cx="241" cy="220" r="4" />
-                <path d="M203 255h55" />
+                <path class="doorway-back" d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
+                <g class="doorway-glimpse" clip-path="url(#frontDoorOpeningClip)">
+                  <rect x="210" y="181" width="42" height="75" fill="#f9e7bd" />
+                  <path d="m211 232 40-7v31h-40Z" fill="#d79f6d" />
+                  <path d="M231 182v31m-12 42 5-24m23 24-10-27" fill="none" stroke="#b47a55" stroke-width="2" />
+                  <path d="M218 218h25v12h-25Z" fill="#73a4d6" stroke="#446e96" stroke-width="2" />
+                  <circle cx="230" cy="202" r="7" fill="#ffe47c" opacity=".8" />
+                  <path d="M230 181v15" stroke="#725844" stroke-width="2" />
+                </g>
+                <g class="door-leaf">
+                  <path class="door-panel" d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
+                  <g class="door-handle">
+                    <circle class="door-knob" cx="241" cy="220" r="4" />
+                    <path d="M241 220h8" />
+                  </g>
+                  <path class="door-panel-detail" d="M217 205h27v17h-27Zm0 25h27v18h-27Z" />
+                </g>
+                <path class="door-threshold" d="M203 255h55" />
               </g>
               <g class="toy-window left-window"><rect x="157" y="174" width="43" height="39" rx="9" /><path d="M178 178v31m-17-15h35" /></g>
               <g class="toy-window right-window"><rect x="263" y="174" width="43" height="39" rx="9" /><path d="M284 178v31m-17-15h35" /></g>
@@ -134,6 +157,9 @@
             <g class="candy-cloud candy-right"><circle cx="314" cy="238" r="17" /><circle cx="331" cy="228" r="20" /><circle cx="348" cy="240" r="16" /></g>
             <path class="candy-swirl" d="M217 122q25-23 38 0-8 17-27 6 4-10 14-6" />
             <path class="lollipop" d="M112 208v35m-10-38q10-17 20 0-10 17-20 0Z" />
+            <path class="lollipop lollipop-blue" d="M352 206v38m-10-40q10-17 20 0-10 17-20 0Z" />
+            <g class="wrapped-candies"><path d="m169 191-9-5v10Zm18 0 9-5v10Z" /><rect x="169" y="184" width="18" height="14" rx="7" /><path d="m273 178-8-5v10Zm17 0 8-5v10Z" /><rect x="273" y="171" width="17" height="14" rx="7" /></g>
+            <g class="candy-sprinkles"><circle cx="177" cy="121" r="3" /><circle cx="289" cy="133" r="3" /><circle cx="309" cy="157" r="2.5" /><circle cx="154" cy="153" r="2.5" /></g>
           </g>
 
           <g v-if="view === 'front' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="#8d5d49" /><circle cx="288" cy="122" fill="#fff" opacity=".55" r="8" /><circle cx="296" cy="110" fill="#fff" opacity=".38" r="11" /></g>
@@ -171,14 +197,10 @@
         :class="{ 'garden-view': view === 'garden' }"
         @pointerdown.stop
       >
-        <nav class="scene-room-switcher" aria-label="Raumansicht auswählen">
-          <button :class="{ active: selectedRoomView === 'all' }" type="button" @click="selectZone('all')"><v-icon size="13">mdi-home-group</v-icon><span>Alle</span></button>
-          <button v-for="room in rooms" :key="room.id" :class="{ active: selectedRoomView === room.id }" type="button" @click="selectZone(room.id)"><span>{{ room.icon }}</span><span>{{ room.name }}</span></button>
-          <button :class="{ active: selectedRoomView === 'garden' }" type="button" @click="selectZone('garden')"><span>🌿</span><span>Garten</span></button>
-        </nav>
         <DollhouseInterior
           :accessories="accessories"
           compact
+          contextual-neighbors
           :editable="canArrangeHouse"
           include-garden
           :members="members"
@@ -188,9 +210,53 @@
           :score="ladiScore"
           :selected-zone-id="selectedRoomView"
           :show-room-labels="false"
+          :storage-open="storageOpen"
+          @drag-state="draggingEntityType = $event"
           @move="forwardEntityMove"
+          @reset="forwardEntityReset"
+          @select-zone="selectZone"
+          @store="storeAccessory"
         />
       </div>
+
+      <button
+        v-if="view !== 'front' && !storageOpen"
+        class="furniture-storage-trigger"
+        :aria-expanded="storageOpen"
+        aria-label="Möbellager öffnen"
+        type="button"
+        @click.stop="storageOpen = !storageOpen"
+      >
+        <v-icon icon="mdi-sofa-outline" size="21" />
+        <v-icon class="storage-plus" icon="mdi-plus" size="12" />
+      </button>
+      <Transition name="storage-tray">
+        <aside v-if="view !== 'front' && storageOpen" class="furniture-storage" data-furniture-storage aria-label="Möbellager">
+          <header>
+            <div class="storage-title">
+              <span class="storage-title-icon"><v-icon icon="mdi-archive-star-outline" size="19" /></span>
+              <span><strong>Möbellager</strong><small>{{ storageAccessories.length === 1 ? '1 Möbelstück verstaut' : `${storageAccessories.length} Möbelstücke verstaut` }}</small></span>
+            </div>
+            <button aria-label="Möbellager schließen" type="button" @click="storageOpen = false"><v-icon icon="mdi-close" size="18" /></button>
+          </header>
+          <div class="storage-items">
+            <p v-if="storageAccessories.length === 0" class="storage-empty"><span><v-icon icon="mdi-inbox-arrow-down-outline" size="25" /></span><strong>Hier ist noch Platz!</strong><small>Ziehe ein Möbelstück in diese Truhe.</small></p>
+            <button
+              v-for="accessory in storageAccessories"
+              :key="accessory.id"
+              :aria-label="`${accessory.title} aufstellen`"
+              class="stored"
+              type="button"
+              @click="placeStoredAccessory(accessory)"
+            >
+              <span class="stored-preview"><RoomFurniture :item="accessory" /></span>
+              <strong>{{ accessory.title }}</strong>
+              <span class="stored-action"><v-icon icon="mdi-plus" size="10" />Aufstellen</span>
+            </button>
+            <p v-if="storageAccessories.length > 0" class="storage-drop-hint"><v-icon icon="mdi-inbox-arrow-down-outline" size="15" />Weitere Möbel hier ablegen</p>
+          </div>
+        </aside>
+      </Transition>
 
       <div v-if="view === 'front'" class="world-family" :class="{ 'guardian-active': activeFamilyMember?.role === 'guardian' }" aria-label="Familienmitglieder in der Familienwelt">
         <div class="world-family-background" aria-label="Weitere Familienmitglieder im Hintergrund">
@@ -243,10 +309,6 @@
           <v-icon icon="mdi-door-open" size="20" />
           <span><strong>Eintreten</strong><small>Tür öffnen</small></span>
         </button>
-        <button class="scene-action" :disabled="entering" aria-label="Garten betreten" type="button" @click.stop="enterGarden">
-          <v-icon icon="mdi-flower" size="20" />
-          <span><strong>In den Garten</strong><small>Gartenwelt</small></span>
-        </button>
       </template>
       <button v-else class="scene-action" aria-label="Zurück vor das Haus" type="button" @click.stop="leaveScene">
         <v-icon icon="mdi-arrow-left" size="20" />
@@ -265,10 +327,11 @@ import AvatarFigure from '@/features/avatar/components/AvatarFigure.vue';
 import AnimatedPet from './AnimatedPet.vue';
 import DollhouseInterior from './DollhouseInterior.vue';
 import HouseLayoutEntity from './HouseLayoutEntity.vue';
+import RoomFurniture from './RoomFurniture.vue';
 import { HOUSE_THEMES } from '../data/house-catalog';
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
 import type { AvatarAppearance } from '@/domain/avatar';
-import type { HouseRoomDefinition, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
+import type { HouseAccessoryId, HouseRoomDefinition, HouseStageLevel, HouseThemeId, HouseZoneId } from '@/domain/house';
 import type { FamilyMember, FamilyMemberId, FamilyPet, FamilyPetId, HouseAccessory, HouseLayoutPlacement, HouseLayoutPlacementId, WorldEffect } from '@/domain/types';
 
 type HouseView = 'front' | 'inside' | 'garden';
@@ -290,11 +353,16 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   'move-entity': [placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number];
+  'place-furniture': [accessoryId: HouseAccessoryId, zoneId: HouseZoneId];
+  'reset-entity': [placementId: HouseLayoutPlacementId];
+  'store-furniture': [accessoryId: HouseAccessoryId];
 }>();
 
 const view = ref<HouseView>('front');
 const selectedRoomView = ref<HouseZoneId | 'all'>('living-room');
 const entering = ref(false);
+const storageOpen = ref(false);
+const draggingEntityType = ref<HouseLayoutPlacement['entityType'] | null>(null);
 const speakingMemberId = ref<FamilyMemberId | null>(null);
 const activePetId = ref<FamilyPetId | null>(null);
 let memberNameTimer: number | undefined;
@@ -361,6 +429,14 @@ const frontGardenPlacements = computed(() => props.houseLayout
     const accessory = accessoryFor(placement);
     return Boolean(accessory?.owned && accessory.equipped);
   }));
+const storageAccessories = computed(() => props.accessories.filter((accessory) => accessory.owned && !accessory.equipped));
+const storageTargetZone = computed<HouseZoneId>(() => view.value === 'garden'
+  ? 'garden'
+  : selectedRoomView.value === 'all' || selectedRoomView.value === 'garden'
+    ? 'living-room'
+    : selectedRoomView.value);
+const storeAccessory = (accessoryId: HouseAccessoryId) => emit('store-furniture', accessoryId);
+const placeStoredAccessory = (accessory: HouseAccessory) => emit('place-furniture', accessory.id, storageTargetZone.value);
 const appearanceFor = (member: FamilyMember, index: number): AvatarAppearance => {
   if (member.appearance) return member.appearance;
   if (member.role === 'guardian') {
@@ -390,6 +466,7 @@ const showPetName = (petId: FamilyPetId) => {
 const forwardEntityMove = (placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) => {
   emit('move-entity', placementId, zoneId, x, y);
 };
+const forwardEntityReset = (placementId: HouseLayoutPlacementId) => emit('reset-entity', placementId);
 const enterHouse = () => {
   if (entering.value) return;
   entering.value = true;
@@ -397,17 +474,14 @@ const enterHouse = () => {
     selectedRoomView.value = 'living-room';
     view.value = 'inside';
     entering.value = false;
-  }, 760);
-};
-const enterGarden = () => {
-  selectedRoomView.value = 'garden';
-  view.value = 'garden';
+  }, 520);
 };
 const selectZone = (zoneId: HouseZoneId | 'all') => {
   selectedRoomView.value = zoneId;
   view.value = zoneId === 'garden' ? 'garden' : 'inside';
 };
 const leaveScene = () => {
+  storageOpen.value = false;
   view.value = 'front';
 };
 onUnmounted(() => {
@@ -420,6 +494,7 @@ onUnmounted(() => {
 <style scoped>
 .world-scene-wrap {
   @apply w-100;
+  margin-top: 10px;
   padding-bottom: 8px;
   @apply position-relative overflow-hidden;
   touch-action: pan-y;
@@ -449,23 +524,50 @@ onUnmounted(() => {
 }
 .scene-world-shell {
   @apply position-absolute overflow-hidden;
-  top: 21%;
+  top: 19%;
   right: 0;
   bottom: 2%;
   left: 0;
   z-index: 5;
-  padding-top: 29px;
   pointer-events: auto;
   animation: enter-house 420ms cubic-bezier(0.18, 0.78, 0.22, 1) both;
+  transition: right 0.2s ease;
+}
+.world-scene-wrap.is-storage-open .scene-world-shell {
+  right: auto;
+  width: calc(100% - 134px);
+}
+.world-scene-wrap.is-storage-open.is-dragging-furniture .scene-world-shell {
+  overflow: visible;
+  z-index: 30;
+}
+.world-scene-wrap.is-inside .scene-world-shell {
+  top: 0;
+  background: linear-gradient(180deg, #fff9ea, #f7e7c9);
+}
+.world-scene-wrap.is-garden .scene-world-shell {
+  top: 0;
+}
+.world-scene-wrap.is-inside .scene-sun,
+.world-scene-wrap.is-inside .cloud,
+.world-scene-wrap.is-inside .rain-cloud,
+.world-scene-wrap.is-inside .far-landscape,
+.world-scene-wrap.is-inside .island {
+  opacity: 0;
 }
 .scene-world-shell :deep(.dollhouse-layout) {
+  width: 100%;
+  height: 100%;
   min-height: 229px;
   padding: 0;
-  gap: 2px;
+  gap: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+.scene-world-shell :deep(.contextual-zone .dollhouse-room) {
+  min-height: 100%;
 }
 .scene-world-shell :deep(.dollhouse-room) {
   border: 0;
@@ -479,8 +581,8 @@ onUnmounted(() => {
   min-height: 229px;
 }
 .scene-world-shell :deep(.compact:not(.single-zone) .entity-furniture) {
-  width: 61px;
-  height: 61px;
+  width: 68px;
+  height: 68px;
 }
 .scene-world-shell :deep(.compact:not(.single-zone) .entity-member) {
   width: 42px;
@@ -495,8 +597,8 @@ onUnmounted(() => {
   height: 52px;
 }
 .scene-world-shell :deep(.compact.single-zone .entity-furniture) {
-  width: 98px;
-  height: 98px;
+  width: 112px;
+  height: 112px;
 }
 .scene-world-shell :deep(.compact.single-zone .entity-member) {
   width: 61px;
@@ -510,6 +612,26 @@ onUnmounted(() => {
   width: 78px;
   height: 78px;
 }
+.scene-world-shell
+  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-furniture) {
+  width: 136px;
+  height: 136px;
+}
+.scene-world-shell
+  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-member) {
+  width: 67px;
+  height: 90px;
+}
+.scene-world-shell
+  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-pet) {
+  width: 62px;
+  height: 62px;
+}
+.scene-world-shell
+  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-ladi) {
+  width: 86px;
+  height: 86px;
+}
 .scene-world-shell.garden-view :deep(.dollhouse-layout),
 .scene-world-shell.garden-view :deep(.garden-zone) {
   background: transparent;
@@ -517,48 +639,269 @@ onUnmounted(() => {
 .scene-world-shell.garden-view :deep(.garden-zone) {
   min-height: 229px;
 }
-.scene-room-switcher {
-  @apply position-absolute d-flex align-center overflow-x-auto;
-  top: 4px;
-  right: 7px;
-  left: 7px;
-  z-index: 15;
-  gap: 3px;
-  scrollbar-width: none;
+.furniture-storage-trigger {
+  width: 43px;
+  height: 43px;
+  @apply position-absolute d-grid place-center cursor-pointer;
+  top: 8px;
+  right: 8px;
+  z-index: 25;
+  color: #2f8068;
+  border: 3px solid #fff;
+  border-radius: 14px;
+  background: #eefaf4;
+  box-shadow:
+    0 4px 0 #b9dfce,
+    0 8px 16px rgba(42, 83, 68, 0.18);
 }
-.scene-room-switcher::-webkit-scrollbar {
-  display: none;
+.storage-plus {
+  width: 17px;
+  height: 17px;
+  @apply position-absolute d-grid place-center;
+  right: -5px;
+  bottom: -5px;
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #40b78b;
 }
-.scene-room-switcher button {
-  min-width: max-content;
-  padding: 3px 6px;
+.furniture-storage {
+  width: 126px;
+  @apply position-absolute overflow-hidden;
+  top: 0;
+  right: 0;
+  bottom: 2%;
+  z-index: 24;
+  padding: 8px 7px 10px;
+  border: 2px solid #cce6d9;
+  border-radius: 22px 0 0 22px;
+  background:
+    radial-gradient(
+      circle at 92% 9%,
+      rgba(255, 214, 116, 0.25) 0 22px,
+      transparent 23px
+    ),
+    linear-gradient(165deg, #fbfff9, #fff8e9 72%);
+  box-shadow:
+    -7px 0 0 rgba(160, 205, 184, 0.25),
+    -13px 0 25px rgba(54, 67, 58, 0.14);
+  backdrop-filter: blur(12px);
+}
+.furniture-storage::after {
+  content: "";
+  width: 56px;
+  height: 56px;
+  @apply position-absolute;
+  right: -34px;
+  bottom: -26px;
+  z-index: -1;
+  border: 9px solid rgba(85, 184, 143, 0.1);
+  border-radius: 50%;
+}
+.furniture-storage > header {
+  @apply d-flex align-start justify-space-between;
+  gap: 4px;
+  margin: -3px -2px 8px;
+  padding: 6px 5px 8px;
+  border-bottom: 1px dashed rgba(58, 137, 105, 0.25);
+}
+.storage-title {
+  min-width: 0;
   @apply d-flex align-center;
-  gap: 3px;
-  color: #786a61;
-  border: 1px solid rgba(70, 56, 47, 0.12);
+  gap: 5px;
+}
+.storage-title > span:last-child {
+  min-width: 0;
+  @apply d-flex flex-column;
+  color: #31594e;
+  line-height: 1.08;
+}
+.storage-title strong {
+  font-size: 10px;
+}
+.storage-title small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #71817b;
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.storage-title-icon {
+  width: 29px;
+  height: 29px;
+  @apply d-grid place-center flex-shrink-0;
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 10px 10px 8px 8px;
+  background: linear-gradient(145deg, #66c79f, #369876);
+  box-shadow: 0 3px 0 #277a5d;
+  transform: rotate(-4deg);
+}
+.furniture-storage > header button {
+  width: 24px;
+  height: 24px;
+  @apply d-grid place-center flex-shrink-0 cursor-pointer;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #fff0d5;
+  color: #a96d25;
+  box-shadow: 0 3px 0 #e6cda5;
+}
+.storage-items {
+  @apply d-grid overflow-y-auto;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  max-height: calc(100% - 47px);
+  padding: 2px 3px 6px 1px;
+  scrollbar-width: thin;
+}
+.storage-empty {
+  min-height: 128px;
+  @apply d-flex flex-column align-center justify-center text-center;
+  gap: 4px;
+  margin: 0;
+  padding: 8px;
+  color: #4e7568;
+  border: 2px dashed #add7c4;
+  border-radius: 17px;
+  background: rgba(237, 250, 242, 0.78);
+  font-weight: 750;
+}
+.storage-empty > span {
+  width: 43px;
+  height: 43px;
+  @apply d-grid place-center;
+  margin-bottom: 3px;
+  color: #398f6e;
+  border: 3px solid #fff;
+  border-radius: 15px;
+  background: #dff5e9;
+  box-shadow: 0 4px 0 #bfdccb;
+}
+.storage-empty strong {
+  font-size: 8px;
+}
+.storage-empty small {
+  max-width: 82px;
+  font-size: 6px;
+  line-height: 1.3;
+}
+.storage-items > button.stored {
+  min-height: 112px;
+  @apply position-relative d-flex flex-column align-center justify-center cursor-pointer;
+  gap: 2px;
+  padding: 7px 4px 6px;
+  color: #49645b;
+  border: 1px solid #c8e1d5;
+  border-radius: 17px;
+  background: linear-gradient(155deg, #fff, #edf9f1);
+  box-shadow:
+    0 4px 0 #d3e6dc,
+    0 8px 12px rgba(61, 104, 84, 0.08);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.storage-items > button.stored:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 0 #c7dfd2,
+    0 10px 14px rgba(61, 104, 84, 0.11);
+}
+.storage-items > button.stored > strong {
+  max-width: 92px;
+  overflow: hidden;
+  font-size: 7px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stored-preview {
+  width: 62px;
+  height: 57px;
+  @apply d-grid place-center;
+  margin-bottom: 1px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle, #fff 0 48%, transparent 49%),
+    linear-gradient(145deg, #e8f6ff, #fff1ce);
+}
+.stored-preview :deep(.room-furniture) {
+  width: 62px;
+  height: 62px;
+}
+.stored-action {
+  @apply d-inline-flex align-center;
+  gap: 1px;
+  margin-top: 3px;
+  padding: 4px 7px;
+  color: #fff;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  font: inherit;
+  background: linear-gradient(145deg, #58bd94, #318b6c);
+  box-shadow: 0 3px 0 #267258;
   font-size: 6px;
   font-weight: 850;
-  cursor: pointer;
 }
-.scene-room-switcher button.active {
-  color: #fff;
-  border-color: var(--house-trim);
-  background: var(--house-trim);
-  box-shadow: 0 2px 0 rgba(51, 39, 33, 0.18);
+.storage-drop-hint {
+  @apply d-flex align-center justify-center text-center;
+  gap: 3px;
+  margin: 1px 0 0;
+  padding: 6px 4px;
+  color: #598074;
+  border: 1px dashed #afd2c2;
+  border-radius: 11px;
+  background: rgba(239, 250, 243, 0.72);
+  font-size: 6px;
+  font-weight: 800;
+}
+.storage-tray-enter-active,
+.storage-tray-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.storage-tray-enter-from,
+.storage-tray-leave-to {
+  opacity: 0;
+  transform: translateX(12px) scale(0.97);
+}
+.world-scene-wrap.is-dragging-furniture .furniture-storage {
+  border-color: #55b88f;
+  background: #f3fff8;
+  box-shadow:
+    inset 0 0 0 3px rgba(85, 184, 143, 0.12),
+    -7px 0 18px rgba(54, 67, 58, 0.16);
+}
+.world-scene-wrap.is-dragging-furniture .storage-empty {
+  color: #2f8068;
+  border-color: #55b88f;
+  background: rgba(85, 184, 143, 0.08);
+}
+.world-scene-wrap.is-storage-open .scene-actions {
+  right: 134px;
 }
 .world-scene-wrap.is-inside .house-inside {
   opacity: 0;
 }
-.world-scene-wrap.is-entering .toy-door path:first-child {
-  transform-box: fill-box;
-  transform-origin: left center;
-  animation: front-door-open 700ms cubic-bezier(0.42, 0, 0.2, 1) both;
+.doorway-glimpse {
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
 }
-.world-scene-wrap.is-entering .toy-door circle {
-  animation: door-knob-turn 700ms ease both;
+.door-leaf {
+  transform-box: view-box;
+  transform-origin: 210px 220px;
+}
+.world-scene-wrap.is-entering .doorway-glimpse {
+  opacity: 1;
+}
+.world-scene-wrap.is-entering .door-leaf {
+  animation: front-door-open 460ms cubic-bezier(0.42, 0, 0.2, 1) both;
+}
+.world-scene-wrap.is-entering .door-handle {
+  transform-box: view-box;
+  transform-origin: 241px 220px;
+  animation: door-knob-turn 460ms ease both;
 }
 .island {
   transform-origin: 230px 210px;
@@ -735,19 +1078,36 @@ onUnmounted(() => {
   stroke-linecap: round;
   stroke-width: 3;
 }
-.toy-door path:first-child,
+.toy-door .doorway-back {
+  fill: #654d40;
+  stroke: var(--house-trim);
+  stroke-width: 5;
+}
+.toy-door .door-panel,
 .side-door path:first-child {
   fill: var(--house-door);
   stroke: var(--house-trim);
   stroke-width: 5;
 }
-.toy-door circle,
+.toy-door .door-knob,
 .side-door circle {
   fill: #ffd45f;
   stroke: #986621;
   stroke-width: 2;
 }
-.toy-door path:last-child {
+.toy-door .door-handle path {
+  fill: none;
+  stroke: #986621;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+.toy-door .door-panel-detail {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.toy-door .door-threshold {
   fill: none;
   stroke: var(--house-trim);
   stroke-linecap: round;
@@ -916,6 +1276,7 @@ onUnmounted(() => {
   fill: #f3a9c9;
   stroke: #fff0f7;
   stroke-width: 3;
+  filter: drop-shadow(0 4px 2px rgba(168, 104, 151, 0.2));
 }
 .candy-right {
   fill: #a9dff1;
@@ -931,8 +1292,35 @@ onUnmounted(() => {
   stroke: #fff;
   stroke-width: 4;
 }
+.lollipop-blue {
+  fill: #86d6ec;
+}
+.wrapped-candies {
+  fill: #ffd875;
+  stroke: #fff;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.wrapped-candies rect:last-of-type {
+  fill: #88d8e9;
+}
+.candy-sprinkles circle:nth-child(odd) {
+  fill: #ffd56d;
+}
+.candy-sprinkles circle:nth-child(even) {
+  fill: #79d4e7;
+}
 .theme-cotton-candy-dream .far-landscape {
   filter: hue-rotate(310deg) saturate(0.75) brightness(1.08);
+}
+.theme-cotton-candy-dream .toy-roof path:first-child {
+  fill: url(#cottonRoofPattern);
+}
+.theme-cotton-candy-dream .toy-house-body {
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.8));
+}
+.theme-cotton-candy-dream .toy-window rect {
+  filter: drop-shadow(0 0 5px rgba(255, 224, 117, 0.75));
 }
 .exterior-pumpkin-arch path {
   fill: none;
@@ -1558,22 +1946,25 @@ onUnmounted(() => {
 }
 @keyframes front-door-open {
   0%,
-  12% {
-    transform: perspective(220px) rotateY(0);
+  24% {
+    transform: scaleX(1) skewY(0);
+  }
+  65% {
+    transform: scaleX(0.48) skewY(-1.5deg);
   }
   100% {
-    transform: perspective(220px) rotateY(-82deg);
-    filter: brightness(0.82);
+    transform: scaleX(0.13) skewY(-2deg);
+    filter: brightness(0.84);
   }
 }
 @keyframes door-knob-turn {
   0%,
-  22% {
-    transform: translateX(0);
+  12% {
+    transform: rotate(0);
   }
+  28%,
   100% {
-    transform: translateX(-11px);
-    opacity: 0.35;
+    transform: rotate(55deg);
   }
 }
 @keyframes house-turn {

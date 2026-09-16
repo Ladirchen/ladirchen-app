@@ -127,7 +127,11 @@ const close = () => emit('update:modelValue', false);
   max-height: min(820px, 94dvh);
   @apply overflow-hidden;
   color: #253843;
+  border: 2px solid rgba(224, 142, 99, 0.2);
   background: #fffdf8 !important;
+  box-shadow:
+    0 10px 0 rgba(119, 85, 47, 0.12),
+    0 28px 70px rgba(62, 85, 75, 0.22) !important;
 }
 .energy-dialog-header {
   @apply position-relative overflow-hidden;
@@ -201,10 +205,12 @@ const close = () => emit('update:modelValue', false);
   padding: 11px;
   @apply d-flex align-center;
   gap: 10px;
-  border: 1px solid rgba(110, 82, 72, 0.13);
+  border: 2px solid rgba(110, 82, 72, 0.11);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow:
+    0 5px 0 rgba(126, 88, 57, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 .summary-tile--energy {
   @apply position-relative overflow-hidden;
@@ -300,12 +306,15 @@ const close = () => emit('update:modelValue', false);
   @apply d-grid place-center;
   flex: 0 0 44px;
   color: #b27518;
+  border: 2px solid rgba(255, 255, 255, 0.86);
   border-radius: 14px;
   background: #ffedb5;
+  box-shadow: 0 4px 0 rgba(181, 111, 18, 0.13);
+  transform: rotate(-4deg);
 }
 .summary-icon.is-achieved {
   background: linear-gradient(145deg, #fff8cf, #ffe59b);
-  box-shadow: 0 3px 0 rgba(181, 111, 18, 0.13);
+  box-shadow: 0 4px 0 rgba(181, 111, 18, 0.13);
 }
 .energy-content {
   min-height: 0;
@@ -315,10 +324,18 @@ const close = () => emit('update:modelValue', false);
 }
 .threshold-card {
   padding: 15px;
-  border: 1px solid rgba(242, 175, 66, 0.25);
+  border: 2px solid rgba(242, 175, 66, 0.25);
   border-radius: 20px;
-  background: linear-gradient(135deg, #fff9ed, #fff3d6 62%, #effaf4);
-  box-shadow: 0 4px 0 rgba(179, 126, 45, 0.07);
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      rgba(255, 255, 255, 0.65),
+      transparent 25%
+    ),
+    linear-gradient(135deg, #fff9ed, #fff3d6 62%, #effaf4);
+  box-shadow:
+    0 6px 0 rgba(179, 126, 45, 0.1),
+    0 12px 24px rgba(97, 91, 60, 0.06);
 }
 .threshold-heading {
   @apply d-flex align-end justify-space-between ga-3;
@@ -393,21 +410,23 @@ const close = () => emit('update:modelValue', false);
   padding: 11px 12px;
   @apply d-flex align-center;
   gap: 12px;
-  border: 1px solid rgba(74, 145, 114, 0.16);
+  border: 2px solid rgba(74, 145, 114, 0.16);
   border-radius: 18px;
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.94),
     color-mix(in srgb, var(--avatar-color, #6f8df5) 7%, white)
   );
-  box-shadow: 0 3px 0 rgba(57, 137, 106, 0.07);
+  box-shadow:
+    0 5px 0 rgba(57, 137, 106, 0.09),
+    0 10px 20px rgba(71, 107, 92, 0.06);
   transition:
     transform 0.2s ease,
     border-color 0.2s ease;
 }
 .child-energy-row:hover {
   border-color: rgba(62, 188, 140, 0.34);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 .child-avatar {
   width: 58px;
@@ -417,8 +436,9 @@ const close = () => emit('update:modelValue', false);
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 19px;
   background: color-mix(in srgb, var(--avatar-color, #6f8df5) 18%, white);
-  box-shadow: 0 3px 0
+  box-shadow: 0 4px 0
     color-mix(in srgb, var(--avatar-color, #6f8df5) 18%, transparent);
+  transform: rotate(-2deg);
 }
 .child-energy-copy {
   @apply min-w-0;

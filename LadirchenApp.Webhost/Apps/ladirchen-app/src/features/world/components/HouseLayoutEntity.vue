@@ -2,11 +2,15 @@
   <button
     :aria-label="accessibleLabel"
     class="layout-entity"
-    :class="[`entity-${placement.entityType}`, { editable }]"
+    :class="[`entity-${placement.entityType}`, { editable, dragging: Boolean(dragOffset) }]"
     :style="entityStyle"
     type="button"
     @click="interactWithLadi"
+    @lostpointercapture="forwardLostPointerCapture"
+    @pointercancel="forwardPointerCancel"
     @pointerdown="forwardPointerDown"
+    @pointermove="forwardPointerMove"
+    @pointerup="forwardPointerUp"
   >
     <RoomFurniture v-if="placement.entityType === 'furniture' && accessory" :item="accessory" />
     <AvatarFigure
@@ -21,12 +25,17 @@
       :pet="pet"
       :size="54"
     />
-    <LadiMascot
-      v-else-if="placement.entityType === 'ladi'"
-      :score="score"
-      :show-score="false"
-      :size="74"
-    />
+    <span v-else-if="placement.entityType === 'ladi'" class="ladi-on-perch" :class="{ perched }">
+      <LadiMascot
+        :score="score"
+        :show-scene-base="!perched"
+        :show-score="false"
+        :size="74"
+      />
+      <Transition name="ladi-speech">
+        <span v-if="speech" class="ladi-speech" :class="{ 'opens-left': placement.x > 70 }" role="status">{{ speech }}</span>
+      </Transition>
+    </span>
   </button>
 </template>
 
@@ -46,13 +55,19 @@ const props = defineProps<{
   dragOffset?: { readonly x: number; readonly y: number };
   editable: boolean;
   member?: FamilyMember & { resolvedAppearance: AvatarAppearance };
+  perched?: boolean;
   pet?: FamilyPet;
   placement: HouseLayoutPlacement;
   score: number;
+  speech?: string;
 }>();
 const emit = defineEmits<{
   'ladi-interact': [];
+  lostpointercapture: [event: PointerEvent];
+  pointercancel: [event: PointerEvent];
   pointerdown: [event: PointerEvent, placement: HouseLayoutPlacement];
+  pointermove: [event: PointerEvent];
+  pointerup: [event: PointerEvent];
 }>();
 
 const entityName = computed(() => {
@@ -64,11 +79,12 @@ const entityName = computed(() => {
 const accessibleLabel = computed(() => props.editable
   ? `${entityName.value} verschieben`
   : entityName.value);
+const displayY = computed(() => props.accessory?.visual === 'string-lights' ? Math.max(58, props.placement.y) : props.placement.y);
 const entityStyle = computed(() => ({
   left: `${props.placement.x}%`,
-  top: `${props.placement.y}%`,
+  top: `${displayY.value}%`,
   transform: `translate(-50%, -70%) translate(${props.dragOffset?.x ?? 0}px, ${props.dragOffset?.y ?? 0}px) scale(${props.placement.scale})`,
-  zIndex: Math.round(props.placement.y) + 5,
+  zIndex: props.dragOffset ? 1000 : (props.placement.entityType === 'furniture' ? 10 : 300) + Math.round(displayY.value),
 }));
 const interactWithLadi = () => {
   if (props.placement.entityType === 'ladi') {
@@ -78,6 +94,10 @@ const interactWithLadi = () => {
 const forwardPointerDown = (event: PointerEvent) => {
   emit('pointerdown', event, props.placement);
 };
+const forwardLostPointerCapture = (event: PointerEvent) => emit('lostpointercapture', event);
+const forwardPointerMove = (event: PointerEvent) => emit('pointermove', event);
+const forwardPointerUp = (event: PointerEvent) => emit('pointerup', event);
+const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', event);
 </script>
 
 <style scoped>
@@ -136,6 +156,79 @@ const forwardPointerDown = (event: PointerEvent) => {
 .layout-entity :deep(.ladi-mascot) {
   @apply d-block;
   pointer-events: none;
+}
+.ladi-on-perch {
+  @apply d-block;
+  transform-origin: center bottom;
+}
+.ladi-on-perch.perched {
+  animation: ladi-perch-hello 5.4s ease-in-out infinite;
+}
+.ladi-speech {
+  width: max-content;
+  max-width: 148px;
+  @apply position-absolute text-left;
+  bottom: 65%;
+  left: 66%;
+  z-index: 500;
+  padding: 7px 9px;
+  color: #36584e;
+  border: 2px solid #fff;
+  border-radius: 13px 13px 13px 4px;
+  background: #fff8dc;
+  box-shadow: 0 7px 15px rgba(76, 59, 44, 0.2);
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.25;
+  pointer-events: none;
+}
+.ladi-speech::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  @apply position-absolute;
+  bottom: -5px;
+  left: 7px;
+  transform: rotate(45deg);
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff8dc;
+}
+.ladi-speech.opens-left {
+  right: 66%;
+  left: auto;
+  border-radius: 13px 13px 4px 13px;
+}
+.ladi-speech.opens-left::after {
+  right: 7px;
+  left: auto;
+}
+.ladi-speech-enter-active,
+.ladi-speech-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.ladi-speech-enter-from,
+.ladi-speech-leave-to {
+  opacity: 0;
+  transform: translateY(6px) scale(0.9);
+}
+@keyframes ladi-perch-hello {
+  0%,
+  68%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  73% {
+    transform: translateY(-5px) rotate(-4deg);
+  }
+  79% {
+    transform: translateY(0) rotate(4deg);
+  }
+  85% {
+    transform: translateY(-2px) rotate(0);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .layout-entity {

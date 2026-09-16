@@ -31,7 +31,8 @@ export type FurnitureVisualId =
   | 'pumpkin-arch'
   | 'bat-garland'
   | 'candy-bush'
-  | 'candy-fence';
+  | 'candy-fence'
+  | 'family-flag';
 
 export type HouseAccessoryId =
   | 'flower-boxes'
@@ -66,8 +67,11 @@ export type HouseAccessoryId =
   | 'halloween-pumpkin-arch'
   | 'halloween-bat-garland'
   | 'candy-cloud-bushes'
-  | 'candy-striped-fence';
+  | 'candy-striped-fence'
+  | 'family-flag';
 
+export type HouseAccessoryCategory = 'furniture' | 'garden' | 'special';
+export type HouseAccessoryMotion = 'flutter' | 'glow' | 'none' | 'wave';
 export type HouseAccessoryPlacement = 'inside' | 'outside';
 export type HouseRoomId = 'living-room' | 'kitchen' | 'children-room' | 'bedroom' | 'creative-room';
 export type HouseZoneId = HouseRoomId | 'garden';
