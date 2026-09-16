@@ -29,7 +29,7 @@
     <BrandedCard class="settings-card pa-4" tone="profile">
       <strong>{{ t('profile.settings.title') }}</strong>
       <div class="setting-row mt-3">
-        <span><i class="setting-icon" aria-hidden="true"><v-icon size="19">i-mdi:translate</v-icon></i>{{ t('profile.language.label') }}</span>
+        <span><i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:translate" size="19" /></i>{{ t('profile.language.label') }}</span>
         <div class="language-options" role="group" :aria-label="t('profile.language.label')">
           <button
             v-for="option in languageOptions"
@@ -46,8 +46,8 @@
         </div>
       </div>
       <template v-if="store.viewerRole === 'child'">
-        <div class="setting-row"><span><i class="setting-icon" aria-hidden="true"><v-icon size="19">i-mdi:bell-outline</v-icon></i>{{ t('profile.settings.reminders') }}</span><v-switch color="primary" density="compact" hide-details inset model-value /></div>
-        <div class="setting-row"><span><i class="setting-icon" aria-hidden="true"><v-icon size="19">i-mdi:eye-outline</v-icon></i>{{ t('profile.settings.familyGoals') }}</span><v-switch color="primary" density="compact" hide-details inset model-value /></div>
+        <div class="setting-row"><span><i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:bell-outline" size="19" /></i>{{ t('profile.settings.reminders') }}</span><v-switch color="primary" density="compact" hide-details inset model-value /></div>
+        <div class="setting-row"><span><i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:eye-outline" size="19" /></i>{{ t('profile.settings.familyGoals') }}</span><v-switch color="primary" density="compact" hide-details inset model-value /></div>
       </template>
     </BrandedCard>
 
