@@ -40,10 +40,10 @@
 </template>
 
 <script lang="ts" setup>
-import LadiMascot from '@/shared/components/LadiMascot.vue';
-import { WORLD_DECORATION_SPRITE_URLS } from '@/shared/assets/world-sprite-assets';
-import { useGlobalLadiGuide } from '../composables/use-global-ladi-guide';
-import { useI18n } from 'vue-i18n';
+import LadiMascot from "@/shared/components/LadiMascot.vue";
+import { WORLD_DECORATION_SPRITE_URLS } from "@/shared/assets/world-sprite-assets";
+import { useGlobalLadiGuide } from "@/app/composables/use-global-ladi-guide";
+import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 
@@ -57,7 +57,7 @@ const {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .global-ladi-guide {
-  @apply position-fixed pointer-events-none;
+  --uno: position-fixed pointer-events-none;
   right: calc(var(--lad-shell-inline-offset, 0px) + 4px);
   bottom: 86px;
   z-index: 3000;
@@ -69,7 +69,7 @@ const {
   width: 94px;
   height: 88px;
   padding: 0;
-  @apply position-relative d-grid place-center pointer-events-auto cursor-pointer;
+  --uno: position-relative d-grid place-center pointer-events-auto cursor-pointer;
   border: 0;
   border-radius: 28px;
   background: radial-gradient(
@@ -99,7 +99,7 @@ const {
 .guide-hide {
   width: 25px;
   height: 34px;
-  @apply position-absolute d-grid place-center pointer-events-auto cursor-pointer;
+  --uno: position-absolute d-grid place-center pointer-events-auto cursor-pointer;
   right: -1px;
   top: 25px;
   z-index: 5;
@@ -117,7 +117,7 @@ const {
   width: 58px;
   height: 68px;
   padding: 0;
-  @apply position-relative d-grid place-center pointer-events-auto cursor-pointer overflow-hidden;
+  --uno: position-relative d-grid place-center pointer-events-auto cursor-pointer overflow-hidden;
   color: var(--lad-palette-teal-700);
   border: 2px solid
     color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
@@ -160,7 +160,7 @@ const {
   width: 280px;
   max-width: calc(100vw - 30px);
   padding: 15px 16px;
-  @apply position-absolute pointer-events-auto;
+  --uno: position-absolute pointer-events-auto;
   right: 70px;
   bottom: 64px;
   color: var(--lad-palette-muted-700);
@@ -183,7 +183,7 @@ const {
   content: "";
   width: 12px;
   height: 12px;
-  @apply position-absolute;
+  --uno: position-absolute;
   right: -7px;
   bottom: 12px;
   transform: rotate(45deg);
@@ -195,7 +195,7 @@ const {
 }
 .guide-speech strong,
 .guide-speech > span {
-  @apply d-block;
+  --uno: d-block;
 }
 .guide-speech strong {
   padding-right: 24px;
@@ -207,7 +207,7 @@ const {
 .guide-close {
   width: 26px;
   height: 26px;
-  @apply position-absolute d-grid place-center cursor-pointer;
+  --uno: position-absolute d-grid place-center cursor-pointer;
   top: 7px;
   right: 8px;
   color: var(--lad-palette-teal-600);
@@ -220,7 +220,7 @@ const {
 .speech-actions {
   margin-top: 12px;
   padding-top: 10px;
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   gap: 10px;
   border-top: 1px solid
     color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
@@ -228,7 +228,7 @@ const {
 .speech-progress {
   min-width: 42px;
   padding: 6px 9px;
-  @apply text-center;
+  --uno: text-center;
   color: var(--lad-palette-amber-700);
   border-radius: var(--lad-radius-pill);
   background: var(--lad-palette-amber-150);
@@ -238,7 +238,7 @@ const {
 .speech-next {
   min-height: 35px;
   padding: 7px 13px;
-  @apply d-flex align-center justify-center cursor-pointer;
+  --uno: d-flex align-center justify-center cursor-pointer;
   gap: 8px;
   color: var(--lad-palette-white);
   border: 0;
@@ -264,14 +264,14 @@ const {
 }
 .mood-picker {
   margin-top: 9px;
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 5px;
 }
 .mood-picker button {
   min-width: 0;
   padding: 5px 2px;
-  @apply d-flex flex-column align-center cursor-pointer;
+  --uno: d-flex flex-column align-center cursor-pointer;
   gap: 2px;
   color: var(--lad-palette-muted);
   border: 1px solid
@@ -343,7 +343,7 @@ const {
 }
 .guide-high-five,
 .guide-flying-gift {
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   z-index: 8;
 }
 .guide-high-five {

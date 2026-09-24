@@ -1,14 +1,14 @@
-import type { FamilyPermissions } from '@/domain/family/permissions';
-import type { FurnitureSetId } from '@/domain/house';
-import type { Contribution } from '@/domain/contributions/types';
-import type { FamilyMember } from '@/domain/family/types';
-import type { SavingGoal } from '@/domain/savings/types';
-import type { FamilyMemberId } from '@/domain/shared/identifiers';
-import type { TranslationKey } from '@/locales/translation-keys';
-import type { FamilyWorldState } from './family-world-state';
-import type { FamilyWorldDependencies } from '@/application/ports/family-world-dependencies';
+import type { FamilyPermissions } from "@/domain/family/permissions";
+import type { FurnitureSetId } from "@/domain/house";
+import type { Contribution } from "@/domain/contributions/types";
+import type { FamilyMember } from "@/domain/family/types";
+import type { SavingGoal } from "@/domain/savings/types";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import type { TranslationKey } from "@/locales/translation-keys";
+import type { FamilyWorldState } from "./family-world-state";
+import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
 
-declare module 'pinia' {
+declare module "pinia" {
   export interface PiniaCustomProperties {
     readonly $familyWorld: FamilyWorldDependencies;
   }

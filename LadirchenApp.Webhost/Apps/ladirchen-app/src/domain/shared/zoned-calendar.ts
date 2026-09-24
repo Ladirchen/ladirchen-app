@@ -1,5 +1,7 @@
-import type { IanaTimeZone } from '../family/time-zone';
-import { DAYS_PER_WEEK, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from './time';
+import { DateTime } from "luxon";
+
+import type { IanaTimeZone } from "@/domain/family/time-zone";
+import { DAYS_PER_WEEK } from "./time";
 
 export interface ZonedCalendarParts {
   readonly date: string;
@@ -8,66 +10,39 @@ export interface ZonedCalendarParts {
   readonly second: number;
 }
 
-const dateTimeFormatter = (timeZone: IanaTimeZone) => new Intl.DateTimeFormat('en', {
-  day: '2-digit',
-  hour: '2-digit',
-  hourCycle: 'h23',
-  minute: '2-digit',
-  month: '2-digit',
-  second: '2-digit',
-  timeZone,
-  year: 'numeric',
-});
+const toIsoDate = (dateTime: DateTime): string => {
+  const date = dateTime.toISODate();
+  if (!date) {throw new TypeError(dateTime.invalidExplanation ?? "Invalid date");}
+  return date;
+};
 
-const numericPart = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): number =>
-  Number(parts.find(part => part.type === type)?.value ?? Number.NaN);
+const inTimeZone = (instant: Date, timeZone: IanaTimeZone): DateTime =>
+  DateTime.fromJSDate(instant, { zone: timeZone });
 
 export const zonedCalendarParts = (instant: Date, timeZone: IanaTimeZone): ZonedCalendarParts => {
-  const parts = dateTimeFormatter(timeZone).formatToParts(instant);
-  const year = numericPart(parts, 'year');
-  const month = numericPart(parts, 'month');
-  const day = numericPart(parts, 'day');
+  const dateTime = inTimeZone(instant, timeZone);
   return {
-    date: `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
-    hour: numericPart(parts, 'hour'),
-    minute: numericPart(parts, 'minute'),
-    second: numericPart(parts, 'second'),
+    date: toIsoDate(dateTime),
+    hour: dateTime.hour,
+    minute: dateTime.minute,
+    second: dateTime.second,
   };
 };
 
 export const calendarDateInTimeZone = (instant: Date, timeZone: IanaTimeZone): string =>
   zonedCalendarParts(instant, timeZone).date;
 
-export const addCalendarDays = (date: string, days: number): string => {
-  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
-  const shifted = new Date(Date.UTC(year, month - 1, day + days));
-  return shifted.toISOString().slice(0, 10);
-};
-
-export const startOfIsoWeek = (instant: Date, timeZone: IanaTimeZone): string => {
-  const date = calendarDateInTimeZone(instant, timeZone);
-  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
-  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return addCalendarDays(date, -((weekday + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK));
-};
-
 export const isInstantInIsoWeek = (value: string, reference: Date, timeZone: IanaTimeZone): boolean => {
-  const instant = new Date(value);
-  if (Number.isNaN(instant.getTime())) {return false;}
-  const date = calendarDateInTimeZone(instant, timeZone);
-  const start = startOfIsoWeek(reference, timeZone);
-  return date >= start && date <= addCalendarDays(start, DAYS_PER_WEEK - 1);
+  const instant = DateTime.fromISO(value, { setZone: true });
+  if (!instant.isValid) {return false;}
+  const start = inTimeZone(reference, timeZone).startOf("week");
+  const zonedInstant = instant.setZone(timeZone);
+  return zonedInstant >= start && zonedInstant < start.plus({ days: DAYS_PER_WEEK });
 };
 
 export const isSameCalendarDay = (value: string, reference: Date, timeZone: IanaTimeZone): boolean => {
-  const instant = new Date(value);
-  return !Number.isNaN(instant.getTime()) &&
-    calendarDateInTimeZone(instant, timeZone) === calendarDateInTimeZone(reference, timeZone);
-};
-
-export const secondsSinceStartOfDay = (instant: Date, timeZone: IanaTimeZone): number => {
-  const { hour, minute, second } = zonedCalendarParts(instant, timeZone);
-  return hour * SECONDS_PER_HOUR + minute * SECONDS_PER_MINUTE + second;
+  const instant = DateTime.fromISO(value, { setZone: true });
+  return instant.isValid && instant.setZone(timeZone).hasSame(inTimeZone(reference, timeZone), "day");
 };
 
 export const calendarDateIsWithin = (date: string, from?: string, until?: string): boolean =>

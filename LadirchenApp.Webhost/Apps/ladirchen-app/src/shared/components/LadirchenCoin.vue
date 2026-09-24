@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts" setup>
-import { LADIRCHEN_COIN_SPRITE_URL } from '@/shared/assets/currency-assets';
+import { LADIRCHEN_COIN_SPRITE_URL } from "@/shared/assets/currency-assets";
 
 withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: false, animated: false });
 </script>
@@ -15,12 +15,12 @@ withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: fa
 .ladirchen-coin {
   width: 66px;
   height: 66px;
-  @apply position-relative d-inline-grid place-center flex-shrink-0;
+  --uno: position-relative d-inline-grid place-center flex-shrink-0;
 }
 .ladirchen-coin img {
   width: 100%;
   height: 100%;
-  @apply d-block;
+  --uno: d-block;
   object-fit: contain;
   filter: drop-shadow(
     0 5px 4px color-mix(in srgb, var(--lad-palette-amber-700) 24%, transparent)

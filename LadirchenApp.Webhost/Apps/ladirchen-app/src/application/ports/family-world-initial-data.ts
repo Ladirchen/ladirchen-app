@@ -1,9 +1,9 @@
-import type { Contribution, Promotion } from '@/domain/contributions/types';
-import type { FamilyMember, FamilyPet } from '@/domain/family/types';
-import type { HouseAccessory, HouseLayoutPlacement } from '@/domain/house/entities';
-import type { SavingGoal } from '@/domain/savings/types';
-import type { FamilyMemberId, SavingGoalId } from '@/domain/shared/identifiers';
-import type { ShopReward } from '@/domain/shop/types';
+import type { Contribution, Promotion } from "@/domain/contributions/types";
+import type { FamilyMember, FamilyPet } from "@/domain/family/types";
+import type { HouseAccessory, HouseLayoutPlacement } from "@/domain/house/entities";
+import type { SavingGoal } from "@/domain/savings/types";
+import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
+import type { ShopReward } from "@/domain/shop/types";
 
 export interface FamilyWorldInitialData {
   readonly activeChildId: FamilyMemberId;

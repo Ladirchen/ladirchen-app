@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = withDefaults(defineProps<{ size?: number }>(), { size: 32 });
 const starStyle = computed(() => ({ width: `${props.size}px`, height: `${props.size}px` }));
@@ -19,10 +19,10 @@ const starStyle = computed(() => ({ width: `${props.size}px`, height: `${props.s
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .energy-star {
-  @apply d-inline-grid place-center flex-shrink-0;
+  --uno: d-inline-grid place-center flex-shrink-0;
 }
 svg {
-  @apply d-block w-100 h-100 overflow-visible;
+  --uno: d-block w-100 h-100 overflow-visible;
 }
 .star-halo {
   fill: var(--lad-palette-amber-150);

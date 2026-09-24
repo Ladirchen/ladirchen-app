@@ -1,12 +1,12 @@
-import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
+import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 
 export type FamilyAggregateType =
-  | 'contributions'
-  | 'family-profile'
-  | 'family-progression'
-  | 'home-customization'
-  | 'reward-shop'
-  | 'savings';
+  | "contributions"
+  | "family-profile"
+  | "family-progression"
+  | "home-customization"
+  | "reward-shop"
+  | "savings";
 
 export interface AggregateDraft<TState> {
   readonly familyId: FamilyId;

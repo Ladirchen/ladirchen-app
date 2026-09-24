@@ -65,37 +65,40 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { DateTime } from "luxon";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AnimatedStreakFlame from './AnimatedStreakFlame.vue';
-import LadiMascot from '@/shared/components/LadiMascot.vue';
-import MetricCard from '@/shared/components/ui/MetricCard.vue';
-import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
-import { getLadiStage } from '@/domain/ladi';
-import { approvedContributionDatesInCurrentWeek } from '@/domain/contributions/weekly-progress';
-import { addCalendarDays, calendarDateInTimeZone, startOfIsoWeek } from '@/domain/shared/zoned-calendar';
-import { useFamilyWorldStore } from '@/stores/family-world';
+import AnimatedStreakFlame from "./AnimatedStreakFlame.vue";
+import LadiMascot from "@/shared/components/LadiMascot.vue";
+import MetricCard from "@/shared/components/ui/MetricCard.vue";
+import HeaderDecoration from "@/shared/components/ui/HeaderDecoration.vue";
+import { getLadiStage } from "@/domain/ladi";
+import { approvedContributionDatesInCurrentWeek } from "@/domain/contributions/weekly-progress";
+import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
+import { useFamilyWorldStore } from "@/stores/family-world";
 
 enum DayStatus {
-  Done = 'done',
-  Today = 'today',
-  Upcoming = 'upcoming',
+  Done = "done",
+  Today = "today",
+  Upcoming = "upcoming",
 }
 
 defineProps<{ modelValue: boolean }>();
-const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
+const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const labels = computed(() => {
-  const now = new Date(store.currentTimeMilliseconds);
-  const monday = startOfIsoWeek(now, store.familyTimeZone);
-  const shortFormatter = new Intl.DateTimeFormat(locale.value, { timeZone: 'UTC', weekday: 'short' });
-  const longFormatter = new Intl.DateTimeFormat(locale.value, { timeZone: 'UTC', weekday: 'long' });
+  const monday = DateTime.fromMillis(store.currentTimeMilliseconds, { zone: store.familyTimeZone })
+    .startOf("week")
+    .setLocale(locale.value);
   return Array.from({ length: 7 }, (_, index) => {
-    const calendarDate = addCalendarDays(monday, index);
-    const date = new Date(`${calendarDate}T12:00:00.000Z`);
-    return { calendarDate, label: shortFormatter.format(date), fullLabel: longFormatter.format(date) };
+    const date = monday.plus({ days: index });
+    return {
+      calendarDate: date.toFormat("yyyy-LL-dd"),
+      label: date.toFormat("ccc"),
+      fullLabel: date.toFormat("cccc"),
+    };
   });
 });
 
@@ -105,24 +108,24 @@ const completedDates = computed(() => approvedContributionDatesInCurrentWeek(
   new Date(store.currentTimeMilliseconds),
 ));
 const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
-const dayStatus = (calendarDate: string): DayStatus => completedDates.value.has(calendarDate)
-  ? DayStatus.Done
-  : calendarDate === today.value
-    ? DayStatus.Today
-    : DayStatus.Upcoming;
+const dayStatus = (calendarDate: string): DayStatus => {
+  if (completedDates.value.has(calendarDate)) return DayStatus.Done;
+  if (calendarDate === today.value) return DayStatus.Today;
+  return DayStatus.Upcoming;
+};
 const weekDays = computed(() => labels.value.map(day => ({
   ...day,
   status: dayStatus(day.calendarDate),
 })));
 const ladiStage = computed(() => getLadiStage(store.averageTaskRating));
 const weekMessage = computed(() => store.currentWeekDays >= store.currentWeekTarget
-  ? t('streaks.weekly.motivation.complete')
-  : t('streaks.weekly.motivation.active'));
+  ? t("streaks.weekly.motivation.complete")
+  : t("streaks.weekly.motivation.active"));
 
 const statusLabel = (status: DayStatus) => {
   return t(`streaks.weekly.status.${status}`);
 };
-const close = () => emit('update:modelValue', false);
+const close = () => emit("update:modelValue", false);
 </script>
 
 <style lang="scss" scoped>
@@ -130,25 +133,25 @@ const close = () => emit('update:modelValue', false);
 
 .streak-dialog {
   max-height: calc(100dvh - 28px);
-  @apply d-flex flex-column overflow-hidden;
+  --uno: d-flex flex-column overflow-hidden;
   @include dialog-frame;
 }
 .streak-header {
-  @apply position-relative;
+  --uno: position-relative;
   flex: 0 0 auto;
   background: var(--lad-surface);
 }
 .streak-title-row {
   min-height: 126px;
   padding: 18px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   z-index: 1;
   @include dialog-title-panel;
 }
 .streak-title-row::before,
 .streak-title-row::after {
   content: "";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   border-radius: 50%;
 }
 .streak-title-row::before {
@@ -169,7 +172,7 @@ const close = () => emit('update:modelValue', false);
 }
 .streak-title-row > div:first-child {
   max-width: 245px;
-  @apply position-relative;
+  --uno: position-relative;
   z-index: 1;
 }
 .dialog-kicker {
@@ -177,7 +180,7 @@ const close = () => emit('update:modelValue', false);
   @include overline(var(--lad-blue), rem(9));
 }
 .streak-dialog h2 {
-  @apply ma-0;
+  --uno: ma-0;
   @include heading(rem(25), 1.1, -0.04em);
 }
 .streak-subtitle {
@@ -185,7 +188,7 @@ const close = () => emit('update:modelValue', false);
   @include body-copy(rem(11));
 }
 .close-button {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 8px;
   right: 8px;
   z-index: 5;
@@ -194,7 +197,7 @@ const close = () => emit('update:modelValue', false);
 .streak-hero {
   width: 82px;
   height: 82px;
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   top: 23px;
   right: 44px;
   z-index: 2;
@@ -203,7 +206,7 @@ const close = () => emit('update:modelValue', false);
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info) 12%, transparent);
 }
 .hero-spark {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 2;
   color: var(--lad-color-reward-accent);
   font-size: 1rem;
@@ -223,13 +226,13 @@ const close = () => emit('update:modelValue', false);
   content: none;
 }
 .summary-grid {
-  @apply position-relative d-grid;
+  --uno: position-relative d-grid;
   z-index: 1;
   grid-template-columns: 1fr 1fr;
   gap: 9px;
 }
 .summary-tile {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .summary-icon {
   @include icon-tile(
@@ -267,7 +270,7 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile span,
 .summary-tile strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .summary-tile span {
   color: var(--lad-muted);
@@ -276,12 +279,12 @@ const close = () => emit('update:modelValue', false);
 .summary-tile strong {
   margin-top: 1px;
   font-size: rem(17);
-  @apply text-no-wrap;
+  --uno: text-no-wrap;
 }
 .streak-content {
   min-height: 0;
   flex: 1 1 auto;
-  @apply d-flex flex-column overflow-hidden;
+  --uno: d-flex flex-column overflow-hidden;
   gap: 12px;
   background: linear-gradient(
     180deg,
@@ -290,12 +293,12 @@ const close = () => emit('update:modelValue', false);
   );
 }
 .week-heading {
-  @apply d-flex align-end justify-space-between;
+  --uno: d-flex align-end justify-space-between;
   gap: 10px;
 }
 .week-heading > div span,
 .week-heading > div strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .week-heading > div strong {
   margin-top: 3px;
@@ -310,9 +313,9 @@ const close = () => emit('update:modelValue', false);
 }
 .week-days {
   padding: 18px 11px 12px;
-  @apply d-grid;
+  --uno: d-grid ga-1;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  @apply ga-1;
+
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   border-radius: 23px;
   background:
@@ -327,13 +330,13 @@ const close = () => emit('update:modelValue', false);
     0 14px 24px color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
 }
 .week-day {
-  @apply min-w-0 position-relative text-center;
+  --uno: min-w-0 position-relative text-center;
 }
 .week-day:not(:nth-child(7))::after {
   content: "";
   width: calc(100% - 35px);
   height: 4px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 34px;
   left: calc(50% + 20px);
   z-index: 0;
@@ -346,26 +349,26 @@ const close = () => emit('update:modelValue', false);
 .week-day > span {
   color: var(--lad-text-strong);
   font-size: rem(10);
-  @apply font-weight-black;
+  --uno: font-weight-black;
 }
 .day-symbol {
   width: 40px;
   height: 40px;
   margin: 6px auto;
-  @apply position-relative;
+  --uno: position-relative d-grid place-center;
   z-index: 1;
-  @apply d-grid place-center;
+
   color: var(--lad-text-subtle);
   border: 2px solid var(--lad-color-primary-soft);
   border-radius: 50%;
   background: var(--lad-surface-soft);
 }
 .week-day small {
-  @apply d-block overflow-hidden;
+  --uno: d-block overflow-hidden text-no-wrap;
   color: var(--lad-muted);
   font-size: 0.5rem;
   text-overflow: ellipsis;
-  @apply text-no-wrap;
+
 }
 .week-day--done .day-symbol {
   color: var(--lad-text-inverse);
@@ -405,12 +408,12 @@ const close = () => emit('update:modelValue', false);
 }
 .week-day--today small {
   color: var(--lad-color-reward-ink);
-  @apply font-weight-black;
+  --uno: font-weight-black;
 }
 .week-motivation {
   min-height: 48px;
   padding: 7px 11px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   grid-column: 1 / -1;
   gap: 9px;
   margin-top: 8px;
@@ -429,7 +432,7 @@ const close = () => emit('update:modelValue', false);
 .week-motivation span,
 .week-motivation strong,
 .week-motivation small {
-  @apply d-block;
+  --uno: d-block;
 }
 .week-motivation strong {
   font-size: rem(11);
@@ -443,7 +446,7 @@ const close = () => emit('update:modelValue', false);
 .ladi-level {
   min-height: 118px;
   padding: 13px 17px;
-  @apply position-relative d-flex align-center overflow-hidden;
+  --uno: position-relative d-flex align-center overflow-hidden;
   gap: 16px;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 22px;
@@ -456,17 +459,17 @@ const close = () => emit('update:modelValue', false);
 }
 .ladi-level::after {
   content: "✦";
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 9px;
   right: 12px;
   color: var(--lad-color-reward-border);
 }
 .ladi-level > div:last-child {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .ladi-level strong,
 .ladi-level span {
-  @apply d-block;
+  --uno: d-block;
 }
 .ladi-level strong {
   margin-top: 2px;

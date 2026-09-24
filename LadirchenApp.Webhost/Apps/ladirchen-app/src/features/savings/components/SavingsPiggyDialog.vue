@@ -6,7 +6,7 @@
           <HeaderDecoration tone="balance" />
           <div class="piggy-title-copy">
             <p class="dialog-kicker">{{ t(`savings.piggy.header.${store.viewerRole}.eyebrow`) }}</p>
-            <h2>{{ store.viewerRole === 'guardian' ? t('savings.piggy.header.guardian.title') : t('savings.piggy.header.child.title', { name: store.activeChild.name }) }}</h2>
+            <h2>{{ dialogTitle }}</h2>
             <p class="piggy-subtitle">{{ t(`savings.piggy.header.${store.viewerRole}.description`) }}</p>
           </div>
           <div class="piggy-title-actions">
@@ -89,7 +89,7 @@
           <div class="currency-settings-example mt-2"><span>{{ t('savings.piggy.currency.example') }}</span><strong>{{ formattedGuardianFamilyValue }}</strong></div>
         </v-card>
 
-        <v-card v-if="store.viewerRole === 'child'" class="transfer-card pa-3" :class="transferDirection ? `transfer-${transferDirection}` : ''" color="blue-lighten-5" elevation="0" rounded="xl">
+        <v-card v-if="store.viewerRole === 'child'" class="transfer-card pa-3" :class="transferDirectionClass" color="blue-lighten-5" elevation="0" rounded="xl">
           <div class="transfer-heading">
             <div class="transfer-title">
               <span class="transfer-title-icon" aria-hidden="true">
@@ -205,15 +205,16 @@
 </template>
 
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AnimatedExchangeIcon from './AnimatedExchangeIcon.vue';
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
-import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
-import MetricCard from '@/shared/components/ui/MetricCard.vue';
-import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
-import { useSavingsPiggy } from '../composables/use-savings-piggy';
+import AnimatedExchangeIcon from "./AnimatedExchangeIcon.vue";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
+import MetricCard from "@/shared/components/ui/MetricCard.vue";
+import HeaderDecoration from "@/shared/components/ui/HeaderDecoration.vue";
+import { useSavingsPiggy } from "@/features/savings/composables/use-savings-piggy";
 
 const { t } = useI18n();
 const {
@@ -223,6 +224,10 @@ const {
   selectedMemberId, selectedMemberName, setCurrency, setTransferDestination, store, transferAmountMaximum,
   transferDestination, transferDirection, withdraw,
 } = useSavingsPiggy();
+const dialogTitle = computed(() => store.viewerRole === "guardian"
+  ? t("savings.piggy.header.guardian.title")
+  : t("savings.piggy.header.child.title", { name: store.activeChild.name }));
+const transferDirectionClass = computed(() => transferDirection.value ? `transfer-${transferDirection.value}` : "");
 </script>
 
 <style lang="scss" scoped>
@@ -231,7 +236,7 @@ const {
 .piggy-dialog {
   height: min(660px, calc(100dvh - 28px));
   max-height: min(660px, calc(100dvh - 28px));
-  @apply d-flex flex-column overflow-hidden;
+  --uno: d-flex flex-column overflow-hidden;
   @include dialog-frame;
 }
 .piggy-dialog :deep(.v-card-text) {
@@ -243,7 +248,7 @@ const {
   overflow-y: auto;
 }
 .piggy-header {
-  @apply position-relative;
+  --uno: position-relative;
   flex: 0 0 auto;
   background: var(--lad-surface);
 }
@@ -257,14 +262,14 @@ const {
 .piggy-title-row {
   min-height: 108px;
   padding: 15px 16px;
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   gap: 10px;
   @include dialog-title-panel(rem(21));
 }
 .piggy-title-row::before,
 .piggy-title-row::after {
   content: "";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   border-radius: 50%;
 }
 .piggy-title-row::before {
@@ -285,7 +290,7 @@ const {
 }
 .piggy-title-copy {
   max-width: 245px;
-  @apply position-relative min-w-0 flex-grow-1;
+  --uno: position-relative min-w-0 flex-grow-1;
   z-index: 1;
 }
 .dialog-kicker {
@@ -293,7 +298,7 @@ const {
   @include overline(var(--lad-blue), var(--lad-font-size-micro));
 }
 .piggy-header h2 {
-  @apply ma-0;
+  --uno: ma-0;
   @include heading(rem(23), 1.1, -0.04em);
 }
 .piggy-subtitle {
@@ -302,14 +307,14 @@ const {
   @include body-copy(var(--lad-font-size-caption), 1.32);
 }
 .piggy-title-actions {
-  @apply position-relative d-flex align-start flex-shrink-0;
+  --uno: position-relative d-flex align-start flex-shrink-0;
   z-index: 2;
   gap: 5px;
 }
 .header-coin {
   width: 64px;
   height: 64px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border-radius: 21px;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info) 12%, transparent);
@@ -321,7 +326,7 @@ const {
   );
 }
 .piggy-close {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -10px;
   right: -10px;
   z-index: 3;
@@ -329,12 +334,12 @@ const {
 }
 .balance-grid,
 .balance-detail-grid {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
 }
 .balance-tile {
-  @apply position-relative min-w-0;
+  --uno: position-relative min-w-0;
 }
 .balance-tile.interest-earned {
   color: var(--lad-color-primary-deep);
@@ -374,7 +379,7 @@ const {
   width: fit-content;
   margin-top: 4px;
   padding: 2px 5px 2px 3px;
-  @apply d-flex align-center text-no-wrap;
+  --uno: d-flex align-center text-no-wrap;
   gap: 2px;
   color: var(--lad-color-primary-deep);
   border-radius: var(--lad-radius-pill);
@@ -398,17 +403,17 @@ const {
   content: none;
 }
 .balance-icon :deep(.v-icon) {
-  @apply d-block;
-  @apply ma-auto;
+  --uno: d-block ma-auto;
+
   color: inherit;
   opacity: 1;
 }
 .family-currency-value {
   min-height: 68px;
   padding: 7px 8px;
-  @apply position-relative d-grid min-w-0;
+  --uno: position-relative d-grid min-w-0 align-center;
   grid-template-columns: 36px minmax(0, 1fr);
-  @apply align-center;
+
   column-gap: 6px;
 }
 .family-currency-value > .exchange-icon {
@@ -418,10 +423,10 @@ const {
 }
 .family-currency-value span,
 .family-currency-value strong {
-  @apply d-block min-w-0;
+  --uno: d-block min-w-0;
 }
 .family-currency-value span {
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   color: var(--lad-muted);
   font-size: rem(7);
   text-overflow: ellipsis;
@@ -429,7 +434,7 @@ const {
 }
 .family-currency-value strong {
   margin-top: 2px;
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   color: var(--lad-text);
   font-size: 0.75rem;
   text-overflow: ellipsis;
@@ -444,7 +449,7 @@ const {
   text-align: center;
 }
 .dialog-section-title {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: 1rem;
   letter-spacing: -0.025em;
 }
@@ -467,7 +472,7 @@ const {
     color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent);
 }
 .guardian-balances-heading {
-  @apply d-flex align-end justify-space-between;
+  --uno: d-flex align-end justify-space-between;
   gap: 8px;
 }
 .guardian-balances-heading > span {
@@ -480,13 +485,13 @@ const {
   white-space: nowrap;
 }
 .guardian-balance-list {
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
   gap: 8px;
 }
 .guardian-balance-row {
   min-height: 62px;
   padding: 8px;
-  @apply d-grid align-center min-w-0;
+  --uno: d-grid align-center min-w-0;
   grid-template-columns:
     42px minmax(76px, 1fr) repeat(3, minmax(47px, 0.62fr))
     minmax(45px, 0.56fr);
@@ -501,7 +506,7 @@ const {
 .guardian-child-avatar {
   width: 42px;
   height: 42px;
-  @apply d-grid place-center overflow-hidden;
+  --uno: d-grid place-center overflow-hidden;
   border-radius: 12px;
   background: linear-gradient(
     145deg,
@@ -520,10 +525,10 @@ const {
 .guardian-child-stat,
 .guardian-child-stat small,
 .guardian-child-stat strong {
-  @apply d-block min-w-0;
+  --uno: d-block min-w-0;
 }
 .guardian-child-name strong {
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -541,7 +546,7 @@ const {
     color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
 }
 .guardian-child-stat small {
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   color: var(--lad-muted);
   font-size: rem(7.5);
   text-overflow: ellipsis;
@@ -549,7 +554,7 @@ const {
 }
 .guardian-child-stat strong {
   margin-top: 2px;
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   font-size: rem(11);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -570,13 +575,13 @@ const {
     color-mix(in srgb, var(--lad-color-reward-accent) 10%, transparent);
 }
 .currency-settings-heading {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 9px;
 }
 .currency-settings-heading > span {
   width: 35px;
   height: 35px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-color-reward-strong);
   border-radius: 12px;
   background: var(--lad-color-reward-pale);
@@ -584,7 +589,7 @@ const {
   font-weight: var(--lad-font-weight-black);
 }
 .currency-settings-fields {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 0.9fr 1.1fr;
   gap: 7px;
 }
@@ -593,7 +598,7 @@ const {
 }
 .currency-settings-example {
   padding: 7px 9px;
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   gap: 8px;
   border-radius: 11px;
   background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
@@ -607,7 +612,7 @@ const {
   font-size: 0.75rem;
 }
 .transfer-card {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
   background:
@@ -630,7 +635,7 @@ const {
 }
 .transfer-card::after {
   content: "✦";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: 7px;
   right: 10px;
   color: var(--lad-color-reward-border);
@@ -638,11 +643,11 @@ const {
   animation: transfer-spark 2s ease-in-out infinite;
 }
 .transfer-card::after {
-  @apply d-none;
+  --uno: d-none;
 }
 .destination-switch {
   padding: 4px;
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 5px;
   border-radius: 16px;
@@ -658,7 +663,7 @@ const {
   min-width: 0;
   min-height: 47px;
   padding: 6px 8px;
-  @apply d-flex align-center text-left cursor-pointer;
+  --uno: d-flex align-center text-left cursor-pointer;
   gap: 7px;
   color: var(--lad-color-primary-supporting);
   border: 2px solid transparent;
@@ -671,14 +676,14 @@ const {
 .destination-switch button > span:first-child {
   width: 28px;
   height: 28px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border-radius: 10px;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
   font-size: 1rem;
 }
 .destination-switch strong,
 .destination-switch small {
-  @apply d-block;
+  --uno: d-block;
 }
 .destination-switch strong {
   font-size: rem(10);
@@ -706,29 +711,29 @@ const {
   transform: translateY(-1px);
 }
 .destination-switch button {
-  @apply justify-center;
+  --uno: justify-center;
   text-align: center;
 }
 .destination-switch button > span:first-child :deep(.v-icon) {
-  @apply d-block;
-  @apply ma-auto;
+  --uno: d-block ma-auto;
+
   color: inherit;
   opacity: 1;
 }
 .transfer-heading {
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   gap: 10px;
 }
 .transfer-visual {
   width: 112px;
   height: 40px;
-  @apply d-flex align-center justify-space-between flex-shrink-0;
+  --uno: d-flex align-center justify-space-between flex-shrink-0;
 }
 .transfer-wallet,
 .transfer-goal {
   width: 34px;
   height: 34px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   z-index: 2;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 12px;
@@ -754,7 +759,7 @@ const {
 }
 .transfer-track {
   height: 6px;
-  @apply position-relative flex-grow-1;
+  --uno: position-relative flex-grow-1;
   margin-inline: -3px;
   border-radius: var(--lad-radius-pill);
   background: repeating-linear-gradient(
@@ -766,7 +771,7 @@ const {
 .transfer-track i {
   width: 9px;
   height: 9px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -2px;
   left: 4px;
   border: 2px solid var(--lad-border-on-accent);
@@ -850,13 +855,13 @@ const {
       color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
 }
 .transfer-title {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 8px;
 }
 .transfer-title-icon {
   width: 35px;
   height: 35px;
-  @apply d-flex align-center justify-center flex-shrink-0 overflow-hidden;
+  --uno: d-flex align-center justify-center flex-shrink-0 overflow-hidden;
   color: var(--lad-color-primary-supporting);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 12px;
@@ -874,7 +879,7 @@ const {
   height: 25px;
 }
 .transfer-fields {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1.4fr 0.8fr;
   gap: 8px;
 }
@@ -890,7 +895,7 @@ const {
 }
 .transfer-field > span {
   margin: 0 2px 5px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 5px;
   color: var(--lad-text-strong);
   font-size: 0.5rem;
@@ -899,7 +904,7 @@ const {
 .transfer-field > span i {
   width: 17px;
   height: 17px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   color: var(--lad-text-inverse);
   border-radius: 6px;
   background: var(--lad-color-primary-muted);
@@ -922,7 +927,7 @@ const {
 }
 .transfer-input :deep(.v-field__overlay),
 .transfer-input :deep(.v-field__outline) {
-  @apply d-none;
+  --uno: d-none;
 }
 .transfer-input :deep(.v-field__input) {
   min-height: 38px;
@@ -938,21 +943,21 @@ const {
 }
 .transfer-amount :deep(input[type="number"]::-webkit-inner-spin-button),
 .transfer-amount :deep(input[type="number"]::-webkit-outer-spin-button) {
-  @apply ma-0;
+  --uno: ma-0;
   appearance: none;
 }
 .selected-goal-option {
   min-width: 0;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 7px;
 }
 .selected-goal-option > span:last-child,
 .selected-goal-option strong,
 .selected-goal-option small {
-  @apply d-block min-w-0;
+  --uno: d-block min-w-0;
 }
 .selected-goal-option strong {
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   font-size: rem(11);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -965,7 +970,7 @@ const {
 .goal-option-icon {
   width: 31px;
   height: 31px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 10px;
   background: linear-gradient(
@@ -1009,7 +1014,7 @@ const {
   font-weight: var(--lad-font-weight-black);
 }
 .member-option-icon {
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   background: linear-gradient(
     145deg,
     var(--lad-surface-soft),
@@ -1022,7 +1027,7 @@ const {
 }
 .amount-stepper {
   height: 40px;
-  @apply d-grid align-center overflow-hidden;
+  --uno: d-grid align-center overflow-hidden;
   grid-template-columns: 36px 1fr 36px;
   border-radius: 11px;
   background: linear-gradient(
@@ -1038,7 +1043,7 @@ const {
 .amount-stepper button {
   width: 30px;
   height: 30px;
-  @apply d-grid place-center justify-self-center cursor-pointer;
+  --uno: d-grid place-center justify-self-center cursor-pointer;
   color: var(--lad-text-inverse);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 10px;
@@ -1076,7 +1081,7 @@ const {
   opacity: 0.35;
 }
 .amount-stepper output {
-  @apply d-flex align-center justify-center;
+  --uno: d-flex align-center justify-center;
   gap: 5px;
   color: var(--lad-text);
   font-size: rem(15);
@@ -1117,7 +1122,7 @@ const {
   font-size: rem(6.5);
 }
 .transfer-heading {
-  @apply justify-start;
+  --uno: justify-start;
 }
 .transfer-fields {
   grid-template-columns: 1.2fr 0.9fr;
@@ -1144,7 +1149,7 @@ const {
   font-size: rem(18);
 }
 .amount-stepper output {
-  @apply text-no-wrap;
+  --uno: text-no-wrap;
   gap: 4px;
 }
 .transfer-button {
@@ -1154,7 +1159,7 @@ const {
   font-size: rem(17);
 }
 .setting-label {
-  @apply mt-3 d-flex justify-space-between;
+  --uno: mt-3 d-flex justify-space-between;
   color: var(--lad-muted);
   font-size: 0.75rem;
 }

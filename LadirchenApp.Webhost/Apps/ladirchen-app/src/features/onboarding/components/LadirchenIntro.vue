@@ -20,10 +20,10 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { onMounted, onUnmounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import LadiMascot from '@/shared/components/LadiMascot.vue';
+import LadiMascot from "@/shared/components/LadiMascot.vue";
 
 const emit = defineEmits<{ finished: [] }>();
 const { t } = useI18n();
@@ -31,7 +31,7 @@ const visible = ref(true);
 let timer: number | undefined;
 
 onMounted(() => {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   timer = window.setTimeout(() => { visible.value = false; }, reduceMotion ? 500 : 2200);
 });
 
@@ -43,9 +43,9 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .app-intro {
-  @apply position-fixed inset-0;
+  --uno: position-fixed inset-0 d-grid place-center overflow-hidden;
   z-index: 1000;
-  @apply d-grid place-center overflow-hidden;
+
   background: linear-gradient(
     155deg,
     var(--lad-palette-background) 0%,
@@ -56,7 +56,7 @@ onUnmounted(() => {
 .intro-sun {
   width: 120px;
   height: 120px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -30px;
   right: -25px;
   border-radius: 50%;
@@ -68,7 +68,7 @@ onUnmounted(() => {
 .intro-cloud {
   width: 110px;
   height: 35px;
-  @apply position-absolute;
+  --uno: position-absolute;
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
   filter: blur(0.2px);
@@ -76,7 +76,7 @@ onUnmounted(() => {
 .intro-cloud::before,
 .intro-cloud::after {
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   bottom: 5px;
   border-radius: 50%;
   background: inherit;
@@ -104,9 +104,9 @@ onUnmounted(() => {
 }
 .intro-card {
   width: min(360px, calc(100vw - 40px));
-  @apply position-relative;
+  --uno: position-relative text-center;
   padding: 28px 26px 24px;
-  @apply text-center;
+
   border: 3px solid
     color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
   border-radius: 38px;
@@ -121,9 +121,9 @@ onUnmounted(() => {
 .intro-mascot {
   width: 185px;
   height: 164px;
-  @apply position-relative;
+  --uno: position-relative d-grid place-center;
   margin: -5px auto 3px;
-  @apply d-grid place-center;
+
 }
 .intro-mascot :deep(.ladi-wrap) {
   width: var(--ladi-size);
@@ -131,26 +131,26 @@ onUnmounted(() => {
   transform: translate(-12px, 16px);
 }
 .intro-logo-row {
-  @apply d-flex align-end justify-center;
+  --uno: d-flex align-end justify-center;
   gap: 9px;
 }
 .intro-logo {
   width: 40px;
   height: 40px;
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   border-radius: 11px;
   background: var(--lad-palette-white);
 }
 .intro-logo img {
   width: 72px;
   height: 72px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -5.5px;
   left: -16px;
   max-width: none;
 }
 .intro-logo-row h1 {
-  @apply ma-0;
+  --uno: ma-0;
   color: var(--lad-palette-text);
   font-size: rem(35);
   line-height: 0.9;
@@ -161,12 +161,12 @@ onUnmounted(() => {
   margin: 8px 0 0;
   color: var(--lad-palette-muted);
   font-size: 0.75rem;
-  @apply font-weight-bold;
+  --uno: font-weight-bold;
 }
 .intro-dots {
   height: 18px;
   margin-top: 10px;
-  @apply d-flex align-center justify-center;
+  --uno: d-flex align-center justify-center;
   gap: 6px;
 }
 .intro-dots i {

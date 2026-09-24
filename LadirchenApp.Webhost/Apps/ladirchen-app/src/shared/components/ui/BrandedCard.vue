@@ -11,14 +11,14 @@
 
 <script lang="ts" setup>
 export type BrandedCardTone =
-  | 'balance'
-  | 'contributions'
-  | 'family'
-  | 'profile'
-  | 'shop'
-  | 'streak'
-  | 'wishes'
-  | 'world';
+  | "balance"
+  | "contributions"
+  | "family"
+  | "profile"
+  | "shop"
+  | "streak"
+  | "wishes"
+  | "world";
 
 withDefaults(defineProps<{
   interactive?: boolean;
@@ -52,7 +52,7 @@ withDefaults(defineProps<{
 }
 
 .branded-card--interactive:hover {
-  transform: translateY(-rem(2));
+  transform: translateY(rem(-2));
   box-shadow:
     0 rem(7) 0 color-mix(in srgb, var(--branded-card-lift) 18%, transparent),
     0 rem(15) rem(26)

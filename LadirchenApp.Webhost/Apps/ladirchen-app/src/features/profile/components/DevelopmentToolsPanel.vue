@@ -25,7 +25,7 @@
               @click="store.switchSession(member.id)"
             >
               <span>{{ member.avatar }}</span>
-              <span><strong>{{ member.name }}</strong><small>{{ t(member.role === 'guardian' ? 'profile.development.session.guardian' : 'profile.development.session.child') }}</small></span>
+              <span><strong>{{ member.name }}</strong><small>{{ memberRoleLabel(member.role) }}</small></span>
               <v-icon v-if="member.id === store.signedInMemberId" icon="i-mdi:check-circle" size="19" />
             </button>
           </div>
@@ -66,10 +66,8 @@
           <div class="panel-title"><v-icon icon="i-mdi:calendar-refresh-outline" /><span><strong>{{ t('profile.development.week.title') }}</strong><small>{{ t('profile.development.week.description') }}</small></span></div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <v-alert class="mb-3" :color="store.houseMeetsMinimumEnergy ? 'success' : 'warning'" density="compact" variant="tonal">
-            {{ store.houseMeetsMinimumEnergy
-              ? t('profile.development.week.ready', { energy: store.familyEnergy })
-              : t('profile.development.week.missing', { energy: store.familyEnergy, missing: minimumHouseEnergyPercent - store.familyEnergy }) }}
+          <v-alert class="mb-3" :color="weekAlertColor" density="compact" variant="tonal">
+            {{ weekAlertMessage }}
           </v-alert>
           <div class="week-actions">
             <v-btn color="error" rounded="lg" size="small" variant="tonal" @click="finishWeek(false)">{{ t('profile.development.week.failed') }}</v-btn>
@@ -83,8 +81,8 @@
       <v-card class="development-result pa-6 text-center" rounded="xl">
         <div class="result-house">{{ houseLevelIcon }}</div>
         <p class="eyebrow mt-3 mb-1">{{ t('profile.development.result.eyebrow') }}</p>
-        <h2>{{ t(lastWeekSuccessful ? 'profile.development.result.successTitle' : 'profile.development.result.failureTitle') }}</h2>
-        <p class="text-body-small text-medium-emphasis mt-2 mb-5">{{ t(lastWeekSuccessful ? 'profile.development.result.successDescription' : 'profile.development.result.failureDescription', { level: houseLevelName }) }}</p>
+        <h2>{{ resultTitle }}</h2>
+        <p class="text-body-small text-medium-emphasis mt-2 mb-5">{{ resultDescription }}</p>
         <v-btn color="primary" rounded="lg" variant="flat" width="100%" @click="revealDialog = false">{{ t('common.close') }}</v-btn>
       </v-card>
     </v-dialog>
@@ -92,13 +90,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import SavingsInterestSimulator from './SavingsInterestSimulator.vue';
-import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house/catalog';
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
-import { useFamilyWorldStore } from '@/stores/family-world';
+import SavingsInterestSimulator from "./SavingsInterestSimulator.vue";
+import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
+import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import type { ViewerRole } from "@/domain/family/types";
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
@@ -108,6 +107,19 @@ const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
 const currentLevel = computed(() => HOUSE_STAGES[store.houseLevel] ?? DEFAULT_HOUSE_STAGE);
 const houseLevelName = computed(() => t(currentLevel.value.nameKey));
 const houseLevelIcon = computed(() => currentLevel.value.icon);
+const weekAlertColor = computed(() => store.houseMeetsMinimumEnergy ? "success" : "warning");
+const weekAlertMessage = computed(() => store.houseMeetsMinimumEnergy
+  ? t("profile.development.week.ready", { energy: store.familyEnergy })
+  : t("profile.development.week.missing", { energy: store.familyEnergy, missing: minimumHouseEnergyPercent - store.familyEnergy }));
+const resultTitle = computed(() => t(lastWeekSuccessful.value
+  ? "profile.development.result.successTitle"
+  : "profile.development.result.failureTitle"));
+const resultDescription = computed(() => t(lastWeekSuccessful.value
+  ? "profile.development.result.successDescription"
+  : "profile.development.result.failureDescription", { level: houseLevelName.value }));
+const memberRoleLabel = (role: ViewerRole) => t(role === "guardian"
+  ? "profile.development.session.guardian"
+  : "profile.development.session.child");
 const finishWeek = (successful: boolean) => {
   lastWeekSuccessful.value = successful;
   if (successful) {
@@ -131,11 +143,11 @@ const finishWeek = (successful: boolean) => {
     color-mix(in srgb, var(--lad-color-bonus) 10%, transparent);
 }
 .development-heading {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: rem(11);
 }
 .development-heading h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(21);
   letter-spacing: -0.035em;
 }
@@ -147,7 +159,7 @@ const finishWeek = (successful: boolean) => {
 .development-icon {
   width: 3rem;
   height: 3rem;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-color-bonus);
   border: rem(3) solid var(--lad-surface);
   border-radius: rem(17);
@@ -173,7 +185,7 @@ const finishWeek = (successful: boolean) => {
   padding: rem(5) rem(13) rem(15);
 }
 .panel-title {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: rem(10);
 }
 .panel-title > .v-icon {
@@ -186,7 +198,7 @@ const finishWeek = (successful: boolean) => {
 .panel-title span,
 .panel-title strong,
 .panel-title small {
-  @apply d-block;
+  --uno: d-block;
 }
 .panel-title strong {
   font-size: rem(13);
@@ -197,14 +209,14 @@ const finishWeek = (successful: boolean) => {
   font-size: rem(9);
 }
 .session-grid {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 .session-option {
   min-width: 0;
   padding: rem(9);
-  @apply d-flex align-center text-left cursor-pointer;
+  --uno: d-flex align-center text-left cursor-pointer;
   gap: 0.5rem;
   color: var(--lad-text);
   border: rem(2) solid
@@ -220,11 +232,11 @@ const finishWeek = (successful: boolean) => {
   font-size: rem(22);
 }
 .session-option > span:nth-child(2) {
-  @apply flex-grow-1 min-w-0;
+  --uno: flex-grow-1 min-w-0;
 }
 .session-option strong,
 .session-option small {
-  @apply d-block text-truncate;
+  --uno: d-block text-truncate;
 }
 .session-option strong {
   font-size: rem(11);
@@ -237,7 +249,7 @@ const finishWeek = (successful: boolean) => {
   color: var(--lad-mint-dark);
 }
 .simulator-footer {
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   gap: 0.5rem;
   color: var(--lad-muted);
   font-size: rem(9);
@@ -248,7 +260,7 @@ const finishWeek = (successful: boolean) => {
   box-shadow: none;
 }
 .week-actions {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
@@ -266,7 +278,7 @@ const finishWeek = (successful: boolean) => {
     );
 }
 .development-result h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(22);
 }
 .result-house {
@@ -279,7 +291,7 @@ const finishWeek = (successful: boolean) => {
     transform: translateY(rem(25)) scale(0.5) rotate(-7deg);
   }
   70% {
-    transform: translateY(-rem(5)) scale(1.08) rotate(2deg);
+    transform: translateY(rem(-5)) scale(1.08) rotate(2deg);
   }
   100% {
     opacity: 1;

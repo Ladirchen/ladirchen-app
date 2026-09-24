@@ -40,13 +40,13 @@
 </template>
 
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
+import { useI18n } from "vue-i18n";
 
-import type { HouseAccessory } from '@/domain/house';
-import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
+import type { HouseAccessory } from "@/domain/house";
+import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
 
 defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; open: boolean }>();
-const emit = defineEmits<{ place: [accessory: HouseAccessory]; 'update:open': [open: boolean] }>();
+const emit = defineEmits<{ place: [accessory: HouseAccessory]; "update:open": [open: boolean] }>();
 const { t } = useI18n();
 </script>
 
@@ -56,7 +56,7 @@ const { t } = useI18n();
 .furniture-storage-trigger {
   width: 43px;
   height: 43px;
-  @apply position-absolute d-grid place-center cursor-pointer;
+  --uno: position-absolute d-grid place-center cursor-pointer;
   top: 8px;
   right: 8px;
   z-index: 25;
@@ -71,7 +71,7 @@ const { t } = useI18n();
 .storage-plus {
   width: 17px;
   height: 17px;
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   right: -5px;
   bottom: -5px;
   color: var(--lad-palette-white);
@@ -81,7 +81,7 @@ const { t } = useI18n();
 }
 .furniture-storage {
   width: 126px;
-  @apply position-absolute overflow-hidden;
+  --uno: position-absolute overflow-hidden;
   top: 0;
   right: 0;
   bottom: 2%;
@@ -116,7 +116,7 @@ const { t } = useI18n();
   content: "";
   width: 56px;
   height: 56px;
-  @apply position-absolute;
+  --uno: position-absolute;
   right: -34px;
   bottom: -26px;
   z-index: -1;
@@ -124,7 +124,7 @@ const { t } = useI18n();
   border-radius: 50%;
 }
 .furniture-storage > header {
-  @apply d-flex align-start justify-space-between;
+  --uno: d-flex align-start justify-space-between;
   gap: 4px;
   margin: -3px -2px 8px;
   padding: 6px 5px 8px;
@@ -133,12 +133,12 @@ const { t } = useI18n();
 }
 .storage-title {
   min-width: 0;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 5px;
 }
 .storage-title > span:last-child {
   min-width: 0;
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
   color: var(--lad-palette-muted-700);
   line-height: 1.08;
 }
@@ -147,7 +147,7 @@ const { t } = useI18n();
 }
 .storage-title small {
   margin-top: 2px;
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   color: var(--lad-palette-muted);
   font-size: rem(6);
   text-overflow: ellipsis;
@@ -156,7 +156,7 @@ const { t } = useI18n();
 .storage-title-icon {
   width: 29px;
   height: 29px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-palette-white);
   border: 2px solid var(--lad-palette-white);
   border-radius: 10px 10px 8px 8px;
@@ -171,7 +171,7 @@ const { t } = useI18n();
 .furniture-storage > header button {
   width: 24px;
   height: 24px;
-  @apply d-grid place-center flex-shrink-0 cursor-pointer;
+  --uno: d-grid place-center flex-shrink-0 cursor-pointer;
   border: 2px solid var(--lad-palette-white);
   border-radius: 50%;
   background: var(--lad-palette-amber-100);
@@ -179,7 +179,7 @@ const { t } = useI18n();
   box-shadow: 0 3px 0 var(--lad-palette-amber-200);
 }
 .storage-items {
-  @apply d-grid overflow-y-auto;
+  --uno: d-grid overflow-y-auto;
   grid-template-columns: 1fr;
   gap: 7px;
   max-height: calc(100% - 47px);
@@ -188,9 +188,9 @@ const { t } = useI18n();
 }
 .storage-empty {
   min-height: 128px;
-  @apply position-relative d-flex flex-column align-center justify-center overflow-hidden text-center;
+  --uno: position-relative d-flex flex-column align-center justify-center overflow-hidden text-center ma-0;
   gap: 4px;
-  @apply ma-0;
+
   padding: 8px;
   color: var(--lad-palette-teal-600);
   border: 2px dashed var(--lad-palette-teal-400);
@@ -212,7 +212,7 @@ const { t } = useI18n();
 }
 .storage-empty::after {
   content: "✦";
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 8px;
   right: 10px;
   color: var(--lad-palette-amber-500);
@@ -221,7 +221,7 @@ const { t } = useI18n();
 .storage-empty > span {
   width: 43px;
   height: 43px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   margin-bottom: 3px;
   color: var(--lad-palette-white);
   border: 3px solid var(--lad-palette-white);
@@ -243,7 +243,7 @@ const { t } = useI18n();
 }
 .storage-items > button.stored {
   min-height: 112px;
-  @apply position-relative d-flex flex-column align-center justify-center cursor-pointer;
+  --uno: position-relative d-flex flex-column align-center justify-center cursor-pointer;
   gap: 2px;
   padding: 7px 4px 6px;
   color: var(--lad-palette-muted-700);
@@ -270,7 +270,7 @@ const { t } = useI18n();
 }
 .storage-items > button.stored > strong {
   max-width: 92px;
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   font-size: rem(7);
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -279,7 +279,7 @@ const { t } = useI18n();
 .stored-preview {
   width: 62px;
   height: 57px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   margin-bottom: 1px;
   border-radius: 18px;
   background:
@@ -295,7 +295,7 @@ const { t } = useI18n();
   height: 62px;
 }
 .stored-action {
-  @apply d-inline-flex align-center;
+  --uno: d-inline-flex align-center;
   gap: 1px;
   margin-top: 3px;
   padding: 4px 7px;
@@ -311,7 +311,7 @@ const { t } = useI18n();
   font-weight: var(--lad-font-weight-strong);
 }
 .storage-drop-hint {
-  @apply d-flex align-center justify-center text-center;
+  --uno: d-flex align-center justify-center text-center;
   gap: 3px;
   margin: 1px 0 0;
   padding: 6px 4px;

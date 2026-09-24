@@ -1,9 +1,9 @@
-import type { HouseAccessoryId, HouseThemeId, RoomDesignId, SelectedRoomDesignState } from '@/domain/house';
-import type { HouseLayoutPlacement } from '@/domain/house/entities';
-import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
+import type { HouseAccessoryId, HouseThemeId, RoomDesignId, SelectedRoomDesignState } from "@/domain/house";
+import type { HouseLayoutPlacement } from "@/domain/house/entities";
+import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
 
-export const HOME_CUSTOMIZATION_SCHEMA_VERSION = 3 as const;
-export const HOME_CUSTOMIZATION_AGGREGATE_TYPE = 'home-customization' as const;
+export const HOME_CUSTOMIZATION_SCHEMA_VERSION = 3;
+export const HOME_CUSTOMIZATION_AGGREGATE_TYPE = "home-customization";
 
 export interface HouseAccessoryState {
   readonly id: HouseAccessoryId;

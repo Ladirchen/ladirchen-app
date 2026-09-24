@@ -1,4 +1,4 @@
-export const DEMO_CREDENTIALS = Object.freeze({ password: 'demo' });
+export const DEMO_CREDENTIALS = Object.freeze({ password: "demo" });
 
 export const AUTH_INPUT_RULES = Object.freeze({
   demoMemberCount: 2,

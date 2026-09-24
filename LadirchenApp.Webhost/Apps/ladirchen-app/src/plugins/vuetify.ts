@@ -5,21 +5,32 @@
  */
 
 // Composables
-import { createVuetify } from 'vuetify';
-import { aliases, mdi } from 'vuetify/iconsets/mdi-unocss';
+import { createVuetify } from "vuetify";
+import { aliases, mdi } from "vuetify/iconsets/mdi-unocss";
 // Styles
-import 'vuetify/styles';
-import { applicationColorPalette } from '@/theme/color-palette';
+import "vuetify/styles";
+import { applicationColorPalette } from "@/theme/color-palette";
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
+  display: {
+    mobileBreakpoint: "md",
+    thresholds: {
+      xs: 0,
+      sm: 600,
+      md: 1024,
+      lg: 1368,
+      xl: 1920,
+      xxl: 2560,
+    },
+  },
   icons: {
     aliases,
-    defaultSet: 'mdi',
+    defaultSet: "mdi",
     sets: { mdi },
   },
   theme: {
-    defaultTheme: 'ladirchen',
+    defaultTheme: "ladirchen",
     themes: {
       ladirchen: {
         dark: false,

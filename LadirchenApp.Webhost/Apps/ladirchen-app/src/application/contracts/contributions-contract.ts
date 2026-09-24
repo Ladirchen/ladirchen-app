@@ -1,8 +1,8 @@
-import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
-import type { Contribution, Promotion } from '@/domain/contributions/types';
+import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
+import type { Contribution, Promotion } from "@/domain/contributions/types";
 
-export const CONTRIBUTIONS_SCHEMA_VERSION = 1 as const;
-export const CONTRIBUTIONS_AGGREGATE_TYPE = 'contributions' as const;
+export const CONTRIBUTIONS_SCHEMA_VERSION = 1;
+export const CONTRIBUTIONS_AGGREGATE_TYPE = "contributions";
 
 export interface ContributionsState {
   readonly contributions: ReadonlyArray<Contribution>;

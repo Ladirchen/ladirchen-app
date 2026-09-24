@@ -4,7 +4,7 @@
       <div class="setup-header pa-5 pb-4">
         <div class="d-flex align-start justify-space-between ga-3">
           <div>
-            <p class="eyebrow mb-1">{{ t(store.onboardingCompleted ? 'family.setup.editEyebrow' : 'family.setup.welcomeEyebrow') }}</p>
+            <p class="eyebrow mb-1">{{ setupEyebrow }}</p>
             <h2>{{ t('family.setup.title') }}</h2>
           </div>
           <v-btn
@@ -82,15 +82,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineComponent, h, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, defineComponent, h, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 
-import { createDefaultAvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember, FamilyPet, FamilyPetKindId } from '@/domain/family/types';
-import { createDomainId } from '@/domain/shared/identifiers';
-import { percentageOfTotal } from '@/domain/shared/numbers';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import { familyMemberColorPalette } from '@/theme/color-palette';
+import { createDefaultAvatarAppearance } from "@/domain/avatar";
+import type { FamilyMember, FamilyPet, FamilyPetKindId } from "@/domain/family/types";
+import { createDomainId } from "@/domain/shared/identifiers";
+import { percentageOfTotal } from "@/domain/shared/numbers";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import { familyMemberColorPalette } from "@/theme/color-palette";
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
@@ -99,7 +99,7 @@ const step = ref(SETUP_STEPS.children);
 const children = ref<FamilyMember[]>([]);
 const guardians = ref<FamilyMember[]>([]);
 const pets = ref<FamilyPet[]>([]);
-const petKindIds: readonly FamilyPetKindId[] = ['cat', 'dog', 'rabbit', 'bird', 'other'];
+const petKindIds: readonly FamilyPetKindId[] = ["cat", "dog", "rabbit", "bird", "other"];
 const petKinds = computed(() => petKindIds.map(value => ({
   title: t(`familyPets.kinds.${value}`),
   value,
@@ -107,9 +107,9 @@ const petKinds = computed(() => petKindIds.map(value => ({
 
 const SetupSectionHeader = defineComponent({
   props: { icon: { type: String, required: true }, title: { type: String, required: true }, copy: { type: String, required: true } },
-  setup: (props) => () => h('div', { class: 'd-flex align-start ga-3' }, [
-    h('div', { class: 'setup-section-icon' }, props.icon),
-    h('div', [h('h3', { class: 'setup-section-title' }, props.title), h('p', { class: 'text-caption text-medium-emphasis mt-1' }, props.copy)]),
+  setup: (props) => () => h("div", { class: "d-flex align-start ga-3" }, [
+    h("div", { class: "setup-section-icon" }, props.icon),
+    h("div", [h("h3", { class: "setup-section-title" }, props.title), h("p", { class: "text-caption text-medium-emphasis mt-1" }, props.copy)]),
   ]),
 });
 
@@ -123,20 +123,23 @@ const currentStepIsValid = computed(() => {
   return guardiansAreValid.value;
 });
 const setupIsValid = computed(() => childrenAreValid.value && petsAreValid.value && guardiansAreValid.value);
+const setupEyebrow = computed(() => t(store.onboardingCompleted
+  ? "family.setup.editEyebrow"
+  : "family.setup.welcomeEyebrow"));
 
 const newId = (prefix: string, index: number) => `${prefix}-${Date.now()}-${index}`;
 const resetDraft = () => {
-  children.value = store.members.filter((member) => member.role === 'child').map((member) => ({ ...member }));
-  guardians.value = store.members.filter((member) => member.role === 'guardian').map((member) => ({ ...member }));
+  children.value = store.members.filter((member) => member.role === "child").map((member) => ({ ...member }));
+  guardians.value = store.members.filter((member) => member.role === "guardian").map((member) => ({ ...member }));
   pets.value = store.pets.map((pet) => ({ ...pet }));
   step.value = SETUP_STEPS.children;
 };
-const addChild = () => children.value.push({ id: createDomainId.familyMember(newId('child', children.value.length)), name: '', avatar: '🧒', color: familyMemberColorPalette.laura, role: 'child', participatesInWeeklyGoal: true, weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
-const addGuardian = () => guardians.value.push({ id: createDomainId.familyMember(newId('guardian', guardians.value.length)), name: '', avatar: '🧑', color: familyMemberColorPalette.defaultGuardian, role: 'guardian', guardianAccess: 'supporter', participatesInWeeklyGoal: false, weeklyStreak: 0 });
-const addPet = () => pets.value.push({ id: createDomainId.familyPet(newId('pet', pets.value.length)), name: '', kind: 'cat', avatar: '🐈', color: familyMemberColorPalette.petAnna });
+const addChild = () => children.value.push({ id: createDomainId.familyMember(newId("child", children.value.length)), name: "", avatar: "🧒", color: familyMemberColorPalette.laura, role: "child", participatesInWeeklyGoal: true, weeklyStreak: 0, appearance: createDefaultAvatarAppearance() });
+const addGuardian = () => guardians.value.push({ id: createDomainId.familyMember(newId("guardian", guardians.value.length)), name: "", avatar: "🧑", color: familyMemberColorPalette.defaultGuardian, role: "guardian", guardianAccess: "supporter", participatesInWeeklyGoal: false, weeklyStreak: 0 });
+const addPet = () => pets.value.push({ id: createDomainId.familyPet(newId("pet", pets.value.length)), name: "", kind: "cat", avatar: "🐈", color: familyMemberColorPalette.petAnna });
 const updatePetAvatar = (pet: FamilyPet) => {
-  const avatars: Record<FamilyPetKindId, string> = { cat: '🐈', dog: '🐕', rabbit: '🐇', bird: '🐦', other: '🐾' };
-  pet.avatar = avatars[pet.kind] ?? '🐾';
+  const avatars: Record<FamilyPetKindId, string> = { cat: "🐈", dog: "🐕", rabbit: "🐇", bird: "🐦", other: "🐾" };
+  pet.avatar = avatars[pet.kind] ?? "🐾";
 };
 const finishSetup = () => store.completeFamilySetup(
   [...children.value.map((member) => ({ ...member })), ...guardians.value.map((member) => ({ ...member }))],
@@ -162,7 +165,7 @@ watch(() => store.familySetupOpen, (isOpen) => {
   border-bottom: rem(1) solid var(--lad-border);
 }
 .setup-header h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(23);
   letter-spacing: -0.035em;
 }
@@ -171,7 +174,7 @@ watch(() => store.familySetupOpen, (isOpen) => {
 }
 .setup-avatar,
 .setup-section-icon {
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border-radius: rem(14);
   font-size: 1.5rem;
 }
@@ -185,7 +188,7 @@ watch(() => store.familySetupOpen, (isOpen) => {
   background: var(--lad-surface-soft);
 }
 .setup-section-title {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(18);
 }
 .pet-fields {

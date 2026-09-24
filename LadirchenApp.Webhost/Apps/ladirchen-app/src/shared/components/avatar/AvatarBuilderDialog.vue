@@ -16,7 +16,7 @@
       </section>
 
       <nav class="category-rail mt-3" :aria-label="t('avatar.builder.partsAria')">
-        <button v-for="category in categories" :key="category.value" :aria-current="section === category.value ? 'page' : undefined" :class="{ active: section === category.value }" type="button" @click="selectSection(category.value)">
+        <button v-for="category in categories" :key="category.value" :aria-current="categoryAriaCurrent(category.value)" :class="{ active: section === category.value }" type="button" @click="selectSection(category.value)">
           <AvatarCategoryIcon :name="category.value" /><span>{{ category.label }}</span>
         </button>
       </nav>
@@ -70,81 +70,84 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineComponent, h, nextTick, reactive, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, defineComponent, h, nextTick, reactive, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AvatarCategoryIcon from './AvatarCategoryIcon.vue';
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from './data/avatar-options';
-import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from '@/domain/avatar';
-import type { AvatarAppearance, GuardianAvatarPreset } from '@/domain/avatar';
-import type { ViewerRole } from '@/domain/family/types';
-import type { AvatarCatalogItemId, AvatarColorOption } from './data/avatar-options';
+import AvatarCategoryIcon from "./AvatarCategoryIcon.vue";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from "./data/avatar-options";
+import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@/domain/avatar";
+import type { AvatarAppearance, GuardianAvatarPreset } from "@/domain/avatar";
+import type { ViewerRole } from "@/domain/family/types";
+import type { AvatarCatalogItemId, AvatarColorOption } from "./data/avatar-options";
 
-type Section = 'base' | 'face' | 'hair' | 'outfit' | 'extras' | 'fun' | 'season';
-type PreviewKind = 'face' | 'faceShape' | 'hair' | 'outfit' | 'accessory' | 'fun' | 'season';
+type Section = "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season";
+type PreviewKind = "face" | "faceShape" | "hair" | "outfit" | "accessory" | "fun" | "season";
 
-const props = withDefaults(defineProps<{ modelValue: boolean; userName: string; initialAppearance?: AvatarAppearance; profileRole?: ViewerRole }>(), { profileRole: 'child' });
-const emit = defineEmits<{ 'update:modelValue': [value: boolean]; save: [appearance: AvatarAppearance] }>();
+const props = withDefaults(defineProps<{ modelValue: boolean; userName: string; initialAppearance?: AvatarAppearance; profileRole?: ViewerRole }>(), { profileRole: "child" });
+const emit = defineEmits<{ "update:modelValue": [value: boolean]; save: [appearance: AvatarAppearance] }>();
 const { t } = useI18n();
-const section = ref<Section>('base');
+const section = ref<Section>("base");
 const optionsPanel = ref<HTMLElement | { $el?: HTMLElement }>();
 const draft = reactive<AvatarAppearance>(createDefaultAvatarAppearance());
 const categories = computed<Array<{ value: Section; label: string; kicker: string; title: string; hint: string }>>(() => [
-  { value: 'base', label: t('avatar.builder.categories.base.label'), kicker: t('avatar.builder.categories.base.kicker'), title: t(`avatar.builder.categories.base.${props.profileRole}Title`), hint: t('avatar.builder.categories.base.hint') },
-  { value: 'face', label: t('avatar.builder.categories.face.label'), kicker: t('avatar.builder.categories.face.kicker'), title: t('avatar.builder.categories.face.title'), hint: t('avatar.builder.categories.face.hint') },
-  { value: 'hair', label: t('avatar.builder.categories.hair.label'), kicker: t('avatar.builder.categories.hair.kicker'), title: t('avatar.builder.categories.hair.title'), hint: t('avatar.builder.categories.hair.hint') },
-  { value: 'outfit', label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`), kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`), title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`), hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`) },
-  { value: 'extras', label: t('avatar.builder.categories.extras.label'), kicker: t('avatar.builder.categories.extras.kicker'), title: t('avatar.builder.categories.extras.title'), hint: t('avatar.builder.categories.extras.hint') },
-  { value: 'fun', label: t('avatar.builder.categories.fun.label'), kicker: t('avatar.builder.categories.fun.kicker'), title: t('avatar.builder.categories.fun.title'), hint: t('avatar.builder.categories.fun.hint') },
-  { value: 'season', label: t('avatar.builder.categories.season.label'), kicker: t('avatar.builder.categories.season.kicker'), title: t('avatar.builder.categories.season.title'), hint: t('avatar.builder.categories.season.hint') },
+  { value: "base", label: t("avatar.builder.categories.base.label"), kicker: t("avatar.builder.categories.base.kicker"), title: t(`avatar.builder.categories.base.${props.profileRole}Title`), hint: t("avatar.builder.categories.base.hint") },
+  { value: "face", label: t("avatar.builder.categories.face.label"), kicker: t("avatar.builder.categories.face.kicker"), title: t("avatar.builder.categories.face.title"), hint: t("avatar.builder.categories.face.hint") },
+  { value: "hair", label: t("avatar.builder.categories.hair.label"), kicker: t("avatar.builder.categories.hair.kicker"), title: t("avatar.builder.categories.hair.title"), hint: t("avatar.builder.categories.hair.hint") },
+  { value: "outfit", label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`), kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`), title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`), hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`) },
+  { value: "extras", label: t("avatar.builder.categories.extras.label"), kicker: t("avatar.builder.categories.extras.kicker"), title: t("avatar.builder.categories.extras.title"), hint: t("avatar.builder.categories.extras.hint") },
+  { value: "fun", label: t("avatar.builder.categories.fun.label"), kicker: t("avatar.builder.categories.fun.kicker"), title: t("avatar.builder.categories.fun.title"), hint: t("avatar.builder.categories.fun.hint") },
+  { value: "season", label: t("avatar.builder.categories.season.label"), kicker: t("avatar.builder.categories.season.kicker"), title: t("avatar.builder.categories.season.title"), hint: t("avatar.builder.categories.season.hint") },
 ]);
 const activeCategory = computed(() => categories.value.find(category => category.value === section.value) ?? categories.value[0]!);
-const baseAppearance = () => props.profileRole === 'guardian' ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
-const visibleHairOptions = computed(() => props.profileRole === 'guardian' ? adultHairOptions : hairOptions);
-const visibleHairColorOptions = computed(() => props.profileRole === 'guardian' ? adultHairColorOptions : hairColorOptions);
-const visibleOutfitOptions = computed(() => props.profileRole === 'guardian' ? adultOutfitOptions : outfitOptions);
+const baseAppearance = () => props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
+const visibleHairOptions = computed(() => props.profileRole === "guardian" ? adultHairOptions : hairOptions);
+const visibleHairColorOptions = computed(() => props.profileRole === "guardian" ? adultHairColorOptions : hairColorOptions);
+const visibleOutfitOptions = computed(() => props.profileRole === "guardian" ? adultOutfitOptions : outfitOptions);
 const guardianPresets = computed<Array<{ value: GuardianAvatarPreset; label: string; description: string }>>(() => [
-  { value: 'adult', label: t('avatar.builder.presets.adult.label'), description: t('avatar.builder.presets.adult.description') },
-  { value: 'grandma', label: t('avatar.builder.presets.grandma.label'), description: t('avatar.builder.presets.grandma.description') },
-  { value: 'grandpa', label: t('avatar.builder.presets.grandpa.label'), description: t('avatar.builder.presets.grandpa.description') },
+  { value: "adult", label: t("avatar.builder.presets.adult.label"), description: t("avatar.builder.presets.adult.description") },
+  { value: "grandma", label: t("avatar.builder.presets.grandma.label"), description: t("avatar.builder.presets.grandma.description") },
+  { value: "grandpa", label: t("avatar.builder.presets.grandpa.label"), description: t("avatar.builder.presets.grandpa.description") },
 ]);
-const activeGuardianPreset = computed<GuardianAvatarPreset>(() => draft.age !== 'senior' ? 'adult' : draft.outfit === 'cardigan' ? 'grandma' : 'grandpa');
+const activeGuardianPreset = computed<GuardianAvatarPreset>(() => {
+  if (draft.age !== "senior") return "adult";
+  return draft.outfit === "cardigan" ? "grandma" : "grandpa";
+});
 const guardianPresetAppearance = (preset: GuardianAvatarPreset) => ({ ...createGuardianAvatarAppearance(preset), skinToneId: draft.skinToneId });
 const selectGuardianPreset = (preset: GuardianAvatarPreset) => Object.assign(draft, guardianPresetAppearance(preset));
 const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
-  accessory: 'accessoryId',
-  face: 'face',
-  faceShape: 'faceShape',
-  fun: 'funAccessoryId',
-  hair: 'hair',
-  outfit: 'outfit',
-  season: 'seasonalAccessoryId',
+  accessory: "accessoryId",
+  face: "face",
+  faceShape: "faceShape",
+  fun: "funAccessoryId",
+  hair: "hair",
+  outfit: "outfit",
+  season: "seasonalAccessoryId",
 };
 const previewAppearance = (kind: PreviewKind, value: string): AvatarAppearance => ({ ...baseAppearance(), age: draft.age, skinToneId: draft.skinToneId, hairColorId: draft.hairColorId, outfitColorId: draft.outfitColorId, [previewField[kind]]: value });
 
 const OptionGrid = defineComponent({
   props: { modelValue: { type: String, required: true }, options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true }, previewKind: { type: String as () => PreviewKind, required: true } },
-  emits: ['update:modelValue'],
+  emits: ["update:modelValue"],
   setup: (gridProps, { emit: gridEmit }) => () => h(
-    'div',
-    { class: 'option-grid mt-4' },
+    "div",
+    { class: "option-grid mt-4" },
     gridProps.options.map((option) => h(
-      'button',
+      "button",
       {
-        class: ['option-choice', { active: gridProps.modelValue === option.value }],
-        type: 'button',
-        'data-catalog-id': option.id,
-        'data-preview-kind': gridProps.previewKind,
-        'aria-label': t('avatar.builder.selectAria', { label: t(option.id) }),
-        'aria-pressed': gridProps.modelValue === option.value,
-        onClick: () => gridEmit('update:modelValue', option.value),
+        class: ["option-choice", { active: gridProps.modelValue === option.value }],
+        type: "button",
+        "data-catalog-id": option.id,
+        "data-preview-kind": gridProps.previewKind,
+        "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
+        "aria-pressed": gridProps.modelValue === option.value,
+        onClick: () => gridEmit("update:modelValue", option.value),
       },
       {
         default: () => [
-          h('span', { class: 'option-art', 'aria-hidden': 'true' }, [h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 })]),
-          h('strong', t(option.id)),
-          gridProps.modelValue === option.value ? h('span', { class: 'option-check', 'aria-hidden': 'true' }, '✓') : null,
+          h("span", { class: "option-art", "aria-hidden": "true" }, [h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 })]),
+          h("strong", t(option.id)),
+          gridProps.modelValue === option.value ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓") : null,
         ],
       },
     )),
@@ -152,25 +155,26 @@ const OptionGrid = defineComponent({
 });
 
 const ColorPicker = defineComponent({
-  props: { modelValue: { type: String, required: true }, options: { type: Array as () => AvatarColorOption<string>[], required: true }, label: { type: String, required: true } }, emits: ['update:modelValue'],
-  setup: (colorProps, { emit: colorEmit }) => () => h('div', { class: 'compact-colors' }, [h('strong', colorProps.label), h('div', { class: 'color-row' }, colorProps.options.map(option => h('button', { class: ['color-choice', { active: colorProps.modelValue === option.value }], type: 'button', 'data-catalog-id': option.id, 'aria-label': t(option.id), 'aria-pressed': colorProps.modelValue === option.value, style: { background: option.color }, onClick: () => colorEmit('update:modelValue', option.value) }))) ]),
+  props: { modelValue: { type: String, required: true }, options: { type: Array as () => AvatarColorOption<string>[], required: true }, label: { type: String, required: true } }, emits: ["update:modelValue"],
+  setup: (colorProps, { emit: colorEmit }) => () => h("div", { class: "compact-colors" }, [h("strong", colorProps.label), h("div", { class: "color-row" }, colorProps.options.map(option => h("button", { class: ["color-choice", { active: colorProps.modelValue === option.value }], type: "button", "data-catalog-id": option.id, "aria-label": t(option.id), "aria-pressed": colorProps.modelValue === option.value, style: { background: option.color }, onClick: () => colorEmit("update:modelValue", option.value) }))) ]),
 });
 
 const randomItem = <T,>(items: T[]): T => {
   const item = items[Math.floor(Math.random() * items.length)];
-  if (item === undefined) {throw new RangeError('Cannot select a random item from an empty list.');}
+  if (item === undefined) {throw new RangeError("Cannot select a random item from an empty list.");}
   return item;
 };
 const resetDraft = () => Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
-const scrollOptionsToTop = () => void nextTick(() => { const panel = optionsPanel.value; const element = panel instanceof HTMLElement ? panel : panel?.$el; element?.scrollTo({ top: 0, behavior: 'smooth' }); });
+const scrollOptionsToTop = () => void nextTick(() => { const panel = optionsPanel.value; const element = panel instanceof HTMLElement ? panel : panel?.$el; element?.scrollTo({ top: 0, behavior: "smooth" }); });
 const selectSection = (value: Section) => { section.value = value; scrollOptionsToTop(); };
+const categoryAriaCurrent = (value: Section): "page" | undefined => section.value === value ? "page" : undefined;
 const randomLook = (funny: boolean) => {
-  const funnyParts = funOptions.filter(option => option.value !== 'none');
-  Object.assign(draft, { skinToneId: randomItem(skinToneOptions).value, faceShape: randomItem(faceShapeOptions).value, face: randomItem(faceOptions).value, hair: randomItem(visibleHairOptions.value).value, hairColorId: randomItem(visibleHairColorOptions.value).value, outfit: randomItem(visibleOutfitOptions.value).value, outfitColorId: randomItem(outfitColorOptions).value, accessoryId: randomItem(accessoryOptions).value, funAccessoryId: funny ? randomItem(funnyParts).value : 'none', seasonalAccessoryId: funny && Math.random() > .55 ? randomItem(seasonOptions).value : 'none' });
+  const funnyParts = funOptions.filter(option => option.value !== "none");
+  Object.assign(draft, { skinToneId: randomItem(skinToneOptions).value, faceShape: randomItem(faceShapeOptions).value, face: randomItem(faceOptions).value, hair: randomItem(visibleHairOptions.value).value, hairColorId: randomItem(visibleHairColorOptions.value).value, outfit: randomItem(visibleOutfitOptions.value).value, outfitColorId: randomItem(outfitColorOptions).value, accessoryId: randomItem(accessoryOptions).value, funAccessoryId: funny ? randomItem(funnyParts).value : "none", seasonalAccessoryId: funny && Math.random() > .55 ? randomItem(seasonOptions).value : "none" });
 };
-const close = () => emit('update:modelValue', false);
-const save = () => { emit('save', { ...draft }); close(); };
-watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); section.value = 'base'; scrollOptionsToTop(); }, { immediate: true });
+const close = () => emit("update:modelValue", false);
+const save = () => { emit("save", { ...draft }); close(); };
+watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); section.value = "base"; scrollOptionsToTop(); }, { immediate: true });
 </script>
 
 <style lang="scss" scoped>
@@ -178,11 +182,11 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .avatar-builder {
   height: min(720px, calc(100dvh - 28px));
   max-height: min(720px, calc(100dvh - 28px));
-  @apply d-flex flex-column overflow-hidden;
+  --uno: d-flex flex-column overflow-hidden;
   background: var(--lad-surface);
 }
 .studio-header {
-  @apply d-flex flex-shrink-0 align-center justify-space-between;
+  --uno: d-flex flex-shrink-0 align-center justify-space-between;
 }
 .studio-header h2 {
   margin: 1px 0 0;
@@ -191,9 +195,9 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .studio-preview {
   min-height: 166px;
-  @apply position-relative d-grid flex-shrink-0;
+  --uno: position-relative d-grid flex-shrink-0 align-center overflow-hidden;
   grid-template-columns: 180px 1fr;
-  @apply align-center overflow-hidden;
+
   border: 2px solid
     color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 28px;
@@ -217,7 +221,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .studio-preview::after {
   content: "";
   height: 38px;
-  @apply position-absolute right-0 bottom-0 left-0;
+  --uno: position-absolute right-0 bottom-0 left-0;
   background: color-mix(
     in srgb,
     var(--lad-color-accent-warm-soft) 25%,
@@ -234,18 +238,18 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   );
 }
 .studio-preview :deep(.avatar-figure) {
-  @apply position-relative;
+  --uno: position-relative justify-self-center;
   z-index: 2;
-  @apply justify-self-center;
+
   filter: drop-shadow(
     0 9px 7px color-mix(in srgb, var(--lad-text-strong) 15%, transparent)
   );
 }
 .preview-tools {
-  @apply position-relative;
+  --uno: position-relative d-flex flex-column align-start;
   z-index: 2;
   padding-right: 18px;
-  @apply d-flex flex-column align-start;
+
 }
 .preview-tools > strong {
   font-size: rem(22);
@@ -259,7 +263,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .random-actions {
   margin-top: 14px;
-  @apply d-flex flex-wrap ga-2;
+  --uno: d-flex flex-wrap ga-2;
 }
 .random-actions button {
   min-height: 36px;
@@ -272,7 +276,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
   font: inherit;
   font-size: rem(11);
-  @apply font-weight-black cursor-pointer;
+  --uno: font-weight-black cursor-pointer;
 }
 .random-actions .fun-random {
   color: var(--lad-color-accent-pink-strong);
@@ -281,7 +285,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .preview-decoration {
   width: 12px;
   height: 12px;
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 1;
   background: var(--lad-color-reward);
   clip-path: polygon(
@@ -307,28 +311,28 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .category-rail {
   padding: 2px 16px 8px;
-  @apply d-flex flex-shrink-0;
+  --uno: d-flex flex-shrink-0 overflow-x-auto;
   gap: 5px;
-  @apply overflow-x-auto;
+
   scrollbar-width: none;
   border-bottom: 1px solid var(--lad-border);
 }
 .category-rail::-webkit-scrollbar {
-  @apply d-none;
+  --uno: d-none;
 }
 .category-rail button {
   min-width: 78px;
   height: 68px;
-  @apply position-relative;
+  --uno: position-relative d-flex flex-column align-center justify-center cursor-pointer;
   padding: 4px 6px 6px;
-  @apply d-flex flex-column align-center justify-center;
+
   gap: 1px;
   color: var(--lad-muted);
   border: 0;
   border-radius: 18px;
   background: transparent;
   font: inherit;
-  @apply cursor-pointer;
+
   transition:
     transform 150ms ease,
     color 150ms ease,
@@ -352,26 +356,26 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   content: "";
   width: 24px;
   height: 3px;
-  @apply position-absolute;
+  --uno: position-absolute;
   bottom: 3px;
   border-radius: var(--lad-radius-pill);
   background: var(--lad-mint);
 }
 .category-rail span {
   font-size: rem(10);
-  @apply font-weight-black;
+  --uno: font-weight-black;
 }
 .builder-options {
   min-height: 0;
   flex: 1 1 auto;
-  @apply overflow-y-auto;
+  --uno: overflow-y-auto;
   padding-bottom: 34px;
   scroll-padding-bottom: 34px;
 }
 .section-intro {
-  @apply d-flex;
+  --uno: d-flex justify-space-between ga-4;
   align-items: end;
-  @apply justify-space-between ga-4;
+
 }
 .section-intro p {
   margin: 0 0 1px;
@@ -379,16 +383,16 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.11em;
-  @apply text-uppercase;
+  --uno: text-uppercase;
 }
 .section-intro h3 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(18);
 }
 .section-intro > span {
   color: var(--lad-muted);
   font-size: rem(10);
-  @apply text-right;
+  --uno: text-right;
 }
 .mini-section-label {
   margin-bottom: -8px;
@@ -396,17 +400,17 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: 0.06em;
-  @apply text-uppercase;
+  --uno: text-uppercase;
 }
 .guardian-preset-grid {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 9px;
 }
 .guardian-preset-grid button {
-  @apply min-w-0;
+  --uno: min-w-0 d-flex flex-column align-center cursor-pointer;
   padding: 10px 6px;
-  @apply d-flex flex-column align-center;
+
   gap: 3px;
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
@@ -414,7 +418,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: var(--lad-surface);
   box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
-  @apply cursor-pointer;
+
 }
 .guardian-preset-grid button.active {
   border: 2px solid var(--lad-mint);
@@ -431,17 +435,17 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-muted);
   font-size: 0.5rem;
   line-height: 1.2;
-  @apply text-center;
+  --uno: text-center;
 }
 .skin-studio {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 .skin-choice {
   min-height: 126px;
   padding: 13px 6px 10px;
-  @apply d-flex flex-column align-center justify-center;
+  --uno: d-flex flex-column align-center justify-center cursor-pointer;
   gap: 9px;
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
@@ -449,12 +453,12 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: linear-gradient(155deg, var(--lad-surface), var(--lad-surface));
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
-  @apply cursor-pointer;
+
 }
 .skin-choice > span {
   width: 68px;
   height: 72px;
-  @apply position-relative;
+  --uno: position-relative;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 48% 48% 44% 44%;
   background: var(--swatch-color);
@@ -464,7 +468,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   content: "";
   width: 20px;
   height: 10px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 12px;
   left: 12px;
   border-radius: 50%;
@@ -486,15 +490,15 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   transform: translateY(-2px);
 }
 :deep(.option-grid) {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 :deep(.option-choice) {
   min-height: 116px;
-  @apply position-relative;
+  --uno: position-relative d-flex flex-column align-center justify-center ga-1 overflow-hidden cursor-pointer;
   padding: 6px 5px 9px;
-  @apply d-flex flex-column align-center justify-center ga-1 overflow-hidden;
+
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 21px;
@@ -505,7 +509,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   );
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
-  @apply cursor-pointer;
+
 }
 :deep(.option-choice:nth-child(3n + 2)) {
   background: linear-gradient(
@@ -535,12 +539,12 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   max-width: 100%;
   font-size: rem(10);
   line-height: 1.05;
-  @apply text-center;
+  --uno: text-center;
 }
 :deep(.option-art) {
   width: 78px;
   height: 78px;
-  @apply d-grid place-center overflow-hidden;
+  --uno: d-grid place-center overflow-hidden;
   border: 2px solid
     color-mix(in srgb, var(--lad-border-on-accent) 85%, transparent);
   border-radius: 40% 40% 34% 34%;
@@ -582,10 +586,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 :deep(.option-check) {
   width: 20px;
   height: 20px;
-  @apply position-absolute;
+  --uno: position-absolute d-grid place-center;
   top: 5px;
   right: 5px;
-  @apply d-grid place-center;
+
   color: var(--lad-text-inverse);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 50%;
@@ -598,7 +602,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 :deep(.compact-colors) {
   margin-top: 18px;
   padding: 12px 14px;
-  @apply d-flex align-center justify-space-between ga-3;
+  --uno: d-flex align-center justify-space-between ga-3;
   border: 1px solid var(--lad-border);
   border-radius: 18px;
   background: var(--lad-surface);
@@ -607,24 +611,24 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   font-size: rem(11);
 }
 :deep(.color-row) {
-  @apply d-flex flex-wrap justify-end ga-2;
+  --uno: d-flex flex-wrap justify-end ga-2;
 }
 :deep(.color-choice) {
   width: 34px;
   height: 34px;
-  @apply position-relative;
+  --uno: position-relative cursor-pointer;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 43% 43% 48% 48%;
   box-shadow:
     0 2px 0 color-mix(in srgb, var(--lad-text-warm) 15%, transparent),
     0 0 0 1px var(--lad-border);
-  @apply cursor-pointer;
+
 }
 :deep(.color-choice::before) {
   content: "";
   width: 8px;
   height: 5px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 5px;
   left: 6px;
   border-radius: 50%;
@@ -638,9 +642,9 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     0 0 0 3px var(--lad-mint);
 }
 .builder-actions {
-  @apply position-relative justify-center;
+  --uno: position-relative justify-center flex-shrink-0;
   z-index: 3;
-  @apply flex-shrink-0;
+
   border-top: 1px solid var(--lad-border);
   background: var(--lad-surface);
   box-shadow: 0 -10px 22px color-mix(in srgb, var(--lad-text) 5%, transparent);
@@ -649,7 +653,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   min-width: 250px;
   min-height: 50px;
   padding-inline: 18px;
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   border: 2px solid
     color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
   border-radius: 17px;
@@ -683,7 +687,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .studio-save-shine {
   width: 45px;
   height: 160%;
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: -30%;
   left: -65px;
   transform: rotate(17deg);
@@ -736,7 +740,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   .category-rail {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     padding: 2px 14px 8px;
-    @apply d-grid overflow-visible;
+    --uno: d-grid overflow-visible;
     gap: 4px;
   }
   .category-rail button {
@@ -748,7 +752,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   }
   .category-rail span {
     max-width: 100%;
-    @apply text-truncate;
+    --uno: text-truncate;
   }
   .skin-studio {
     grid-template-columns: repeat(2, 1fr);
@@ -761,14 +765,14 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   .studio-preview {
     min-height: 138px;
     grid-template-columns: 1fr;
-    @apply pa-2;
+    --uno: pa-2;
   }
   .studio-preview :deep(.avatar-figure) {
     width: 118px;
     height: 118px;
   }
   .preview-tools {
-    @apply d-none;
+    --uno: d-none;
   }
 }
 @include reduced-motion {

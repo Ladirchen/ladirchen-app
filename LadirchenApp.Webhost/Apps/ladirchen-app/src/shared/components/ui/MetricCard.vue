@@ -5,14 +5,14 @@
 </template>
 
 <script lang="ts" setup>
-export type MetricCardTone = 'balance' | 'bonus' | 'energy' | 'info' | 'neutral' | 'reward' | 'streak';
+export type MetricCardTone = "balance" | "bonus" | "energy" | "info" | "neutral" | "reward" | "streak";
 
 withDefaults(defineProps<{
   compact?: boolean;
   tone?: MetricCardTone;
 }>(), {
   compact: false,
-  tone: 'neutral',
+  tone: "neutral",
 });
 </script>
 
@@ -25,7 +25,7 @@ withDefaults(defineProps<{
   --metric-card-lift: var(--lad-color-info-strong);
 
   min-height: 4.25rem;
-  @apply pa-2 d-flex align-center overflow-hidden;
+  --uno: pa-2 d-flex align-center overflow-hidden;
   gap: 0.5rem;
   @include metric-card;
 }
@@ -45,7 +45,7 @@ withDefaults(defineProps<{
 .metric-card :deep(> span:last-child),
 .metric-card :deep(small),
 .metric-card :deep(strong) {
-  @apply d-block min-w-0;
+  --uno: d-block min-w-0;
   max-width: 100%;
   overflow-wrap: anywhere;
 }

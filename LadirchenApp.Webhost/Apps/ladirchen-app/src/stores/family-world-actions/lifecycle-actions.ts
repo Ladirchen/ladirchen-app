@@ -1,15 +1,15 @@
-import { DEFAULT_ROOM_DESIGNS, HOUSE_THEMES, ROOM_DESIGNS, roomDesignsForTheme } from '@/domain/house';
-import type { HouseZoneId, RoomDesignId } from '@/domain/house';
-import type { TranslationKey } from '@/locales/translation-keys';
-import { AUTH_STATE_KEY } from './family-world-store-utils';
-import { mergeHouseLayout, normalizeFamilyMembers, normalizeFamilyPets } from '@/stores/family-world-state';
-import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from '../family-world-store-context';
+import { DEFAULT_ROOM_DESIGNS, HOUSE_THEMES, ROOM_DESIGNS, roomDesignsForTheme } from "@/domain/house";
+import type { HouseZoneId, RoomDesignId } from "@/domain/house";
+import type { TranslationKey } from "@/locales/translation-keys";
+import { AUTH_STATE_KEY } from "./family-world-store-utils";
+import { mergeHouseLayout, normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
+import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 
 const applySettledLoad = <T>(
   result: PromiseSettledResult<T>,
   apply: (value: T) => void,
 ): boolean => {
-  if (result.status === 'rejected') {return false;}
+  if (result.status === "rejected") {return false;}
   try {
     apply(result.value);
     return true;
@@ -22,7 +22,7 @@ export const lifecycleActions = {
   async hydrateFamilyAggregates(this: FamilyWorldStoreContext) {
     if (this.familyAggregatesHydrated) {return;}
     const { contributionsService, familyContext, familyProfileService, familyProgressionService, rewardShopService, savingsService } = this.$familyWorld;
-    if (this.$familyWorld.clientStorage.getItem(AUTH_STATE_KEY) === 'signed-out') {
+    if (this.$familyWorld.clientStorage.getItem(AUTH_STATE_KEY) === "signed-out") {
       this.isAuthenticated = false;
       return;
     }
@@ -49,7 +49,7 @@ export const lifecycleActions = {
         this.promotions = [...contributions.state.promotions];
         let contributionRewardsMigrated = false;
         this.contributions.forEach((contribution) => {
-          if (contribution.status !== 'approved' || contribution.earnedReward !== undefined) {return;}
+          if (contribution.status !== "approved" || contribution.earnedReward !== undefined) {return;}
           const promotion = this.promotions.find(item => item.active && item.contributionId === contribution.id);
           contribution.earnedReward = contribution.reward * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
           contribution.earnedRatingBonus = 0;
@@ -82,8 +82,8 @@ export const lifecycleActions = {
       }
     });
     if (profileLoaded) {
-      const activeChild = this.members.find(member => member.id === this.activeChildId && member.role === 'child') ??
-        this.members.find(member => member.role === 'child');
+      const activeChild = this.members.find(member => member.id === this.activeChildId && member.role === "child") ??
+        this.members.find(member => member.role === "child");
       if (activeChild) {
         this.activeChildId = activeChild.id;
       }
@@ -91,7 +91,7 @@ export const lifecycleActions = {
     }
     const hydrationSucceeded = profileLoaded && contributionsLoaded && savingsLoaded && rewardShopLoaded && progressionLoaded;
     this.familyAggregatesHydrated = hydrationSucceeded;
-    if (!hydrationSucceeded) {this.notify('notifications.load.family');}
+    if (!hydrationSucceeded) {this.notify("notifications.load.family");}
     await this.hydrateHomeCustomization();
   },
   async hydrateHomeCustomization(this: FamilyWorldStoreContext) {
@@ -115,7 +115,7 @@ export const lifecycleActions = {
         ]));
         this.houseThemeId = this.ownedHouseThemeIds.includes(snapshot.state.selectedEditionId)
           ? snapshot.state.selectedEditionId
-          : 'sunny-dollhouse';
+          : "sunny-dollhouse";
         this.ownedRoomDesignIds = Array.from(new Set([
           ...DEFAULT_ROOM_DESIGNS.map(design => design.id),
           ...this.ownedHouseThemeIds.flatMap(themeId => roomDesignsForTheme(themeId).map(design => design.id)),
@@ -136,7 +136,7 @@ export const lifecycleActions = {
       this.homeCustomizationHydrated = true;
     } catch {
       this.homeCustomizationHydrated = false;
-      this.notify('notifications.load.home');
+      this.notify("notifications.load.home");
     }
   },
   persistHomeCustomization(this: FamilyWorldStoreContext) {
@@ -164,7 +164,7 @@ export const lifecycleActions = {
           .map(design => ({ zoneId: design.zoneId, designId: design.id })),
         selectedEditionId: this.houseThemeId,
       },
-    }, () => this.notify('notifications.save.home'));
+    }, () => this.notify("notifications.save.home"));
   },
   persistFamilyProfile(this: FamilyWorldStoreContext) {
     const { familyContext, familyProfileService } = this.$familyWorld;
@@ -172,7 +172,7 @@ export const lifecycleActions = {
       familyId: familyContext.activeFamilyId,
       state: { members: this.members, onboardingCompleted: this.onboardingCompleted, pets: this.pets, subscriptionTier: this.subscriptionTier, timeZone: this.familyTimeZone },
       updatedBy: this.signedInMemberId,
-    }, () => this.notify('notifications.save.profile'));
+    }, () => this.notify("notifications.save.profile"));
   },
   persistContributions(this: FamilyWorldStoreContext) {
     const { contributionsService, familyContext } = this.$familyWorld;
@@ -180,7 +180,7 @@ export const lifecycleActions = {
       familyId: familyContext.activeFamilyId,
       state: { contributions: this.contributions, promotions: this.promotions },
       updatedBy: this.signedInMemberId,
-    }, () => this.notify('notifications.save.contributions'));
+    }, () => this.notify("notifications.save.contributions"));
   },
   persistSavings(this: FamilyWorldStoreContext) {
     const { familyContext, savingsService } = this.$familyWorld;
@@ -194,7 +194,7 @@ export const lifecycleActions = {
         pendingGuardianGifts: this.pendingGuardianGifts,
       },
       updatedBy: this.signedInMemberId,
-    }, () => this.notify('notifications.save.savings'));
+    }, () => this.notify("notifications.save.savings"));
   },
   persistRewardShop(this: FamilyWorldStoreContext) {
     const { familyContext, rewardShopService } = this.$familyWorld;
@@ -202,7 +202,7 @@ export const lifecycleActions = {
       familyId: familyContext.activeFamilyId,
       state: { rewards: this.shopRewards },
       updatedBy: this.signedInMemberId,
-    }, () => this.notify('notifications.save.shop'));
+    }, () => this.notify("notifications.save.shop"));
   },
   persistFamilyProgression(this: FamilyWorldStoreContext) {
     const { familyContext, familyProgressionService } = this.$familyWorld;
@@ -214,7 +214,7 @@ export const lifecycleActions = {
         houseLevel: this.houseLevel,
       },
       updatedBy: this.signedInMemberId,
-    }, () => this.notify('notifications.save.progression'));
+    }, () => this.notify("notifications.save.progression"));
   },
   notify(this: FamilyWorldStoreContext, messageKey: TranslationKey, params: Record<string, number | string> = {}) {
     this.snackbar.messageKey = messageKey;

@@ -1,15 +1,11 @@
+import { IANAZone } from "luxon";
+
 declare const ianaTimeZoneBrand: unique symbol;
 
-export type IanaTimeZone = string & { readonly [ianaTimeZoneBrand]: 'iana-time-zone' };
+export type IanaTimeZone = string & { readonly [ianaTimeZoneBrand]: "iana-time-zone" };
 
 export const isIanaTimeZone = (value: unknown): value is IanaTimeZone => {
-  if (typeof value !== 'string' || value.length === 0) {return false;}
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: value }).format();
-    return true;
-  } catch {
-    return false;
-  }
+  return typeof value === "string" && IANAZone.isValidZone(value);
 };
 
 export const createIanaTimeZone = (value: string): IanaTimeZone => {
@@ -17,4 +13,4 @@ export const createIanaTimeZone = (value: string): IanaTimeZone => {
   return value;
 };
 
-export const DEFAULT_FAMILY_TIME_ZONE = createIanaTimeZone('Europe/Zurich');
+export const DEFAULT_FAMILY_TIME_ZONE = createIanaTimeZone("Europe/Zurich");

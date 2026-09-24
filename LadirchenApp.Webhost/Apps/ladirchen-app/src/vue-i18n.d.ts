@@ -1,5 +1,5 @@
-import type { LocaleMessageSchema } from '@/locales/translation-keys';
+import type { LocaleMessageSchema } from "@/locales/translation-keys";
 
-declare module 'vue-i18n' {
+declare module "vue-i18n" {
   export interface DefineLocaleMessage extends LocaleMessageSchema {}
 }

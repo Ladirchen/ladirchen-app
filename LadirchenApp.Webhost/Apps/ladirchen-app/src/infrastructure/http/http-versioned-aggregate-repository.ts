@@ -1,9 +1,9 @@
-import { isVersionedAggregateSnapshot } from '@/application/contracts/family-aggregate-validation';
-import type { FamilyAggregateDescriptor } from '@/application/contracts/family-aggregate-descriptors';
-import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
-import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
-import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
-import type { FamilyId } from '@/domain/shared/identifiers';
+import { isVersionedAggregateSnapshot } from "@/application/contracts/family-aggregate-validation";
+import type { FamilyAggregateDescriptor } from "@/application/contracts/family-aggregate-descriptors";
+import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
+import { AggregateConflictError } from "@/application/ports/versioned-aggregate-repository";
+import type { VersionedAggregateRepository } from "@/application/ports/versioned-aggregate-repository";
+import type { FamilyId } from "@/domain/shared/identifiers";
 
 export class AggregateApiError extends Error {
   public constructor(
@@ -11,7 +11,7 @@ export class AggregateApiError extends Error {
     public readonly status: number,
   ) {
     super(message);
-    this.name = 'AggregateApiError';
+    this.name = "AggregateApiError";
   }
 }
 
@@ -28,7 +28,7 @@ const parseJson = async (response: Response): Promise<unknown> => {
     const parsed: unknown = await response.json();
     return parsed;
   } catch {
-    throw new AggregateApiError('The aggregate API returned invalid JSON.', response.status);
+    throw new AggregateApiError("The aggregate API returned invalid JSON.", response.status);
   }
 };
 
@@ -44,12 +44,12 @@ export class HttpVersionedAggregateRepository<
 
   public async load(familyId: FamilyId): Promise<VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState> | null> {
     const response = await this.fetchRequest(this.endpoint(familyId), {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-      method: 'GET',
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      method: "GET",
     });
     if (response.status === 404) {return null;}
-    if (!response.ok) {throw new AggregateApiError('The aggregate could not be loaded.', response.status);}
+    if (!response.ok) {throw new AggregateApiError("The aggregate could not be loaded.", response.status);}
     return this.readSnapshot(await parseJson(response), familyId, response.status);
   }
 
@@ -59,15 +59,15 @@ export class HttpVersionedAggregateRepository<
     }
     const response = await this.fetchRequest(this.endpoint(command.familyId), {
       body: JSON.stringify(command),
-      credentials: 'include',
+      credentials: "include",
       headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
-      method: 'PUT',
+      method: "PUT",
     });
     if (response.status === 409) {throw new AggregateConflictError(this.options.aggregateType);}
-    if (!response.ok) {throw new AggregateApiError('The aggregate could not be saved.', response.status);}
+    if (!response.ok) {throw new AggregateApiError("The aggregate could not be saved.", response.status);}
     return this.readSnapshot(await parseJson(response), command.familyId, response.status);
   }
 
@@ -86,7 +86,7 @@ export class HttpVersionedAggregateRepository<
       this.options.schemaVersion,
       this.options.isState,
     ) || value.familyId !== familyId) {
-      throw new AggregateApiError('The aggregate API returned an invalid snapshot.', status);
+      throw new AggregateApiError("The aggregate API returned an invalid snapshot.", status);
     }
     return value;
   }

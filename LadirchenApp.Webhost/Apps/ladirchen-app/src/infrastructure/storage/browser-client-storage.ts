@@ -1,8 +1,8 @@
-import type { ClientStorage } from '@/application/ports/client-storage';
+import type { ClientStorage } from "@/application/ports/client-storage";
 
 const storage = (): Storage | undefined => {
   try {
-    return typeof localStorage === 'undefined' ? undefined : localStorage;
+    return typeof localStorage === "undefined" ? undefined : localStorage;
   } catch {
     return undefined;
   }

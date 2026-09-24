@@ -3,15 +3,15 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue';
-import type { Application, Container } from 'pixi.js';
-import type * as PixiNamespace from 'pixi.js';
+import { onMounted, onUnmounted, ref } from "vue";
+import type { Application, Container } from "pixi.js";
+import type * as PixiNamespace from "pixi.js";
 
-import type { RoomDesignDefinition, RoomSceneOverlayDefinition } from '@/domain/house';
-import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
-import { MILLISECONDS_PER_SECOND } from '@/domain/shared/time';
-import { ROOM_DESIGN_ASSET_URLS, roomDesignBackgroundAssetId } from '@/shared/visuals/house/room-design-assets';
-import { visualColorPalette } from '@/theme/color-palette';
+import type { RoomDesignDefinition, RoomSceneOverlayDefinition } from "@/domain/house";
+import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
+import { MILLISECONDS_PER_SECOND } from "@/domain/shared/time";
+import { ROOM_DESIGN_ASSET_URLS, roomDesignBackgroundAssetId } from "@/shared/visuals/house/room-design-assets";
+import { visualColorPalette } from "@/theme/color-palette";
 
 const props = defineProps<{
   design: RoomDesignDefinition;
@@ -35,7 +35,7 @@ const paletteColor = (token: string, fallback: string): string => {
 
 onMounted(async () => {
   if (!host.value) return;
-  const pixi = await import('pixi.js');
+  const pixi = await import("pixi.js");
   if (destroyed || !host.value) return;
 
   const app = new pixi.Application();
@@ -43,7 +43,7 @@ onMounted(async () => {
     antialias: true,
     autoDensity: true,
     backgroundAlpha: 0,
-    preference: 'webgl',
+    preference: "webgl",
     resolution: Math.min(window.devicePixelRatio, MAXIMUM_DEVICE_PIXEL_RATIO),
     resizeTo: host.value,
   });
@@ -53,7 +53,7 @@ onMounted(async () => {
   }
 
   application = app;
-  app.canvas.className = 'pixi-room-scene__canvas';
+  app.canvas.className = "pixi-room-scene__canvas";
   host.value.append(app.canvas);
 
   const scene = new pixi.Container();
@@ -65,9 +65,9 @@ onMounted(async () => {
   background.height = props.design.canvasHeight;
   scene.addChild(background);
 
-  const accent = paletteColor('--lad-palette-amber-500', visualColorPalette['amber-500']);
-  const outline = paletteColor('--lad-palette-teal-700', visualColorPalette['teal-700']);
-  const leaf = paletteColor('--lad-palette-green-500', visualColorPalette['green-500']);
+  const accent = paletteColor("--lad-palette-amber-500", visualColorPalette["amber-500"]);
+  const outline = paletteColor("--lad-palette-teal-700", visualColorPalette["teal-700"]);
+  const leaf = paletteColor("--lad-palette-green-500", visualColorPalette["green-500"]);
   const overlayNodes = props.design.overlays.map((overlay) => {
     const node = new pixi.Container();
     node.position.set(
@@ -95,12 +95,12 @@ onMounted(async () => {
   resizeObserver = new ResizeObserver(layout);
   resizeObserver.observe(host.value);
 
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     let elapsed = 0;
     app.ticker.add((ticker) => {
       elapsed += ticker.deltaMS / MILLISECONDS_PER_SECOND;
       overlayNodes.forEach(({ definition, node }) => {
-        node.rotation = definition.motion === 'spin'
+        node.rotation = definition.motion === "spin"
           ? elapsed * OVERLAY_SPIN_SPEED
           : Math.sin(elapsed * OVERLAY_FLOAT_FREQUENCY) * OVERLAY_FLOAT_ROTATION;
       });
@@ -122,7 +122,7 @@ const createOverlay = (
   colors: { accent: string; leaf: string; outline: string },
 ): Container => {
   const container = new pixi.Container();
-  if (overlay.id === 'garden-wind-spinner') {
+  if (overlay.id === "garden-wind-spinner") {
     for (let index = 0; index < 6; index += 1) {
       const petal = new pixi.Graphics()
         .ellipse(0, -25, 8, 20)

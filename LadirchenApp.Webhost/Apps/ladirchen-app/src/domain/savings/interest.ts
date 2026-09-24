@@ -1,6 +1,6 @@
-import { CONTRIBUTION_RATING } from '@/domain/contributions/rating';
-import { SAVINGS_RULES } from '@/domain/savings/rules';
-import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
+import { CONTRIBUTION_RATING } from "@/domain/contributions/rating";
+import { SAVINGS_RULES } from "@/domain/savings/rules";
+import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
 
 /** Inputs used by a savings-interest policy. */
 export interface SavingsInterestContext {

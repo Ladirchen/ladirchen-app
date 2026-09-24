@@ -1,8 +1,8 @@
-import type { HouseLayoutPlacementId } from '../shared/identifiers';
-import type { HouseAccessory, HouseLayoutPlacement } from './entities';
-import type { FurnitureVisualId, HouseLayoutEntityType, HouseZoneId } from './types';
-import { furnitureVisualDefinitionFor } from './furniture-visuals';
-import type { FurnitureCollisionBounds } from './furniture-visuals';
+import type { HouseLayoutPlacementId } from "@/domain/shared/identifiers";
+import type { HouseAccessory, HouseLayoutPlacement } from "./entities";
+import type { FurnitureVisualId, HouseLayoutEntityType, HouseZoneId } from "./types";
+import { furnitureVisualDefinitionFor } from "./furniture-visuals";
+import type { FurnitureCollisionBounds } from "./furniture-visuals";
 
 const CHARACTER_COLLISION_BOUNDS = { horizontalRadius: 4, verticalRadius: 6 } as const satisfies FurnitureCollisionBounds;
 
@@ -53,7 +53,7 @@ export const characterCollidesWithFurniture = (
   placements: ReadonlyArray<HouseLayoutPlacement>,
   accessories: ReadonlyArray<HouseAccessory>,
 ): boolean => placements.some((placement) => {
-  if (placement.id === placementId || placement.entityType !== 'furniture' || placement.zoneId !== zoneId) {return false;}
+  if (placement.id === placementId || placement.entityType !== "furniture" || placement.zoneId !== zoneId) {return false;}
   const accessory = accessories.find(item => item.id === placement.entityId);
   if (!accessory?.owned || !accessory.equipped || !accessory.visual) {return false;}
   const bounds = collisionBoundsFor(accessory.visual);

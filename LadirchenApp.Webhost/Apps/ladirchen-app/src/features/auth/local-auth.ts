@@ -1,10 +1,10 @@
-import { createDomainId, isUuidValue } from '@/domain/shared/identifiers';
-import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
-import { isDomainId, isRecord } from '@/application/contracts/family-aggregate-validation';
-import type { AuthenticationGateway, AuthenticationSession } from '@/application/ports/authentication-gateway';
-import type { ClientStorage } from '@/application/ports/client-storage';
+import { createDomainId, isUuidValue } from "@/domain/shared/identifiers";
+import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
+import { isDomainId, isRecord } from "@/application/contracts/family-aggregate-validation";
+import type { AuthenticationGateway, AuthenticationSession } from "@/application/ports/authentication-gateway";
+import type { ClientStorage } from "@/application/ports/client-storage";
 
-const ACCOUNT_STORAGE_KEY = 'ladirchen:local-accounts:v1';
+const ACCOUNT_STORAGE_KEY = "ladirchen:local-accounts:v1";
 
 interface StoredLocalAccount {
   username: string;
@@ -15,20 +15,20 @@ interface StoredLocalAccount {
   memberId: string;
 }
 
-const normalizeUsername = (username: string) => username.trim().toLocaleLowerCase('de');
+const normalizeUsername = (username: string) => username.trim().toLocaleLowerCase("de");
 
 const isStoredLocalAccount = (value: unknown): value is StoredLocalAccount =>
   isRecord(value) &&
-  typeof value.username === 'string' && value.username.length > 0 && value.username === normalizeUsername(value.username) &&
-  typeof value.passwordHash === 'string' && /^[\da-f]{64}$/u.test(value.passwordHash) &&
-  typeof value.salt === 'string' && /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/iu.test(value.salt) &&
+  typeof value.username === "string" && value.username.length > 0 && value.username === normalizeUsername(value.username) &&
+  typeof value.passwordHash === "string" && /^[\da-f]{64}$/u.test(value.passwordHash) &&
+  typeof value.salt === "string" && /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/iu.test(value.salt) &&
   isUuidValue(value.familyId) &&
-  typeof value.familyName === 'string' && value.familyName.trim().length > 0 &&
+  typeof value.familyName === "string" && value.familyName.trim().length > 0 &&
   isDomainId(value.memberId);
 
 const loadAccounts = (storage: ClientStorage): StoredLocalAccount[] => {
   try {
-    const parsed: unknown = JSON.parse(storage.getItem(ACCOUNT_STORAGE_KEY) ?? '[]');
+    const parsed: unknown = JSON.parse(storage.getItem(ACCOUNT_STORAGE_KEY) ?? "[]");
     if (!Array.isArray(parsed)) {return [];}
     return parsed.filter(isStoredLocalAccount);
   } catch {
@@ -38,8 +38,8 @@ const loadAccounts = (storage: ClientStorage): StoredLocalAccount[] => {
 
 const digestPassword = async (password: string, salt: string): Promise<string> => {
   const bytes = new TextEncoder().encode(`${salt}:${password}`);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
 };
 
 const localUsernameExists = (storage: ClientStorage, username: string): boolean =>
@@ -55,7 +55,7 @@ const registerLocalAccount = async (
 ): Promise<void> => {
   const normalizedUsername = normalizeUsername(username);
   const accounts = loadAccounts(storage);
-  if (accounts.some(account => account.username === normalizedUsername)) {throw new Error('USERNAME_EXISTS');}
+  if (accounts.some(account => account.username === normalizedUsername)) {throw new Error("USERNAME_EXISTS");}
   const salt = crypto.randomUUID();
   accounts.push({
     username: normalizedUsername,
