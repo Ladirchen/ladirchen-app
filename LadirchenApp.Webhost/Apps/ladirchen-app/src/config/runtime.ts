@@ -1,4 +1,4 @@
-export type FrontendDataSource = 'api' | 'local-storage';
+export type FrontendDataSource = "api" | "local-storage";
 
 export interface FrontendRuntimeConfig {
   readonly apiBaseUrl: string;
@@ -6,11 +6,11 @@ export interface FrontendRuntimeConfig {
 }
 
 const normalizeApiBaseUrl = (value: string | undefined): string =>
-  (value ?? '').trim().replace(/\/+$/u, '');
+  (value ?? "").trim().replace(/\/+$/u, "");
 
 const resolveDataSource = (value: string | undefined): FrontendDataSource => {
-  if (value === undefined || value === '' || value === 'local-storage') {return 'local-storage';}
-  if (value === 'api') {return value;}
+  if (value === undefined || value === "" || value === "local-storage") {return "local-storage";}
+  if (value === "api") {return value;}
   throw new Error(`Unsupported VITE_DATA_SOURCE value: ${value}`);
 };
 

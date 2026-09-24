@@ -1,13 +1,13 @@
 <template><span hidden aria-hidden="true" /></template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { calculateSavingsCredit } from '@/domain/savings/interest';
-import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { calculateSavingsCredit } from "@/domain/savings/interest";
+import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 
-import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
-import { useFamilyWorldStore } from '@/stores/family-world';
+import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
+import { useFamilyWorldStore } from "@/stores/family-world";
 
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
@@ -30,26 +30,26 @@ const estimatedWeeklyInterest = computed(() =>
 );
 const answers = computed(() => [
   {
-    title: t('savings.interestGuide.bonusTitle'),
-    text: t('savings.interestGuide.bonusMessage', { saved: store.totalSaved, interest: estimatedWeeklyInterest.value }),
+    title: t("savings.interestGuide.bonusTitle"),
+    text: t("savings.interestGuide.bonusMessage", { saved: store.totalSaved, interest: estimatedWeeklyInterest.value }),
   },
   {
-    title: t('savings.interestGuide.goalsTitle'),
+    title: t("savings.interestGuide.goalsTitle"),
     text: goalInterestRows.value.length
-      ? t('savings.interestGuide.goalsMessage', { goals: goalInterestRows.value.map(goal => t('savings.interestGuide.goalItem', { title: goal.title, interest: goal.weeklyInterest })).join(' · ') })
-      : t('savings.interestGuide.goalsEmpty'),
+      ? t("savings.interestGuide.goalsMessage", { goals: goalInterestRows.value.map(goal => t("savings.interestGuide.goalItem", { title: goal.title, interest: goal.weeklyInterest })).join(" · ") })
+      : t("savings.interestGuide.goalsEmpty"),
   },
   {
-    title: t('savings.interestGuide.streakTitle'),
-    text: t('savings.interestGuide.streakMessage', { days: store.currentDailyStreak, rate: formatRate(streakInterest.value) }),
+    title: t("savings.interestGuide.streakTitle"),
+    text: t("savings.interestGuide.streakMessage", { days: store.currentDailyStreak, rate: formatRate(streakInterest.value) }),
   },
   {
-    title: t('savings.interestGuide.careTitle'),
-    text: t('savings.interestGuide.careMessage', { completion: store.dailyEnergy, rating: formatRate(store.averageTaskRating) }),
+    title: t("savings.interestGuide.careTitle"),
+    text: t("savings.interestGuide.careMessage", { completion: store.dailyEnergy, rating: formatRate(store.averageTaskRating) }),
   },
   {
-    title: t('savings.interestGuide.tipTitle'),
-    text: t('savings.interestGuide.tipMessage'),
+    title: t("savings.interestGuide.tipTitle"),
+    text: t("savings.interestGuide.tipMessage"),
   },
 ]);
 
@@ -65,16 +65,16 @@ const nextAnswer = () => {
     message: answer.text,
     smart: true,
     progress: `${conversationStep.value + 2} / ${answers.value.length + 1}`,
-    actionLabel: t(conversationStep.value === answers.value.length - 1 ? 'savings.piggy.guide.again' : 'common.next'),
-    actionId: 'savings-interest:next',
+    actionLabel: t(conversationStep.value === answers.value.length - 1 ? "savings.piggy.guide.again" : "common.next"),
+    actionId: "savings-interest:next",
   });
 };
 
 let unregisterStartAction: (() => void) | undefined;
 let unregisterNextAction: (() => void) | undefined;
 onMounted(() => {
-  unregisterStartAction = ladiGuideController.registerAction('savings-interest:start', nextAnswer);
-  unregisterNextAction = ladiGuideController.registerAction('savings-interest:next', nextAnswer);
+  unregisterStartAction = ladiGuideController.registerAction("savings-interest:start", nextAnswer);
+  unregisterNextAction = ladiGuideController.registerAction("savings-interest:next", nextAnswer);
 });
 onUnmounted(() => {
   unregisterStartAction?.();

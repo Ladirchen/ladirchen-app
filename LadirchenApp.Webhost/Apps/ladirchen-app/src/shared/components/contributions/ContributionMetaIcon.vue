@@ -19,9 +19,9 @@
 </template>
 
 <script lang="ts" setup>
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 
-defineProps<{ kind: 'time' | 'reward' | 'energy' }>();
+defineProps<{ kind: "time" | "reward" | "energy" }>();
 </script>
 
 <style lang="scss" scoped>

@@ -1,8 +1,8 @@
-import type { FamilyContext } from '@/application/ports/family-context';
-import { createDomainId, isUuidValue } from '@/domain/shared/identifiers';
-import { browserClientStorage } from '@/infrastructure/storage/browser-client-storage';
+import type { FamilyContext } from "@/application/ports/family-context";
+import { createDomainId, isUuidValue } from "@/domain/shared/identifiers";
+import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 
-const ACTIVE_FAMILY_ID_KEY = 'ladirchen-active-family-id';
+const ACTIVE_FAMILY_ID_KEY = "ladirchen-active-family-id";
 
 let inMemoryFamilyId: ReturnType<typeof createDomainId.family> | null = null;
 

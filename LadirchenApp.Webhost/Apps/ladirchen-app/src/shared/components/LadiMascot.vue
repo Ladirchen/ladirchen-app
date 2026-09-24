@@ -7,10 +7,10 @@
     :initial="false"
     :animate="characterMotion"
     :transition="characterTransition"
-    :while-hover="reducedMotion ? undefined : { scale: characterMotion.scale * 1.035, y: characterMotion.y - 2 }"
-    :while-press="reducedMotion ? undefined : { scale: characterMotion.scale * .96 }"
+    :while-hover="hoverMotion"
+    :while-press="pressMotion"
     role="img"
-    :aria-label="t('ladi.mascotAria', { name: smart ? t('ladi.smartName') : t(stage.nameKey), score: score.toFixed(1) })"
+    :aria-label="ariaLabel"
   >
     <img class="ladi-sprite" :src="spriteUrl" alt="">
     <span v-if="showScore" class="ladi-score"><i aria-hidden="true" />{{ score.toFixed(1) }}</span>
@@ -18,13 +18,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { motion, useReducedMotion } from 'motion-v';
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { motion, useReducedMotion } from "motion-v";
+import { useI18n } from "vue-i18n";
 
-import { getLadiStage } from '@/domain/ladi';
-import type { LadiSpriteId } from '@/domain/ladi';
-import { LADI_SPRITE_ASSET_URLS } from '@/shared/assets/ladi-sprite-assets';
+import { getLadiStage } from "@/domain/ladi";
+import type { LadiSpriteId } from "@/domain/ladi";
+import { LADI_SPRITE_ASSET_URLS } from "@/shared/assets/ladi-sprite-assets";
 
 const { t } = useI18n();
 const props = withDefaults(defineProps<{
@@ -41,16 +41,21 @@ const props = withDefaults(defineProps<{
 });
 const stage = computed(() => getLadiStage(props.score));
 const spriteId = computed<LadiSpriteId>(() => {
-  if (props.perched) return 'perched-ladi';
-  if (props.smart) return 'smart-ladi';
+  if (props.perched) return "perched-ladi";
+  if (props.smart) return "smart-ladi";
   return stage.value.id;
 });
 const spriteUrl = computed(() => LADI_SPRITE_ASSET_URLS[spriteId.value]);
-const isBored = computed(() => stage.value.id === 'idle-ladi');
-const isCool = computed(() => stage.value.tier === 'aurora');
-const isSuper = computed(() => stage.value.tier === 'super');
+const isBored = computed(() => stage.value.id === "idle-ladi");
+const isCool = computed(() => stage.value.tier === "aurora");
+const isSuper = computed(() => stage.value.tier === "super");
 const reducedMotion = useReducedMotion();
-const motionState = computed(() => isSuper.value ? 'super' : isCool.value ? 'cool' : isBored.value ? 'bored' : 'happy');
+const motionState = computed(() => {
+  if (isSuper.value) return "super";
+  if (isCool.value) return "cool";
+  if (isBored.value) return "bored";
+  return "happy";
+});
 const characterMotion = computed(() => {
   if (reducedMotion.value) return { rotate: 0, y: 0, scale: 1 };
   if (isSuper.value) return { rotate: 0, y: -4, scale: 1.06 };
@@ -58,7 +63,17 @@ const characterMotion = computed(() => {
   if (isBored.value) return { rotate: -2, y: 3, scale: .96 };
   return { rotate: 0, y: 0, scale: 1 };
 });
-const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass: .8 } as const;
+const hoverMotion = computed(() => reducedMotion.value
+  ? undefined
+  : { scale: characterMotion.value.scale * 1.035, y: characterMotion.value.y - 2 });
+const pressMotion = computed(() => reducedMotion.value
+  ? undefined
+  : { scale: characterMotion.value.scale * .96 });
+const ariaLabel = computed(() => t("ladi.mascotAria", {
+  name: props.smart ? t("ladi.smartName") : t(stage.value.nameKey),
+  score: props.score.toFixed(1),
+}));
+const characterTransition = { type: "spring", stiffness: 260, damping: 22, mass: .8 } as const;
 </script>
 
 <style lang="scss" scoped>
@@ -67,7 +82,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   --ladi-size: 46px;
   width: var(--ladi-size);
   height: var(--ladi-size);
-  @apply position-relative d-inline-flex align-center flex-shrink-0;
+  --uno: position-relative d-inline-flex align-center flex-shrink-0;
 }
 .ladi-wrap.has-score {
   width: calc(var(--ladi-size) + 23px);
@@ -75,7 +90,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
 .ladi-sprite {
   width: var(--ladi-size);
   height: var(--ladi-size);
-  @apply d-block;
+  --uno: d-block;
   object-fit: contain;
   filter: drop-shadow(
     0 3px 2px color-mix(in srgb, var(--lad-palette-text) 20%, transparent)
@@ -102,7 +117,7 @@ const characterTransition = { type: 'spring', stiffness: 260, damping: 22, mass:
   min-width: 30px;
   margin-left: -8px;
   padding: 3px 6px 3px 9px;
-  @apply d-inline-flex align-center text-no-wrap;
+  --uno: d-inline-flex align-center text-no-wrap;
   gap: 3px;
   color: var(--lad-palette-orange-750);
   border: 1px solid

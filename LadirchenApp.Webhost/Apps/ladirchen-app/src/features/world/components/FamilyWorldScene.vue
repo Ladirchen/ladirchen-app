@@ -87,7 +87,7 @@
           <g :key="view" class="house-view">
             <g v-if="view === 'front'" class="house house-front" :class="`house-level-${houseLevel}`">
               <ellipse class="toy-house-shadow" cx="232" cy="271" rx="125" ry="21" />
-              <rect class="toy-house-body" x="137" :y="houseLevel >= 1 ? 145 : 151" width="188" :height="houseLevel >= 1 ? 110 : 104" rx="10" />
+              <rect class="toy-house-body" x="137" :y="houseBodyY" width="188" :height="houseBodyHeight" rx="10" />
               <g v-if="houseLevel >= 1" class="house-addon toy-upper-floor">
                 <rect x="163" y="87" width="136" height="69" rx="10" />
                 <path d="M163 147h136" />
@@ -95,9 +95,9 @@
               </g>
 
               <g class="toy-roof">
-                <path :d="houseLevel >= 1 ? 'M143 91 230 36l88 55-13 17-75-45-74 45Z' : 'M112 155 230 78l119 77-15 18-104-66-103 66Z'" />
-                <path class="roof-highlight" :d="houseLevel >= 1 ? 'M230 36l88 55-7 9-81-49Z' : 'M230 78l119 77-8 10-111-70Z'" />
-                <path class="roof-detail" :d="houseLevel >= 1 ? 'M170 82l60-33 61 34M184 89l46-25 47 25' : 'M143 145l87-51 88 51M160 151l70-41 71 41'" />
+                <path :d="roofPath" />
+                <path class="roof-highlight" :d="roofHighlightPath" />
+                <path class="roof-detail" :d="roofDetailPath" />
               </g>
 
               <g class="toy-door">
@@ -213,7 +213,7 @@
             <div
               v-for="(member, index) in group.members"
               :key="member.id"
-              :class="['world-family-member', 'is-background-member', member.role === 'child' ? 'is-child' : 'is-guardian']"
+              :class="['world-family-member', 'is-background-member', memberRoleClass(member)]"
             >
               <Transition name="member-name">
                 <span v-if="speakingMemberId === member.id" class="member-name-bubble" role="status">{{ worldMemberName(member) }}</span>
@@ -222,7 +222,7 @@
                 :appearance="appearanceFor(member, index)"
                 calm
                 full-body
-                :size="member.role === 'child' ? 42 : 55"
+                :size="backgroundMemberSize(member)"
                 @interact="showMemberName(member.id)"
               />
             </div>
@@ -268,16 +268,18 @@
 </template>
 
 <script lang="ts" setup>
-import { motion } from 'motion-v';
-import { useI18n } from 'vue-i18n';
+import { motion } from "motion-v";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
-import DollhouseInterior from './DollhouseInterior.vue';
-import FurnitureStoragePanel from './FurnitureStoragePanel.vue';
-import HouseThemeDecoration from './HouseThemeDecoration.vue';
-import { useFamilyWorldScene } from '../composables/use-family-world-scene';
-import type { FamilyWorldSceneEmit, FamilyWorldSceneProps } from '../composables/use-family-world-scene';
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
+import DollhouseInterior from "./DollhouseInterior.vue";
+import FurnitureStoragePanel from "./FurnitureStoragePanel.vue";
+import HouseThemeDecoration from "./HouseThemeDecoration.vue";
+import { useFamilyWorldScene } from "@/features/world/composables/use-family-world-scene";
+import type { FamilyWorldSceneEmit, FamilyWorldSceneProps } from "@/features/world/composables/use-family-world-scene";
+import type { FamilyMember } from "@/domain/family/types";
 
 const props = defineProps<FamilyWorldSceneProps>();
 const emit = defineEmits<FamilyWorldSceneEmit>();
@@ -289,6 +291,20 @@ const {
   sceneStyle, selectedRoomView, selectZone, showMemberName, showPetName, speakingMemberId, storageAccessories,
   storageOpen, storeAccessory, sunOpacity, view, worldMemberName,
 } = useFamilyWorldScene(props, emit);
+const houseHasUpperFloor = computed(() => props.houseLevel >= 1);
+const houseBodyY = computed(() => houseHasUpperFloor.value ? 145 : 151);
+const houseBodyHeight = computed(() => houseHasUpperFloor.value ? 110 : 104);
+const roofPath = computed(() => houseHasUpperFloor.value
+  ? "M143 91 230 36l88 55-13 17-75-45-74 45Z"
+  : "M112 155 230 78l119 77-15 18-104-66-103 66Z");
+const roofHighlightPath = computed(() => houseHasUpperFloor.value
+  ? "M230 36l88 55-7 9-81-49Z"
+  : "M230 78l119 77-8 10-111-70Z");
+const roofDetailPath = computed(() => houseHasUpperFloor.value
+  ? "M170 82l60-33 61 34M184 89l46-25 47 25"
+  : "M143 145l87-51 88 51M160 151l70-41 71 41");
+const memberRoleClass = (member: FamilyMember) => member.role === "child" ? "is-child" : "is-guardian";
+const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ? 42 : 55;
 </script>
 
 <style lang="scss" scoped>
@@ -297,13 +313,13 @@ const {
   --world-furniture-overview-size: 60px;
   --world-furniture-room-size: 96px;
   --world-furniture-focused-size: 116px;
-  @apply w-100;
+  --uno: w-100 position-relative overflow-hidden select-none;
   margin-top: 10px;
   padding-bottom: 8px;
-  @apply position-relative overflow-hidden;
+
   container: world-scene / inline-size;
   touch-action: pan-y;
-  @apply select-none;
+
 }
 .scene-world-shell :deep(.layout-entity.entity-furniture) {
   --world-entity-responsive-scale: 0.8;
@@ -331,16 +347,16 @@ const {
   }
 }
 .scene-drag-layer {
-  @apply position-relative;
+  --uno: position-relative;
   touch-action: pan-y;
 }
 .world-scene {
-  @apply w-100;
+  --uno: w-100 overflow-visible;
   height: auto;
-  @apply overflow-visible;
+
 }
 .front-scene-art {
-  @apply position-absolute overflow-hidden;
+  --uno: position-absolute overflow-hidden;
   inset: 0;
   z-index: 1;
   border-radius: 1rem 1rem 0.75rem 0.75rem;
@@ -348,7 +364,7 @@ const {
 }
 .front-scene-art::after {
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   inset: 0;
   z-index: 2;
   background:
@@ -369,7 +385,7 @@ const {
     color-mix(in srgb, var(--lad-palette-background) 32%, transparent);
 }
 .front-scene-art img {
-  @apply position-absolute w-100 h-100;
+  --uno: position-absolute w-100 h-100;
   inset: 0;
   object-fit: cover;
 }
@@ -379,7 +395,7 @@ const {
 .front-scene-art__house {
   width: 92%;
   aspect-ratio: 1.598;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 8.5%;
   left: 50%;
   z-index: 2;
@@ -392,7 +408,7 @@ const {
   width: 68%;
   height: 7%;
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   right: 16%;
   bottom: 6%;
   left: 16%;
@@ -408,7 +424,7 @@ const {
 .front-scene-sun {
   width: 3.4rem;
   aspect-ratio: 1;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 4%;
   right: 10%;
   z-index: 1;
@@ -422,7 +438,7 @@ const {
 }
 .front-scene-sun::before {
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   inset: -1.15rem;
   background: repeating-conic-gradient(
     from 0deg,
@@ -447,12 +463,12 @@ const {
 }
 .theme-halloween-night .front-scene-sun::before,
 .theme-starlight-palace .front-scene-sun::before {
-  @apply d-none;
+  --uno: d-none;
 }
 .front-scene-cloud {
   width: 4.5rem;
   height: 1.25rem;
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 1;
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-palette-white) 86%, transparent);
@@ -502,7 +518,7 @@ const {
   transform: translateY(8px) rotate(30deg) scaleY(0.78);
 }
 .scene-world-shell {
-  @apply position-absolute overflow-hidden;
+  --uno: position-absolute overflow-hidden;
   top: 19%;
   right: 0;
   bottom: 2%;
@@ -517,7 +533,7 @@ const {
   width: calc(100% - 134px);
 }
 .world-scene-wrap.is-storage-open.is-dragging-furniture .scene-world-shell {
-  @apply overflow-visible;
+  --uno: overflow-visible;
   z-index: 30;
 }
 .world-scene-wrap.is-inside .scene-world-shell {
@@ -542,7 +558,7 @@ const {
   width: 100%;
   height: 100%;
   min-height: 229px;
-  @apply pa-0;
+  --uno: pa-0;
   gap: 0;
   border: 0;
   border-radius: 0;
@@ -758,7 +774,7 @@ const {
   stroke: var(--lad-palette-yellow);
 }
 .floor-lamp circle {
-  @apply pointer-events-none;
+  --uno: pointer-events-none;
 }
 .dollhouse-roof {
   transform-origin: 230px 75px;
@@ -1048,10 +1064,10 @@ const {
 .world-family {
   width: 215px;
   height: 108px;
-  @apply position-absolute left-0;
+  --uno: position-absolute left-0 d-grid place-end-center pointer-events-none;
   bottom: 3.5%;
   z-index: 3;
-  @apply d-grid place-end-center pointer-events-none;
+
   filter: drop-shadow(
     0 6px 5px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent)
   );
@@ -1060,7 +1076,7 @@ const {
   content: "";
   width: 145px;
   height: 20px;
-  @apply position-absolute;
+  --uno: position-absolute;
   left: 50%;
   bottom: -2px;
   z-index: 0;
@@ -1073,15 +1089,15 @@ const {
   bottom: 4.5%;
 }
 .world-family-background {
-  @apply w-100;
+  --uno: w-100 d-flex align-end justify-space-between;
   grid-area: 1 / 1;
   z-index: 1;
-  @apply d-flex align-end justify-space-between;
+
   transform: translateY(-17px);
 }
 .world-family-side {
   width: 86px;
-  @apply d-flex align-end justify-center;
+  --uno: d-flex align-end justify-center;
 }
 .world-family-side .world-family-member {
   margin-inline: -5px;
@@ -1090,20 +1106,20 @@ const {
   margin-inline: -7px;
 }
 .world-family-member {
-  @apply position-relative;
+  --uno: position-relative;
   z-index: 2;
   margin-inline: -8px;
   transform-origin: center bottom;
 }
 .world-family-member :deep(.avatar-figure) {
   pointer-events: auto;
-  @apply cursor-pointer;
+  --uno: cursor-pointer;
 }
 .member-name-bubble,
 .pet-name-bubble {
   min-width: max-content;
   padding: 5px 8px;
-  @apply position-absolute;
+  --uno: position-absolute font-weight-black pointer-events-none;
   left: 50%;
   bottom: calc(100% + 4px);
   z-index: 7;
@@ -1116,16 +1132,16 @@ const {
   box-shadow: 0 4px 10px
     color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
   font-size: rem(9);
-  @apply font-weight-black;
+
   line-height: 1;
-  @apply pointer-events-none;
+
 }
 .member-name-bubble::after,
 .pet-name-bubble::after {
   content: "";
   width: 8px;
   height: 8px;
-  @apply position-absolute;
+  --uno: position-absolute;
   left: 50%;
   bottom: -5px;
   transform: translateX(-50%) rotate(45deg);
@@ -1160,7 +1176,7 @@ const {
 .world-family > .world-family-member.is-active-member {
   grid-area: 1 / 1;
   z-index: 6;
-  @apply ma-0;
+  --uno: ma-0;
   translate: 0 8px;
   opacity: 1;
 }
@@ -1178,22 +1194,22 @@ const {
 }
 .world-pets {
   width: 108px;
-  @apply position-absolute;
+  --uno: position-absolute d-flex align-end justify-center pointer-events-none;
   right: 3%;
   bottom: 13%;
   z-index: 4;
-  @apply d-flex align-end justify-center;
+
   gap: 2px;
-  @apply pointer-events-none;
+
 }
 .world-pets.inside {
   right: 3%;
   bottom: 13%;
 }
 .world-pet {
-  @apply position-relative;
+  --uno: position-relative d-flex align-end;
   z-index: 1;
-  @apply d-flex align-end;
+
   pointer-events: auto;
 }
 .world-pet:nth-child(2) :deep(.animated-pet) {
@@ -1201,7 +1217,7 @@ const {
 }
 .world-pets :deep(.animated-pet) {
   pointer-events: auto;
-  @apply cursor-pointer;
+  --uno: cursor-pointer;
 }
 .far-landscape {
   opacity: 0.92;
@@ -1342,7 +1358,7 @@ const {
   animation: accessory-pop 650ms var(--lad-easing-pop);
 }
 .scene-actions {
-  @apply position-absolute d-flex justify-center;
+  --uno: position-absolute d-flex justify-center;
   right: 7px;
   bottom: 3px;
   left: 7px;
@@ -1354,7 +1370,7 @@ const {
   min-width: 104px;
   height: 42px;
   padding: 5px 11px;
-  @apply d-flex align-center justify-center;
+  --uno: d-flex align-center justify-center cursor-pointer;
   gap: 7px;
   color: var(--lad-palette-muted-700);
   border: 1px solid
@@ -1368,7 +1384,7 @@ const {
   box-shadow:
     0 4px 0 var(--lad-palette-teal-150),
     0 8px 18px color-mix(in srgb, var(--lad-palette-text) 15%, transparent);
-  @apply cursor-pointer;
+
   font: inherit;
   pointer-events: auto;
   backdrop-filter: blur(10px);
@@ -1388,10 +1404,10 @@ const {
 .scene-action span,
 .scene-action strong,
 .scene-action small {
-  @apply d-block;
+  --uno: d-block;
 }
 .scene-action span {
-  @apply text-left;
+  --uno: text-left;
   line-height: 1.05;
 }
 .scene-action strong {

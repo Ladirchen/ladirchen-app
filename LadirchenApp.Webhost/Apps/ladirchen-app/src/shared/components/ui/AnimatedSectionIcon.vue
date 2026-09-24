@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts" setup>
-export type AnimatedSectionIconVariant = 'contributions' | 'family' | 'shop';
+export type AnimatedSectionIconVariant = "contributions" | "family" | "shop";
 
 defineProps<{ variant: AnimatedSectionIconVariant }>();
 </script>
@@ -40,7 +40,7 @@ defineProps<{ variant: AnimatedSectionIconVariant }>();
 .animated-section-icon {
   width: 45px;
   height: 45px;
-  @apply d-block overflow-visible;
+  --uno: d-block overflow-visible;
 }
 .section-main {
   transform-box: fill-box;

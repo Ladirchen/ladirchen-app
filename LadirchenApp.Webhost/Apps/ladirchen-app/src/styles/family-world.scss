@@ -1,9 +1,8 @@
 @use "./mixins" as *;
-@use "./tokens" as tokens;
 
 .family-world-background {
   --lad-shell-inline-offset: max(0px, calc((100vw - 31.25rem) / 2));
-  font-family: var(--lad-font-body);
+  font-family: var(--lad-font-body, "Roboto"), sans-serif;
   min-height: 100dvh;
   padding: 1.75rem 1rem;
   background:
@@ -29,9 +28,9 @@
   .family-world-header {
     min-height: rem(70);
     padding: 0.75rem rem(18);
-    @apply position-sticky top-0;
+    --uno: position-sticky top-0 ga-4;
     z-index: 20;
-    @apply ga-4;
+
     color: var(--lad-text);
     background: color-mix(in srgb, var(--lad-surface) 95%, transparent);
     border-bottom: rem(1) solid var(--lad-border);
@@ -40,7 +39,7 @@
   }
 
   .family-world-brand {
-    @apply min-w-0;
+    --uno: min-w-0;
     gap: rem(9);
     color: var(--lad-color-primary-deep);
     font-size: rem(19);
@@ -62,7 +61,7 @@
   .family-world-logo img {
     width: rem(86);
     height: rem(86);
-    @apply position-absolute;
+    --uno: position-absolute;
     top: -0.5rem;
     left: rem(-20);
     max-width: none;
@@ -71,7 +70,7 @@
     width: min(52%, rem(250));
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    @apply ga-2;
+    --uno: ga-2;
   }
   .header-stats--guardian {
     width: min(58%, rem(290));
@@ -79,9 +78,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .header-stat {
-    @apply w-100;
+    --uno: w-100 min-w-0;
     height: rem(42);
-    @apply min-w-0;
+
     padding: rem(6) rem(9);
     gap: rem(5);
     color: var(--lad-text-strong);
@@ -98,7 +97,7 @@
   .header-stat-symbol {
     width: 1.75rem;
     height: 1.75rem;
-    @apply d-grid place-center flex-shrink-0;
+    --uno: d-grid place-center flex-shrink-0;
   }
   .header-stat strong {
     color: var(--lad-text);
@@ -125,7 +124,7 @@
   .header-guardian-week-copy small,
   .header-guardian-week-copy strong,
   .header-guardian-week-copy i {
-    @apply d-block min-w-0;
+    --uno: d-block min-w-0;
   }
   .header-guardian-week-copy {
     flex: 1;
@@ -209,17 +208,17 @@
       padding-inline: 0.5rem;
     }
     .header-stat-label {
-      @apply d-none;
+      --uno: d-none;
     }
     .header-balance .animated-piggy {
-      @apply d-none;
+      --uno: d-none;
     }
   }
 
   .family-world-navigation {
     min-height: rem(70);
     padding: 0.5rem 0.5rem rem(10);
-    @apply right-0 bottom-0 left-0;
+    --uno: right-0 bottom-0 left-0;
     z-index: 20;
     grid-template-columns: repeat(6, 1fr);
     background: color-mix(in srgb, var(--lad-surface) 95%, transparent);
@@ -227,12 +226,12 @@
     backdrop-filter: blur(rem(14));
 
     a {
-      @apply min-w-0;
+      --uno: min-w-0 font-weight-black;
       gap: rem(2);
       color: var(--lad-muted);
       border-radius: rem(13);
       font-size: rem(9);
-      @apply font-weight-black;
+
       transition:
         color 160ms ease,
         background 160ms ease,
@@ -270,7 +269,7 @@
   }
   .family-world-navigation a.router-link-exact-active .app-navigation-icon {
     filter: drop-shadow(0 rem(3) rem(3) color-mix(in srgb, var(--navigation-tone) 24%, transparent));
-    transform: translateY(-rem(1));
+    transform: translateY(rem(-1));
   }
   .page {
     min-height: 100%;
@@ -282,7 +281,7 @@
     margin-bottom: rem(18);
   }
   .page-heading h1 {
-    @apply ma-0;
+    --uno: ma-0;
     @include heading(var(--lad-font-size-page), 1.08, -0.045em);
   }
   .page-heading p {
@@ -294,7 +293,7 @@
     @include overline(var(--lad-mint-dark), rem(11), 0.09em);
   }
   .section-title {
-    @apply ma-0;
+    --uno: ma-0;
     @include heading(var(--lad-font-size-section), 1.2, -0.025em);
   }
   .raised-button {
@@ -309,36 +308,29 @@
   }
 }
 
-@media
-  (min-width: tokens.breakpoint(shell)) and (max-width: tokens.breakpoint(tablet)),
-  (min-width: tokens.breakpoint(tablet)) and (max-width: tokens.breakpoint(tablet-landscape)) and (hover: none) and (pointer: coarse) {
-  .family-world-background {
-    --lad-shell-inline-offset: 0px;
-    padding: 0;
-  }
-
-  .family-world-background .family-world-shell {
-    width: 100%;
-    height: 100dvh;
-    min-height: 100dvh;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .family-world-background .page-padding {
-    padding-inline: clamp(1.5rem, 4vw, 3.5rem);
-  }
+.family-world-background--fullscreen {
+  --lad-shell-inline-offset: 0px;
+  padding: 0;
 }
 
-@media
-  (min-width: tokens.breakpoint(tablet)) and (max-width: tokens.breakpoint(tablet-landscape)) and (orientation: landscape) {
-  .family-world-background,
-  .family-world-background .family-world-shell {
-    width: 100dvw;
-    max-width: 100dvw;
-    overflow: hidden;
-  }
+.family-world-background--fullscreen .family-world-shell {
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.family-world-background--expanded-padding .page-padding {
+  padding-inline: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.family-world-background--landscape,
+.family-world-background--landscape .family-world-shell {
+  width: 100dvw;
+  max-width: 100dvw;
+  overflow: hidden;
 }
 
 @keyframes coin-to-piggy {
@@ -352,7 +344,7 @@
   }
   68% {
     opacity: 1;
-    transform: translate(rem(70), -rem(215)) scale(0.82);
+    transform: translate(rem(70), rem(-215)) scale(0.82);
   }
   100% {
     opacity: 0;
@@ -377,21 +369,7 @@
 }
 .family-world-page-leave-to {
   opacity: 0;
-  transform: translateY(-rem(5));
-}
-
-@include respond-down(shell) {
-  .family-world-background {
-    --lad-shell-inline-offset: 0px;
-    @apply pa-0;
-  }
-  .family-world-background .family-world-shell {
-    height: 100dvh;
-    min-height: 100dvh;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
+  transform: translateY(rem(-5));
 }
 
 @include reduced-motion {

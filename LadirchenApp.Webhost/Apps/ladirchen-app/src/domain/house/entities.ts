@@ -1,6 +1,6 @@
-import type { HouseAccessoryTranslationNamespaceKey } from '@/locales/translation-keys';
-import type { FamilyMemberId, FamilyPetId, HouseLayoutPlacementId } from '../shared/identifiers';
-import type { CatalogNewBadgeSchedule, FurniturePlacement, FurnitureSetId, FurnitureVisualId, HouseAccessoryCategory, HouseAccessoryId, HouseAccessoryInteraction, HouseAccessoryMobility, HouseAccessoryMotion, HouseAccessoryPlacement, HouseLayoutEntityType, HouseRoomId, HouseStageLevel, HouseZoneId } from './types';
+import type { HouseAccessoryTranslationNamespaceKey } from "@/locales/translation-keys";
+import type { FamilyMemberId, FamilyPetId, HouseLayoutPlacementId } from "@/domain/shared/identifiers";
+import type { CatalogNewBadgeSchedule, FurniturePlacement, FurnitureSetId, FurnitureVisualId, HouseAccessoryCategory, HouseAccessoryId, HouseAccessoryInteraction, HouseAccessoryMobility, HouseAccessoryMotion, HouseAccessoryPlacement, HouseLayoutEntityType, HouseRoomId, HouseStageLevel, HouseZoneId } from "./types";
 
 export interface HouseAccessory {
   id: HouseAccessoryId;
@@ -34,7 +34,7 @@ interface HouseLayoutPlacementBase {
 }
 
 export type HouseLayoutPlacement =
-  | (HouseLayoutPlacementBase & { entityType: 'furniture'; entityId: HouseAccessoryId })
-  | (HouseLayoutPlacementBase & { entityType: 'member'; entityId: FamilyMemberId })
-  | (HouseLayoutPlacementBase & { entityType: 'pet'; entityId: FamilyPetId })
-  | (HouseLayoutPlacementBase & { entityType: 'ladi'; entityId: 'family-ladi' });
+  | (HouseLayoutPlacementBase & { entityType: "furniture"; entityId: HouseAccessoryId })
+  | (HouseLayoutPlacementBase & { entityType: "member"; entityId: FamilyMemberId })
+  | (HouseLayoutPlacementBase & { entityType: "pet"; entityId: FamilyPetId })
+  | (HouseLayoutPlacementBase & { entityType: "ladi"; entityId: "family-ladi" });

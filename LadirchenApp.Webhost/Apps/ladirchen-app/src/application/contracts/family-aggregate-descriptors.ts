@@ -1,15 +1,15 @@
-import { CONTRIBUTIONS_AGGREGATE_TYPE, CONTRIBUTIONS_SCHEMA_VERSION } from './contributions-contract';
-import type { ContributionsState } from './contributions-contract';
-import { FAMILY_PROFILE_AGGREGATE_TYPE, FAMILY_PROFILE_SCHEMA_VERSION } from './family-profile-contract';
-import type { FamilyProfileState } from './family-profile-contract';
-import { FAMILY_PROGRESSION_AGGREGATE_TYPE, FAMILY_PROGRESSION_SCHEMA_VERSION } from './family-progression-contract';
-import type { FamilyProgressionState } from './family-progression-contract';
-import { HOME_CUSTOMIZATION_AGGREGATE_TYPE, HOME_CUSTOMIZATION_SCHEMA_VERSION } from './home-customization-contract';
-import type { HomeCustomizationState } from './home-customization-contract';
-import { REWARD_SHOP_AGGREGATE_TYPE, REWARD_SHOP_SCHEMA_VERSION } from './reward-shop-contract';
-import type { RewardShopState } from './reward-shop-contract';
-import { SAVINGS_AGGREGATE_TYPE, SAVINGS_SCHEMA_VERSION } from './savings-contract';
-import type { SavingsState } from './savings-contract';
+import { CONTRIBUTIONS_AGGREGATE_TYPE, CONTRIBUTIONS_SCHEMA_VERSION } from "./contributions-contract";
+import type { ContributionsState } from "./contributions-contract";
+import { FAMILY_PROFILE_AGGREGATE_TYPE, FAMILY_PROFILE_SCHEMA_VERSION } from "./family-profile-contract";
+import type { FamilyProfileState } from "./family-profile-contract";
+import { FAMILY_PROGRESSION_AGGREGATE_TYPE, FAMILY_PROGRESSION_SCHEMA_VERSION } from "./family-progression-contract";
+import type { FamilyProgressionState } from "./family-progression-contract";
+import { HOME_CUSTOMIZATION_AGGREGATE_TYPE, HOME_CUSTOMIZATION_SCHEMA_VERSION } from "./home-customization-contract";
+import type { HomeCustomizationState } from "./home-customization-contract";
+import { REWARD_SHOP_AGGREGATE_TYPE, REWARD_SHOP_SCHEMA_VERSION } from "./reward-shop-contract";
+import type { RewardShopState } from "./reward-shop-contract";
+import { SAVINGS_AGGREGATE_TYPE, SAVINGS_SCHEMA_VERSION } from "./savings-contract";
+import type { SavingsState } from "./savings-contract";
 import {
   isContributionsState,
   isFamilyProfileState,
@@ -17,9 +17,9 @@ import {
   isHomeCustomizationState,
   isRewardShopState,
   isSavingsState,
-} from './family-aggregate-validation';
-import type { StateGuard } from './family-aggregate-validation';
-import type { FamilyAggregateType } from './versioned-aggregate-contract';
+} from "./family-aggregate-validation";
+import type { StateGuard } from "./family-aggregate-validation";
+import type { FamilyAggregateType } from "./versioned-aggregate-contract";
 
 export interface FamilyAggregateDescriptor<
   TAggregateType extends FamilyAggregateType,

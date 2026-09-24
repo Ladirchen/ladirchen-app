@@ -1,4 +1,4 @@
-import type { FamilyAggregateType, VersionedAggregateSnapshot } from '../versioned-aggregate-contract';
+import type { FamilyAggregateType, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
 import {
   isFamilyId,
   isFamilyMemberId,
@@ -6,7 +6,7 @@ import {
   isNonNegativeInteger,
   isRecord,
   type StateGuard,
-} from './runtime-validation';
+} from "./runtime-validation";
 
 export const isVersionedAggregateSnapshot = <
   TAggregateType extends FamilyAggregateType,

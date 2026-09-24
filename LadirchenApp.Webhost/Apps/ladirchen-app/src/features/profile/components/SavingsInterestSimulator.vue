@@ -54,17 +54,18 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
-import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
-import LadiMascot from '@/shared/components/LadiMascot.vue';
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
+import LadiMascot from "@/shared/components/LadiMascot.vue";
 
-import AnimatedPiggyBank from '@/shared/components/AnimatedPiggyBank.vue';
-import { getLadiStage } from '@/domain/ladi';
-import { calculateSavingsCredit, familyParticipationInterestStrategy } from '@/domain/savings/interest';
-import { useFamilyWorldStore } from '@/stores/family-world';
+import AnimatedPiggyBank from "@/shared/components/AnimatedPiggyBank.vue";
+import { getLadiStage } from "@/domain/ladi";
+import { calculateSavingsCredit, familyParticipationInterestStrategy } from "@/domain/savings/interest";
+import { PAYOUT_CELEBRATION_DURATION_MS } from "@/shared/runtime-timing";
+import { useFamilyWorldStore } from "@/stores/family-world";
 
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
@@ -104,23 +105,22 @@ const formatRate = (value: number) => value.toLocaleString(locale.value, {
   maximumFractionDigits: 2,
   minimumFractionDigits: 1,
 });
-function interestForRate(saved: number, target: number, rate: number): number {
-  return calculateSavingsCredit(saved, target, rate);
-}
-function resetSimulation(): void {
+const interestForRate = (saved: number, target: number, rate: number): number =>
+  calculateSavingsCredit(saved, target, rate);
+const resetSimulation = (): void => {
   simulatedCompletion.value = store.dailyEnergy;
   simulatedRating.value = store.averageTaskRating;
   simulatedStreak.value = store.currentDailyStreak;
   payoutVisible.value = false;
-}
-function simulatePayout(): void {
+};
+const simulatePayout = (): void => {
   lastPayout.value = store.creditActiveChildInterestDemo(simulatedInterestRate.value);
   if (lastPayout.value <= 0) return;
   payoutVersion.value += 1;
   payoutVisible.value = true;
   if (payoutTimer !== undefined) window.clearTimeout(payoutTimer);
-  payoutTimer = window.setTimeout(() => { payoutVisible.value = false; }, 3300);
-}
+  payoutTimer = window.setTimeout(() => { payoutVisible.value = false; }, PAYOUT_CELEBRATION_DURATION_MS);
+};
 
 onMounted(resetSimulation);
 onUnmounted(() => {
@@ -135,13 +135,13 @@ onUnmounted(() => {
   background: var(--lad-gradient-info);
 }
 h3 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(18);
   letter-spacing: -0.025em;
 }
 .simulator-preview {
   padding: 11px 12px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 10px;
   border: 1px solid var(--lad-border-subtle);
   border-radius: 18px;
@@ -150,7 +150,7 @@ h3 {
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) strong,
 .simulator-preview > div:nth-child(2) small {
-  @apply d-block;
+  --uno: d-block;
 }
 .simulator-preview > div:nth-child(2) span,
 .simulator-preview > div:nth-child(2) small {
@@ -163,11 +163,11 @@ h3 {
 }
 .simulator-rate {
   min-width: 70px;
-  @apply text-right;
+  --uno: text-right;
 }
 .simulator-rate strong,
 .simulator-rate span {
-  @apply d-block;
+  --uno: d-block;
 }
 .simulator-rate strong {
   color: var(--lad-color-info-strong);
@@ -179,7 +179,7 @@ h3 {
 }
 .simulator-label {
   margin-top: 9px;
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   color: var(--lad-muted);
   font-size: rem(11);
 }
@@ -192,7 +192,7 @@ h3 {
   background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
 }
 .payout-estimate > div {
-  @apply d-flex align-center justify-space-between ga-3;
+  --uno: d-flex align-center justify-space-between ga-3;
 }
 .payout-estimate span,
 .payout-estimate small {
@@ -204,16 +204,16 @@ h3 {
   font-size: rem(22);
 }
 .payout-estimate small {
-  @apply d-block;
+  --uno: d-block;
   margin-top: 3px;
   line-height: 1.35;
 }
 .simulator-actions {
-  @apply d-flex align-center justify-end;
+  --uno: d-flex align-center justify-end;
   gap: 6px;
 }
 .payout-success {
-  @apply pa-3 d-flex align-center ga-3 overflow-hidden;
+  --uno: pa-3 d-flex align-center ga-3 overflow-hidden;
   border: 1px solid var(--lad-border-success);
   border-radius: 17px;
   background: var(--lad-gradient-success);
@@ -221,7 +221,7 @@ h3 {
 }
 .payout-success > div:last-child strong,
 .payout-success > div:last-child span {
-  @apply d-block;
+  --uno: d-block;
 }
 .payout-success > div:last-child strong {
   color: var(--lad-color-success-strong);
@@ -236,14 +236,14 @@ h3 {
 .payout-visual {
   width: 96px;
   height: 70px;
-  @apply position-relative d-grid place-center;
+  --uno: position-relative d-grid place-center;
   flex: 0 0 96px;
 }
 .payout-visual > .animated-piggy {
-  @apply position-absolute right-0;
+  --uno: position-absolute right-0;
 }
 .payout-coin {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 2;
   left: 9px;
   animation: payout-coin-flight 1.05s 0.12s cubic-bezier(0.22, 0.8, 0.26, 1)
@@ -279,13 +279,13 @@ h3 {
 }
 @include respond-down(small) {
   .simulator-preview {
-    @apply align-start flex-wrap;
+    --uno: align-start flex-wrap;
   }
   .simulator-rate {
-    @apply ms-auto;
+    --uno: ms-auto;
   }
   .simulator-actions {
-    @apply align-stretch flex-column-reverse;
+    --uno: align-stretch flex-column-reverse;
   }
 }
 @include reduced-motion {

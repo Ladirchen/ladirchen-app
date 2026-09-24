@@ -1,6 +1,6 @@
 <template>
   <span class="avatar-figure" :class="[`outfit-${appearance.outfit}`, `age-${appearance.age ?? 'child'}`, { reacting: isReacting, 'full-body': fullBody, calm }]" :style="figureStyle" role="img" :aria-label="t('avatar.figureAria')" @click="react">
-    <svg :viewBox="fullBody ? '0 0 160 260' : '0 0 160 180'">
+    <svg :viewBox="viewBox">
       <template v-if="!fullBody">
         <circle class="backdrop" cx="80" cy="88" r="74" />
         <circle class="backdrop-dot dot-one" cx="25" cy="38" r="7" />
@@ -326,55 +326,56 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import { avatarHairColors, avatarOutfitColors, avatarSkinToneColors } from '@/domain/avatar';
-import { CHARACTER_REACTION_DURATION_MS } from '@/shared/runtime-timing';
-import type { AvatarAppearance } from '@/domain/avatar';
-import { avatarAccessoryVisuals, avatarExtensionVisualFor } from './avatar-visuals';
+import { avatarHairColors, avatarOutfitColors, avatarSkinToneColors } from "@/domain/avatar";
+import { CHARACTER_REACTION_DURATION_MS } from "@/shared/runtime-timing";
+import type { AvatarAppearance } from "@/domain/avatar";
+import { avatarAccessoryVisuals, avatarExtensionVisualFor } from "./avatar-visuals";
 
 const props = withDefaults(defineProps<{ appearance: AvatarAppearance; size?: number; fullBody?: boolean; calm?: boolean }>(), { size: 64, fullBody: false, calm: false });
 const { t } = useI18n();
 const emit = defineEmits<{ interact: [] }>();
 const isReacting = ref(false);
+const viewBox = computed(() => props.fullBody ? "0 0 160 260" : "0 0 160 180");
 let reactionTimer: number | undefined;
 const react = () => {
-  emit('interact');
+  emit("interact");
   isReacting.value = false;
   window.clearTimeout(reactionTimer);
   requestAnimationFrame(() => { isReacting.value = true; });
   reactionTimer = window.setTimeout(() => { isReacting.value = false; }, CHARACTER_REACTION_DURATION_MS);
 };
-const outfitHasHeadwear = computed(() => ['superhero', 'dinosaur', 'monster', 'shark', 'robot', 'space'].includes(props.appearance.outfit));
-const showsOutfitHeadwear = computed(() => props.appearance.seasonalAccessoryId === 'none');
-const allowsHeadAccessory = computed(() => (props.appearance.seasonalAccessoryId === 'none' || props.appearance.seasonalAccessoryId === 'bat') && !outfitHasHeadwear.value);
+const outfitHasHeadwear = computed(() => ["superhero", "dinosaur", "monster", "shark", "robot", "space"].includes(props.appearance.outfit));
+const showsOutfitHeadwear = computed(() => props.appearance.seasonalAccessoryId === "none");
+const allowsHeadAccessory = computed(() => (props.appearance.seasonalAccessoryId === "none" || props.appearance.seasonalAccessoryId === "bat") && !outfitHasHeadwear.value);
 const accessoryVisual = computed(() => {
-  if (props.appearance.accessoryId === 'none') {return undefined;}
+  if (props.appearance.accessoryId === "none") {return undefined;}
   const definition = avatarAccessoryVisuals[props.appearance.accessoryId];
   return definition.requiresHeadClearance && !allowsHeadAccessory.value ? undefined : definition.component;
 });
-const faceVisual = computed(() => avatarExtensionVisualFor('face', props.appearance.face));
-const faceShapeVisual = computed(() => avatarExtensionVisualFor('face-shape', props.appearance.faceShape));
-const funAccessoryVisual = computed(() => props.appearance.funAccessoryId === 'none'
+const faceVisual = computed(() => avatarExtensionVisualFor("face", props.appearance.face));
+const faceShapeVisual = computed(() => avatarExtensionVisualFor("face-shape", props.appearance.faceShape));
+const funAccessoryVisual = computed(() => props.appearance.funAccessoryId === "none"
   ? undefined
-  : avatarExtensionVisualFor('fun-accessory', props.appearance.funAccessoryId));
-const hairVisual = computed(() => avatarExtensionVisualFor('hair', props.appearance.hair));
-const outfitVisual = computed(() => avatarExtensionVisualFor('outfit', props.appearance.outfit));
-const seasonalAccessoryVisual = computed(() => props.appearance.seasonalAccessoryId === 'none'
+  : avatarExtensionVisualFor("fun-accessory", props.appearance.funAccessoryId));
+const hairVisual = computed(() => avatarExtensionVisualFor("hair", props.appearance.hair));
+const outfitVisual = computed(() => avatarExtensionVisualFor("outfit", props.appearance.outfit));
+const seasonalAccessoryVisual = computed(() => props.appearance.seasonalAccessoryId === "none"
   ? undefined
-  : avatarExtensionVisualFor('seasonal-accessory', props.appearance.seasonalAccessoryId));
+  : avatarExtensionVisualFor("seasonal-accessory", props.appearance.seasonalAccessoryId));
 const phase = computed(() => {
   const fingerprint = `${props.appearance.hair}-${props.appearance.face}-${props.appearance.outfit}`;
-  return -(fingerprint.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0) % 37) / 10;
+  return -(fingerprint.split("").reduce((sum, character) => sum + character.charCodeAt(0), 0) % 37) / 10;
 });
 const figureStyle = computed(() => ({
-  '--avatar-size': `${props.size}px`,
-  '--avatar-height': `${Math.round(props.size * 1.625)}px`,
-  '--avatar-phase': `${phase.value}s`,
-  '--skin': avatarSkinToneColors[props.appearance.skinToneId],
-  '--hair': avatarHairColors[props.appearance.hairColorId],
-  '--outfit': avatarOutfitColors[props.appearance.outfitColorId],
+  "--avatar-size": `${props.size}px`,
+  "--avatar-height": `${Math.round(props.size * 1.625)}px`,
+  "--avatar-phase": `${phase.value}s`,
+  "--skin": avatarSkinToneColors[props.appearance.skinToneId],
+  "--hair": avatarHairColors[props.appearance.hairColorId],
+  "--outfit": avatarOutfitColors[props.appearance.outfitColorId],
 }));
 </script>
 
@@ -383,7 +384,7 @@ const figureStyle = computed(() => ({
 .avatar-figure {
   width: var(--avatar-size);
   height: var(--avatar-size);
-  @apply d-inline-flex flex-shrink-0 overflow-hidden;
+  --uno: d-inline-flex flex-shrink-0 overflow-hidden;
   border-radius: 38%;
   background: linear-gradient(
     145deg,
@@ -395,19 +396,19 @@ const figureStyle = computed(() => ({
 }
 .avatar-figure.full-body {
   height: var(--avatar-height);
-  @apply overflow-visible;
+  --uno: overflow-visible;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
 .avatar-figure {
-  @apply cursor-pointer;
+  --uno: cursor-pointer;
 }
 .avatar-figure.reacting svg {
   animation: avatar-tap 620ms var(--lad-easing-pop);
 }
 svg {
-  @apply w-100 h-100 overflow-visible;
+  --uno: w-100 h-100 overflow-visible;
   transform-origin: center bottom;
   animation: avatar-idle 9s var(--avatar-phase) ease-in-out infinite;
 }
@@ -949,7 +950,7 @@ svg {
   text-anchor: middle;
   font-family: sans-serif;
   font-size: 28px;
-  @apply font-weight-black;
+  --uno: font-weight-black;
 }
 .pajama-top {
   fill: color-mix(in srgb, var(--lad-palette-text) 12%, transparent);

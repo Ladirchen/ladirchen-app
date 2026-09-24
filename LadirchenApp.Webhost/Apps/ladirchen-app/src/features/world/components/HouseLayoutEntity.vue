@@ -40,20 +40,20 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import type { AvatarAppearance } from '@/domain/avatar';
-import { ENTITY_LAYER_BASE, furnitureVisualDefinitionFor } from '@/domain/house';
-import type { HouseAccessory, HouseLayoutPlacement } from '@/domain/house';
-import type { FamilyMember, FamilyPet } from '@/domain/family/types';
-import type { FamilyMemberId } from '@/domain/shared/identifiers';
-import LadiMascot from '@/shared/components/LadiMascot.vue';
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import { ENTITY_VISUAL_CONFIG } from '../entity-visual-config';
+import type { AvatarAppearance } from "@/domain/avatar";
+import { ENTITY_LAYER_BASE, furnitureVisualDefinitionFor } from "@/domain/house";
+import type { HouseAccessory, HouseLayoutPlacement } from "@/domain/house";
+import type { FamilyMember, FamilyPet } from "@/domain/family/types";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import LadiMascot from "@/shared/components/LadiMascot.vue";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import { ENTITY_VISUAL_CONFIG } from "@/features/world/entity-visual-config";
 
-import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
-import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
+import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
+import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
 
 const { t } = useI18n();
 
@@ -70,7 +70,7 @@ const props = defineProps<{
   viewerMemberId?: FamilyMemberId;
 }>();
 const emit = defineEmits<{
-  'ladi-interact': [];
+  "ladi-interact": [];
   lostpointercapture: [event: PointerEvent];
   pointercancel: [event: PointerEvent];
   pointerdown: [event: PointerEvent, placement: HouseLayoutPlacement];
@@ -80,23 +80,23 @@ const emit = defineEmits<{
 const doorOpen = ref(false);
 
 const entityName = computed(() => {
-  if (props.placement.entityType === 'furniture') {return props.accessory?.title ?? t('world.scene.entity.furniture');}
-  if (props.placement.entityType === 'member') {
-    if (!props.member) return t('world.scene.entity.member');
+  if (props.placement.entityType === "furniture") {return props.accessory?.title ?? t("world.scene.entity.furniture");}
+  if (props.placement.entityType === "member") {
+    if (!props.member) return t("world.scene.entity.member");
     const name = props.member.nickname?.trim() || props.member.name;
-    return props.member.id === props.viewerMemberId ? t('world.scene.memberYou', { name }) : name;
+    return props.member.id === props.viewerMemberId ? t("world.scene.memberYou", { name }) : name;
   }
-  if (props.placement.entityType === 'pet') {return props.pet?.name ?? t('world.scene.entity.pet');}
-  return 'Ladi';
+  if (props.placement.entityType === "pet") {return props.pet?.name ?? t("world.scene.entity.pet");}
+  return "Ladi";
 });
-const accessibleLabel = computed(() => props.editable
-  ? t('world.scene.moveEntity', { name: entityName.value })
-  : props.accessory?.interaction === 'toggle-door'
-    ? t(doorOpen.value ? 'world.scene.fridge.close' : 'world.scene.fridge.open')
-    : entityName.value);
+const accessibleLabel = computed(() => {
+  if (props.editable) return t("world.scene.moveEntity", { name: entityName.value });
+  if (props.accessory?.interaction !== "toggle-door") return entityName.value;
+  return t(doorOpen.value ? "world.scene.fridge.close" : "world.scene.fridge.open");
+});
 const visualDefinition = computed(() => props.accessory?.visual ? furnitureVisualDefinitionFor(props.accessory.visual) : undefined);
 const displayY = computed(() => Math.max(visualDefinition.value?.minimumY ?? 0, props.placement.y));
-const layerY = computed(() => props.accessory?.mobility === 'fixed' ? 0 : displayY.value);
+const layerY = computed(() => props.accessory?.mobility === "fixed" ? 0 : displayY.value);
 const entityStyle = computed(() => ({
   left: `${props.placement.x}%`,
   top: `${displayY.value}%`,
@@ -104,20 +104,20 @@ const entityStyle = computed(() => ({
   zIndex: props.dragOffset ? ENTITY_VISUAL_CONFIG.draggingLayer : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
 }));
 const interact = () => {
-  if (props.placement.entityType === 'ladi') {
-    emit('ladi-interact');
+  if (props.placement.entityType === "ladi") {
+    emit("ladi-interact");
   }
-  if (props.accessory?.interaction === 'toggle-door') {
+  if (props.accessory?.interaction === "toggle-door") {
     doorOpen.value = !doorOpen.value;
   }
 };
 const forwardPointerDown = (event: PointerEvent) => {
-  emit('pointerdown', event, props.placement);
+  emit("pointerdown", event, props.placement);
 };
-const forwardLostPointerCapture = (event: PointerEvent) => emit('lostpointercapture', event);
-const forwardPointerMove = (event: PointerEvent) => emit('pointermove', event);
-const forwardPointerUp = (event: PointerEvent) => emit('pointerup', event);
-const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', event);
+const forwardLostPointerCapture = (event: PointerEvent) => emit("lostpointercapture", event);
+const forwardPointerMove = (event: PointerEvent) => emit("pointermove", event);
+const forwardPointerUp = (event: PointerEvent) => emit("pointerup", event);
+const forwardPointerCancel = (event: PointerEvent) => emit("pointercancel", event);
 </script>
 
 <style lang="scss" scoped>
@@ -125,7 +125,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
 .layout-entity {
   width: 72px;
   height: 72px;
-  @apply position-absolute pa-0 d-grid place-center;
+  --uno: position-absolute pa-0 d-grid place-center;
   transform-origin: center bottom;
   border: 0;
   background: transparent;
@@ -165,7 +165,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   );
 }
 .entity-label {
-  @apply position-absolute text-no-wrap;
+  --uno: position-absolute text-no-wrap;
   left: 50%;
   bottom: -8px;
   padding: 2px 5px;
@@ -181,11 +181,11 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
 .layout-entity :deep(.avatar-figure),
 .layout-entity :deep(.animated-pet),
 .layout-entity :deep(.ladi-mascot) {
-  @apply d-block;
+  --uno: d-block;
   pointer-events: none;
 }
 .ladi-on-perch {
-  @apply d-block;
+  --uno: d-block;
   transform-origin: center bottom;
 }
 .ladi-on-perch.perched {
@@ -195,7 +195,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
 .ladi-speech {
   width: max-content;
   max-width: 180px;
-  @apply position-absolute text-left;
+  --uno: position-absolute text-left;
   bottom: 68%;
   left: 66%;
   z-index: 500;
@@ -221,7 +221,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit('pointercancel', even
   content: "";
   width: 10px;
   height: 10px;
-  @apply position-absolute;
+  --uno: position-absolute;
   bottom: -5px;
   left: 9px;
   transform: rotate(45deg);

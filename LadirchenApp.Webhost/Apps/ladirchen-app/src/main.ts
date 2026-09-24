@@ -12,14 +12,13 @@ import { registerPlugins } from "@/plugins";
 
 // Components
 import App from "./App.vue";
-import { installCssColorPalette } from "./theme/color-palette";
 
 // Styles
 import "virtual:uno.css";
+import "./theme/color-palette.css";
 import "./styles/fonts.scss";
 import "./styles/main.scss";
 
-installCssColorPalette();
 const app = createApp(App);
 
 registerPlugins(app);

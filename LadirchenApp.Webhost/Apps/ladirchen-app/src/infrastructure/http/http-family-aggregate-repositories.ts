@@ -1,7 +1,7 @@
-import { FAMILY_AGGREGATE_DESCRIPTORS } from '@/application/contracts/family-aggregate-descriptors';
-import type { FamilyAggregateRepositories } from '@/application/ports/family-aggregate-repositories';
+import { FAMILY_AGGREGATE_DESCRIPTORS } from "@/application/contracts/family-aggregate-descriptors";
+import type { FamilyAggregateRepositories } from "@/application/ports/family-aggregate-repositories";
 
-import { HttpVersionedAggregateRepository } from './http-versioned-aggregate-repository';
+import { HttpVersionedAggregateRepository } from "./http-versioned-aggregate-repository";
 
 export const createHttpFamilyAggregateRepositories = (apiBaseUrl: string): FamilyAggregateRepositories => ({
   contributions: new HttpVersionedAggregateRepository({

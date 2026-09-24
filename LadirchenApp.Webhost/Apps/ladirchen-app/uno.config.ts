@@ -31,7 +31,7 @@ export default defineConfig({
       font: {
         heading: "Roboto, sans-serif",
         body: "Roboto, sans-serif",
-        mono: '"Roboto Mono", sans-serif',
+        mono: "\"Roboto Mono\", sans-serif",
       },
       typography: "md3",
       elevation: "md3",
@@ -54,7 +54,7 @@ export default defineConfig({
     ["select-none", { "user-select": "none" }],
     ["font-weight-950", { "font-weight": "950" }],
   ],
-  transformers: [transformerDirectives()],
+  transformers: [transformerDirectives({ applyVariable: ["--uno"] })],
   safelist: [
     ...vuetifyIconSafelist,
     ...applicationIconSafelist,

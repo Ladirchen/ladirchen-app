@@ -1,16 +1,17 @@
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 
-import type { PageViewOption } from '@/shared/components/ui/PageViewSwitch.vue';
-import type { GoalVisibility, NewGoal, SavingGoal, SavingGoalOwnerId } from '@/domain/savings/types';
-import { calculateSavingsCredit } from '@/domain/savings/interest';
-import { SAVINGS_RULES } from '@/domain/savings/rules';
-import type { FamilyMemberId, SavingGoalId } from '@/domain/shared/identifiers';
-import { percentageOfTotal } from '@/domain/shared/numbers';
-import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+import type { PageViewOption } from "@/shared/components/ui/PageViewSwitch.vue";
+import type { GoalVisibility, NewGoal, SavingGoal, SavingGoalOwnerId } from "@/domain/savings/types";
+import { calculateSavingsCredit } from "@/domain/savings/interest";
+import { SAVINGS_RULES } from "@/domain/savings/rules";
+import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
+import { percentageOfTotal } from "@/domain/shared/numbers";
+import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
+import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
 
 const SAVE_ANIMATION_DURATION_MS = 620;
 const SUPPORT_ANIMATION_DURATION_MS = 950;
@@ -20,8 +21,8 @@ const store = useFamilyWorldStore();
 const route = useRoute();
 const { locale, t } = useI18n();
 const localize = useLocalizedDomainContent();
-type WishView = 'own' | 'children' | 'family';
-const activeTab = ref<WishView>('own');
+type WishView = "own" | "children" | "family";
+const activeTab = ref<WishView>("own");
 const saveDialog = ref(false);
 const goalDialog = ref(false);
 const newGoalOwnerId = ref<SavingGoalOwnerId>(store.activeChildId);
@@ -40,54 +41,54 @@ const activeGoalRemaining = computed(() => Math.max(0, activeGoal.value.target -
 const maxAssignable = computed(() => Math.min(store.availableBalance, activeGoalRemaining.value));
 const personalGoalOwnerId = computed<FamilyMemberId>(() => store.signedInMemberId);
 const childrenGoals = computed(() => localizedGoals.value.filter((goal) => {
-  const owner = goal.ownerId === 'family' ? undefined : store.members.find((member) => member.id === goal.ownerId);
-  return owner?.role === 'child' && goal.visibility !== 'private';
+  const owner = goal.ownerId === "family" ? undefined : store.members.find((member) => member.id === goal.ownerId);
+  return owner?.role === "child" && goal.visibility !== "private";
 }));
-const personalGoals = computed(() => activeTab.value === 'children'
+const personalGoals = computed(() => activeTab.value === "children"
   ? childrenGoals.value
   : localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId));
-const canCreatePersonalGoal = computed(() => activeTab.value === 'own');
+const canCreatePersonalGoal = computed(() => activeTab.value === "own");
 const visibleFamilyGoals = computed(() => localizedGoals.value.filter((goal) => {
-  if (store.viewerRole === 'guardian') {
-    if (goal.ownerId === 'family') {return true;}
+  if (store.viewerRole === "guardian") {
+    if (goal.ownerId === "family") {return true;}
     const owner = store.members.find((member) => member.id === goal.ownerId);
-    return owner?.role === 'guardian' &&
+    return owner?.role === "guardian" &&
       goal.ownerId !== store.signedInMemberId &&
-      (goal.visibility === 'family' || (store.permissions.canViewGuardianGoals && goal.visibility === 'guardians'));
+      (goal.visibility === "family" || (store.permissions.canViewGuardianGoals && goal.visibility === "guardians"));
   }
 
-  return goal.ownerId !== store.signedInMemberId && goal.visibility === 'family';
+  return goal.ownerId !== store.signedInMemberId && goal.visibility === "family";
 }));
 const wishViewOptions = computed<Array<PageViewOption<WishView>>>(() => {
   const ownGoals = localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId);
   const options: Array<PageViewOption<WishView>> = [{
-    id: 'own',
-    icon: 'i-mdi:account-star-outline',
-    subtitle: t('wishes.views.ownCount', { count: ownGoals.length }),
-    title: t('wishes.views.own'),
+    id: "own",
+    icon: "i-mdi:account-star-outline",
+    subtitle: t("wishes.views.ownCount", { count: ownGoals.length }),
+    title: t("wishes.views.own"),
   }];
-  if (store.viewerRole === 'guardian') {
-    options.push({ id: 'children', icon: 'i-mdi:account-child-outline', subtitle: t('wishes.views.visibleCount', { count: childrenGoals.value.length }), title: t('wishes.views.children') });
+  if (store.viewerRole === "guardian") {
+    options.push({ id: "children", icon: "i-mdi:account-child-outline", subtitle: t("wishes.views.visibleCount", { count: childrenGoals.value.length }), title: t("wishes.views.children") });
   }
-  if (store.permissions.canViewFamilyGoals) {options.push({ id: 'family', icon: 'i-mdi:account-group-outline', subtitle: t('wishes.views.visibleCount', { count: visibleFamilyGoals.value.length }), title: t('wishes.views.family') });}
+  if (store.permissions.canViewFamilyGoals) {options.push({ id: "family", icon: "i-mdi:account-group-outline", subtitle: t("wishes.views.visibleCount", { count: visibleFamilyGoals.value.length }), title: t("wishes.views.family") });}
   return options;
 });
 const supportGoal = computed(() => localizedGoals.value.find((goal) => goal.id === supportGoalId.value));
 const supportMaximum = computed(() => {
   if (!supportGoal.value) {return 0;}
   const remaining = Math.max(0, supportGoal.value.target - supportGoal.value.saved);
-  return store.viewerRole === 'child' ? Math.min(store.availableBalance, remaining) : remaining;
+  return store.viewerRole === "child" ? Math.min(store.availableBalance, remaining) : remaining;
 });
-const supportExplanation = computed(() => store.viewerRole === 'child'
-  ? t('wishes.support.childExplanation')
-  : t('wishes.support.guardianExplanation'));
+const supportExplanation = computed(() => store.viewerRole === "child"
+  ? t("wishes.support.childExplanation")
+  : t("wishes.support.guardianExplanation"));
 
 const progress = (saved: number, target: number) => percentageOfTotal(saved, target);
 const depositedAmount = (goal: SavingGoal) => Math.max(0, goal.saved - (goal.interestEarned ?? 0));
 const weeklyInterestForGoal = (goal: SavingGoal) =>
   calculateSavingsCredit(goal.saved, goal.target, store.savingsInterestRate);
 const formatInterestRate = (value: number) => value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-const ownerName = (ownerId: SavingGoalOwnerId) => ownerId === 'family' ? t('wishes.owner.myFamily') : store.members.find((member) => member.id === ownerId)?.name ?? t('wishes.owner.family');
+const ownerName = (ownerId: SavingGoalOwnerId) => ownerId === "family" ? t("wishes.owner.myFamily") : store.members.find((member) => member.id === ownerId)?.name ?? t("wishes.owner.family");
 const visibilityLabel = (visibility: GoalVisibility) => {
   return t(`wishes.visibility.${visibility}`);
 };
@@ -117,7 +118,7 @@ const openSupport = (goalId: SavingGoalId) => {
   const remaining = goal ? Math.max(0, goal.target - goal.saved) : 0;
   supportAmount.value = Math.max(0, Math.min(
     SAVINGS_RULES.defaultTransferAmount,
-    store.viewerRole === 'child' ? store.availableBalance : remaining,
+    store.viewerRole === "child" ? store.availableBalance : remaining,
     remaining,
   ));
   supportDialog.value = true;
@@ -126,15 +127,15 @@ const giveSupport = () => {
   if (!supportGoalId.value || supportSending.value) {return;}
   const goalId = supportGoalId.value;
   const amount = supportAmount.value;
-  const recipient = supportGoal.value ? ownerName(supportGoal.value.ownerId) : t('wishes.owner.yourFamily');
+  const recipient = supportGoal.value ? ownerName(supportGoal.value.ownerId) : t("wishes.owner.yourFamily");
   supportSending.value = true;
   ladiGuideController.say({
-    heading: t('wishes.support.guideTitle'),
-    message: t('wishes.support.guideMessage', { recipient }),
-    celebration: 'gift',
+    heading: t("wishes.support.guideTitle"),
+    message: t("wishes.support.guideMessage", { recipient }),
+    celebration: "gift",
   });
   supportTimer = window.setTimeout(() => {
-    if (store.viewerRole === 'child') {store.giftLadirchenToGoal(goalId, amount);}
+    if (store.viewerRole === "child") {store.giftLadirchenToGoal(goalId, amount);}
     else {store.supportGoal(goalId, amount);}
     supportDialog.value = false;
     supportSending.value = false;
@@ -148,35 +149,35 @@ const openGoalDialog = (ownerId: SavingGoalOwnerId) => {
 const addGoal = (goal: NewGoal) => store.addGoal(goal, newGoalOwnerId.value);
 watch(
   () => route.query.new,
-  (value) => { if (value === '1' && store.permissions.canManageGoals) {goalDialog.value = true;} },
+  (value) => { if (value === "1" && store.permissions.canManageGoals) {goalDialog.value = true;} },
   { immediate: true },
 );
 watch(
   () => route.query.family,
   (value) => {
-    if (value !== '1' || !store.permissions.canManageGoals) {return;}
-    activeTab.value = 'family';
-    openGoalDialog('family');
+    if (value !== "1" || !store.permissions.canManageGoals) {return;}
+    activeTab.value = "family";
+    openGoalDialog("family");
   },
   { immediate: true },
 );
 watch(() => store.permissions.canViewFamilyGoals, canViewFamilyGoals => {
-  if (!canViewFamilyGoals) {activeTab.value = 'own';}
+  if (!canViewFamilyGoals) {activeTab.value = "own";}
 });
 watch(activeTab, (tab) => {
-  if (tab !== 'family' || store.viewerRole !== 'child') {return;}
+  if (tab !== "family" || store.viewerRole !== "child") {return;}
   ladiGuideController.say({
-    heading: t('wishes.guide.familyTitle'),
-    message: t('wishes.guide.familyMessage'),
+    heading: t("wishes.guide.familyTitle"),
+    message: t("wishes.guide.familyMessage"),
   });
 });
 onMounted(() => {
-  if (store.viewerRole !== 'child') {return;}
+  if (store.viewerRole !== "child") {return;}
   window.setTimeout(() => ladiGuideController.say({
-    heading: t('guide.pages.wishes.heading'),
-    message: t('guide.pages.wishes.message'),
+    heading: t("guide.pages.wishes.heading"),
+    message: t("guide.pages.wishes.message"),
     pageIntro: true,
-  }), 350);
+  }), PAGE_INTRO_GUIDE_DELAY_MS);
 });
 onUnmounted(() => {
   if (saveTimer !== undefined) {window.clearTimeout(saveTimer);}

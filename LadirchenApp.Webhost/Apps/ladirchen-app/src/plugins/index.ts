@@ -1,4 +1,4 @@
-import router from "../router";
+import router from "@/router";
 import i18n from "./i18n";
 import { createPinia } from "pinia";
 /**
@@ -12,10 +12,10 @@ import type { App } from "vue";
 
 // Plugins
 import vuetify from "./vuetify";
-import { familyWorldDependencies } from '@/app/composition-root';
-import { createFamilyWorldStoreDefinition, FAMILY_WORLD_STORE_DEFINITION } from '@/stores/family-world';
+import { familyWorldDependencies } from "@/app/composition-root";
+import { createFamilyWorldStoreDefinition, FAMILY_WORLD_STORE_DEFINITION } from "@/stores/family-world";
 
-export function registerPlugins(app: App) {
+export const registerPlugins = (app: App): void => {
   app.use(vuetify);
   const pinia = createPinia();
   pinia.use(() => ({ $familyWorld: familyWorldDependencies }));
@@ -26,4 +26,4 @@ export function registerPlugins(app: App) {
   );
   app.use(i18n);
   app.use(router);
-}
+};

@@ -8,10 +8,10 @@
         <span>{{ t('family.hero.description') }}</span>
       </div>
       <div class="family-hero-avatars" :aria-label="t('family.hero.membersAria')">
-        <span v-for="(member, memberIndex) in store.members.slice(0, 3)" :key="member.id">
-          <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="66" />
+        <span v-for="member in heroMembers" :key="member.id">
+          <AvatarFigure :appearance="appearanceFor(member)" :size="66" />
         </span>
-        <i v-if="store.members.length > 3">+{{ store.members.length - 3 }}</i>
+        <i v-if="additionalHeroMemberCount > 0">+{{ additionalHeroMemberCount }}</i>
       </div>
     </section>
 
@@ -32,16 +32,16 @@
         <v-btn v-if="store.permissions.canInviteMembers" color="primary" prepend-icon="i-mdi:account-plus-outline" rounded="lg" size="small" variant="tonal" @click="inviteDialog = true">{{ t('family.roster.invite') }}</v-btn>
       </div>
       <div class="member-grid">
-        <BrandedCard v-for="(member, memberIndex) in store.members" :key="member.id" class="member-card pa-4" tone="family">
+        <BrandedCard v-for="member in store.members" :key="member.id" class="member-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
-            <AvatarFigure :appearance="appearanceFor(member, memberIndex)" :size="56" />
+            <AvatarFigure :appearance="appearanceFor(member)" :size="56" />
             <div class="flex-grow-1 min-w-0">
               <strong>{{ member.name }}</strong>
-              <p class="text-caption text-medium-emphasis">{{ member.role === 'guardian' ? t('family.roles.guardian') : goalTitle(member.id) }}</p>
+              <p class="text-caption text-medium-emphasis">{{ memberSubtitle(member) }}</p>
             </div>
             <v-chip v-if="member.invitationPending" color="info" size="small" variant="tonal">{{ t('family.roster.invited') }}</v-chip>
             <v-chip v-else-if="member.role === 'child'" color="warning" size="small" variant="tonal">🔥 {{ streakDays(member.id) }}</v-chip>
-            <v-chip v-else-if="store.permissions.canManageFamily" :color="member.guardianAccess === 'admin' ? 'info' : 'primary'" size="x-small" variant="tonal">{{ accessLabel(member.guardianAccess) }}</v-chip>
+            <v-chip v-else-if="store.permissions.canManageFamily" :color="guardianAccessColor(member.guardianAccess)" size="x-small" variant="tonal">{{ accessLabel(member.guardianAccess) }}</v-chip>
           </div>
           <div v-if="store.permissions.canManageFamily && member.role === 'guardian' && member.id !== store.signedInMemberId" class="permission-editor mt-3">
             <v-select
@@ -59,7 +59,7 @@
           <div v-if="member.role === 'guardian' && (store.permissions.canManageFamily || member.id === store.signedInMemberId)" class="weekly-participation mt-3">
             <div>
               <strong>{{ t('family.weekly.participate') }}</strong>
-              <span>{{ t(member.participatesInWeeklyGoal ? 'family.weekly.active' : 'family.weekly.inactive') }}</span>
+              <span>{{ participationLabel(member) }}</span>
             </div>
             <v-switch
               color="primary"
@@ -71,11 +71,11 @@
           </div>
           <div v-if="member.role === 'child' || member.participatesInWeeklyGoal" class="mt-3">
             <div class="d-flex align-center justify-space-between mb-1">
-              <span class="text-caption text-medium-emphasis">{{ t(member.role === 'guardian' ? 'family.weekly.familyProgress' : 'family.weekly.personalProgress') }}</span>
+              <span class="text-caption text-medium-emphasis">{{ progressLabel(member) }}</span>
               <strong class="text-caption">{{ store.contributionProgress(member.id) }} %</strong>
             </div>
             <v-progress-linear
-              :color="store.averageTaskRatingFor(member.id) >= 5 ? 'primary' : 'warning'"
+              :color="ratingColorFor(member.id)"
               height="7"
               :model-value="store.contributionProgress(member.id)"
               rounded
@@ -118,70 +118,82 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, onMounted, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import HeaderDecoration from '@/shared/components/ui/HeaderDecoration.vue';
-import AnimatedPet from '@/shared/components/family/AnimatedPet.vue';
-import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
-import type { AvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember, GuardianAccessLevel } from '@/domain/family/types';
-import type { FamilyMemberId } from '@/domain/shared/identifiers';
-import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import { isGuardianAccessLevel } from '@/application/contracts/family-aggregate-validation';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import HeaderDecoration from "@/shared/components/ui/HeaderDecoration.vue";
+import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
+import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import type { AvatarAppearance } from "@/domain/avatar";
+import { CONTRIBUTION_RATING } from "@/domain/contributions/rating";
+import type { FamilyMember, GuardianAccessLevel } from "@/domain/family/types";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import { isGuardianAccessLevel } from "@/application/contracts/family-aggregate-validation";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
+import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
+
+const FAMILY_HERO_MEMBER_LIMIT = 3;
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
 const inviteDialog = ref(false);
-const invite = reactive<{ name: string; email: string; guardianAccess: GuardianAccessLevel }>({ name: '', email: '', guardianAccess: 'supporter' });
+const invite = reactive<{ name: string; email: string; guardianAccess: GuardianAccessLevel }>({ name: "", email: "", guardianAccess: "supporter" });
 const guardianAccessOptions = computed<Array<{ title: string; value: GuardianAccessLevel }>>(() => [
-  { title: t('family.permissions.supporter'), value: 'supporter' },
-  { title: t('family.permissions.admin'), value: 'admin' },
+  { title: t("family.permissions.supporter"), value: "supporter" },
+  { title: t("family.permissions.admin"), value: "admin" },
 ]);
+const heroMembers = computed(() => store.members.slice(0, FAMILY_HERO_MEMBER_LIMIT));
+const additionalHeroMemberCount = computed(() => Math.max(0, store.members.length - FAMILY_HERO_MEMBER_LIMIT));
 const canInvite = computed(() => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email));
-const appearanceFor = (member: FamilyMember, _index: number): AvatarAppearance => {
+const appearanceFor = (member: FamilyMember): AvatarAppearance => {
   return resolveFamilyMemberAvatarAppearance(member, store.members);
 };
-const accessLabel = (access?: GuardianAccessLevel) => t(access === 'admin' ? 'family.permissions.admin' : 'family.permissions.supporter');
+const accessLabel = (access?: GuardianAccessLevel) => t(access === "admin" ? "family.permissions.admin" : "family.permissions.supporter");
 const goalTitle = (memberId: FamilyMemberId) => {
   const goal = store.goals.find(item => item.ownerId === memberId);
-  return goal ? localize.goal(goal).title : t('family.roster.noGoal');
+  return goal ? localize.goal(goal).title : t("family.roster.noGoal");
 };
+const memberSubtitle = (member: FamilyMember) => member.role === "guardian" ? t("family.roles.guardian") : goalTitle(member.id);
+const guardianAccessColor = (access?: GuardianAccessLevel): "info" | "primary" => access === "admin" ? "info" : "primary";
+const participationLabel = (member: FamilyMember) => t(member.participatesInWeeklyGoal ? "family.weekly.active" : "family.weekly.inactive");
+const progressLabel = (member: FamilyMember) => t(member.role === "guardian" ? "family.weekly.familyProgress" : "family.weekly.personalProgress");
 const streakDays = (memberId: FamilyMemberId) => store.members.find((member) => member.id === memberId)?.weeklyStreak ?? 0;
+const ratingColorFor = (memberId: FamilyMemberId): "primary" | "warning" =>
+  store.averageTaskRatingFor(memberId) >= CONTRIBUTION_RATING.perfect ? "primary" : "warning";
 const setGuardianAccess = (memberId: FamilyMemberId, value: unknown) => {
   if (isGuardianAccessLevel(value)) {store.setGuardianAccess(memberId, value);}
 };
 const inviteGuardian = () => {
   store.inviteGuardian(invite.name.trim(), invite.email.trim(), invite.guardianAccess);
-  invite.name = '';
-  invite.email = '';
-  invite.guardianAccess = 'supporter';
+  invite.name = "";
+  invite.email = "";
+  invite.guardianAccess = "supporter";
   inviteDialog.value = false;
 };
 onMounted(() => {
-  if (store.viewerRole !== 'child') return;
+  if (store.viewerRole !== "child") return;
   window.setTimeout(() => ladiGuideController.say({
-    heading: t('family.guide.title'),
-    message: t('family.guide.message'),
+    heading: t("family.guide.title"),
+    message: t("family.guide.message"),
     pageIntro: true,
-  }), 350);
+  }), PAGE_INTRO_GUIDE_DELAY_MS);
 });
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .family-hero {
-  min-height: 150px;
-  padding: 23px 22px;
-  @apply position-relative d-flex align-center justify-space-between overflow-hidden;
-  gap: 16px;
-  border: 2px solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
-  border-radius: 27px;
+  min-height: rem(150);
+  padding: rem(23) rem(22);
+  --uno: position-relative d-flex align-center justify-space-between overflow-hidden;
+  gap: rem(16);
+  border: rem(2) solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
+  border-radius: rem(27);
   background:
     radial-gradient(
       circle at 88% 8%,
@@ -200,24 +212,24 @@ onMounted(() => {
       var(--lad-surface-soft)
     );
   box-shadow:
-    0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent),
-    0 16px 28px color-mix(in srgb, var(--lad-color-info-deep) 8%, transparent);
+    0 rem(7) 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent),
+    0 rem(16) rem(28) color-mix(in srgb, var(--lad-color-info-deep) 8%, transparent);
 }
 .family-hero::after {
   content: "✦";
-  @apply position-absolute;
-  top: 15px;
-  right: 18px;
+  --uno: position-absolute;
+  top: rem(15);
+  right: rem(18);
   color: var(--lad-color-reward-border);
   font-size: rem(13);
   animation: family-spark 2.2s ease-in-out infinite;
 }
 .family-hero-copy {
-  max-width: 245px;
+  max-width: rem(245);
   z-index: 1;
 }
 .family-hero-kicker {
-  margin: 0 0 5px;
+  margin: 0 0 rem(5);
   color: var(--lad-color-info);
   font-size: rem(10);
   font-weight: var(--lad-font-weight-black);
@@ -225,41 +237,41 @@ onMounted(() => {
   text-transform: uppercase;
 }
 .family-hero h1 {
-  @apply ma-0;
+  --uno: ma-0;
   color: var(--lad-text);
   font-size: rem(29);
   line-height: 1;
   letter-spacing: -0.05em;
 }
 .family-hero-copy > span {
-  @apply d-block;
-  margin-top: 9px;
+  --uno: d-block;
+  margin-top: rem(9);
   color: var(--lad-muted);
   font-size: rem(11);
   line-height: 1.45;
 }
 .family-hero-avatars {
-  min-width: 128px;
-  height: 88px;
-  @apply position-relative d-flex align-end justify-center;
+  min-width: rem(128);
+  height: rem(88);
+  --uno: position-relative d-flex align-end justify-center;
   z-index: 1;
 }
 .family-hero-avatars > span {
-  width: 58px;
-  height: 74px;
-  @apply d-grid place-center overflow-hidden;
-  margin-left: -17px;
-  border: 3px solid var(--lad-border-on-accent);
-  border-radius: 19px;
+  width: rem(58);
+  height: rem(74);
+  --uno: d-grid place-center overflow-hidden;
+  margin-left: rem(-17);
+  border: rem(3) solid var(--lad-border-on-accent);
+  border-radius: rem(19);
   background: linear-gradient(
     145deg,
     var(--lad-surface-soft),
     var(--lad-color-reward-soft)
   );
   box-shadow:
-    0 5px 0
+    0 rem(5) 0
       color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent),
-    0 9px 15px color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
+    0 rem(9) rem(15) color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   animation: family-avatar-bob 3.2s ease-in-out infinite;
 }
 .family-hero-avatars > span:first-child {
@@ -272,35 +284,35 @@ onMounted(() => {
   animation-delay: -1.6s;
 }
 .family-hero-avatars > span :deep(.avatar-figure) {
-  margin-top: 7px;
+  margin-top: rem(7);
 }
 .family-hero-avatars > i {
-  min-width: 29px;
-  height: 29px;
-  @apply position-absolute d-grid place-center;
-  right: -3px;
-  bottom: 1px;
+  min-width: rem(29);
+  height: rem(29);
+  --uno: position-absolute d-grid place-center;
+  right: rem(-3);
+  bottom: rem(1);
   color: var(--lad-text-inverse);
-  border: 3px solid var(--lad-border-on-accent);
-  border-radius: 10px;
+  border: rem(3) solid var(--lad-border-on-accent);
+  border-radius: rem(10);
   background: var(--lad-color-primary);
-  box-shadow: 0 3px 0 var(--lad-color-primary-supporting);
+  box-shadow: 0 rem(3) 0 var(--lad-color-primary-supporting);
   font-size: rem(9);
   font-style: normal;
   font-weight: var(--lad-font-weight-black);
 }
 .family-roster,
 .family-pets {
-  padding: 17px;
-  @apply position-relative overflow-hidden;
+  padding: rem(17);
+  --uno: position-relative overflow-hidden;
 }
 .family-section-heading {
-  margin-bottom: 14px;
-  @apply d-flex align-center justify-space-between;
-  gap: 12px;
+  margin-bottom: rem(14);
+  --uno: d-flex align-center justify-space-between;
+  gap: rem(12);
 }
 .family-section-heading p {
-  margin: 0 0 3px;
+  margin: 0 0 rem(3);
   color: var(--lad-color-bonus-muted);
   font-size: rem(9);
   font-weight: var(--lad-font-weight-black);
@@ -308,51 +320,51 @@ onMounted(() => {
   text-transform: uppercase;
 }
 .family-section-heading h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: 1.25rem;
   letter-spacing: -0.035em;
 }
 .family-section-heading span {
-  @apply d-block;
-  margin-top: 3px;
+  --uno: d-block;
+  margin-top: rem(3);
   color: var(--lad-muted);
   font-size: rem(9);
 }
 .member-grid {
-  @apply d-grid;
-  gap: 10px;
+  --uno: d-grid;
+  gap: rem(10);
 }
 .pet-grid {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: rem(10);
 }
 .member-card,
 .pet-card {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
 }
 .permission-editor {
-  padding-top: 10px;
-  border-top: 1px solid var(--lad-border);
+  padding-top: rem(10);
+  border-top: rem(1) solid var(--lad-border);
 }
 .weekly-participation {
-  padding: 9px 10px;
-  @apply d-flex align-center justify-space-between;
-  gap: 10px;
-  border: 1px solid
+  padding: rem(9) rem(10);
+  --uno: d-flex align-center justify-space-between;
+  gap: rem(10);
+  border: rem(1) solid
     color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
-  border-radius: 13px;
+  border-radius: rem(13);
   background: color-mix(in srgb, var(--lad-surface-soft) 80%, transparent);
 }
 .weekly-participation strong,
 .weekly-participation span {
-  @apply d-block;
+  --uno: d-block;
 }
 .weekly-participation strong {
   font-size: rem(10);
 }
 .weekly-participation span {
-  margin-top: 2px;
+  margin-top: rem(2);
   color: var(--lad-muted);
   font-size: rem(10);
 }
@@ -362,10 +374,10 @@ onMounted(() => {
 @keyframes family-avatar-bob {
   0%,
   100% {
-    transform: translateY(1px) rotate(-2deg);
+    transform: translateY(rem(1)) rotate(-2deg);
   }
   50% {
-    transform: translateY(-4px) rotate(2deg);
+    transform: translateY(rem(-4)) rotate(2deg);
   }
 }
 @keyframes family-spark {
@@ -387,24 +399,24 @@ onMounted(() => {
 }
 @include respond-down(phone) {
   .family-hero {
-    min-height: 138px;
-    padding: 19px 16px;
+    min-height: rem(138);
+    padding: rem(19) rem(16);
   }
   .family-hero-copy {
-    max-width: 205px;
+    max-width: rem(205);
   }
   .family-hero-avatars {
-    min-width: 105px;
+    min-width: rem(105);
     transform: scale(0.88);
     transform-origin: right center;
   }
   .family-roster,
   .family-pets {
-    padding: 14px;
+    padding: rem(14);
   }
   .family-section-heading {
-    @apply align-start;
-    @apply flex-column;
+    --uno: align-start flex-column;
+
   }
 }
 @include respond-up(shell) {

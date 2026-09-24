@@ -20,7 +20,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = withDefaults(defineProps<{ size?: number }>(), { size: 25 });
 const flameStyle = computed(() => ({
@@ -32,14 +32,14 @@ const flameStyle = computed(() => ({
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .animated-streak-flame {
-  @apply d-inline-grid;
+  --uno: d-inline-grid place-center;
   flex: 0 0 auto;
-  @apply place-center;
+
   transform-origin: center bottom;
   animation: flame-bob 3.4s ease-in-out infinite;
 }
 svg {
-  @apply w-100 h-100 overflow-visible;
+  --uno: w-100 h-100 overflow-visible;
   filter: drop-shadow(
     0 3px 2px color-mix(in srgb, var(--lad-palette-amber-700) 20%, transparent)
   );

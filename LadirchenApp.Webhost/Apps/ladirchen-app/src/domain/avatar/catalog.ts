@@ -1,4 +1,4 @@
-export const AVATAR_PROFILE_ROLES = ['child', 'guardian'] as const;
+export const AVATAR_PROFILE_ROLES = ["child", "guardian"] as const;
 
 export type AvatarProfileRole = typeof AVATAR_PROFILE_ROLES[number];
 
@@ -14,7 +14,7 @@ export const defineAvatarPart = <const Id extends string>(
 
 export const avatarPartIds = <const Definitions extends readonly AvatarPartDefinition[]>(
   definitions: Definitions,
-): Array<Definitions[number]['id']> => definitions.map(definition => definition.id);
+): Array<Definitions[number]["id"]> => definitions.map(definition => definition.id);
 
 export const avatarPartsForProfile = <const Definitions extends readonly AvatarPartDefinition[]>(
   definitions: Definitions,

@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { HouseThemeId } from '@/domain/house';
+import type { HouseThemeId } from "@/domain/house";
 
 defineProps<{ label: string; themeId: HouseThemeId }>();
 </script>

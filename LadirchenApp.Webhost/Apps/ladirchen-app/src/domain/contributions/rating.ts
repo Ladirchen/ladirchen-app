@@ -1,4 +1,4 @@
-import { clamp, PERCENTAGE_BASE } from '@/domain/shared/numbers';
+import { clamp, PERCENTAGE_BASE } from "@/domain/shared/numbers";
 
 export const CONTRIBUTION_RATING = Object.freeze({
   maximum: 5,

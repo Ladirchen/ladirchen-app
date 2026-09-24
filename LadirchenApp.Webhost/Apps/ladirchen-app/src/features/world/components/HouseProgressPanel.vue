@@ -21,7 +21,7 @@
             :class="{ reached: stage.level <= houseLevel, current: stage.level === houseLevel }"
           />
         </div>
-        <b>{{ t(houseLevel < houseStages.length - 1 ? 'world.progress.next' : 'world.progress.maximum') }}</b>
+        <b>{{ progressionStatus }}</b>
       </div>
     </div>
 
@@ -41,12 +41,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from '@/domain/house/catalog';
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from '@/domain/contributions/energy';
-import type { HouseStageLevel } from '@/domain/house';
+import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
+import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
+import type { HouseStageLevel } from "@/domain/house";
 
 const props = defineProps<{
   completedWeeks: number;
@@ -59,6 +59,9 @@ const { t } = useI18n();
 const houseStages = HOUSE_STAGES;
 const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
 const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOUSE_STAGE);
+const progressionStatus = computed(() => t(props.houseLevel < houseStages.length - 1
+  ? "world.progress.next"
+  : "world.progress.maximum"));
 </script>
 
 <style lang="scss" scoped>
@@ -67,9 +70,9 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 .house-stage-card {
   min-height: 126px;
   padding: 14px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center overflow-hidden;
   gap: 13px;
-  @apply overflow-hidden;
+
   @include raised-surface(
     color-mix(in srgb, var(--lad-color-reward-border) 20%, transparent),
     color-mix(in srgb, var(--lad-color-reward-shadow) 8%, transparent),
@@ -87,13 +90,13 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 .house-stage-visual {
   width: 88px;
   height: 88px;
-  @apply position-relative d-grid place-center;
+  --uno: position-relative d-grid place-center;
   flex: 0 0 88px;
 }
 .house-halo {
   width: 72px;
   height: 72px;
-  @apply position-absolute;
+  --uno: position-absolute;
   border-radius: 50%;
   background: repeating-conic-gradient(
     from 0deg,
@@ -103,7 +106,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   animation: house-halo-spin 12s linear infinite;
 }
 .house-stage-icon {
-  @apply position-relative;
+  --uno: position-relative;
   z-index: 2;
   font-size: 3.25rem;
   line-height: 1;
@@ -114,7 +117,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   animation: house-stage-bounce 3.2s ease-in-out infinite;
 }
 .house-spark {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 3;
   color: var(--lad-color-reward-accent);
   font-size: rem(14);
@@ -130,7 +133,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   animation-delay: -0.9s;
 }
 .house-stage-copy {
-  @apply min-w-0;
+  --uno: min-w-0;
   flex: 1;
 }
 .section-kicker {
@@ -141,7 +144,7 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 }
 .house-stage-title {
   margin: 2px 0;
-  @apply d-flex align-center flex-wrap;
+  --uno: d-flex align-center flex-wrap;
   gap: 5px;
 }
 .house-stage-title strong {
@@ -153,22 +156,22 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   border-radius: var(--lad-radius-pill);
   background: var(--lad-color-reward-pale);
   font-size: 0.5rem;
-  @apply font-weight-black;
+  --uno: font-weight-black;
 }
 .house-stage-copy > p {
-  @apply ma-0;
+  --uno: ma-0;
   @include body-copy(rem(9), 1.35);
 }
 .house-stage-copy > b {
-  @apply d-block;
+  --uno: d-block;
   margin-top: 5px;
   color: var(--lad-color-reward-strong);
   font-size: 0.5rem;
 }
 .stage-track {
-  @apply mt-2 d-grid;
+  --uno: mt-2 d-grid ga-1;
   grid-template-columns: repeat(5, 1fr);
-  @apply ga-1;
+
 }
 .stage-track span {
   height: 6px;
@@ -195,12 +198,12 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
 }
 .evolution-heading {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 10px;
 }
 .evolution-heading > div:last-child span,
 .evolution-heading > div:last-child strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .evolution-heading > div:last-child strong {
   margin-top: 1px;
@@ -209,19 +212,19 @@ const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOU
 .evolution-icon {
   width: 40px;
   height: 40px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   flex: 0 0 40px;
   color: var(--lad-color-primary-strong);
   border-radius: 13px;
   background: var(--lad-surface-soft);
 }
 .evolution-steps {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 .evolution-steps > div {
-  @apply pa-2;
+  --uno: pa-2;
   border-radius: 12px;
   background: var(--lad-surface);
 }

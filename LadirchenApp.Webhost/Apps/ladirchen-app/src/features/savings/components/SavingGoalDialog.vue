@@ -8,8 +8,8 @@
         </div>
         <div class="goal-dialog-heading">
           <p class="eyebrow mb-1">{{ t('savings.goalDialog.eyebrow') }}</p>
-          <v-card-title class="pa-0">{{ t(isEditing ? 'savings.goalDialog.editTitle' : 'savings.goalDialog.createTitle') }}</v-card-title>
-          <p>{{ t(isEditing ? 'savings.goalDialog.editDescription' : 'savings.goalDialog.createDescription') }}</p>
+          <v-card-title class="pa-0">{{ dialogTitle }}</v-card-title>
+          <p>{{ dialogDescription }}</p>
         </div>
         <v-btn class="goal-dialog-close" :aria-label="t('savings.goalDialog.close')" icon="i-mdi:close" size="small" variant="text" @click="close" />
       </header>
@@ -71,7 +71,7 @@
           <v-btn color="error" rounded="lg" variant="flat" @click="remove">{{ t('savings.goalDialog.confirmRemove') }}</v-btn>
         </template>
         <template v-else>
-          <v-btn class="create-goal-button" color="primary" :disabled="!isValid" rounded="lg" variant="flat" @click="submit"><span aria-hidden="true">★</span>{{ t(isEditing ? 'common.save' : 'savings.goalDialog.start') }}</v-btn>
+          <v-btn class="create-goal-button" color="primary" :disabled="!isValid" rounded="lg" variant="flat" @click="submit"><span aria-hidden="true">★</span>{{ submitLabel }}</v-btn>
         </template>
       </v-card-actions>
     </v-card>
@@ -79,12 +79,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+import { computed, reactive, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
-import type { GoalVisibility, NewGoal } from '@/domain/savings/types';
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import type { GoalVisibility, NewGoal } from "@/domain/savings/types";
 
 const props = withDefaults(defineProps<{
   modelValue: boolean;
@@ -95,7 +95,7 @@ const props = withDefaults(defineProps<{
   minimumTarget: 10,
 });
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean];
+  "update:modelValue": [value: boolean];
   submit: [goal: NewGoal];
   remove: [];
 }>();
@@ -103,32 +103,35 @@ const { t } = useI18n();
 
 const initialGoal = (): NewGoal => props.initialGoal
   ? { ...props.initialGoal }
-  : { title: '', icon: '✨', target: 100, visibility: 'family' };
+  : { title: "", icon: "✨", target: 100, visibility: "family" };
 const goal = reactive<NewGoal>(initialGoal());
 const removeConfirmation = ref(false);
-const iconOptions = ['✨', '🚲', '📷', '🎨', '🧱', '🦒', '🎮', '🎵'];
+const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
 const visibilityOptions = computed<{ icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[]>(() => [
-  { icon: 'i-mdi:home-heart', shortTitle: t('savings.goalDialog.visibility.family.title'), subtitle: t('savings.goalDialog.visibility.family.description'), value: 'family' },
-  { icon: 'i-mdi:lock-outline', shortTitle: t('savings.goalDialog.visibility.private.title'), subtitle: t('savings.goalDialog.visibility.private.description'), value: 'private' },
-  { icon: 'i-mdi:shield-account-outline', shortTitle: t('savings.goalDialog.visibility.guardians.title'), subtitle: t('savings.goalDialog.visibility.guardians.description'), value: 'guardians' },
+  { icon: "i-mdi:home-heart", shortTitle: t("savings.goalDialog.visibility.family.title"), subtitle: t("savings.goalDialog.visibility.family.description"), value: "family" },
+  { icon: "i-mdi:lock-outline", shortTitle: t("savings.goalDialog.visibility.private.title"), subtitle: t("savings.goalDialog.visibility.private.description"), value: "private" },
+  { icon: "i-mdi:shield-account-outline", shortTitle: t("savings.goalDialog.visibility.guardians.title"), subtitle: t("savings.goalDialog.visibility.guardians.description"), value: "guardians" },
 ]);
 const isEditing = computed(() => props.initialGoal !== null);
 const isValid = computed(() => goal.title.trim().length > 0 && Number.isFinite(goal.target) && goal.target >= props.minimumTarget);
 const validTargetPreview = computed(() => Number.isFinite(goal.target) ? Math.max(0, Math.round(goal.target)) : 0);
+const dialogTitle = computed(() => t(isEditing.value ? "savings.goalDialog.editTitle" : "savings.goalDialog.createTitle"));
+const dialogDescription = computed(() => t(isEditing.value ? "savings.goalDialog.editDescription" : "savings.goalDialog.createDescription"));
+const submitLabel = computed(() => t(isEditing.value ? "common.save" : "savings.goalDialog.start"));
 
 const reset = () => Object.assign(goal, initialGoal());
 const adjustTarget = (change: number) => {
   goal.target = Math.max(props.minimumTarget, validTargetPreview.value + change);
 };
-const close = () => emit('update:modelValue', false);
+const close = () => emit("update:modelValue", false);
 const remove = () => {
-  emit('remove');
+  emit("remove");
   close();
 };
 const submit = () => {
   if (!isValid.value) return;
-  emit('submit', { ...goal, title: goal.title.trim(), target: Math.round(goal.target) });
-  emit('update:modelValue', false);
+  emit("submit", { ...goal, title: goal.title.trim(), target: Math.round(goal.target) });
+  emit("update:modelValue", false);
 };
 
 watch(() => props.modelValue, (isOpen) => {
@@ -136,8 +139,8 @@ watch(() => props.modelValue, (isOpen) => {
     reset();
     removeConfirmation.value = false;
     window.setTimeout(() => ladiGuideController.say({
-      heading: t('savings.goalDialog.guideTitle'),
-      message: t('savings.goalDialog.guideMessage'),
+      heading: t("savings.goalDialog.guideTitle"),
+      message: t("savings.goalDialog.guideMessage"),
     }), 180);
   }
 });
@@ -147,7 +150,7 @@ watch(() => props.modelValue, (isOpen) => {
 @use "@/styles/mixins" as *;
 .goal-dialog-card {
   max-height: calc(100dvh - 24px);
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   border: 2px solid var(--lad-border-success);
   background: var(--lad-gradient-surface);
   box-shadow:
@@ -156,7 +159,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .goal-dialog-header {
   padding: 17px 50px 15px 18px;
-  @apply position-relative d-flex align-center overflow-hidden;
+  --uno: position-relative d-flex align-center overflow-hidden;
   gap: 12px;
   border-bottom: 2px solid
     color-mix(in srgb, var(--lad-color-info) 12%, transparent);
@@ -174,7 +177,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .goal-dialog-header::after {
   content: "✦";
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 9px;
   right: 49px;
   color: var(--lad-color-reward-border);
@@ -183,7 +186,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-dialog-visual {
   width: 66px;
   height: 66px;
-  @apply position-relative d-grid place-center flex-shrink-0;
+  --uno: position-relative d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 23px;
   background: linear-gradient(
@@ -207,7 +210,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-dialog-visual i {
   width: 6px;
   height: 6px;
-  @apply position-absolute;
+  --uno: position-absolute;
   border-radius: 50%;
   background: var(--lad-color-reward-pale);
   box-shadow: 0 0 7px var(--lad-surface-raised);
@@ -228,7 +231,7 @@ watch(() => props.modelValue, (isOpen) => {
   animation-delay: -1s;
 }
 .goal-dialog-heading {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .goal-dialog-heading :deep(.v-card-title) {
   font-size: rem(21);
@@ -242,7 +245,7 @@ watch(() => props.modelValue, (isOpen) => {
   line-height: 1.35;
 }
 .goal-dialog-close {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 10px;
   right: 9px;
 }
@@ -251,13 +254,13 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .goal-step {
   margin-bottom: 9px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 9px;
 }
 .goal-step-number {
   width: 28px;
   height: 28px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-text-inverse);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 10px;
@@ -274,7 +277,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .goal-step > div strong,
 .goal-step > div small {
-  @apply d-block;
+  --uno: d-block;
 }
 .goal-step > div strong {
   font-size: 0.75rem;
@@ -285,13 +288,13 @@ watch(() => props.modelValue, (isOpen) => {
   font-size: rem(9);
 }
 .goal-icon-picker {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 5px;
 }
 .goal-icon-picker button {
   aspect-ratio: 1;
-  @apply d-grid place-center cursor-pointer;
+  --uno: d-grid place-center cursor-pointer;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 12%, transparent);
   border-radius: 11px;
   background: var(--lad-surface-soft);
@@ -325,7 +328,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-target-picker {
   min-height: 72px;
   padding: 8px 13px;
-  @apply position-relative d-grid align-center overflow-hidden;
+  --uno: position-relative d-grid align-center overflow-hidden;
   grid-template-columns: 52px 1fr 52px;
   gap: 10px;
   border: 2px solid
@@ -345,7 +348,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-target-picker button {
   width: 46px;
   height: 46px;
-  @apply d-grid place-center cursor-pointer;
+  --uno: d-grid place-center cursor-pointer;
   z-index: 1;
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-border-on-accent);
@@ -389,11 +392,11 @@ watch(() => props.modelValue, (isOpen) => {
   opacity: 0.35;
 }
 .goal-target-picker > div {
-  @apply position-relative text-center;
+  --uno: position-relative text-center;
   z-index: 1;
 }
 .goal-target-picker small {
-  @apply d-block;
+  --uno: d-block;
   color: var(--lad-muted);
   font-size: rem(9);
   font-weight: var(--lad-font-weight-strong);
@@ -401,7 +404,7 @@ watch(() => props.modelValue, (isOpen) => {
   letter-spacing: 0.07em;
 }
 .goal-target-picker output {
-  @apply d-flex align-baseline justify-center;
+  --uno: d-flex align-baseline justify-center;
   gap: 5px;
   color: var(--lad-blue-dark);
 }
@@ -415,7 +418,7 @@ watch(() => props.modelValue, (isOpen) => {
   font-weight: var(--lad-font-weight-black);
 }
 .target-spark {
-  @apply position-absolute;
+  --uno: position-absolute;
   color: var(--lad-color-reward-accent);
   font-style: normal;
   animation: goal-twinkle 1.6s ease-in-out infinite;
@@ -430,13 +433,13 @@ watch(() => props.modelValue, (isOpen) => {
   animation-delay: -0.8s;
 }
 .visibility-options {
-  @apply d-grid;
+  --uno: d-grid;
   gap: 7px;
 }
 .visibility-options button {
   min-height: 51px;
   padding: 7px 9px;
-  @apply position-relative d-flex align-center text-left cursor-pointer;
+  --uno: position-relative d-flex align-center text-left cursor-pointer;
   gap: 9px;
   color: var(--lad-text);
   border: 2px solid var(--lad-border-subtle);
@@ -446,17 +449,17 @@ watch(() => props.modelValue, (isOpen) => {
 .visibility-options button > .v-icon:first-child {
   width: 34px;
   height: 34px;
-  @apply flex-shrink-0;
+  --uno: flex-shrink-0;
   color: var(--lad-color-info-strong);
   border-radius: 11px;
   background: var(--lad-color-info-soft);
 }
 .visibility-options button > span {
-  @apply flex-grow-1 min-w-0;
+  --uno: flex-grow-1 min-w-0;
 }
 .visibility-options strong,
 .visibility-options small {
-  @apply d-block;
+  --uno: d-block;
 }
 .visibility-options strong {
   font-size: rem(11);
@@ -481,7 +484,7 @@ watch(() => props.modelValue, (isOpen) => {
 .starter-bonus {
   min-height: 76px;
   padding: 10px 12px;
-  @apply position-relative d-flex align-center overflow-hidden;
+  --uno: position-relative d-flex align-center overflow-hidden;
   gap: 10px;
   border: 2px solid var(--lad-border-warning);
   border-radius: 19px;
@@ -494,7 +497,7 @@ watch(() => props.modelValue, (isOpen) => {
   content: "";
   width: 46px;
   height: 150%;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -25%;
   left: -65px;
   transform: rotate(17deg);
@@ -509,7 +512,7 @@ watch(() => props.modelValue, (isOpen) => {
 .bonus-gift {
   width: 45px;
   height: 45px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   z-index: 1;
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 15px;
@@ -522,10 +525,10 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .starter-bonus p,
 .starter-bonus p > * {
-  @apply d-block;
+  --uno: d-block;
 }
 .starter-bonus p {
-  @apply ma-0 flex-grow-1 min-w-0;
+  --uno: ma-0 flex-grow-1 min-w-0;
   z-index: 1;
 }
 .starter-bonus p small {
@@ -547,7 +550,7 @@ watch(() => props.modelValue, (isOpen) => {
 .bonus-coin {
   width: 49px;
   height: 49px;
-  @apply position-relative d-grid place-center flex-shrink-0;
+  --uno: position-relative d-grid place-center flex-shrink-0;
   z-index: 1;
   color: var(--lad-color-reward-strong);
   border: 3px solid var(--lad-color-reward-soft);
@@ -570,7 +573,7 @@ watch(() => props.modelValue, (isOpen) => {
   line-height: 1;
 }
 .bonus-coin em {
-  @apply position-absolute;
+  --uno: position-absolute;
   right: -5px;
   bottom: -3px;
   padding: 2px 5px;
@@ -583,7 +586,7 @@ watch(() => props.modelValue, (isOpen) => {
   font-weight: var(--lad-font-weight-black);
 }
 .bonus-spark {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 2;
   color: var(--lad-color-reward-accent);
   animation: goal-twinkle 1.4s ease-in-out infinite;
@@ -599,13 +602,13 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .goal-dialog-actions {
   padding: 11px 18px 15px;
-  @apply flex-shrink-0 d-flex justify-end ga-2;
+  --uno: flex-shrink-0 d-flex justify-end ga-2;
   border-top: 1px solid
     color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
   background: color-mix(in srgb, var(--lad-surface-raised) 90%, transparent);
 }
 .goal-dialog-actions > :first-child:not(:last-child) {
-  @apply me-auto;
+  --uno: me-auto;
 }
 .create-goal-button {
   min-height: 43px;

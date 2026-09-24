@@ -1,5 +1,5 @@
-import type { SavingsState } from '../savings-contract';
-import type { FamilyCurrency, GoalVisibility, GuardianGift, SavingGoal } from '@/domain/savings/types';
+import type { SavingsState } from "@/application/contracts/savings-contract";
+import type { FamilyCurrency, GoalVisibility, GuardianGift, SavingGoal } from "@/domain/savings/types";
 import {
   exhaustiveValues,
   hasLocalizedValue,
@@ -14,7 +14,7 @@ import {
   isOptionalString,
   isRecord,
   type StateGuard,
-} from './runtime-validation';
+} from "./runtime-validation";
 
 const familyCurrencies = exhaustiveValues<FamilyCurrency>({ CHF: true, EUR: true, HUF: true });
 const goalVisibilities = exhaustiveValues<GoalVisibility>({ family: true, guardians: true, private: true });
@@ -26,16 +26,16 @@ const isSavingGoal = (value: unknown): value is SavingGoal =>
   isRecord(value) &&
   isDomainId(value.id) &&
   isOptionalString(value.translationKey) &&
-  hasLocalizedValue(value, 'title') &&
+  hasLocalizedValue(value, "title") &&
   isNonEmptyString(value.icon) &&
-  (value.ownerId === 'family' || isFamilyMemberId(value.ownerId)) &&
+  (value.ownerId === "family" || isFamilyMemberId(value.ownerId)) &&
   isFiniteNumber(value.target) && value.target > 0 &&
   isFiniteNumber(value.saved) && value.saved >= 0 &&
   isOptionalNonNegativeNumber(value.starterBonus) &&
   isOptionalNonNegativeNumber(value.interestEarned) &&
   isKnownString(value.visibility, goalVisibilities) &&
-  typeof value.shared === 'boolean' &&
-  typeof value.cheered === 'boolean';
+  typeof value.shared === "boolean" &&
+  typeof value.cheered === "boolean";
 
 const isGuardianGift = (value: unknown): value is GuardianGift =>
   isRecord(value) &&
@@ -43,7 +43,7 @@ const isGuardianGift = (value: unknown): value is GuardianGift =>
   isFamilyMemberId(value.childId) &&
   isNonEmptyString(value.guardianName) &&
   isNonEmptyString(value.goalTitle) &&
-  (value.destination === 'balance' || value.destination === 'goal') &&
+  (value.destination === "balance" || value.destination === "goal") &&
   isFiniteNumber(value.amount) && value.amount > 0;
 
 export const isSavingsState: StateGuard<SavingsState> = (value): value is SavingsState =>
