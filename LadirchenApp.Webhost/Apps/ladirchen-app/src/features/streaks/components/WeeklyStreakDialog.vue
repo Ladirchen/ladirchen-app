@@ -1,30 +1,50 @@
 <template>
-  <v-dialog content-class="series-summary-dialog-frame" :model-value="modelValue" max-width="480" @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog
+    content-class="series-summary-dialog-frame"
+    :model-value="modelValue"
+    max-width="480"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <v-card class="streak-dialog" rounded="xl">
       <div class="streak-header pa-4">
         <div class="streak-title-row">
           <HeaderDecoration tone="streak" />
           <div>
-            <p class="dialog-kicker">{{ t('streaks.weekly.eyebrow') }}</p>
-            <h2>{{ t('streaks.weekly.title') }}</h2>
-            <p class="streak-subtitle mt-1">{{ t('streaks.weekly.description') }}</p>
+            <p class="dialog-kicker">{{ t("streaks.weekly.eyebrow") }}</p>
+            <h2>{{ t("streaks.weekly.title") }}</h2>
+            <p class="streak-subtitle mt-1">{{ t("streaks.weekly.description") }}</p>
           </div>
           <div class="streak-hero" aria-hidden="true">
             <span class="hero-spark hero-spark--one">✦</span>
             <span class="hero-spark hero-spark--two">✦</span>
             <AnimatedStreakFlame :size="80" />
           </div>
-          <button class="close-button" :aria-label="t('streaks.weekly.close')" type="button" @click="close"><v-icon icon="i-mdi:close" /></button>
+          <button class="close-button" :aria-label="t('streaks.weekly.close')" type="button" @click="close">
+            <v-icon icon="i-mdi:close" />
+          </button>
         </div>
 
         <div class="summary-grid mt-4">
           <MetricCard class="summary-tile summary-tile--streak" tone="streak">
             <div class="summary-icon" aria-hidden="true"><v-icon icon="i-mdi:fire" size="25" /></div>
-            <div><span>{{ t('streaks.weekly.summary.streak') }}</span><strong>{{ t('streaks.weekly.summary.days', { count: store.currentDailyStreak }) }}</strong></div>
+            <div>
+              <span>{{ t("streaks.weekly.summary.streak") }}</span>
+              <strong>{{ t("streaks.weekly.summary.days", { count: store.currentDailyStreak }) }}</strong>
+            </div>
           </MetricCard>
           <MetricCard class="summary-tile summary-tile--week" tone="bonus">
             <div class="summary-icon" aria-hidden="true"><v-icon icon="i-mdi:calendar-heart" size="23" /></div>
-            <div><span>{{ t('streaks.weekly.summary.thisWeek') }}</span><strong>{{ t('streaks.weekly.summary.progress', { current: store.currentWeekDays, target: store.currentWeekTarget }) }}</strong></div>
+            <div>
+              <span>{{ t("streaks.weekly.summary.thisWeek") }}</span>
+              <strong>
+                {{
+                  t("streaks.weekly.summary.progress", {
+                    current: store.currentWeekDays,
+                    target: store.currentWeekTarget,
+                  })
+                }}
+              </strong>
+            </div>
           </MetricCard>
         </div>
       </div>
@@ -33,18 +53,27 @@
         <div v-if="store.viewerRole === 'child'" class="ladi-level">
           <LadiMascot :score="store.averageTaskRating" :show-score="false" :size="88" />
           <div>
-            <p class="section-kicker">{{ t('streaks.weekly.ladiLevel') }}</p>
+            <p class="section-kicker">{{ t("streaks.weekly.ladiLevel") }}</p>
             <strong>{{ t(ladiStage.nameKey) }}</strong>
             <span>{{ t(ladiStage.descriptionKey) }}</span>
           </div>
         </div>
 
         <div class="week-heading" :class="{ 'mt-4': store.viewerRole === 'child' }">
-          <div><span class="section-kicker">{{ t('streaks.weekly.path.eyebrow') }}</span><strong>{{ t('streaks.weekly.path.title') }}</strong></div>
+          <div>
+            <span class="section-kicker">{{ t("streaks.weekly.path.eyebrow") }}</span>
+            <strong>{{ t("streaks.weekly.path.title") }}</strong>
+          </div>
         </div>
 
         <div :aria-label="t('streaks.weekly.path.progressAria')" class="week-days mt-3">
-          <div v-for="(day, index) in weekDays" :key="day.fullLabel" :class="['week-day', `week-day--${day.status}`]" :style="{ '--day-index': index }" :aria-label="t('streaks.weekly.path.dayAria', { day: day.fullLabel, status: statusLabel(day.status) })">
+          <div
+            v-for="(day, index) in weekDays"
+            :key="day.fullLabel"
+            :class="['week-day', `week-day--${day.status}`]"
+            :style="{ '--day-index': index }"
+            :aria-label="t('streaks.weekly.path.dayAria', { day: day.fullLabel, status: statusLabel(day.status) })"
+          >
             <span>{{ day.label }}</span>
             <div class="day-symbol">
               <v-icon v-if="day.status === DayStatus.Done" size="19">i-mdi:check-bold</v-icon>
@@ -55,10 +84,12 @@
           </div>
           <div class="week-motivation">
             <AnimatedStreakFlame :size="27" />
-            <span><strong>{{ weekMessage }}</strong><small>{{ t('streaks.weekly.motivation.description') }}</small></span>
+            <span>
+              <strong>{{ weekMessage }}</strong>
+              <small>{{ t("streaks.weekly.motivation.description") }}</small>
+            </span>
           </div>
         </div>
-
       </div>
     </v-card>
   </v-dialog>
@@ -78,22 +109,18 @@ import { approvedContributionDatesInCurrentWeek } from "@/domain/contributions/w
 import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import { useFamilyWorldStore } from "@/stores/family-world";
 
-enum DayStatus {
-  Done = "done",
-  Today = "today",
-  Upcoming = "upcoming",
-}
-
-defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
+
 const labels = computed(() => {
   const monday = DateTime.fromMillis(store.currentTimeMilliseconds, { zone: store.familyTimeZone })
     .startOf("week")
     .setLocale(locale.value);
+
   return Array.from({ length: 7 }, (_, index) => {
     const date = monday.plus({ days: index });
+
     return {
       calendarDate: date.toFormat("yyyy-LL-dd"),
       label: date.toFormat("ccc"),
@@ -101,31 +128,51 @@ const labels = computed(() => {
     };
   });
 });
-
-const completedDates = computed(() => approvedContributionDatesInCurrentWeek(
-  store.contributions,
-  store.familyTimeZone,
-  new Date(store.currentTimeMilliseconds),
-));
+const completedDates = computed(() =>
+  approvedContributionDatesInCurrentWeek(
+    store.contributions,
+    store.familyTimeZone,
+    new Date(store.currentTimeMilliseconds),
+  ),
+);
 const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
-const dayStatus = (calendarDate: string): DayStatus => {
-  if (completedDates.value.has(calendarDate)) return DayStatus.Done;
-  if (calendarDate === today.value) return DayStatus.Today;
-  return DayStatus.Upcoming;
-};
-const weekDays = computed(() => labels.value.map(day => ({
-  ...day,
-  status: dayStatus(day.calendarDate),
-})));
+const weekDays = computed(() =>
+  labels.value.map((day) => ({
+    ...day,
+    status: dayStatus(day.calendarDate),
+  })),
+);
 const ladiStage = computed(() => getLadiStage(store.averageTaskRating));
-const weekMessage = computed(() => store.currentWeekDays >= store.currentWeekTarget
-  ? t("streaks.weekly.motivation.complete")
-  : t("streaks.weekly.motivation.active"));
+const weekMessage = computed(() =>
+  store.currentWeekDays >= store.currentWeekTarget
+    ? t("streaks.weekly.motivation.complete")
+    : t("streaks.weekly.motivation.active"),
+);
 
-const statusLabel = (status: DayStatus) => {
+function dayStatus(calendarDate: string): DayStatus {
+  if (completedDates.value.has(calendarDate)) {
+    return DayStatus.Done;
+  }
+
+  if (calendarDate === today.value) {
+    return DayStatus.Today;
+  }
+
+  return DayStatus.Upcoming;
+}
+function statusLabel(status: DayStatus) {
   return t(`streaks.weekly.status.${status}`);
-};
-const close = () => emit("update:modelValue", false);
+}
+function close() {
+  return emit("update:modelValue", false);
+}
+
+enum DayStatus {
+  Done = "done",
+  Today = "today",
+  Upcoming = "upcoming",
+}
+defineProps<{ modelValue: boolean }>();
 </script>
 
 <style lang="scss" scoped>
@@ -160,8 +207,7 @@ const close = () => emit("update:modelValue", false);
   top: -72px;
   right: -28px;
   background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
-  box-shadow: 0 0 0 17px
-    color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
+  box-shadow: 0 0 0 17px color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
 }
 .streak-title-row::after {
   width: 84px;
@@ -221,10 +267,6 @@ const close = () => emit("update:modelValue", false);
   bottom: 14px;
   animation-delay: -0.8s;
 }
-.streak-title-row::before,
-.streak-title-row::after {
-  content: none;
-}
 .summary-grid {
   --uno: position-relative d-grid;
   z-index: 1;
@@ -238,30 +280,18 @@ const close = () => emit("update:modelValue", false);
   @include icon-tile(
     2.5rem,
     rem(14),
-    linear-gradient(
-      145deg,
-      var(--lad-color-primary-highlight),
-      var(--lad-color-info)
-    ),
+    linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-info)),
     var(--lad-color-info-strong),
     -5deg,
     rem(3) solid var(--lad-surface-raised)
   );
   flex-basis: 40px;
   color: var(--lad-text-inverse);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-info)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-info));
   box-shadow: 0 4px 0 var(--lad-color-info-strong);
 }
 .summary-tile--week .summary-icon {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-accent-pink),
-    var(--lad-color-bonus)
-  );
+  background: linear-gradient(145deg, var(--lad-color-accent-pink), var(--lad-color-bonus));
   box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
 }
 .summary-icon :deep(.v-icon) {
@@ -286,11 +316,7 @@ const close = () => emit("update:modelValue", false);
   flex: 1 1 auto;
   --uno: d-flex flex-column overflow-hidden;
   gap: 12px;
-  background: linear-gradient(
-    180deg,
-    var(--lad-surface),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(180deg, var(--lad-surface), var(--lad-surface-soft));
 }
 .week-heading {
   --uno: d-flex align-end justify-space-between;
@@ -305,11 +331,7 @@ const close = () => emit("update:modelValue", false);
   font-size: rem(18);
 }
 .section-kicker {
-  @include overline(
-    var(--lad-color-primary-strong),
-    var(--lad-font-size-micro),
-    0.11em
-  );
+  @include overline(var(--lad-color-primary-strong), var(--lad-font-size-micro), 0.11em);
 }
 .week-days {
   padding: 18px 11px 12px;
@@ -319,11 +341,7 @@ const close = () => emit("update:modelValue", false);
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   border-radius: 23px;
   background:
-    radial-gradient(
-      circle at 88% 2%,
-      color-mix(in srgb, var(--lad-color-reward) 25%, transparent),
-      transparent 30%
-    ),
+    radial-gradient(circle at 88% 2%, color-mix(in srgb, var(--lad-color-reward) 25%, transparent), transparent 30%),
     linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow:
     0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent),
@@ -368,20 +386,14 @@ const close = () => emit("update:modelValue", false);
   color: var(--lad-muted);
   font-size: 0.5rem;
   text-overflow: ellipsis;
-
 }
 .week-day--done .day-symbol {
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-surface-soft);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow:
     0 4px 0 var(--lad-color-primary-deep),
-    0 8px 13px
-      color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
+    0 8px 13px color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
   animation: day-done-arrive 0.65s cubic-bezier(0.2, 0.8, 0.3, 1) both;
   animation-delay: calc(var(--day-index) * 70ms);
 }
@@ -392,11 +404,7 @@ const close = () => emit("update:modelValue", false);
 .week-day--today .day-symbol {
   color: var(--lad-color-reward-ink);
   border: 3px solid var(--lad-color-reward-soft);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-reward-soft),
-    var(--lad-color-reward)
-  );
+  background: linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-color-reward));
   box-shadow:
     0 0 0 6px color-mix(in srgb, var(--lad-color-reward) 18%, transparent),
     0 4px 0 var(--lad-color-reward-shadow);
@@ -418,16 +426,10 @@ const close = () => emit("update:modelValue", false);
   gap: 9px;
   margin-top: 8px;
   color: var(--lad-color-primary-deep);
-  border: 1px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
   border-radius: 16px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-strong) 8%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-strong) 8%, transparent);
 }
 .week-motivation span,
 .week-motivation strong,
@@ -450,11 +452,7 @@ const close = () => emit("update:modelValue", false);
   gap: 16px;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 22px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow: 0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent);
 }
 .ladi-level::after {

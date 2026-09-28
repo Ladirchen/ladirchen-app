@@ -1,17 +1,20 @@
 <template>
   <span class="header-decoration" :class="`header-decoration--${tone}`" aria-hidden="true">
-    <i />
-    <i />
-    <i />
+    <i></i>
+    <i></i>
+    <i></i>
   </span>
 </template>
 
 <script lang="ts" setup>
-withDefaults(defineProps<{
-  tone?: "world" | "contributions" | "wishes" | "shop" | "family" | "profile" | "streak" | "balance";
-}>(), {
-  tone: "world",
-});
+withDefaults(
+  defineProps<{
+    tone?: "world" | "contributions" | "wishes" | "shop" | "family" | "profile" | "streak" | "balance";
+  }>(),
+  {
+    tone: "world",
+  },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -40,8 +43,7 @@ withDefaults(defineProps<{
   height: 8rem;
   top: -4.75rem;
   right: -1.75rem;
-  box-shadow: 0 0 0 rem(18)
-    color-mix(in srgb, var(--decoration-companion) 42%, transparent);
+  box-shadow: 0 0 0 rem(18) color-mix(in srgb, var(--decoration-companion) 42%, transparent);
 }
 
 .header-decoration i:nth-child(2) {
@@ -57,8 +59,7 @@ withDefaults(defineProps<{
   height: rem(38);
   top: 1rem;
   right: 6.75rem;
-  border: 0.5rem solid
-    color-mix(in srgb, var(--decoration-accent) 9%, transparent);
+  border: 0.5rem solid color-mix(in srgb, var(--decoration-accent) 9%, transparent);
   background: transparent;
 }
 

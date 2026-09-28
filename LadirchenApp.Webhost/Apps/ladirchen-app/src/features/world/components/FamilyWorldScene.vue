@@ -1,14 +1,20 @@
 <template>
-  <div class="world-scene-wrap" :class="[{ 'is-inside': view === 'inside', 'is-garden': view === 'garden', 'is-storage-open': storageOpen, 'is-dragging-furniture': draggingEntityType === 'furniture' }, houseEnergyClass, `theme-${activeThemeId}`]" :style="sceneStyle">
+  <div class="world-scene-wrap" :class="sceneClasses" :style="sceneStyle">
     <motion.div
       class="scene-drag-layer"
       :drag="false"
       :drag-constraints="{ left: 0, right: 0 }"
-      :drag-elastic=".16"
+      :drag-elastic="0.16"
       :drag-momentum="false"
       :transition="{ type: 'spring', stiffness: 390, damping: 30 }"
     >
-      <svg class="world-scene" :class="`theme-${activeThemeId}`" viewBox="10 8 440 325" role="img" :aria-label="ariaLabel">
+      <svg
+        class="world-scene"
+        :class="`theme-${activeThemeId}`"
+        viewBox="10 8 440 325"
+        role="img"
+        :aria-label="ariaLabel"
+      >
         <defs>
           <linearGradient id="meadowGround" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stop-color="var(--lad-palette-green-250)" />
@@ -23,13 +29,25 @@
             <stop offset="0" stop-color="var(--lad-palette-amber-100)" />
             <stop offset="1" stop-color="var(--lad-palette-amber-150)" />
           </linearGradient>
-          <pattern id="cottonRoofPattern" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+          <pattern
+            id="cottonRoofPattern"
+            width="24"
+            height="24"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(-8)"
+          >
             <rect width="24" height="24" fill="var(--lad-palette-rose-200)" />
             <path d="M-6 6 6-6m0 24L30-6M18 30 30 18" stroke="var(--lad-palette-surface)" stroke-width="8" />
             <circle cx="7" cy="7" r="2.5" fill="var(--lad-palette-blue-250)" />
           </pattern>
           <filter id="sceneShadow" height="160%" width="160%" x="-30%" y="-30%">
-            <feDropShadow dx="0" dy="12" flood-color="var(--lad-palette-muted-700)" flood-opacity=".2" stdDeviation="8" />
+            <feDropShadow
+              dx="0"
+              dy="12"
+              flood-color="var(--lad-palette-muted-700)"
+              flood-opacity=".2"
+              stdDeviation="8"
+            />
           </filter>
           <clipPath id="frontDoorOpeningClip">
             <path d="M210 195q0-13 13-13h15q13 0 13 13v60h-41Z" />
@@ -41,35 +59,66 @@
           <circle class="sun-core" cx="375" cy="48" r="23" />
           <path class="sun-rays" d="M375 10V1m0 94v-9m38-38h9m-94 0h9m65-27 7-7m-67 67 7-7m53 7 7 7m-67-67 7 7" />
         </g>
-        <g class="cloud cloud-a" :class="{ heavy: energy < 45 }"><ellipse cx="75" cy="79" rx="38" ry="12" /><circle cx="60" cy="70" r="15" /><circle cx="81" cy="65" r="21" /></g>
-        <g class="cloud cloud-b" :class="{ heavy: energy < 60 }"><ellipse cx="381" cy="91" rx="32" ry="10" /><circle cx="370" cy="84" r="13" /><circle cx="388" cy="80" r="17" /></g>
+        <g class="cloud cloud-a" :class="{ heavy: energy < 45 }">
+          <ellipse cx="75" cy="79" rx="38" ry="12" />
+          <circle cx="60" cy="70" r="15" />
+          <circle cx="81" cy="65" r="21" />
+        </g>
+        <g class="cloud cloud-b" :class="{ heavy: energy < 60 }">
+          <ellipse cx="381" cy="91" rx="32" ry="10" />
+          <circle cx="370" cy="84" r="13" />
+          <circle cx="388" cy="80" r="17" />
+        </g>
         <g v-if="energy < 40" class="rain-cloud" aria-hidden="true">
-          <ellipse cx="229" cy="68" rx="48" ry="15" /><circle cx="209" cy="57" r="20" /><circle cx="237" cy="52" r="25" /><circle cx="258" cy="62" r="17" />
+          <ellipse cx="229" cy="68" rx="48" ry="15" />
+          <circle cx="209" cy="57" r="20" />
+          <circle cx="237" cy="52" r="25" />
+          <circle cx="258" cy="62" r="17" />
           <path class="rain-drops" d="M205 86l-6 12m31-12-6 12m31-12-6 12" />
         </g>
 
         <g class="far-landscape" aria-hidden="true">
           <g class="mountains">
-            <path class="mountain-layer" d="M0 180V145l48-48 35 34 47-60 48 58 43-42 57 61 47-65 62 53 43-38 50 40v42Z" />
-            <path class="mountain-snow" d="m31 114 17-17 14 14 21 20-17-7-10 7-11-10-14 5Zm74-12 25-31 25 30-15-8-10 10-9-9Zm96 5 20-20 21 23-12-5-9 8-9-9Zm105 9 26-33 28 24-17-6-11 11-11-9Zm101-2 23-16 18 15-11-3-8 7-10-7Z" />
+            <path
+              class="mountain-layer"
+              d="M0 180V145l48-48 35 34 47-60 48 58 43-42 57 61 47-65 62 53 43-38 50 40v42Z"
+            />
+            <path
+              class="mountain-snow"
+              d="m31 114 17-17 14 14 21 20-17-7-10 7-11-10-14 5Zm74-12 25-31 25 30-15-8-10 10-9-9Zm96 5 20-20 21 23-12-5-9 8-9-9Zm105 9 26-33 28 24-17-6-11 11-11-9Zm101-2 23-16 18 15-11-3-8 7-10-7Z"
+            />
           </g>
           <path class="hill-layer hill-back" d="M0 194v-38q59-34 116 11 60-48 124 0 53-39 104-1 59-34 116 2v26Z" />
           <path class="hill-layer hill-front" d="M0 207v-29q58-37 128 7 68-43 136 1 71-42 128-2 37-21 68-3v26Z" />
           <path class="meadow-ground" d="M0 192q60-18 123 4 70-28 139 0 71-27 131-4 35-12 67 1v147H0Z" />
-          <path class="meadow-highlight" d="M-5 231q86-28 165 2t157 1q78-27 148 1M11 281q74-19 145 3t147 0q76-21 151 0" />
+          <path
+            class="meadow-highlight"
+            d="M-5 231q86-28 165 2t157 1q78-27 148 1M11 281q74-19 145 3t147 0q76-21 151 0"
+          />
           <g class="distant-pines">
-            <path d="m23 165 10-23 10 23h-6l8 16H21l8-16Zm367 1 10-25 10 25h-6l8 16h-24l8-16Zm37 4 8-19 8 19h-5l7 14h-20l7-14Z" />
+            <path
+              d="m23 165 10-23 10 23h-6l8 16H21l8-16Zm367 1 10-25 10 25h-6l8 16h-24l8-16Zm37 4 8-19 8 19h-5l7 14h-20l7-14Z"
+            />
           </g>
         </g>
 
-        <g :key="revealVersion" :class="['island', 'world-reveal', `plot-level-${houseLevel}`]" filter="url(#sceneShadow)">
+        <g
+          :key="revealVersion"
+          :class="['island', 'world-reveal', `plot-level-${houseLevel}`]"
+          filter="url(#sceneShadow)"
+        >
           <g v-if="houseLevel >= 1" class="plot-upgrade plot-flower-border" aria-hidden="true">
             <path d="M82 215q18 16 40 25m256-25q-17 16-38 25" />
-            <circle cx="91" cy="220" r="4" /><circle cx="103" cy="230" r="3" /><circle cx="115" cy="237" r="4" />
-            <circle cx="369" cy="222" r="4" /><circle cx="357" cy="231" r="3" /><circle cx="345" cy="238" r="4" />
+            <circle cx="91" cy="220" r="4" />
+            <circle cx="103" cy="230" r="3" />
+            <circle cx="115" cy="237" r="4" />
+            <circle cx="369" cy="222" r="4" />
+            <circle cx="357" cy="231" r="3" />
+            <circle cx="345" cy="238" r="4" />
           </g>
           <g v-if="houseLevel >= 2" class="plot-upgrade plot-path" aria-hidden="true">
-            <ellipse cx="232" cy="274" rx="13" ry="6" /><ellipse cx="232" cy="291" rx="10" ry="5" />
+            <ellipse cx="232" cy="274" rx="13" ry="6" />
+            <ellipse cx="232" cy="291" rx="10" ry="5" />
           </g>
           <g v-if="houseLevel >= 3" class="plot-upgrade plot-garden-bed" aria-hidden="true">
             <path d="m319 246 42-18 13 13-42 19Z" />
@@ -80,7 +129,12 @@
           <g class="tree" :class="{ subdued: !hasEffect('garden') }" transform="translate(94 139)">
             <g class="tree-motion">
               <path d="m35 61 7 37-13 6-2-41z" fill="var(--lad-palette-orange-650)" />
-              <g class="tree-crown"><circle cx="31" cy="35" fill="var(--lad-palette-teal-550)" r="27" /><circle cx="14" cy="48" fill="var(--lad-palette-mint-450)" r="21" /><circle cx="51" cy="49" fill="var(--lad-palette-mint-strong)" r="23" /><circle cx="35" cy="21" fill="var(--lad-palette-teal-400)" r="22" /></g>
+              <g class="tree-crown">
+                <circle cx="31" cy="35" fill="var(--lad-palette-teal-550)" r="27" />
+                <circle cx="14" cy="48" fill="var(--lad-palette-mint-450)" r="21" />
+                <circle cx="51" cy="49" fill="var(--lad-palette-mint-strong)" r="23" />
+                <circle cx="35" cy="21" fill="var(--lad-palette-teal-400)" r="22" />
+              </g>
             </g>
           </g>
 
@@ -91,7 +145,10 @@
               <g v-if="houseLevel >= 1" class="house-addon toy-upper-floor">
                 <rect x="163" y="87" width="136" height="69" rx="10" />
                 <path d="M163 147h136" />
-                <g class="toy-window upper-window"><rect x="205" y="101" width="52" height="37" rx="8" /><path d="M231 105v29m-22-15h44" /></g>
+                <g class="toy-window upper-window">
+                  <rect x="205" y="101" width="52" height="37" rx="8" />
+                  <path d="M231 105v29m-22-15h44" />
+                </g>
               </g>
 
               <g class="toy-roof">
@@ -105,8 +162,18 @@
                 <g class="doorway-glimpse" clip-path="url(#frontDoorOpeningClip)">
                   <rect x="210" y="181" width="42" height="75" fill="var(--lad-palette-amber-150)" />
                   <path d="m211 232 40-7v31h-40Z" fill="var(--lad-palette-orange-350)" />
-                  <path d="M231 182v31m-12 42 5-24m23 24-10-27" fill="none" stroke="var(--lad-palette-orange-500)" stroke-width="2" />
-                  <path d="M218 218h25v12h-25Z" fill="var(--lad-palette-indigo-350)" stroke="var(--lad-palette-blue-600)" stroke-width="2" />
+                  <path
+                    d="M231 182v31m-12 42 5-24m23 24-10-27"
+                    fill="none"
+                    stroke="var(--lad-palette-orange-500)"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M218 218h25v12h-25Z"
+                    fill="var(--lad-palette-indigo-350)"
+                    stroke="var(--lad-palette-blue-600)"
+                    stroke-width="2"
+                  />
                   <circle cx="230" cy="202" r="7" fill="var(--lad-palette-amber-250)" opacity=".8" />
                   <path d="M230 181v15" stroke="var(--lad-palette-orange-650)" stroke-width="2" />
                 </g>
@@ -120,9 +187,19 @@
                 </g>
                 <path class="door-threshold" d="M203 255h55" />
               </g>
-              <g class="toy-window left-window"><rect x="157" y="174" width="43" height="39" rx="9" /><path d="M178 178v31m-17-15h35" /></g>
-              <g class="toy-window right-window"><rect x="263" y="174" width="43" height="39" rx="9" /><path d="M284 178v31m-17-15h35" /></g>
-              <g class="front-porch-detail" aria-hidden="true"><path d="M194 185v67m73-67v67M188 185h85" /><circle cx="188" cy="183" r="5" /><circle cx="273" cy="183" r="5" /></g>
+              <g class="toy-window left-window">
+                <rect x="157" y="174" width="43" height="39" rx="9" />
+                <path d="M178 178v31m-17-15h35" />
+              </g>
+              <g class="toy-window right-window">
+                <rect x="263" y="174" width="43" height="39" rx="9" />
+                <path d="M284 178v31m-17-15h35" />
+              </g>
+              <g class="front-porch-detail" aria-hidden="true">
+                <path d="M194 185v67m73-67v67M188 185h85" />
+                <circle cx="188" cy="183" r="5" />
+                <circle cx="273" cy="183" r="5" />
+              </g>
 
               <g v-if="houseLevel >= 2" class="house-addon toy-extension">
                 <rect x="90" y="196" width="55" height="58" rx="10" />
@@ -132,38 +209,61 @@
               <g v-if="houseLevel >= 3" class="house-addon toy-tower">
                 <rect x="303" y="112" width="54" height="143" rx="9" />
                 <path d="m294 115 36-42 36 42-10 11-26-30-27 30Z" />
-                <rect x="316" y="137" width="28" height="31" rx="8" /><rect x="316" y="187" width="28" height="31" rx="8" />
+                <rect x="316" y="137" width="28" height="31" rx="8" />
+                <rect x="316" y="187" width="28" height="31" rx="8" />
               </g>
               <g v-if="houseLevel >= 4" class="house-addon toy-balcony-front">
-                <path d="M170 144h120v18H170Z" /><path d="M179 147v27m25-27v27m26-27v27m26-27v27m25-27v27" />
+                <path d="M170 144h120v18H170Z" />
+                <path d="M179 147v27m25-27v27m26-27v27m26-27v27m25-27v27" />
               </g>
 
-              <g class="front-step"><path d="M195 255h71l15 15h-101Z" /><path d="M188 265h86l12 12H176Z" /></g>
-              <g class="toy-bush bush-left"><circle cx="135" cy="242" r="19" /><circle cx="118" cy="250" r="15" /></g>
-              <g class="toy-bush bush-right"><circle cx="327" cy="241" r="18" /><circle cx="343" cy="250" r="14" /></g>
-              <g class="front-planters" aria-hidden="true"><path d="M151 216h54l-5 14h-44Zm105 0h54l-5 14h-44Z" /><circle cx="164" cy="214" r="5" /><circle cx="178" cy="212" r="6" /><circle cx="193" cy="214" r="5" /><circle cx="270" cy="214" r="5" /><circle cx="284" cy="212" r="6" /><circle cx="298" cy="214" r="5" /></g>
+              <g class="front-step">
+                <path d="M195 255h71l15 15h-101Z" />
+                <path d="M188 265h86l12 12H176Z" />
+              </g>
+              <g class="toy-bush bush-left">
+                <circle cx="135" cy="242" r="19" />
+                <circle cx="118" cy="250" r="15" />
+              </g>
+              <g class="toy-bush bush-right">
+                <circle cx="327" cy="241" r="18" />
+                <circle cx="343" cy="250" r="14" />
+              </g>
+              <g class="front-planters" aria-hidden="true">
+                <path d="M151 216h54l-5 14h-44Zm105 0h54l-5 14h-44Z" />
+                <circle cx="164" cy="214" r="5" />
+                <circle cx="178" cy="212" r="6" />
+                <circle cx="193" cy="214" r="5" />
+                <circle cx="270" cy="214" r="5" />
+                <circle cx="284" cy="212" r="6" />
+                <circle cx="298" cy="214" r="5" />
+              </g>
             </g>
-
           </g>
 
-          <HouseThemeDecoration
-            v-if="view === 'front'"
-            :label="activeThemeLabel"
-            :theme-id="activeThemeId"
-          />
+          <HouseThemeDecoration v-if="view === 'front'" :label="activeThemeLabel" :theme-id="activeThemeId" />
 
-          <g v-if="view === 'front' && hasEffect('smoke')" class="smoke"><path d="m281 132 7-3v17l-7 3z" fill="var(--lad-palette-orange-600)" /><circle cx="288" cy="122" fill="var(--lad-palette-white)" opacity=".55" r="8" /><circle cx="296" cy="110" fill="var(--lad-palette-white)" opacity=".38" r="11" /></g>
-          <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)"><ellipse fill="var(--lad-palette-teal-600)" rx="20" ry="8" /><circle cx="-9" cy="-8" fill="var(--lad-palette-coral)" r="6" /><circle cx="4" cy="-11" fill="var(--lad-palette-yellow)" r="6" /><circle cx="13" cy="-5" fill="var(--lad-palette-rose-250)" r="5" /></g>
+          <g v-if="view === 'front' && hasEffect('smoke')" class="smoke">
+            <path d="m281 132 7-3v17l-7 3z" fill="var(--lad-palette-orange-600)" />
+            <circle cx="288" cy="122" fill="var(--lad-palette-white)" opacity=".55" r="8" />
+            <circle cx="296" cy="110" fill="var(--lad-palette-white)" opacity=".38" r="11" />
+          </g>
+          <g class="garden" :class="{ subdued: !hasEffect('flowers') }" transform="translate(137 244)">
+            <ellipse fill="var(--lad-palette-teal-600)" rx="20" ry="8" />
+            <circle cx="-9" cy="-8" fill="var(--lad-palette-coral)" r="6" />
+            <circle cx="4" cy="-11" fill="var(--lad-palette-yellow)" r="6" />
+            <circle cx="13" cy="-5" fill="var(--lad-palette-rose-250)" r="5" />
+          </g>
         </g>
       </svg>
 
       <div v-if="view === 'front' && frontExterior" class="front-scene-art" aria-hidden="true">
-        <img class="front-scene-art__background" :src="frontExterior.backgroundUrl" alt="">
-        <i class="front-scene-sun" />
-        <i class="front-scene-cloud front-scene-cloud--left" />
-        <i class="front-scene-cloud front-scene-cloud--right" />
+        <img class="front-scene-art__background" :src="frontExterior.backgroundUrl" alt="" />
+        <i class="front-scene-sun"></i>
+        <i class="front-scene-cloud front-scene-cloud--left"></i>
+        <i class="front-scene-cloud front-scene-cloud--right"></i>
         <span class="front-scene-art__house">
-          <img :src="frontExterior.houseUrl" alt="">
+          <img :src="frontExterior.houseUrl" alt="" />
         </span>
       </div>
 
@@ -207,16 +307,27 @@
         @place="placeStoredAccessory"
       />
 
-      <div v-if="view === 'front'" class="world-family" :class="{ 'guardian-active': activeFamilyMember?.role === 'guardian' }" :aria-label="t('world.scene.familyAria')">
+      <div
+        v-if="view === 'front'"
+        class="world-family"
+        :class="{ 'guardian-active': activeFamilyMember?.role === 'guardian' }"
+        :aria-label="t('world.scene.familyAria')"
+      >
         <div class="world-family-background" :aria-label="t('world.scene.backgroundFamilyAria')">
-          <div v-for="group in backgroundMemberGroups" :key="group.side" :class="['world-family-side', `world-family-side--${group.side}`]">
+          <div
+            v-for="group in backgroundMemberGroups"
+            :key="group.side"
+            :class="['world-family-side', `world-family-side--${group.side}`]"
+          >
             <div
               v-for="(member, index) in group.members"
               :key="member.id"
               :class="['world-family-member', 'is-background-member', memberRoleClass(member)]"
             >
               <Transition name="member-name">
-                <span v-if="speakingMemberId === member.id" class="member-name-bubble" role="status">{{ worldMemberName(member) }}</span>
+                <output v-if="speakingMemberId === member.id" class="member-name-bubble">
+                  {{ worldMemberName(member) }}
+                </output>
               </Transition>
               <AvatarFigure
                 :appearance="appearanceFor(member, index)"
@@ -230,7 +341,9 @@
         </div>
         <div v-if="activeFamilyMember" class="world-family-member is-active-member">
           <Transition name="member-name">
-            <span v-if="speakingMemberId === activeFamilyMember.id" class="member-name-bubble" role="status">{{ worldMemberName(activeFamilyMember) }}</span>
+            <output v-if="speakingMemberId === activeFamilyMember.id" class="member-name-bubble">
+              {{ worldMemberName(activeFamilyMember) }}
+            </output>
           </Transition>
           <AvatarFigure
             :appearance="appearanceFor(activeFamilyMember, 0)"
@@ -245,7 +358,7 @@
       <div v-if="view === 'front'" class="world-pets" :aria-label="t('world.scene.petsAria')">
         <div v-for="pet in pets" :key="pet.id" class="world-pet">
           <Transition name="member-name">
-            <span v-if="activePetId === pet.id" class="pet-name-bubble" role="status">{{ pet.name }}</span>
+            <output v-if="activePetId === pet.id" class="pet-name-bubble">{{ pet.name }}</output>
           </Transition>
           <AnimatedPet :pet="pet" :size="48" @interact="showPetName(pet.id)" />
         </div>
@@ -256,12 +369,24 @@
       <template v-if="view === 'front'">
         <button class="scene-action" :aria-label="t('world.scene.enterAria')" type="button" @click.stop="enterHouse">
           <v-icon icon="i-mdi:door-open" size="20" />
-          <span><strong>{{ t('world.scene.enter') }}</strong><small>{{ t('world.scene.viewRooms') }}</small></span>
+          <span>
+            <strong>{{ t("world.scene.enter") }}</strong>
+            <small>{{ t("world.scene.viewRooms") }}</small>
+          </span>
         </button>
       </template>
-      <button v-else class="scene-action" :aria-label="t('world.scene.leaveAria')" type="button" @click.stop="leaveScene">
+      <button
+        v-else
+        class="scene-action"
+        :aria-label="t('world.scene.leaveAria')"
+        type="button"
+        @click.stop="leaveScene"
+      >
         <v-icon icon="i-mdi:arrow-left" size="20" />
-        <span><strong>{{ t('world.scene.outside') }}</strong><small>{{ t('world.scene.frontGarden') }}</small></span>
+        <span>
+          <strong>{{ t("world.scene.outside") }}</strong>
+          <small>{{ t("world.scene.frontGarden") }}</small>
+        </span>
       </button>
     </div>
   </div>
@@ -285,26 +410,63 @@ const props = defineProps<FamilyWorldSceneProps>();
 const emit = defineEmits<FamilyWorldSceneEmit>();
 const { t } = useI18n();
 const {
-  activeFamilyMember, activePetId, activeThemeId, activeThemeLabel, appearanceFor,
-  ariaLabel, backgroundMemberGroups, draggingEntityType, enterHouse, forwardEntityMove,
-  forwardEntityReset, frontExterior, hasEffect, houseEnergyClass, leaveScene, placeStoredAccessory,
-  sceneStyle, selectedRoomView, selectZone, showMemberName, showPetName, speakingMemberId, storageAccessories,
-  storageOpen, storeAccessory, sunOpacity, view, worldMemberName,
+  activeFamilyMember,
+  activePetId,
+  activeThemeId,
+  activeThemeLabel,
+  appearanceFor,
+  ariaLabel,
+  backgroundMemberGroups,
+  draggingEntityType,
+  enterHouse,
+  forwardEntityMove,
+  forwardEntityReset,
+  frontExterior,
+  hasEffect,
+  houseEnergyClass,
+  leaveScene,
+  placeStoredAccessory,
+  sceneStyle,
+  selectedRoomView,
+  selectZone,
+  showMemberName,
+  showPetName,
+  speakingMemberId,
+  storageAccessories,
+  storageOpen,
+  storeAccessory,
+  sunOpacity,
+  view,
+  worldMemberName,
 } = useFamilyWorldScene(props, emit);
+const sceneClasses = computed(() => [
+  {
+    "is-inside": view.value === "inside",
+    "is-garden": view.value === "garden",
+    "is-storage-open": storageOpen.value,
+    "is-dragging-furniture": draggingEntityType.value === "furniture",
+  },
+  houseEnergyClass.value,
+  `theme-${activeThemeId.value}`,
+]);
 const houseHasUpperFloor = computed(() => props.houseLevel >= 1);
-const houseBodyY = computed(() => houseHasUpperFloor.value ? 145 : 151);
-const houseBodyHeight = computed(() => houseHasUpperFloor.value ? 110 : 104);
-const roofPath = computed(() => houseHasUpperFloor.value
-  ? "M143 91 230 36l88 55-13 17-75-45-74 45Z"
-  : "M112 155 230 78l119 77-15 18-104-66-103 66Z");
-const roofHighlightPath = computed(() => houseHasUpperFloor.value
-  ? "M230 36l88 55-7 9-81-49Z"
-  : "M230 78l119 77-8 10-111-70Z");
-const roofDetailPath = computed(() => houseHasUpperFloor.value
-  ? "M170 82l60-33 61 34M184 89l46-25 47 25"
-  : "M143 145l87-51 88 51M160 151l70-41 71 41");
-const memberRoleClass = (member: FamilyMember) => member.role === "child" ? "is-child" : "is-guardian";
-const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ? 42 : 55;
+const houseBodyY = computed(() => (houseHasUpperFloor.value ? 145 : 151));
+const houseBodyHeight = computed(() => (houseHasUpperFloor.value ? 110 : 104));
+const roofPath = computed(() =>
+  houseHasUpperFloor.value ? "M143 91 230 36l88 55-13 17-75-45-74 45Z" : "M112 155 230 78l119 77-15 18-104-66-103 66Z",
+);
+const roofHighlightPath = computed(() =>
+  houseHasUpperFloor.value ? "M230 36l88 55-7 9-81-49Z" : "M230 78l119 77-8 10-111-70Z",
+);
+const roofDetailPath = computed(() =>
+  houseHasUpperFloor.value ? "M170 82l60-33 61 34M184 89l46-25 47 25" : "M143 145l87-51 88 51M160 151l70-41 71 41",
+);
+function memberRoleClass(member: FamilyMember) {
+  return member.role === "child" ? "is-child" : "is-guardian";
+}
+function backgroundMemberSize(member: FamilyMember) {
+  return member.role === "child" ? 42 : 55;
+}
 </script>
 
 <style lang="scss" scoped>
@@ -319,7 +481,6 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
 
   container: world-scene / inline-size;
   touch-action: pan-y;
-
 }
 .scene-world-shell :deep(.layout-entity.entity-furniture) {
   --world-entity-responsive-scale: 0.8;
@@ -353,7 +514,6 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
 .world-scene {
   --uno: w-100 overflow-visible;
   height: auto;
-
 }
 .front-scene-art {
   --uno: position-absolute overflow-hidden;
@@ -381,8 +541,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
       transparent 12% 88%,
       color-mix(in srgb, var(--lad-palette-background) 58%, transparent)
     );
-  box-shadow: inset 0 0 1.75rem
-    color-mix(in srgb, var(--lad-palette-background) 32%, transparent);
+  box-shadow: inset 0 0 1.75rem color-mix(in srgb, var(--lad-palette-background) 32%, transparent);
 }
 .front-scene-art img {
   --uno: position-absolute w-100 h-100;
@@ -431,8 +590,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   border-radius: 50%;
   background: var(--lad-palette-amber-250);
   box-shadow:
-    0 0 0 0.7rem
-      color-mix(in srgb, var(--lad-palette-amber-250) 22%, transparent),
+    0 0 0 0.7rem color-mix(in srgb, var(--lad-palette-amber-250) 22%, transparent),
     0 0 1.4rem color-mix(in srgb, var(--lad-palette-yellow) 32%, transparent);
   animation: sun-glow 3.6s ease-in-out infinite;
 }
@@ -440,25 +598,15 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   content: "";
   --uno: position-absolute;
   inset: -1.15rem;
-  background: repeating-conic-gradient(
-    from 0deg,
-    var(--lad-palette-amber-250) 0 6deg,
-    transparent 6deg 45deg
-  );
-  mask: radial-gradient(
-    circle,
-    transparent 0 46%,
-    var(--lad-palette-black) 48% 57%,
-    transparent 59%
-  );
+  background: repeating-conic-gradient(from 0deg, var(--lad-palette-amber-250) 0 6deg, transparent 6deg 45deg);
+  mask: radial-gradient(circle, transparent 0 46%, var(--lad-palette-black) 48% 57%, transparent 59%);
   animation: sun-rays-pulse 3.6s ease-in-out infinite;
 }
 .theme-halloween-night .front-scene-sun,
 .theme-starlight-palace .front-scene-sun {
   background: var(--lad-palette-amber-100);
   box-shadow:
-    inset -0.65rem -0.25rem 0
-      color-mix(in srgb, var(--lad-palette-blue-350) 28%, transparent),
+    inset -0.65rem -0.25rem 0 color-mix(in srgb, var(--lad-palette-blue-350) 28%, transparent),
     0 0 1.4rem color-mix(in srgb, var(--lad-palette-white) 32%, transparent);
 }
 .theme-halloween-night .front-scene-sun::before,
@@ -473,8 +621,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-palette-white) 86%, transparent);
   box-shadow:
-    1.2rem -0.45rem 0 0.15rem
-      color-mix(in srgb, var(--lad-palette-white) 86%, transparent),
+    1.2rem -0.45rem 0 0.15rem color-mix(in srgb, var(--lad-palette-white) 86%, transparent),
     2.25rem 0 0 color-mix(in srgb, var(--lad-palette-white) 86%, transparent);
   opacity: 0.78;
   filter: blur(0.02rem);
@@ -538,11 +685,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
 }
 .world-scene-wrap.is-inside .scene-world-shell {
   top: 0;
-  background: linear-gradient(
-    180deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-amber-100)
-  );
+  background: linear-gradient(180deg, var(--lad-palette-surface), var(--lad-palette-amber-100));
 }
 .world-scene-wrap.is-garden .scene-world-shell {
   top: 0;
@@ -574,8 +717,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   box-shadow: none;
 }
 .scene-world-shell :deep(.compact.single-zone .dollhouse-room),
-.scene-world-shell
-  :deep(.compact.room-count-1:not(:has(.garden-zone)) .dollhouse-room),
+.scene-world-shell :deep(.compact.room-count-1:not(:has(.garden-zone)) .dollhouse-room),
 .scene-world-shell :deep(.compact.single-zone .garden-zone) {
   min-height: 229px;
 }
@@ -611,23 +753,19 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   width: 78px;
   height: 78px;
 }
-.scene-world-shell
-  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-furniture) {
+.scene-world-shell :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-furniture) {
   width: var(--world-furniture-focused-size);
   height: var(--world-furniture-focused-size);
 }
-.scene-world-shell
-  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-member) {
+.scene-world-shell :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-member) {
   width: 67px;
   height: 90px;
 }
-.scene-world-shell
-  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-pet) {
+.scene-world-shell :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-pet) {
   width: 62px;
   height: 62px;
 }
-.scene-world-shell
-  :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-ladi) {
+.scene-world-shell :deep(.compact.contextual-zone .dollhouse-room.is-focused .entity-ladi) {
   width: 86px;
   height: 86px;
 }
@@ -708,10 +846,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   animation: house-idle 4.8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
 .dollhouse {
-  filter: drop-shadow(
-    0 8px 6px
-      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent)
-  );
+  filter: drop-shadow(0 8px 6px color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent));
 }
 .room-wall {
   stroke: var(--house-trim);
@@ -999,14 +1134,10 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   fill: url(#cottonRoofPattern);
 }
 .theme-cotton-candy-dream .toy-house-body {
-  filter: drop-shadow(
-    0 0 7px color-mix(in srgb, var(--lad-palette-white) 80%, transparent)
-  );
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--lad-palette-white) 80%, transparent));
 }
 .theme-cotton-candy-dream .toy-window rect {
-  filter: drop-shadow(
-    0 0 5px color-mix(in srgb, var(--lad-palette-amber-250) 75%, transparent)
-  );
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--lad-palette-amber-250) 75%, transparent));
 }
 .theme-starlight-palace .far-landscape {
   filter: hue-rotate(12deg) saturate(0.75) brightness(1.04);
@@ -1018,15 +1149,11 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
 .theme-starlight-palace .toy-house-body {
   fill: var(--lad-palette-surface);
   stroke: var(--lad-palette-amber-550);
-  filter: drop-shadow(
-    0 0 8px color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent)
-  );
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--lad-palette-yellow) 30%, transparent));
 }
 .theme-starlight-palace .toy-window rect {
   fill: var(--lad-palette-amber-250);
-  filter: drop-shadow(
-    0 0 6px color-mix(in srgb, var(--lad-palette-yellow) 80%, transparent)
-  );
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--lad-palette-yellow) 80%, transparent));
 }
 .exterior-pumpkin-arch path {
   fill: none;
@@ -1068,9 +1195,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   bottom: 3.5%;
   z-index: 3;
 
-  filter: drop-shadow(
-    0 6px 5px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent)
-  );
+  filter: drop-shadow(0 6px 5px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent));
 }
 .world-family::before {
   content: "";
@@ -1125,16 +1250,13 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   z-index: 7;
   transform: translateX(-50%);
   color: var(--lad-palette-muted-700);
-  border: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
   border-radius: 11px;
   background: var(--lad-palette-surface);
-  box-shadow: 0 4px 10px
-    color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent);
   font-size: rem(9);
 
   line-height: 1;
-
 }
 .member-name-bubble::after,
 .pet-name-bubble::after {
@@ -1145,10 +1267,8 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   left: 50%;
   bottom: -5px;
   transform: translateX(-50%) rotate(45deg);
-  border-right: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
-  border-bottom: 2px solid
-    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
+  border-right: 2px solid color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
   background: var(--lad-palette-surface);
 }
 .member-name-enter-active,
@@ -1200,7 +1320,6 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   z-index: 4;
 
   gap: 2px;
-
 }
 .world-pets.inside {
   right: 3%;
@@ -1373,14 +1492,9 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   --uno: d-flex align-center justify-center cursor-pointer;
   gap: 7px;
   color: var(--lad-palette-muted-700);
-  border: 1px solid
-    color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   border-radius: 15px;
-  background: color-mix(
-    in srgb,
-    var(--lad-palette-background) 95%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--lad-palette-background) 95%, transparent);
   box-shadow:
     0 4px 0 var(--lad-palette-teal-150),
     0 8px 18px color-mix(in srgb, var(--lad-palette-text) 15%, transparent);
@@ -1423,9 +1537,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
   box-shadow: 0 2px 0 var(--lad-palette-teal-150);
 }
 .scene-action:focus-visible {
-  @include focus-ring(
-    color-mix(in srgb, var(--lad-palette-teal-550) 30%, transparent)
-  );
+  @include focus-ring(color-mix(in srgb, var(--lad-palette-teal-550) 30%, transparent));
 }
 .scene-action:disabled {
   opacity: 0.76;
@@ -1469,9 +1581,7 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
     transform: scale(0.98);
   }
   50% {
-    filter: drop-shadow(
-      0 0 9px color-mix(in srgb, var(--lad-palette-yellow) 70%, transparent)
-    );
+    filter: drop-shadow(0 0 9px color-mix(in srgb, var(--lad-palette-yellow) 70%, transparent));
     transform: scale(1.05);
   }
 }
@@ -1610,16 +1720,13 @@ const backgroundMemberSize = (member: FamilyMember) => member.role === "child" ?
 @keyframes exterior-house-idle {
   0%,
   100% {
-    transform: translateX(-50%) translateY(0.08rem) rotate(-0.12deg)
-      scale(1, 0.998);
+    transform: translateX(-50%) translateY(0.08rem) rotate(-0.12deg) scale(1, 0.998);
   }
   42% {
-    transform: translateX(-50%) translateY(-0.28rem) rotate(0.2deg)
-      scale(1.005, 0.995);
+    transform: translateX(-50%) translateY(-0.28rem) rotate(0.2deg) scale(1.005, 0.995);
   }
   72% {
-    transform: translateX(-50%) translateY(-0.15rem) rotate(-0.12deg)
-      scale(0.998, 1.003);
+    transform: translateX(-50%) translateY(-0.15rem) rotate(-0.12deg) scale(0.998, 1.003);
   }
 }
 @keyframes front-cloud-drift {

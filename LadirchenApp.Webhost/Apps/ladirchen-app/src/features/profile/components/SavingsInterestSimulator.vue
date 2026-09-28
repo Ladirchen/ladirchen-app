@@ -2,52 +2,98 @@
   <v-card class="interest-simulator pa-4 mb-5" elevation="0" rounded="xl">
     <div class="d-flex align-start justify-space-between ga-3">
       <div>
-        <p class="eyebrow mb-1">{{ t('savings.simulator.eyebrow') }}</p>
-        <h3>{{ t('savings.simulator.title') }}</h3>
-        <p class="text-caption text-medium-emphasis mt-1">{{ t('savings.simulator.description') }}</p>
+        <p class="eyebrow mb-1">{{ t("savings.simulator.eyebrow") }}</p>
+        <h3>{{ t("savings.simulator.title") }}</h3>
+        <p class="text-caption text-medium-emphasis mt-1">{{ t("savings.simulator.description") }}</p>
       </div>
-      <v-chip color="info" size="x-small" variant="tonal">{{ t('savings.simulator.demo') }}</v-chip>
+      <v-chip color="info" size="x-small" variant="tonal">{{ t("savings.simulator.demo") }}</v-chip>
     </div>
 
     <div class="simulator-preview mt-4">
       <LadiMascot :score="simulatedRating" :show-score="false" :size="68" />
       <div class="flex-grow-1">
-        <span>{{ t('savings.simulator.preview') }}</span>
+        <span>{{ t("savings.simulator.preview") }}</span>
         <strong>{{ t(simulatedLadiStage.nameKey) }}</strong>
         <small>{{ t(simulatedLadiStage.descriptionKey) }}</small>
       </div>
-      <div class="simulator-rate"><strong>{{ formatRate(simulatedInterestRate) }} %</strong><span>{{ t('savings.simulator.weeklyRate') }}</span></div>
+      <div class="simulator-rate">
+        <strong>{{ formatRate(simulatedInterestRate) }} %</strong>
+        <span>{{ t("savings.simulator.weeklyRate") }}</span>
+      </div>
     </div>
 
-    <label class="simulator-label mt-4">{{ t('savings.simulator.completion') }} <strong>{{ simulatedCompletion }} %</strong></label>
-    <v-slider v-model="simulatedCompletion" color="primary" hide-details max="100" min="0" step="10" />
-    <label class="simulator-label">{{ t('savings.simulator.rating') }} <strong>{{ formatRate(simulatedRating) }} / 5</strong></label>
-    <v-slider v-model="simulatedRating" color="warning" hide-details max="5" min="0" step="0.1" />
-    <label class="simulator-label">{{ t('savings.simulator.streak') }} <strong>{{ t('savings.simulator.days', { count: simulatedStreak }) }}</strong></label>
-    <v-slider v-model="simulatedStreak" color="info" hide-details max="30" min="0" step="1" />
+    <div class="simulator-label mt-4">
+      {{ t("savings.simulator.completion") }}
+      <strong>{{ simulatedCompletion }} %</strong>
+    </div>
+    <v-slider
+      v-model="simulatedCompletion"
+      :aria-label="t('savings.simulator.completion')"
+      color="primary"
+      hide-details
+      max="100"
+      min="0"
+      step="10"
+    />
+    <div class="simulator-label">
+      {{ t("savings.simulator.rating") }}
+      <strong>{{ formatRate(simulatedRating) }} / 5</strong>
+    </div>
+    <v-slider
+      v-model="simulatedRating"
+      :aria-label="t('savings.simulator.rating')"
+      color="warning"
+      hide-details
+      max="5"
+      min="0"
+      step="0.1"
+    />
+    <div class="simulator-label">
+      {{ t("savings.simulator.streak") }}
+      <strong>{{ t("savings.simulator.days", { count: simulatedStreak }) }}</strong>
+    </div>
+    <v-slider
+      v-model="simulatedStreak"
+      :aria-label="t('savings.simulator.streak')"
+      color="info"
+      hide-details
+      max="30"
+      min="0"
+      step="1"
+    />
 
     <div class="payout-estimate mt-4">
-      <div><span>{{ t('savings.simulator.nextPayout') }}</span><strong><LadirchenAmount prefix="+" :value="simulatedWeeklyInterest" /></strong></div>
-      <small>{{ t('savings.simulator.calculation', { saved: store.totalSaved }) }}</small>
+      <div>
+        <span>{{ t("savings.simulator.nextPayout") }}</span>
+        <strong><LadirchenAmount prefix="+" :value="simulatedWeeklyInterest" /></strong>
+      </div>
+      <small>{{ t("savings.simulator.calculation", { saved: store.totalSaved }) }}</small>
     </div>
 
     <div class="simulator-actions mt-3">
-      <v-btn rounded="lg" size="small" variant="text" @click="resetSimulation">{{ t('common.reset') }}</v-btn>
-      <v-btn color="primary" :disabled="simulatedWeeklyInterest <= 0" rounded="lg" size="small" variant="flat" @click="simulatePayout">{{ t('savings.simulator.simulate') }}</v-btn>
+      <v-btn rounded="lg" size="small" variant="text" @click="resetSimulation">{{ t("common.reset") }}</v-btn>
+      <v-btn
+        color="primary"
+        :disabled="simulatedWeeklyInterest <= 0"
+        rounded="lg"
+        size="small"
+        variant="flat"
+        @click="simulatePayout"
+      >
+        {{ t("savings.simulator.simulate") }}
+      </v-btn>
     </div>
 
     <Transition name="payout">
-      <div
-        v-if="payoutVisible"
-        :key="payoutVersion"
-        class="payout-success mt-4"
-        aria-live="polite"
-      >
+      <div v-if="payoutVisible" :key="payoutVersion" class="payout-success mt-4" aria-live="polite">
         <div class="payout-visual" aria-hidden="true">
           <div class="payout-coin"><LadirchenCoin /></div>
           <AnimatedPiggyBank receiving :size="65" />
         </div>
-        <div><strong>{{ t('savings.simulator.payout', { amount: lastPayout }) }}</strong><span>{{ t('savings.simulator.payoutDescription') }}</span></div>
+        <div>
+          <strong>{{ t("savings.simulator.payout", { amount: lastPayout }) }}</strong>
+          <span>{{ t("savings.simulator.payoutDescription") }}</span>
+        </div>
       </div>
     </Transition>
   </v-card>
@@ -67,64 +113,85 @@ import { calculateSavingsCredit, familyParticipationInterestStrategy } from "@/d
 import { PAYOUT_CELEBRATION_DURATION_MS } from "@/shared/runtime-timing";
 import { useFamilyWorldStore } from "@/stores/family-world";
 
+let payoutTimer: number | undefined;
+
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
+
 const simulatedCompletion = ref(0);
 const simulatedRating = ref(0);
 const simulatedStreak = ref(0);
 const payoutVisible = ref(false);
 const payoutVersion = ref(0);
 const lastPayout = ref(0);
-let payoutTimer: number | undefined;
 
 const simulatedLadiStage = computed(() => getLadiStage(simulatedRating.value));
-const simulationMatchesCurrentWeek = computed(() =>
-  simulatedCompletion.value === store.dailyEnergy
-  && simulatedRating.value === store.averageTaskRating
-  && simulatedStreak.value === store.currentDailyStreak,
+const simulationMatchesCurrentWeek = computed(
+  () =>
+    simulatedCompletion.value === store.dailyEnergy &&
+    simulatedRating.value === store.averageTaskRating &&
+    simulatedStreak.value === store.currentDailyStreak,
 );
-const simulatedInterestRate = computed(() => simulationMatchesCurrentWeek.value
-  ? store.savingsInterestRate
-  : familyParticipationInterestStrategy.calculateRate({
-      baseRate: store.baseSavingsRatePercent,
-      completionBonusRate: store.completionBonusRate,
-      completionPercent: simulatedCompletion.value,
-      maxRate: store.maxSavingsRatePercent,
-      rating: simulatedRating.value,
-      ratingBonusRate: store.ratingBonusRate,
-      streakBonusRate: store.streakBonusRate,
-      streakDays: simulatedStreak.value,
-    }),
+const simulatedInterestRate = computed(() =>
+  simulationMatchesCurrentWeek.value
+    ? store.savingsInterestRate
+    : familyParticipationInterestStrategy.calculateRate({
+        baseRate: store.baseSavingsRatePercent,
+        completionBonusRate: store.completionBonusRate,
+        completionPercent: simulatedCompletion.value,
+        maxRate: store.maxSavingsRatePercent,
+        rating: simulatedRating.value,
+        ratingBonusRate: store.ratingBonusRate,
+        streakBonusRate: store.streakBonusRate,
+        streakDays: simulatedStreak.value,
+      }),
 );
-const simulatedWeeklyInterest = computed(() => store.ownSavingGoals.reduce(
-  (sum, goal) => sum + interestForRate(goal.saved, goal.target, simulatedInterestRate.value),
-  0,
-));
+const simulatedWeeklyInterest = computed(() =>
+  store.ownSavingGoals.reduce(
+    (sum, goal) => sum + interestForRate(goal.saved, goal.target, simulatedInterestRate.value),
+    0,
+  ),
+);
 
-const formatRate = (value: number) => value.toLocaleString(locale.value, {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 1,
-});
-const interestForRate = (saved: number, target: number, rate: number): number =>
-  calculateSavingsCredit(saved, target, rate);
-const resetSimulation = (): void => {
+function formatRate(value: number) {
+  return value.toLocaleString(locale.value, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 1,
+  });
+}
+function interestForRate(saved: number, target: number, rate: number): number {
+  return calculateSavingsCredit(saved, target, rate);
+}
+function resetSimulation(): void {
   simulatedCompletion.value = store.dailyEnergy;
   simulatedRating.value = store.averageTaskRating;
   simulatedStreak.value = store.currentDailyStreak;
   payoutVisible.value = false;
-};
-const simulatePayout = (): void => {
+}
+function simulatePayout(): void {
   lastPayout.value = store.creditActiveChildInterestDemo(simulatedInterestRate.value);
-  if (lastPayout.value <= 0) return;
+
+  if (lastPayout.value <= 0) {
+    return;
+  }
+
   payoutVersion.value += 1;
   payoutVisible.value = true;
-  if (payoutTimer !== undefined) window.clearTimeout(payoutTimer);
-  payoutTimer = window.setTimeout(() => { payoutVisible.value = false; }, PAYOUT_CELEBRATION_DURATION_MS);
-};
+
+  if (payoutTimer !== undefined) {
+    window.clearTimeout(payoutTimer);
+  }
+
+  payoutTimer = window.setTimeout(() => {
+    payoutVisible.value = false;
+  }, PAYOUT_CELEBRATION_DURATION_MS);
+}
 
 onMounted(resetSimulation);
 onUnmounted(() => {
-  if (payoutTimer !== undefined) window.clearTimeout(payoutTimer);
+  if (payoutTimer !== undefined) {
+    window.clearTimeout(payoutTimer);
+  }
 });
 </script>
 
@@ -246,8 +313,7 @@ h3 {
   --uno: position-absolute;
   z-index: 2;
   left: 9px;
-  animation: payout-coin-flight 1.05s 0.12s cubic-bezier(0.22, 0.8, 0.26, 1)
-    both;
+  animation: payout-coin-flight 1.05s 0.12s cubic-bezier(0.22, 0.8, 0.26, 1) both;
 }
 .payout-enter-active,
 .payout-leave-active {

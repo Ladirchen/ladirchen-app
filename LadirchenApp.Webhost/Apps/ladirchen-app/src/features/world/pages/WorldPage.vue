@@ -3,18 +3,23 @@
     <section class="world-hero px-4">
       <div class="d-flex align-start justify-space-between ga-3">
         <div v-if="store.viewerRole === 'child'">
-          <p class="eyebrow">{{ t('world.hero.childEyebrow', { name: store.activeChild.name }) }}</p>
-          <h1 class="world-title">{{ t('world.hero.childTitle') }}</h1>
+          <p class="eyebrow">{{ t("world.hero.childEyebrow", { name: store.activeChild.name }) }}</p>
+          <h1 class="world-title">{{ t("world.hero.childTitle") }}</h1>
         </div>
         <div v-else>
-          <p class="eyebrow">{{ t('world.hero.guardianEyebrow') }}</p>
-          <h1 class="world-title">{{ t('world.hero.guardianTitle') }}</h1>
+          <p class="eyebrow">{{ t("world.hero.guardianEyebrow") }}</p>
+          <h1 class="world-title">{{ t("world.hero.guardianTitle") }}</h1>
         </div>
-        <button :aria-label="t('world.hero.energyAria', { value: store.familyEnergy })" class="energy-trigger text-right flex-shrink-0" type="button" @click="energyDialogOpen = true">
+        <button
+          :aria-label="t('world.hero.energyAria', { value: store.familyEnergy })"
+          class="energy-trigger text-right flex-shrink-0"
+          type="button"
+          @click="energyDialogOpen = true"
+        >
           <AnimatedHouseEnergy :size="43" />
           <span class="energy-trigger-copy">
             <strong class="energy-value">{{ store.familyEnergy }} %</strong>
-            <span class="energy-label">{{ t('world.hero.energy') }}</span>
+            <span class="energy-label">{{ t("world.hero.energy") }}</span>
           </span>
           <v-icon class="energy-chevron" icon="i-mdi:chevron-right" size="15" />
         </button>
@@ -43,51 +48,170 @@
     </section>
 
     <div class="page-padding pt-5">
-      <template v-if="store.viewerRole === 'guardian' && store.permissions.canManageContent">
+      <template v-if="showGuardianManagement">
         <BrandedCard class="management-card pa-4 mb-6" tone="world">
           <div class="d-flex align-center justify-space-between ga-3 mb-3">
-            <div><strong>{{ t('world.management.title') }}</strong><p class="text-caption text-medium-emphasis">{{ t('world.management.description', { name: store.activeChild.name }) }}</p></div>
+            <div>
+              <strong>{{ t("world.management.title") }}</strong>
+              <p class="text-caption text-medium-emphasis">
+                {{ t("world.management.description", { name: store.activeChild.name }) }}
+              </p>
+            </div>
             <v-icon color="info">i-mdi:shield-account-outline</v-icon>
           </div>
           <div class="management-actions">
-            <v-btn color="primary" prepend-icon="i-mdi:plus" rounded="lg" size="small" to="/contributions?new=1" variant="flat">{{ t('world.management.contribution') }}</v-btn>
-            <v-btn color="warning" prepend-icon="i-mdi:rocket-launch-outline" rounded="lg" size="small" to="/contributions?promotion=1" variant="tonal">{{ t('world.management.promotion') }}</v-btn>
-            <v-btn color="info" prepend-icon="i-mdi:target" rounded="lg" size="small" to="/wishes?new=1" variant="tonal">{{ t('world.management.childGoal') }}</v-btn>
-            <v-btn color="info" prepend-icon="i-mdi:account-group-outline" rounded="lg" size="small" to="/wishes?family=1" variant="tonal">{{ t('world.management.familyGoal') }}</v-btn>
-            <v-btn color="warning" prepend-icon="i-mdi:gift-outline" rounded="lg" size="small" to="/shop?new=1" variant="tonal">{{ t('world.management.reward') }}</v-btn>
-            <v-btn color="secondary" prepend-icon="i-mdi:hand-coin-outline" rounded="lg" size="small" variant="tonal" @click="openGiftDialog">{{ t('world.management.gift') }}</v-btn>
-            <v-btn color="primary" prepend-icon="i-mdi:account-cog-outline" rounded="lg" size="small" variant="tonal" @click="store.openFamilySetup">{{ t('world.management.family') }}</v-btn>
-            <v-btn color="success" prepend-icon="i-mdi:piggy-bank-outline" rounded="lg" size="small" variant="tonal" @click="store.piggyBankOpen = true">{{ t('world.management.money') }}</v-btn>
+            <v-btn
+              color="primary"
+              prepend-icon="i-mdi:plus"
+              rounded="lg"
+              size="small"
+              to="/contributions?new=1"
+              variant="flat"
+            >
+              {{ t("world.management.contribution") }}
+            </v-btn>
+            <v-btn
+              color="warning"
+              prepend-icon="i-mdi:rocket-launch-outline"
+              rounded="lg"
+              size="small"
+              to="/contributions?promotion=1"
+              variant="tonal"
+            >
+              {{ t("world.management.promotion") }}
+            </v-btn>
+            <v-btn
+              color="info"
+              prepend-icon="i-mdi:target"
+              rounded="lg"
+              size="small"
+              to="/wishes?new=1"
+              variant="tonal"
+            >
+              {{ t("world.management.childGoal") }}
+            </v-btn>
+            <v-btn
+              color="info"
+              prepend-icon="i-mdi:account-group-outline"
+              rounded="lg"
+              size="small"
+              to="/wishes?family=1"
+              variant="tonal"
+            >
+              {{ t("world.management.familyGoal") }}
+            </v-btn>
+            <v-btn
+              color="warning"
+              prepend-icon="i-mdi:gift-outline"
+              rounded="lg"
+              size="small"
+              to="/shop?new=1"
+              variant="tonal"
+            >
+              {{ t("world.management.reward") }}
+            </v-btn>
+            <v-btn
+              color="secondary"
+              prepend-icon="i-mdi:hand-coin-outline"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="openGiftDialog"
+            >
+              {{ t("world.management.gift") }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              prepend-icon="i-mdi:account-cog-outline"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="store.openFamilySetup"
+            >
+              {{ t("world.management.family") }}
+            </v-btn>
+            <v-btn
+              color="success"
+              prepend-icon="i-mdi:piggy-bank-outline"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="store.piggyBankOpen = true"
+            >
+              {{ t("world.management.money") }}
+            </v-btn>
           </div>
         </BrandedCard>
-
       </template>
 
       <BrandedCard v-else-if="store.viewerRole === 'guardian'" class="supporter-card pa-4 mb-6" tone="world">
         <div class="d-flex align-center ga-3">
           <v-avatar color="primary" size="46" variant="tonal"><v-icon icon="i-mdi:hand-heart-outline" /></v-avatar>
           <div class="flex-grow-1 min-w-0">
-            <p class="eyebrow mb-1">{{ t('world.supporter.eyebrow') }}</p>
-            <strong>{{ t('world.supporter.title') }}</strong>
-            <p class="text-caption text-medium-emphasis mt-1">{{ t('world.supporter.description') }}</p>
+            <p class="eyebrow mb-1">{{ t("world.supporter.eyebrow") }}</p>
+            <strong>{{ t("world.supporter.title") }}</strong>
+            <p class="text-caption text-medium-emphasis mt-1">{{ t("world.supporter.description") }}</p>
           </div>
         </div>
-        <v-btn class="mt-4" color="primary" prepend-icon="i-mdi:gift-outline" rounded="lg" to="/wishes" variant="flat" width="100%">{{ t('world.supporter.action') }}</v-btn>
+        <v-btn
+          class="mt-4"
+          color="primary"
+          prepend-icon="i-mdi:gift-outline"
+          rounded="lg"
+          to="/wishes"
+          variant="flat"
+          width="100%"
+        >
+          {{ t("world.supporter.action") }}
+        </v-btn>
       </BrandedCard>
 
-      <v-card v-if="store.viewerRole === 'child' && activePromotion" class="promotion-banner pa-4 mb-6" color="amber-lighten-5" elevation="0" rounded="xl" role="button" tabindex="0" @click="promoDetailsOpen = true" @keydown.enter="promoDetailsOpen = true">
-        <div class="promotion-stars" aria-hidden="true"><i>✦</i><i>✧</i><i>★</i><i>✦</i><i>✧</i><i>·</i></div>
+      <v-card
+        v-if="bannerPromotion"
+        class="promotion-banner pa-4 mb-6"
+        color="amber-lighten-5"
+        elevation="0"
+        rounded="xl"
+        role="button"
+        tabindex="0"
+        @click="promoDetailsOpen = true"
+        @keydown.enter="promoDetailsOpen = true"
+      >
+        <div class="promotion-stars" aria-hidden="true">
+          <i>✦</i>
+          <i>✧</i>
+          <i>★</i>
+          <i>✦</i>
+          <i>✧</i>
+          <i>·</i>
+        </div>
         <div class="d-flex align-center ga-3">
-          <div class="promotion-gem" aria-hidden="true"><v-icon class="promotion-rocket" icon="i-mdi:rocket-launch" size="29" /><span><v-icon icon="i-mdi:diamond-stone" size="12" /></span><i>✦</i><i>✧</i></div>
+          <div class="promotion-gem" aria-hidden="true">
+            <v-icon class="promotion-rocket" icon="i-mdi:rocket-launch" size="29" />
+            <span><v-icon icon="i-mdi:diamond-stone" size="12" /></span>
+            <i>✦</i>
+            <i>✧</i>
+          </div>
           <div class="flex-grow-1">
-            <p class="eyebrow mb-1">{{ t('world.promotion.eyebrow') }}</p>
-            <strong>{{ activePromotion.title }}</strong>
-            <p class="text-caption text-medium-emphasis">{{ t('world.promotion.until', { title: contributionTitle(activePromotion.contributionId), time: activePromotion.deadline }) }}</p>
-            <PromotionCountdown class="promotion-banner-countdown mt-2" :deadline="activePromotion.deadline" :time-zone="store.familyTimeZone" />
+            <p class="eyebrow mb-1">{{ t("world.promotion.eyebrow") }}</p>
+            <strong>{{ bannerPromotion.title }}</strong>
+            <p class="text-caption text-medium-emphasis">
+              {{
+                t("world.promotion.until", {
+                  title: contributionTitle(bannerPromotion.contributionId),
+                  time: bannerPromotion.deadline,
+                })
+              }}
+            </p>
+            <PromotionCountdown
+              class="promotion-banner-countdown mt-2"
+              :deadline="bannerPromotion.deadline"
+              :time-zone="store.familyTimeZone"
+            />
           </div>
           <div class="promotion-boost" :aria-label="t('world.promotion.boostAria')">
-            <strong>×{{ activePromotion.multiplier }}</strong>
-            <small>{{ t('world.promotion.upTo', { value: promotionRewardTotal }) }}</small>
+            <strong>×{{ bannerPromotion.multiplier }}</strong>
+            <small>{{ t("world.promotion.upTo", { value: promotionRewardTotal }) }}</small>
           </div>
         </div>
       </v-card>
@@ -95,11 +219,15 @@
       <section v-if="store.viewerRole === 'child'" class="contribution-board">
         <div class="contribution-board-heading">
           <div>
-            <p class="eyebrow mb-1">{{ t('world.tasks.eyebrow') }}</p>
-            <h2>{{ t('world.tasks.title') }}</h2>
-            <p>{{ t('world.tasks.description') }}</p>
+            <p class="eyebrow mb-1">{{ t("world.tasks.eyebrow") }}</p>
+            <h2>{{ t("world.tasks.title") }}</h2>
+            <p>{{ t("world.tasks.description") }}</p>
           </div>
-          <RouterLink class="all-contributions" to="/contributions"><v-icon icon="i-mdi:view-grid-plus-outline" size="19" /><span>{{ t('world.tasks.all') }}</span><v-icon icon="i-mdi:chevron-right" size="17" /></RouterLink>
+          <RouterLink class="all-contributions" to="/contributions">
+            <v-icon icon="i-mdi:view-grid-plus-outline" size="19" />
+            <span>{{ t("world.tasks.all") }}</span>
+            <v-icon icon="i-mdi:chevron-right" size="17" />
+          </RouterLink>
         </div>
 
         <div v-if="personalContributions.length" class="contribution-list">
@@ -125,45 +253,114 @@
             <p class="eyebrow mb-1">{{ emptyTaskEyebrow }}</p>
             <strong>{{ emptyTaskTitle }}</strong>
             <p>{{ emptyTaskMessage }}</p>
-            <RouterLink class="empty-task-link" to="/contributions">{{ t('world.tasks.openAvailable') }} <v-icon icon="i-mdi:arrow-right" size="15" /></RouterLink>
+            <RouterLink class="empty-task-link" to="/contributions">
+              {{ t("world.tasks.openAvailable") }}
+              <v-icon icon="i-mdi:arrow-right" size="15" />
+            </RouterLink>
           </div>
         </v-card>
       </section>
-
     </div>
 
     <v-dialog v-model="giftDialogOpen" max-width="420">
       <v-card class="pa-5" rounded="xl">
         <div class="direct-gift-icon mb-3">🎁</div>
-        <v-card-title class="pa-0">{{ t('world.gift.title') }}</v-card-title>
-        <v-card-subtitle class="pa-0 mt-1 mb-5">{{ t('world.gift.description') }}</v-card-subtitle>
-        <v-select v-model="gift.childId" :items="childOptions" item-title="title" item-value="value" :label="t('world.gift.child')" variant="outlined" />
-        <v-text-field v-model.number="gift.amount" :label="t('world.gift.amount')" min="1" suffix="L" type="number" variant="outlined" />
-        <v-textarea v-model="gift.reason" :label="t('world.gift.reason')" :placeholder="t('world.gift.placeholder')" rows="2" variant="outlined" />
-        <v-alert class="mb-4" color="info" density="compact" variant="tonal">{{ t('world.gift.notice') }}</v-alert>
+        <v-card-title class="pa-0">{{ t("world.gift.title") }}</v-card-title>
+        <v-card-subtitle class="pa-0 mt-1 mb-5">{{ t("world.gift.description") }}</v-card-subtitle>
+        <v-select
+          v-model="gift.childId"
+          :items="childOptions"
+          item-title="title"
+          item-value="value"
+          :label="t('world.gift.child')"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model.number="gift.amount"
+          :label="t('world.gift.amount')"
+          min="1"
+          suffix="L"
+          type="number"
+          variant="outlined"
+        />
+        <v-textarea
+          v-model="gift.reason"
+          :label="t('world.gift.reason')"
+          :placeholder="t('world.gift.placeholder')"
+          rows="2"
+          variant="outlined"
+        />
+        <v-alert class="mb-4" color="info" density="compact" variant="tonal">{{ t("world.gift.notice") }}</v-alert>
         <div class="d-flex justify-end ga-2">
-          <v-btn rounded="lg" variant="text" @click="giftDialogOpen = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="secondary" :disabled="!canGiveGift" prepend-icon="i-mdi:gift-outline" rounded="lg" variant="flat" @click="giveDirectGift">{{ t('world.gift.submit') }}</v-btn>
+          <v-btn rounded="lg" variant="text" @click="giftDialogOpen = false">{{ t("common.cancel") }}</v-btn>
+          <v-btn
+            color="secondary"
+            :disabled="!canGiveGift"
+            prepend-icon="i-mdi:gift-outline"
+            rounded="lg"
+            variant="flat"
+            @click="giveDirectGift"
+          >
+            {{ t("world.gift.submit") }}
+          </v-btn>
         </div>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="promoDetailsOpen" max-width="410">
       <v-card v-if="activePromotion" class="promotion-detail-card pa-5" rounded="xl">
-        <v-btn class="promotion-close" :aria-label="t('world.promotion.close')" icon="i-mdi:close" size="small" variant="tonal" @click="promoDetailsOpen = false" />
-        <div class="promotion-detail-gem" aria-hidden="true"><v-icon icon="i-mdi:star-four-points" size="55" /><span><v-icon icon="i-mdi:diamond-stone" size="18" /></span><i>✦</i><i>✧</i></div>
-        <p class="eyebrow promotion-detail-eyebrow mt-4 mb-1">{{ t('world.promotion.onlyToday') }}</p>
+        <v-btn
+          class="promotion-close"
+          :aria-label="t('world.promotion.close')"
+          icon="i-mdi:close"
+          size="small"
+          variant="tonal"
+          @click="promoDetailsOpen = false"
+        />
+        <div class="promotion-detail-gem" aria-hidden="true">
+          <v-icon icon="i-mdi:star-four-points" size="55" />
+          <span><v-icon icon="i-mdi:diamond-stone" size="18" /></span>
+          <i>✦</i>
+          <i>✧</i>
+        </div>
+        <p class="eyebrow promotion-detail-eyebrow mt-4 mb-1">{{ t("world.promotion.onlyToday") }}</p>
         <h2 class="promotion-dialog-title">{{ activePromotion.title }}</h2>
-        <p class="text-body-small text-medium-emphasis mt-2">{{ t('world.promotion.completeBy', { title: contributionTitle(activePromotion.contributionId), time: activePromotion.deadline }) }}</p>
+        <p class="text-body-small text-medium-emphasis mt-2">
+          {{
+            t("world.promotion.completeBy", {
+              title: contributionTitle(activePromotion.contributionId),
+              time: activePromotion.deadline,
+            })
+          }}
+        </p>
         <v-card class="promotion-reward-card pa-4 mt-4" elevation="0" rounded="lg">
-          <span class="text-caption text-medium-emphasis">{{ t('world.promotion.canEarn') }}</span>
-          <strong class="promotion-total d-block">{{ t('world.promotion.coins', { value: promotionRewardTotal }) }}</strong>
+          <span class="text-caption text-medium-emphasis">{{ t("world.promotion.canEarn") }}</span>
+          <strong class="promotion-total d-block">
+            {{ t("world.promotion.coins", { value: promotionRewardTotal }) }}
+          </strong>
           <div class="promotion-breakdown mt-3">
-            <span><i>×{{ activePromotion.multiplier }}</i><small>{{ t('world.promotion.taskBonus') }}</small></span>
-            <span><i>+{{ activePromotion.teamworkBonus }} L</i><small>{{ t('world.promotion.teamwork') }}</small></span>
+            <span>
+              <i>×{{ activePromotion.multiplier }}</i>
+              <small>{{ t("world.promotion.taskBonus") }}</small>
+            </span>
+            <span>
+              <i>+{{ activePromotion.teamworkBonus }} L</i>
+              <small>{{ t("world.promotion.teamwork") }}</small>
+            </span>
           </div>
         </v-card>
-        <v-btn class="promotion-start mt-5" color="warning" rounded="lg" variant="flat" width="100%" @click="promoDetailsOpen = false"><span aria-hidden="true">★</span>{{ t('world.promotion.cta') }}<v-icon icon="i-mdi:arrow-right" /></v-btn>
+        <v-btn
+          class="promotion-start mt-5"
+          color="warning"
+          rounded="lg"
+          variant="flat"
+          width="100%"
+          @click="promoDetailsOpen = false"
+        >
+          <span aria-hidden="true">★</span>
+          {{ t("world.promotion.cta") }}
+          <v-icon icon="i-mdi:arrow-right" />
+        </v-btn>
       </v-card>
     </v-dialog>
 
@@ -191,6 +388,7 @@ import { ROOM_DESIGNS } from "@/domain/house";
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
+
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
@@ -199,50 +397,95 @@ const gift = reactive({ childId: store.activeChildId, amount: 20, reason: "" });
 const localizedContributions = computed(() => store.contributions.map(localize.contribution));
 const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
 const localizedAccessories = computed(() => store.accessories.map(localize.accessory));
-const activeRoomDesigns = computed(() => ROOM_DESIGNS.filter(
-  design => store.selectedRoomDesignIds[design.zoneId] === design.id && store.ownedRoomDesignIds.includes(design.id),
-));
-const personalContributions = computed(() =>
-  localizedContributions.value
-    .filter((contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== "approved"),
-);
-const completedPersonalContributions = computed(() => localizedContributions.value.filter(
-  contribution => contribution.assigneeId === store.activeChildId && contribution.status === "approved",
-));
-const emptyTaskEyebrow = computed(() => t(completedPersonalContributions.value.length ? "world.tasks.empty.completedEyebrow" : "world.tasks.empty.availableEyebrow"));
-const emptyTaskTitle = computed(() => t(completedPersonalContributions.value.length ? "world.tasks.empty.completedTitle" : "world.tasks.empty.availableTitle"));
-const emptyTaskMessage = computed(() => {
-  return t(completedPersonalContributions.value.length ? "world.tasks.empty.completedMessage" : "world.tasks.empty.availableMessage");
-});
-const activePromotion = computed(() =>
-  localizedPromotions.value.find((promotion) =>
-    isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) && localizedContributions.value.some(
-      (contribution) => contribution.id === promotion.contributionId &&
-        contribution.assigneeId === store.activeChildId &&
-        contribution.status === "available",
-    ),
+const activeRoomDesigns = computed(() =>
+  ROOM_DESIGNS.filter(
+    (design) =>
+      store.selectedRoomDesignIds[design.zoneId] === design.id && store.ownedRoomDesignIds.includes(design.id),
   ),
 );
-const contributionTitle = (contributionId: ContributionId) =>
-  localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ?? t("contributions.singular");
+const personalContributions = computed(() =>
+  localizedContributions.value.filter(
+    (contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== "approved",
+  ),
+);
+const completedPersonalContributions = computed(() =>
+  localizedContributions.value.filter(
+    (contribution) => contribution.assigneeId === store.activeChildId && contribution.status === "approved",
+  ),
+);
+const emptyTaskEyebrow = computed(() =>
+  t(
+    completedPersonalContributions.value.length
+      ? "world.tasks.empty.completedEyebrow"
+      : "world.tasks.empty.availableEyebrow",
+  ),
+);
+const emptyTaskTitle = computed(() =>
+  t(
+    completedPersonalContributions.value.length
+      ? "world.tasks.empty.completedTitle"
+      : "world.tasks.empty.availableTitle",
+  ),
+);
+const emptyTaskMessage = computed(() => {
+  return t(
+    completedPersonalContributions.value.length
+      ? "world.tasks.empty.completedMessage"
+      : "world.tasks.empty.availableMessage",
+  );
+});
+const activePromotion = computed(() =>
+  localizedPromotions.value.find(
+    (promotion) =>
+      isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) &&
+      localizedContributions.value.some(
+        (contribution) =>
+          contribution.id === promotion.contributionId &&
+          contribution.assigneeId === store.activeChildId &&
+          contribution.status === "available",
+      ),
+  ),
+);
+const showGuardianManagement = computed(() => store.viewerRole === "guardian" && store.permissions.canManageContent);
+const bannerPromotion = computed(() => (store.viewerRole === "child" ? activePromotion.value : undefined));
 const promotionRewardTotal = computed(() => {
-  if (!activePromotion.value) return 0;
-  const baseReward = localizedContributions.value.find((contribution) => contribution.id === activePromotion.value?.contributionId)?.reward ?? 0;
+  if (!activePromotion.value) {
+    return 0;
+  }
+
+  const baseReward =
+    localizedContributions.value.find((contribution) => contribution.id === activePromotion.value?.contributionId)
+      ?.reward ?? 0;
+
   return baseReward * activePromotion.value.multiplier + activePromotion.value.teamworkBonus;
 });
-const promotionFor = (contributionId: ContributionId) =>
-  localizedPromotions.value.find((promotion) => promotion.contributionId === contributionId && isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)));
 const childMembers = computed(() => store.members.filter((member) => member.role === "child"));
-const childOptions = computed(() => childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })));
+const childOptions = computed(() =>
+  childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })),
+);
 const canGiveGift = computed(() => gift.amount >= 1 && gift.reason.trim().length >= 3);
-const openGiftDialog = () => {
+
+function contributionTitle(contributionId: ContributionId) {
+  return (
+    localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
+    t("contributions.singular")
+  );
+}
+function promotionFor(contributionId: ContributionId) {
+  return localizedPromotions.value.find(
+    (promotion) =>
+      promotion.contributionId === contributionId &&
+      isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
+  );
+}
+function openGiftDialog() {
   Object.assign(gift, { childId: store.activeChildId, amount: 20, reason: "" });
   giftDialogOpen.value = true;
-};
-const giveDirectGift = () => {
+}
+function giveDirectGift() {
   store.giftLadirchenToChild(gift.childId, gift.amount, gift.reason);
   giftDialogOpen.value = false;
-};
+}
 </script>
 
 <style lang="scss" scoped>
@@ -271,7 +514,6 @@ const giveDirectGift = () => {
   color: var(--lad-mint-dark);
   font-size: 1.25rem;
   line-height: 1;
-
 }
 .energy-label {
   --uno: d-block mt-1;
@@ -288,12 +530,10 @@ const giveDirectGift = () => {
 
   gap: 6px;
   color: inherit;
-  border: 1px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary-muted) 10%, transparent);
   border-radius: 17px;
   background: color-mix(in srgb, var(--lad-surface-raised) 50%, transparent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
   font: inherit;
 
   transition:
@@ -303,13 +543,11 @@ const giveDirectGift = () => {
 }
 .energy-trigger:hover {
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent);
 }
 .energy-trigger:active {
   transform: translateY(1px) scale(0.98);
-  box-shadow: 0 1px 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .energy-chevron {
   --uno: position-absolute;
@@ -402,16 +640,10 @@ const giveDirectGift = () => {
   --uno: d-flex align-center flex-shrink-0;
   gap: 5px;
   color: var(--lad-color-primary-deep);
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 20%, transparent);
   border-radius: 16px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-surface-raised)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface-raised));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
   font-size: rem(10);
   font-weight: var(--lad-font-weight-heavy);
   text-decoration: none;
@@ -421,8 +653,7 @@ const giveDirectGift = () => {
 }
 .all-contributions:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 0
-    color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
 }
 .contribution-list {
   --uno: d-flex flex-column;
@@ -431,8 +662,7 @@ const giveDirectGift = () => {
 .contribution-empty {
   --uno: d-flex align-center position-relative overflow-hidden;
   gap: 13px;
-  border: 2px dashed
-    color-mix(in srgb, var(--lad-color-primary-muted) 30%, transparent);
+  border: 2px dashed color-mix(in srgb, var(--lad-color-primary-muted) 30%, transparent);
   background:
     radial-gradient(
       circle at 88% 18%,
@@ -440,8 +670,7 @@ const giveDirectGift = () => {
       transparent 26%
     ),
     linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface));
-  box-shadow: inset 0 0 0 5px
-    color-mix(in srgb, var(--lad-surface-raised) 35%, transparent);
+  box-shadow: inset 0 0 0 5px color-mix(in srgb, var(--lad-surface-raised) 35%, transparent);
 }
 .contribution-empty strong {
   font-size: rem(15);
@@ -500,8 +729,7 @@ const giveDirectGift = () => {
   --uno: position-relative d-grid place-center flex-shrink-0 text-center;
   z-index: 1;
   color: var(--lad-color-info-deep);
-  border: 3px solid
-    color-mix(in srgb, var(--lad-surface-raised) 90%, transparent);
+  border: 3px solid color-mix(in srgb, var(--lad-surface-raised) 90%, transparent);
   border-radius: 18px;
   background: radial-gradient(
     circle at 25% 18%,
@@ -511,8 +739,7 @@ const giveDirectGift = () => {
   );
   box-shadow:
     0 5px 0 var(--lad-border),
-    0 10px 18px
-      color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent);
+    0 10px 18px color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent);
   transform: rotate(3deg);
   animation: bonus-boost-pulse 2s ease-in-out infinite;
 }
@@ -541,8 +768,7 @@ const giveDirectGift = () => {
 .promotion-stars i {
   --uno: position-absolute;
   color: var(--lad-color-reward-accent);
-  text-shadow: 0 0 7px
-    color-mix(in srgb, var(--lad-color-reward-highlight) 95%, transparent);
+  text-shadow: 0 0 7px color-mix(in srgb, var(--lad-color-reward-highlight) 95%, transparent);
   font-style: normal;
   opacity: 0;
   transform: scale(0.35);
@@ -628,9 +854,7 @@ const giveDirectGift = () => {
 }
 .promotion-rocket {
   color: var(--lad-color-reward-pale);
-  filter: drop-shadow(
-    0 2px 1px color-mix(in srgb, var(--lad-color-bonus-strong) 25%, transparent)
-  );
+  filter: drop-shadow(0 2px 1px color-mix(in srgb, var(--lad-color-bonus-strong) 25%, transparent));
   animation: bonus-rocket-launch 2.1s ease-in-out infinite;
 }
 .promotion-banner-countdown {
@@ -677,24 +901,17 @@ const giveDirectGift = () => {
 }
 .promotion-detail-card {
   --uno: position-relative overflow-hidden text-center;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
   background:
     radial-gradient(
       circle at 88% 4%,
       color-mix(in srgb, var(--lad-color-primary-highlight) 18%, transparent),
       transparent 27%
     ),
-    linear-gradient(
-      155deg,
-      var(--lad-surface-soft),
-      var(--lad-surface-soft) 60%,
-      var(--lad-surface-soft)
-    );
+    linear-gradient(155deg, var(--lad-surface-soft), var(--lad-surface-soft) 60%, var(--lad-surface-soft));
   box-shadow:
     0 9px 0 color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent),
-    0 25px 55px
-      color-mix(in srgb, var(--lad-color-bonus-info-deep) 25%, transparent);
+    0 25px 55px color-mix(in srgb, var(--lad-color-bonus-info-deep) 25%, transparent);
 }
 .promotion-detail-card::after {
   content: "✦";
@@ -709,24 +926,14 @@ const giveDirectGift = () => {
   color: var(--lad-color-primary-strong);
 }
 .promotion-reward-card {
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-info-muted) 18%, transparent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-surface-soft)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-info-shadow) 10%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info-muted) 18%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface-soft));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info-shadow) 10%, transparent);
 }
 .promotion-start {
   min-height: 49px;
   color: var(--lad-surface-raised);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-info-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-info-strong));
   box-shadow:
     0 5px 0 var(--lad-color-info-deep),
     0 10px 17px color-mix(in srgb, var(--lad-color-info-deep) 15%, transparent);
@@ -758,12 +965,10 @@ const giveDirectGift = () => {
   min-height: 55px;
   padding: 7px;
   --uno: d-grid place-center;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-info-muted) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info-muted) 15%, transparent);
   border-radius: 14px;
   background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-info-shadow) 8%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-info-shadow) 8%, transparent);
 }
 .promotion-breakdown i,
 .promotion-breakdown small {
@@ -928,7 +1133,6 @@ const giveDirectGift = () => {
   }
   .contribution-board-heading {
     --uno: align-stretch flex-column;
-
   }
   .all-contributions {
     width: fit-content;

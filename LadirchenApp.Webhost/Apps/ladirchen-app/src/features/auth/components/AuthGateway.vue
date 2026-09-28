@@ -2,43 +2,136 @@
   <main class="auth-gateway">
     <section class="auth-card" aria-labelledby="auth-title">
       <div class="auth-brand">
-        <span class="auth-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
-        <span><strong>{{ t('common.appName') }}</strong><small>{{ t('auth.brandClaim') }}</small></span>
+        <span class="auth-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png" /></span>
+        <span>
+          <strong>{{ t("common.appName") }}</strong>
+          <small>{{ t("auth.brandClaim") }}</small>
+        </span>
       </div>
 
       <div class="auth-switch mt-5" role="tablist" :aria-label="t('auth.accessAria')">
-        <button :aria-selected="mode === 'login'" :class="{ active: mode === 'login' }" role="tab" type="button" @click="setMode('login')"><v-icon icon="i-mdi:login-variant" />{{ t('auth.loginTab') }}</button>
-        <button :aria-selected="mode === 'register'" :class="{ active: mode === 'register' }" role="tab" type="button" @click="setMode('register')"><v-icon icon="i-mdi:home-heart" />{{ t('auth.registerTab') }}</button>
+        <button
+          :aria-selected="mode === 'login'"
+          :class="{ active: mode === 'login' }"
+          role="tab"
+          type="button"
+          @click="setMode('login')"
+        >
+          <v-icon icon="i-mdi:login-variant" />
+          {{ t("auth.loginTab") }}
+        </button>
+        <button
+          :aria-selected="mode === 'register'"
+          :class="{ active: mode === 'register' }"
+          role="tab"
+          type="button"
+          @click="setMode('register')"
+        >
+          <v-icon icon="i-mdi:home-heart" />
+          {{ t("auth.registerTab") }}
+        </button>
       </div>
 
       <form v-if="mode === 'login'" class="auth-form mt-5" @submit.prevent="login">
         <div class="auth-heading">
-          <p>{{ t('auth.login.eyebrow') }}</p>
-          <h1 id="auth-title">{{ t('auth.login.title') }}</h1>
-          <span>{{ t('auth.login.description') }}</span>
+          <p>{{ t("auth.login.eyebrow") }}</p>
+          <h1 id="auth-title">{{ t("auth.login.title") }}</h1>
+          <span>{{ t("auth.login.description") }}</span>
         </div>
-        <v-text-field v-model="loginUsername" autocomplete="username" density="comfortable" :label="t('auth.login.username')" prepend-inner-icon="i-mdi:account-outline" variant="outlined" />
-        <v-text-field v-model="loginPassword" :append-inner-icon="loginPasswordIcon" autocomplete="current-password" density="comfortable" :label="t('auth.login.password')" prepend-inner-icon="i-mdi:lock-outline" :type="loginPasswordType" variant="outlined" @click:append-inner="toggleLoginPassword" />
+        <v-text-field
+          v-model="loginUsername"
+          autocomplete="username"
+          density="comfortable"
+          :label="t('auth.login.username')"
+          prepend-inner-icon="i-mdi:account-outline"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="loginPassword"
+          :append-inner-icon="loginPasswordIcon"
+          autocomplete="current-password"
+          density="comfortable"
+          :label="t('auth.login.password')"
+          prepend-inner-icon="i-mdi:lock-outline"
+          :type="loginPasswordType"
+          variant="outlined"
+          @click:append-inner="toggleLoginPassword"
+        />
         <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
-        <button class="auth-submit" :disabled="loginIsDisabled" type="submit"><v-icon icon="i-mdi:door-open" /><span>{{ loginSubmitLabel }}</span><i aria-hidden="true">→</i></button>
-        <div class="demo-login"><v-icon icon="i-mdi:flask-outline" /><span><strong>{{ t('auth.login.demoTitle') }}</strong><small>{{ t('auth.login.demoHint', { users: demoAccessLabel }) }}</small></span></div>
+        <button class="auth-submit" :disabled="loginIsDisabled" type="submit">
+          <v-icon icon="i-mdi:door-open" />
+          <span>{{ loginSubmitLabel }}</span>
+          <i aria-hidden="true">→</i>
+        </button>
+        <div class="demo-login">
+          <v-icon icon="i-mdi:flask-outline" />
+          <span>
+            <strong>{{ t("auth.login.demoTitle") }}</strong>
+            <small>{{ t("auth.login.demoHint", { users: demoAccessLabel }) }}</small>
+          </span>
+        </div>
       </form>
 
       <form v-else class="auth-form mt-5" @submit.prevent="register">
         <div class="auth-heading">
-          <p>{{ t('auth.register.eyebrow') }}</p>
-          <h1 id="auth-title">{{ t('auth.register.title') }}</h1>
-          <span>{{ t('auth.register.description') }}</span>
+          <p>{{ t("auth.register.eyebrow") }}</p>
+          <h1 id="auth-register-title">{{ t("auth.register.title") }}</h1>
+          <span>{{ t("auth.register.description") }}</span>
         </div>
         <div class="register-grid">
-          <v-text-field v-model="familyName" autocomplete="organization" density="comfortable" :label="t('auth.register.familyName')" prepend-inner-icon="i-mdi:home-heart" variant="outlined" />
-          <v-text-field v-model="guardianName" autocomplete="name" density="comfortable" :label="t('auth.register.guardianName')" prepend-inner-icon="i-mdi:account-heart-outline" variant="outlined" />
+          <v-text-field
+            v-model="familyName"
+            autocomplete="organization"
+            density="comfortable"
+            :label="t('auth.register.familyName')"
+            prepend-inner-icon="i-mdi:home-heart"
+            variant="outlined"
+          />
+          <v-text-field
+            v-model="guardianName"
+            autocomplete="name"
+            density="comfortable"
+            :label="t('auth.register.guardianName')"
+            prepend-inner-icon="i-mdi:account-heart-outline"
+            variant="outlined"
+          />
         </div>
-        <v-text-field v-model="registerUsername" autocomplete="username" density="comfortable" :label="t('auth.login.username')" prepend-inner-icon="i-mdi:account-outline" variant="outlined" />
-        <v-text-field v-model="registerPassword" :append-inner-icon="registerPasswordIcon" autocomplete="new-password" density="comfortable" :hint="t('auth.register.passwordHint')" :label="t('auth.login.password')" persistent-hint prepend-inner-icon="i-mdi:lock-plus-outline" :type="registerPasswordType" variant="outlined" @click:append-inner="toggleRegisterPassword" />
-        <v-text-field v-model="passwordConfirmation" autocomplete="new-password" density="comfortable" :label="t('auth.register.passwordConfirmation')" prepend-inner-icon="i-mdi:lock-check-outline" type="password" variant="outlined" />
+        <v-text-field
+          v-model="registerUsername"
+          autocomplete="username"
+          density="comfortable"
+          :label="t('auth.login.username')"
+          prepend-inner-icon="i-mdi:account-outline"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="registerPassword"
+          :append-inner-icon="registerPasswordIcon"
+          autocomplete="new-password"
+          density="comfortable"
+          :hint="t('auth.register.passwordHint')"
+          :label="t('auth.login.password')"
+          persistent-hint
+          prepend-inner-icon="i-mdi:lock-plus-outline"
+          :type="registerPasswordType"
+          variant="outlined"
+          @click:append-inner="toggleRegisterPassword"
+        />
+        <v-text-field
+          v-model="passwordConfirmation"
+          autocomplete="new-password"
+          density="comfortable"
+          :label="t('auth.register.passwordConfirmation')"
+          prepend-inner-icon="i-mdi:lock-check-outline"
+          type="password"
+          variant="outlined"
+        />
         <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
-        <button class="auth-submit auth-submit--register" :disabled="registrationIsDisabled" type="submit"><v-icon icon="i-mdi:home-plus-outline" /><span>{{ registerSubmitLabel }}</span><i aria-hidden="true">✦</i></button>
+        <button class="auth-submit auth-submit--register" :disabled="registrationIsDisabled" type="submit">
+          <v-icon icon="i-mdi:home-plus-outline" />
+          <span>{{ registerSubmitLabel }}</span>
+          <i aria-hidden="true">✦</i>
+        </button>
       </form>
     </section>
   </main>
@@ -73,64 +166,94 @@ const errorMessage = ref("");
 const demoAccessLabel = computed(() => {
   const names = store.members
     .slice(0, AUTH_INPUT_RULES.demoMemberCount)
-    .map(member => `„${member.nickname || member.name}“`);
+    .map((member) => `„${member.nickname || member.name}“`);
+
   return names.length > 1 ? `${names[0]} / ${names[1]}` : names[0] || t("auth.login.demoFallback");
 });
 
-const registrationIsValid = computed(() =>
-  familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength
-  && guardianName.value.trim().length >= AUTH_INPUT_RULES.guardianNameMinimumLength
-  && registerUsername.value.trim().length >= AUTH_INPUT_RULES.usernameMinimumLength
-  && registerPassword.value.length >= AUTH_INPUT_RULES.passwordMinimumLength
-  && registerPassword.value === passwordConfirmation.value,
+const registrationIsValid = computed(
+  () =>
+    familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength &&
+    guardianName.value.trim().length >= AUTH_INPUT_RULES.guardianNameMinimumLength &&
+    registerUsername.value.trim().length >= AUTH_INPUT_RULES.usernameMinimumLength &&
+    registerPassword.value.length >= AUTH_INPUT_RULES.passwordMinimumLength &&
+    registerPassword.value === passwordConfirmation.value,
 );
-const loginPasswordIcon = computed(() => showLoginPassword.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline");
-const loginPasswordType = computed(() => showLoginPassword.value ? "text" : "password");
-const registerPasswordIcon = computed(() => showRegisterPassword.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline");
-const registerPasswordType = computed(() => showRegisterPassword.value ? "text" : "password");
+const loginPasswordIcon = computed(() => (showLoginPassword.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline"));
+const loginPasswordType = computed(() => (showLoginPassword.value ? "text" : "password"));
+const registerPasswordIcon = computed(() =>
+  showRegisterPassword.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline",
+);
+const registerPasswordType = computed(() => (showRegisterPassword.value ? "text" : "password"));
 const loginIsDisabled = computed(() => submitting.value || !loginUsername.value.trim() || !loginPassword.value);
 const registrationIsDisabled = computed(() => submitting.value || !registrationIsValid.value);
 const loginSubmitLabel = computed(() => t(submitting.value ? "auth.login.pending" : "auth.login.submit"));
 const registerSubmitLabel = computed(() => t(submitting.value ? "auth.register.pending" : "auth.register.submit"));
-const toggleLoginPassword = () => { showLoginPassword.value = !showLoginPassword.value; };
-const toggleRegisterPassword = () => { showRegisterPassword.value = !showRegisterPassword.value; };
+function toggleLoginPassword() {
+  showLoginPassword.value = !showLoginPassword.value;
+}
 
-const setMode = (nextMode: AuthMode) => {
+function toggleRegisterPassword() {
+  showRegisterPassword.value = !showRegisterPassword.value;
+}
+
+function setMode(nextMode: AuthMode) {
   mode.value = nextMode;
   errorMessage.value = "";
-};
+}
 
-const login = async () => {
-  if (submitting.value) return;
+async function login() {
+  if (submitting.value) {
+    return;
+  }
+
   submitting.value = true;
   errorMessage.value = "";
+
   try {
     const localAccount = await authenticationGateway.authenticate(loginUsername.value, loginPassword.value);
+
     if (localAccount) {
       const signedIn = await store.signInToFamily(localAccount.familyId, localAccount.memberId);
-      if (!signedIn) errorMessage.value = t("auth.login.loadError");
+
+      if (!signedIn) {
+        errorMessage.value = t("auth.login.loadError");
+      }
+
       return;
     }
+
     const normalizedUsername = loginUsername.value.trim().toLocaleLowerCase("de");
-    const demoMember = store.members.find(member =>
-      member.name.trim().toLocaleLowerCase("de") === normalizedUsername
-      || member.nickname?.trim().toLocaleLowerCase("de") === normalizedUsername,
+    const demoMember = store.members.find(
+      (member) =>
+        member.name.trim().toLocaleLowerCase("de") === normalizedUsername ||
+        member.nickname?.trim().toLocaleLowerCase("de") === normalizedUsername,
     );
-    if (loginPassword.value === DEMO_CREDENTIALS.password && demoMember && store.signInCurrentFamily(demoMember.id)) return;
+
+    if (loginPassword.value === DEMO_CREDENTIALS.password && demoMember && store.signInCurrentFamily(demoMember.id)) {
+      return;
+    }
+
     errorMessage.value = t("auth.login.credentialsError");
   } finally {
     submitting.value = false;
   }
-};
+}
 
-const register = async () => {
-  if (submitting.value || !registrationIsValid.value) return;
-  if (await authenticationGateway.usernameExists(registerUsername.value)) {
-    errorMessage.value = t("auth.register.usernameExists");
+async function register() {
+  if (submitting.value || !registrationIsValid.value) {
     return;
   }
+
+  if (await authenticationGateway.usernameExists(registerUsername.value)) {
+    errorMessage.value = t("auth.register.usernameExists");
+
+    return;
+  }
+
   submitting.value = true;
   errorMessage.value = "";
+
   try {
     const familyId = createDomainId.family(crypto.randomUUID());
     const guardianId = createDomainId.familyMember(crypto.randomUUID());
@@ -147,7 +270,7 @@ const register = async () => {
   } finally {
     submitting.value = false;
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>
@@ -161,26 +284,14 @@ const register = async () => {
   height: min(42.5rem, calc(100dvh - 5rem));
   padding: 1.5rem;
   --uno: overflow-auto position-relative;
-  border: rem(2) solid
-    color-mix(in srgb, var(--lad-color-info) 15%, transparent);
+  border: rem(2) solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: rem(30);
   background:
-    radial-gradient(
-      circle at 92% 5%,
-      color-mix(in srgb, var(--lad-color-reward) 25%, transparent),
-      transparent 26%
-    ),
-    linear-gradient(
-      155deg,
-      var(--lad-surface),
-      var(--lad-surface-soft) 55%,
-      var(--lad-surface-soft)
-    );
+    radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--lad-color-reward) 25%, transparent), transparent 26%),
+    linear-gradient(155deg, var(--lad-surface), var(--lad-surface-soft) 55%, var(--lad-surface-soft));
   box-shadow:
-    0 rem(10) 0
-      color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent),
-    0 rem(30) rem(70)
-      color-mix(in srgb, var(--lad-text-warm) 18%, transparent);
+    0 rem(10) 0 color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent),
+    0 rem(30) rem(70) color-mix(in srgb, var(--lad-text-warm) 18%, transparent);
 }
 .auth-brand {
   --uno: d-flex align-center;
@@ -193,8 +304,7 @@ const register = async () => {
   border: rem(2) solid var(--lad-border-on-accent);
   border-radius: rem(19);
   background: var(--lad-surface-raised);
-  box-shadow: 0 rem(5) 0
-    color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
+  box-shadow: 0 rem(5) 0 color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
 }
 .auth-logo img {
   width: 6.75rem;
@@ -223,8 +333,7 @@ const register = async () => {
   --uno: d-grid;
   grid-template-columns: 1fr 1fr;
   gap: rem(5);
-  border: rem(1) solid
-    color-mix(in srgb, var(--lad-color-info) 15%, transparent);
+  border: rem(1) solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: rem(18);
   background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
 }
@@ -243,11 +352,7 @@ const register = async () => {
 }
 .auth-switch button.active {
   color: var(--lad-text-inverse);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow: 0 0.25rem 0 var(--lad-color-primary-deep);
 }
 .auth-switch button :deep(.v-icon) {
@@ -293,8 +398,7 @@ const register = async () => {
   margin: 0 0 rem(11);
   padding: rem(9) rem(11);
   color: var(--lad-color-danger-strong);
-  border: rem(1) solid
-    color-mix(in srgb, var(--lad-color-danger-muted) 18%, transparent);
+  border: rem(1) solid color-mix(in srgb, var(--lad-color-danger-muted) 18%, transparent);
   border-radius: 0.75rem;
   background: var(--lad-surface);
   font-size: rem(10);
@@ -307,18 +411,12 @@ const register = async () => {
   --uno: d-flex align-center justify-center cursor-pointer;
   gap: rem(9);
   color: var(--lad-text-inverse);
-  border: rem(3) solid
-    color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
+  border: rem(3) solid color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
   border-radius: rem(17);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info-strong));
   box-shadow:
     0 rem(5) 0 var(--lad-color-info-strong),
-    0 rem(10) rem(18)
-      color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
+    0 rem(10) rem(18) color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
   font: inherit;
   font-size: 0.75rem;
   font-weight: var(--lad-font-weight-black);
@@ -335,8 +433,7 @@ const register = async () => {
   transform: translateY(rem(-2));
   box-shadow:
     0 rem(7) 0 var(--lad-color-info-strong),
-    0 rem(13) 1.25rem
-      color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
+    0 rem(13) 1.25rem color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
 }
 .auth-submit:active:not(:disabled) {
   transform: translateY(rem(2));
@@ -348,15 +445,10 @@ const register = async () => {
   opacity: 0.48;
 }
 .auth-submit--register {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow:
     0 rem(5) 0 var(--lad-color-primary-deep),
-    0 rem(10) rem(18)
-      color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
+    0 rem(10) rem(18) color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
 }
 .demo-login {
   margin-top: rem(14);
@@ -364,8 +456,7 @@ const register = async () => {
   --uno: d-flex align-center;
   gap: rem(9);
   color: var(--lad-color-accent-warm-deep);
-  border: rem(1) solid
-    color-mix(in srgb, var(--lad-color-reward-accent) 18%, transparent);
+  border: rem(1) solid color-mix(in srgb, var(--lad-color-reward-accent) 18%, transparent);
   border-radius: rem(14);
   background: var(--lad-color-reward-soft);
 }

@@ -3,9 +3,9 @@
     <section class="family-hero mb-5">
       <HeaderDecoration tone="family" />
       <div class="family-hero-copy">
-        <p class="family-hero-kicker">{{ t('family.hero.eyebrow') }}</p>
-        <h1>{{ t('family.hero.title') }}</h1>
-        <span>{{ t('family.hero.description') }}</span>
+        <p class="family-hero-kicker">{{ t("family.hero.eyebrow") }}</p>
+        <h1>{{ t("family.hero.title") }}</h1>
+        <span>{{ t("family.hero.description") }}</span>
       </div>
       <div class="family-hero-avatars" :aria-label="t('family.hero.membersAria')">
         <span v-for="member in heroMembers" :key="member.id">
@@ -19,31 +19,58 @@
       <div class="d-flex align-center ga-3">
         <v-avatar color="info" variant="tonal">⚙️</v-avatar>
         <div class="flex-grow-1">
-          <strong>{{ t('family.admin.title') }}</strong>
-          <p class="text-caption text-medium-emphasis">{{ t('family.admin.description') }}</p>
+          <strong>{{ t("family.admin.title") }}</strong>
+          <p class="text-caption text-medium-emphasis">{{ t("family.admin.description") }}</p>
         </div>
-        <v-btn color="info" rounded="lg" size="small" variant="flat" @click="store.openFamilySetup">{{ t('family.admin.edit') }}</v-btn>
+        <v-btn color="info" rounded="lg" size="small" variant="flat" @click="store.openFamilySetup">
+          {{ t("family.admin.edit") }}
+        </v-btn>
       </div>
     </BrandedCard>
 
     <BrandedCard class="family-roster mb-6" tag="section" tone="family">
       <div class="family-section-heading">
-        <div><p>{{ t('family.roster.eyebrow') }}</p><h2>{{ t('family.roster.title') }}</h2><span>{{ t('family.roster.count', { count: store.members.length }) }}</span></div>
-        <v-btn v-if="store.permissions.canInviteMembers" color="primary" prepend-icon="i-mdi:account-plus-outline" rounded="lg" size="small" variant="tonal" @click="inviteDialog = true">{{ t('family.roster.invite') }}</v-btn>
+        <div>
+          <p>{{ t("family.roster.eyebrow") }}</p>
+          <h2>{{ t("family.roster.title") }}</h2>
+          <span>{{ t("family.roster.count", { count: store.members.length }) }}</span>
+        </div>
+        <v-btn
+          v-if="store.permissions.canInviteMembers"
+          color="primary"
+          prepend-icon="i-mdi:account-plus-outline"
+          rounded="lg"
+          size="small"
+          variant="tonal"
+          @click="inviteDialog = true"
+        >
+          {{ t("family.roster.invite") }}
+        </v-btn>
       </div>
       <div class="member-grid">
-        <BrandedCard v-for="member in store.members" :key="member.id" class="member-card pa-4" tone="family">
+        <BrandedCard v-for="card in memberCards" :key="card.member.id" class="member-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
-            <AvatarFigure :appearance="appearanceFor(member)" :size="56" />
+            <AvatarFigure :appearance="card.appearance" :size="56" />
             <div class="flex-grow-1 min-w-0">
-              <strong>{{ member.name }}</strong>
-              <p class="text-caption text-medium-emphasis">{{ memberSubtitle(member) }}</p>
+              <strong>{{ card.member.name }}</strong>
+              <p class="text-caption text-medium-emphasis">{{ card.subtitle }}</p>
             </div>
-            <v-chip v-if="member.invitationPending" color="info" size="small" variant="tonal">{{ t('family.roster.invited') }}</v-chip>
-            <v-chip v-else-if="member.role === 'child'" color="warning" size="small" variant="tonal">🔥 {{ streakDays(member.id) }}</v-chip>
-            <v-chip v-else-if="store.permissions.canManageFamily" :color="guardianAccessColor(member.guardianAccess)" size="x-small" variant="tonal">{{ accessLabel(member.guardianAccess) }}</v-chip>
+            <v-chip v-if="card.member.invitationPending" color="info" size="small" variant="tonal">
+              {{ t("family.roster.invited") }}
+            </v-chip>
+            <v-chip v-else-if="card.member.role === 'child'" color="warning" size="small" variant="tonal">
+              🔥 {{ card.streakDays }}
+            </v-chip>
+            <v-chip
+              v-else-if="store.permissions.canManageFamily"
+              :color="card.accessColor"
+              size="x-small"
+              variant="tonal"
+            >
+              {{ card.accessLabel }}
+            </v-chip>
           </div>
-          <div v-if="store.permissions.canManageFamily && member.role === 'guardian' && member.id !== store.signedInMemberId" class="permission-editor mt-3">
+          <div v-if="card.canEditAccess" class="permission-editor mt-3">
             <v-select
               density="compact"
               hide-details
@@ -51,35 +78,30 @@
               item-title="title"
               item-value="value"
               :label="t('family.permissions.label')"
-              :model-value="member.guardianAccess ?? 'supporter'"
+              :model-value="card.access"
               variant="outlined"
-              @update:model-value="setGuardianAccess(member.id, $event)"
+              @update:model-value="setGuardianAccess(card.member.id, $event)"
             />
           </div>
-          <div v-if="member.role === 'guardian' && (store.permissions.canManageFamily || member.id === store.signedInMemberId)" class="weekly-participation mt-3">
+          <div v-if="card.showParticipation" class="weekly-participation mt-3">
             <div>
-              <strong>{{ t('family.weekly.participate') }}</strong>
-              <span>{{ participationLabel(member) }}</span>
+              <strong>{{ t("family.weekly.participate") }}</strong>
+              <span>{{ card.participationLabel }}</span>
             </div>
             <v-switch
               color="primary"
               density="compact"
               hide-details
-              :model-value="member.participatesInWeeklyGoal ?? false"
-              @update:model-value="store.setWeeklyGoalParticipation(member.id, Boolean($event))"
+              :model-value="card.participates"
+              @update:model-value="store.setWeeklyGoalParticipation(card.member.id, Boolean($event))"
             />
           </div>
-          <div v-if="member.role === 'child' || member.participatesInWeeklyGoal" class="mt-3">
+          <div v-if="card.showProgress" class="mt-3">
             <div class="d-flex align-center justify-space-between mb-1">
-              <span class="text-caption text-medium-emphasis">{{ progressLabel(member) }}</span>
-              <strong class="text-caption">{{ store.contributionProgress(member.id) }} %</strong>
+              <span class="text-caption text-medium-emphasis">{{ card.progressLabel }}</span>
+              <strong class="text-caption">{{ card.progress }} %</strong>
             </div>
-            <v-progress-linear
-              :color="ratingColorFor(member.id)"
-              height="7"
-              :model-value="store.contributionProgress(member.id)"
-              rounded
-            />
+            <v-progress-linear :color="card.progressColor" height="7" :model-value="card.progress" rounded />
           </div>
         </BrandedCard>
       </div>
@@ -87,13 +109,20 @@
 
     <BrandedCard class="family-pets mb-6" tag="section" tone="family">
       <div class="family-section-heading family-section-heading--pets">
-        <div><p>{{ t('family.pets.eyebrow') }}</p><h2>{{ t('family.pets.title') }}</h2><span>{{ t('family.pets.description') }}</span></div>
+        <div>
+          <p>{{ t("family.pets.eyebrow") }}</p>
+          <h2>{{ t("family.pets.title") }}</h2>
+          <span>{{ t("family.pets.description") }}</span>
+        </div>
       </div>
       <div class="pet-grid">
         <BrandedCard v-for="pet in store.pets" :key="pet.id" class="pet-card pa-4" tone="family">
           <div class="d-flex align-center ga-3">
             <AnimatedPet :pet="pet" :size="64" />
-            <div><strong>{{ pet.name }}</strong><p class="text-caption text-medium-emphasis">{{ t(`familyPets.kinds.${pet.kind}`) }}</p></div>
+            <div>
+              <strong>{{ pet.name }}</strong>
+              <p class="text-caption text-medium-emphasis">{{ t(`familyPets.kinds.${pet.kind}`) }}</p>
+            </div>
           </div>
         </BrandedCard>
       </div>
@@ -101,24 +130,34 @@
 
     <v-dialog v-model="inviteDialog" max-width="420">
       <v-card class="pa-5" rounded="xl">
-        <v-card-title class="pa-0">{{ t('family.invite.title') }}</v-card-title>
-        <v-card-subtitle class="pa-0 mt-1 mb-5">{{ t('family.invite.description') }}</v-card-subtitle>
+        <v-card-title class="pa-0">{{ t("family.invite.title") }}</v-card-title>
+        <v-card-subtitle class="pa-0 mt-1 mb-5">{{ t("family.invite.description") }}</v-card-subtitle>
         <v-text-field v-model="invite.name" :label="t('family.setup.name')" variant="outlined" />
         <v-text-field v-model="invite.email" :label="t('family.invite.email')" type="email" variant="outlined" />
-        <v-select v-model="invite.guardianAccess" :items="guardianAccessOptions" item-title="title" item-value="value" :label="t('family.permissions.label')" variant="outlined" />
-        <v-alert class="mb-4" color="primary" density="compact" variant="tonal">{{ t('family.invite.notice') }}</v-alert>
+        <v-select
+          v-model="invite.guardianAccess"
+          :items="guardianAccessOptions"
+          item-title="title"
+          item-value="value"
+          :label="t('family.permissions.label')"
+          variant="outlined"
+        />
+        <v-alert class="mb-4" color="primary" density="compact" variant="tonal">
+          {{ t("family.invite.notice") }}
+        </v-alert>
         <div class="d-grid invite-actions ga-2">
-          <v-btn rounded="lg" variant="text" @click="inviteDialog = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="primary" :disabled="!canInvite" rounded="lg" variant="flat" @click="inviteGuardian">{{ t('family.invite.submit') }}</v-btn>
+          <v-btn rounded="lg" variant="text" @click="inviteDialog = false">{{ t("common.cancel") }}</v-btn>
+          <v-btn color="primary" :disabled="!canInvite" rounded="lg" variant="flat" @click="inviteGuardian">
+            {{ t("family.invite.submit") }}
+          </v-btn>
         </div>
       </v-card>
     </v-dialog>
-
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
@@ -136,52 +175,116 @@ import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
 
+let timer: number | undefined;
+
 const FAMILY_HERO_MEMBER_LIMIT = 3;
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
+
 const inviteDialog = ref(false);
-const invite = reactive<{ name: string; email: string; guardianAccess: GuardianAccessLevel }>({ name: "", email: "", guardianAccess: "supporter" });
+const invite = reactive<{ name: string; email: string; guardianAccess: GuardianAccessLevel }>({
+  name: "",
+  email: "",
+  guardianAccess: "supporter",
+});
+
 const guardianAccessOptions = computed<Array<{ title: string; value: GuardianAccessLevel }>>(() => [
   { title: t("family.permissions.supporter"), value: "supporter" },
   { title: t("family.permissions.admin"), value: "admin" },
 ]);
 const heroMembers = computed(() => store.members.slice(0, FAMILY_HERO_MEMBER_LIMIT));
 const additionalHeroMemberCount = computed(() => Math.max(0, store.members.length - FAMILY_HERO_MEMBER_LIMIT));
-const canInvite = computed(() => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email));
-const appearanceFor = (member: FamilyMember): AvatarAppearance => {
+const canInvite = computed(
+  () => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email),
+);
+const memberCards = computed(() =>
+  store.members.map((member) => {
+    const isGuardian = member.role === "guardian";
+    const isSignedIn = member.id === store.signedInMemberId;
+    const canManageFamily = store.permissions.canManageFamily;
+    const participates = member.participatesInWeeklyGoal ?? false;
+
+    return {
+      member,
+      appearance: appearanceFor(member),
+      subtitle: memberSubtitle(member),
+      streakDays: member.weeklyStreak ?? 0,
+      access: member.guardianAccess ?? "supporter",
+      accessColor: guardianAccessColor(member.guardianAccess),
+      accessLabel: accessLabel(member.guardianAccess),
+      canEditAccess: canManageFamily && isGuardian && !isSignedIn,
+      showParticipation: isGuardian && (canManageFamily || isSignedIn),
+      participates,
+      participationLabel: participationLabel(member),
+      showProgress: member.role === "child" || participates,
+      progress: store.contributionProgress(member.id),
+      progressLabel: progressLabel(member),
+      progressColor: ratingColorFor(member.id),
+    };
+  }),
+);
+
+function appearanceFor(member: FamilyMember): AvatarAppearance {
   return resolveFamilyMemberAvatarAppearance(member, store.members);
-};
-const accessLabel = (access?: GuardianAccessLevel) => t(access === "admin" ? "family.permissions.admin" : "family.permissions.supporter");
-const goalTitle = (memberId: FamilyMemberId) => {
-  const goal = store.goals.find(item => item.ownerId === memberId);
+}
+function accessLabel(access?: GuardianAccessLevel) {
+  return t(access === "admin" ? "family.permissions.admin" : "family.permissions.supporter");
+}
+function goalTitle(memberId: FamilyMemberId) {
+  const goal = store.goals.find((item) => item.ownerId === memberId);
+
   return goal ? localize.goal(goal).title : t("family.roster.noGoal");
-};
-const memberSubtitle = (member: FamilyMember) => member.role === "guardian" ? t("family.roles.guardian") : goalTitle(member.id);
-const guardianAccessColor = (access?: GuardianAccessLevel): "info" | "primary" => access === "admin" ? "info" : "primary";
-const participationLabel = (member: FamilyMember) => t(member.participatesInWeeklyGoal ? "family.weekly.active" : "family.weekly.inactive");
-const progressLabel = (member: FamilyMember) => t(member.role === "guardian" ? "family.weekly.familyProgress" : "family.weekly.personalProgress");
-const streakDays = (memberId: FamilyMemberId) => store.members.find((member) => member.id === memberId)?.weeklyStreak ?? 0;
-const ratingColorFor = (memberId: FamilyMemberId): "primary" | "warning" =>
-  store.averageTaskRatingFor(memberId) >= CONTRIBUTION_RATING.perfect ? "primary" : "warning";
-const setGuardianAccess = (memberId: FamilyMemberId, value: unknown) => {
-  if (isGuardianAccessLevel(value)) {store.setGuardianAccess(memberId, value);}
-};
-const inviteGuardian = () => {
+}
+function memberSubtitle(member: FamilyMember) {
+  return member.role === "guardian" ? t("family.roles.guardian") : goalTitle(member.id);
+}
+function guardianAccessColor(access?: GuardianAccessLevel): "info" | "primary" {
+  return access === "admin" ? "info" : "primary";
+}
+function participationLabel(member: FamilyMember) {
+  return t(member.participatesInWeeklyGoal ? "family.weekly.active" : "family.weekly.inactive");
+}
+function progressLabel(member: FamilyMember) {
+  return t(member.role === "guardian" ? "family.weekly.familyProgress" : "family.weekly.personalProgress");
+}
+function ratingColorFor(memberId: FamilyMemberId): "primary" | "warning" {
+  return store.averageTaskRatingFor(memberId) >= CONTRIBUTION_RATING.perfect ? "primary" : "warning";
+}
+function setGuardianAccess(memberId: FamilyMemberId, value: unknown) {
+  if (isGuardianAccessLevel(value)) {
+    store.setGuardianAccess(memberId, value);
+  }
+}
+function inviteGuardian() {
   store.inviteGuardian(invite.name.trim(), invite.email.trim(), invite.guardianAccess);
   invite.name = "";
   invite.email = "";
   invite.guardianAccess = "supporter";
   inviteDialog.value = false;
-};
+}
+
 onMounted(() => {
-  if (store.viewerRole !== "child") return;
-  window.setTimeout(() => ladiGuideController.say({
-    heading: t("family.guide.title"),
-    message: t("family.guide.message"),
-    pageIntro: true,
-  }), PAGE_INTRO_GUIDE_DELAY_MS);
+  if (store.viewerRole !== "child") {
+    return;
+  }
+
+  timer = window.setTimeout(
+    () =>
+      ladiGuideController.say({
+        heading: t("family.guide.title"),
+        message: t("family.guide.message"),
+        pageIntro: true,
+      }),
+    PAGE_INTRO_GUIDE_DELAY_MS,
+  );
+});
+
+onUnmounted(() => {
+  if (timer !== undefined) {
+    window.clearTimeout(timer);
+  }
 });
 </script>
 
@@ -195,22 +298,13 @@ onMounted(() => {
   border: rem(2) solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: rem(27);
   background:
-    radial-gradient(
-      circle at 88% 8%,
-      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
-      transparent 26%
-    ),
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--lad-color-reward) 30%, transparent), transparent 26%),
     radial-gradient(
       circle at 76% 92%,
       color-mix(in srgb, var(--lad-color-primary-highlight) 18%, transparent),
       transparent 31%
     ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface-raised),
-      var(--lad-surface-soft) 58%,
-      var(--lad-surface-soft)
-    );
+    linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft) 58%, var(--lad-surface-soft));
   box-shadow:
     0 rem(7) 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent),
     0 rem(16) rem(28) color-mix(in srgb, var(--lad-color-info-deep) 8%, transparent);
@@ -263,14 +357,9 @@ onMounted(() => {
   margin-left: rem(-17);
   border: rem(3) solid var(--lad-border-on-accent);
   border-radius: rem(19);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
   box-shadow:
-    0 rem(5) 0
-      color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent),
+    0 rem(5) 0 color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent),
     0 rem(9) rem(15) color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   animation: family-avatar-bob 3.2s ease-in-out infinite;
 }
@@ -351,8 +440,7 @@ onMounted(() => {
   padding: rem(9) rem(10);
   --uno: d-flex align-center justify-space-between;
   gap: rem(10);
-  border: rem(1) solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
+  border: rem(1) solid color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: rem(13);
   background: color-mix(in srgb, var(--lad-surface-soft) 80%, transparent);
 }
@@ -416,7 +504,6 @@ onMounted(() => {
   }
   .family-section-heading {
     --uno: align-start flex-column;
-
   }
 }
 @include respond-up(shell) {

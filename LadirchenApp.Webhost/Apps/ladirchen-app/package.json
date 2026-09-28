@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@fontsource/roboto": "catalog:dependencies",
+    "@vueuse/core": "catalog:dependencies",
     "luxon": "catalog:dependencies",
     "motion-v": "catalog:dependencies",
     "pinia": "catalog:dependencies",

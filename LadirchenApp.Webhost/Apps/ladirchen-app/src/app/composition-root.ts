@@ -10,6 +10,7 @@ import type { FamilyWorldDependencies } from "@/application/ports/family-world-d
 import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 import { browserScheduler } from "@/infrastructure/scheduling/browser-scheduler";
 import { createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-world-fixtures";
+import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
 
 const createRepositories = (): FamilyAggregateRepositories =>
   frontendRuntimeConfig.dataSource === "api"
@@ -21,6 +22,7 @@ const initialDataFactory = { create: createFamilyWorldInitialData };
 
 export const familyContext = localFamilyContext;
 export const authenticationGateway = createLocalAuthenticationGateway(browserClientStorage);
+export const localeMessagesSource = createBundledLocaleMessagesSource();
 
 export const homeCustomizationService = new VersionedAggregateService(
   FAMILY_AGGREGATE_DESCRIPTORS.homeCustomization.aggregateType,

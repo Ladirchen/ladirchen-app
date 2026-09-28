@@ -1,59 +1,5 @@
-import sunnyDollhouseBackgroundUrl from "@/assets/room-designs/starter-home-ladi-background.webp";
-import halloweenNightBackgroundUrl from "@/assets/room-designs/halloween-night-exterior-background.webp";
-import christmasWonderlandBackgroundUrl from "@/assets/room-designs/christmas-wonderland-exterior-background.webp";
-import cottonCandyDreamBackgroundUrl from "@/assets/room-designs/cotton-candy-dream-exterior-background.webp";
-import starlightPalaceBackgroundUrl from "@/assets/room-designs/starlight-palace-exterior-background.webp";
-import sunnyDollhouseEnergy1BackgroundUrl from "@/assets/room-designs/sunny-dollhouse-energy-1-exterior-background.webp";
-import sunnyDollhouseEnergy2BackgroundUrl from "@/assets/room-designs/sunny-dollhouse-energy-2-exterior-background.webp";
-import sunnyDollhouseEnergy3BackgroundUrl from "@/assets/room-designs/sunny-dollhouse-energy-3-exterior-background.webp";
-import sunnyDollhouseEnergy4BackgroundUrl from "@/assets/room-designs/sunny-dollhouse-energy-4-exterior-background.webp";
-import halloweenNightEnergy1BackgroundUrl from "@/assets/room-designs/halloween-night-energy-1-exterior-background.webp";
-import halloweenNightEnergy2BackgroundUrl from "@/assets/room-designs/halloween-night-energy-2-exterior-background.webp";
-import halloweenNightEnergy3BackgroundUrl from "@/assets/room-designs/halloween-night-energy-3-exterior-background.webp";
-import halloweenNightEnergy4BackgroundUrl from "@/assets/room-designs/halloween-night-energy-4-exterior-background.webp";
-import christmasWonderlandEnergy1BackgroundUrl from "@/assets/room-designs/christmas-wonderland-energy-1-exterior-background.webp";
-import christmasWonderlandEnergy2BackgroundUrl from "@/assets/room-designs/christmas-wonderland-energy-2-exterior-background.webp";
-import christmasWonderlandEnergy3BackgroundUrl from "@/assets/room-designs/christmas-wonderland-energy-3-exterior-background.webp";
-import christmasWonderlandEnergy4BackgroundUrl from "@/assets/room-designs/christmas-wonderland-energy-4-exterior-background.webp";
-import cottonCandyDreamEnergy1BackgroundUrl from "@/assets/room-designs/cotton-candy-dream-energy-1-exterior-background.webp";
-import cottonCandyDreamEnergy2BackgroundUrl from "@/assets/room-designs/cotton-candy-dream-energy-2-exterior-background.webp";
-import cottonCandyDreamEnergy3BackgroundUrl from "@/assets/room-designs/cotton-candy-dream-energy-3-exterior-background.webp";
-import cottonCandyDreamEnergy4BackgroundUrl from "@/assets/room-designs/cotton-candy-dream-energy-4-exterior-background.webp";
-import starlightPalaceEnergy1BackgroundUrl from "@/assets/room-designs/starlight-palace-energy-1-exterior-background.webp";
-import starlightPalaceEnergy2BackgroundUrl from "@/assets/room-designs/starlight-palace-energy-2-exterior-background.webp";
-import starlightPalaceEnergy3BackgroundUrl from "@/assets/room-designs/starlight-palace-energy-3-exterior-background.webp";
-import starlightPalaceEnergy4BackgroundUrl from "@/assets/room-designs/starlight-palace-energy-4-exterior-background.webp";
-
-import starterHomeSunnyDollhouseUrl from "@/assets/room-designs/starter-home-ladi-house.webp";
-import starterHomeHalloweenNightUrl from "@/assets/room-designs/starter-home-halloween-night-house.webp";
-import starterHomeChristmasWonderlandUrl from "@/assets/room-designs/starter-home-christmas-wonderland-house.webp";
-import starterHomeCottonCandyDreamUrl from "@/assets/room-designs/starter-home-cotton-candy-dream-house.webp";
-import starterHomeStarlightPalaceUrl from "@/assets/room-designs/starter-home-starlight-palace-house.webp";
-
-import familyHomeSunnyDollhouseUrl from "@/assets/room-designs/family-home-ladi-house.webp";
-import familyHomeHalloweenNightUrl from "@/assets/room-designs/family-home-halloween-night-house.webp";
-import familyHomeChristmasWonderlandUrl from "@/assets/room-designs/family-home-christmas-wonderland-house.webp";
-import familyHomeCottonCandyDreamUrl from "@/assets/room-designs/family-home-cotton-candy-dream-house.webp";
-import familyHomeStarlightPalaceUrl from "@/assets/room-designs/family-home-starlight-palace-house.webp";
-
-import gardenHomeSunnyDollhouseUrl from "@/assets/room-designs/modern-home-ladi-house.webp";
-import gardenHomeHalloweenNightUrl from "@/assets/room-designs/garden-home-halloween-night-house.webp";
-import gardenHomeChristmasWonderlandUrl from "@/assets/room-designs/garden-home-christmas-wonderland-house.webp";
-import gardenHomeCottonCandyDreamUrl from "@/assets/room-designs/garden-home-cotton-candy-dream-house.webp";
-import gardenHomeStarlightPalaceUrl from "@/assets/room-designs/garden-home-starlight-palace-house.webp";
-
-import towerHomeSunnyDollhouseUrl from "@/assets/room-designs/castle-home-ladi-house.webp";
-import towerHomeHalloweenNightUrl from "@/assets/room-designs/tower-home-halloween-night-house.webp";
-import towerHomeChristmasWonderlandUrl from "@/assets/room-designs/tower-home-christmas-wonderland-house.webp";
-import towerHomeCottonCandyDreamUrl from "@/assets/room-designs/tower-home-cotton-candy-dream-house.webp";
-import towerHomeStarlightPalaceUrl from "@/assets/room-designs/tower-home-starlight-palace-house.webp";
-
-import dreamHomeSunnyDollhouseUrl from "@/assets/room-designs/palace-home-ladi-house.webp";
-import dreamHomeHalloweenNightUrl from "@/assets/room-designs/dream-home-halloween-night-house.webp";
-import dreamHomeChristmasWonderlandUrl from "@/assets/room-designs/dream-home-christmas-wonderland-house.webp";
-import dreamHomeCottonCandyDreamUrl from "@/assets/room-designs/dream-home-cotton-candy-dream-house.webp";
-import dreamHomeStarlightPalaceUrl from "@/assets/room-designs/dream-home-starlight-palace-house.webp";
-
+import { createLazyAssetLoader } from "@/shared/assets/lazy-asset-loader";
+import type { AssetGlobModules } from "@/shared/assets/lazy-asset-loader";
 import type {
   HouseExteriorAssetId,
   HouseExteriorBackgroundAssetId,
@@ -63,70 +9,74 @@ import type {
 } from "@/domain/house";
 import { resolveHouseEnergyVisualLevel } from "@/domain/house";
 
-export const HOUSE_EXTERIOR_ASSET_URLS = {
-  "sunny-dollhouse-energy-1-exterior-background": sunnyDollhouseEnergy1BackgroundUrl,
-  "sunny-dollhouse-energy-2-exterior-background": sunnyDollhouseEnergy2BackgroundUrl,
-  "sunny-dollhouse-energy-3-exterior-background": sunnyDollhouseEnergy3BackgroundUrl,
-  "sunny-dollhouse-energy-4-exterior-background": sunnyDollhouseEnergy4BackgroundUrl,
-  "sunny-dollhouse-energy-5-exterior-background": sunnyDollhouseBackgroundUrl,
-  "halloween-night-energy-1-exterior-background": halloweenNightEnergy1BackgroundUrl,
-  "halloween-night-energy-2-exterior-background": halloweenNightEnergy2BackgroundUrl,
-  "halloween-night-energy-3-exterior-background": halloweenNightEnergy3BackgroundUrl,
-  "halloween-night-energy-4-exterior-background": halloweenNightEnergy4BackgroundUrl,
-  "halloween-night-energy-5-exterior-background": halloweenNightBackgroundUrl,
-  "christmas-wonderland-energy-1-exterior-background": christmasWonderlandEnergy1BackgroundUrl,
-  "christmas-wonderland-energy-2-exterior-background": christmasWonderlandEnergy2BackgroundUrl,
-  "christmas-wonderland-energy-3-exterior-background": christmasWonderlandEnergy3BackgroundUrl,
-  "christmas-wonderland-energy-4-exterior-background": christmasWonderlandEnergy4BackgroundUrl,
-  "christmas-wonderland-energy-5-exterior-background": christmasWonderlandBackgroundUrl,
-  "cotton-candy-dream-energy-1-exterior-background": cottonCandyDreamEnergy1BackgroundUrl,
-  "cotton-candy-dream-energy-2-exterior-background": cottonCandyDreamEnergy2BackgroundUrl,
-  "cotton-candy-dream-energy-3-exterior-background": cottonCandyDreamEnergy3BackgroundUrl,
-  "cotton-candy-dream-energy-4-exterior-background": cottonCandyDreamEnergy4BackgroundUrl,
-  "cotton-candy-dream-energy-5-exterior-background": cottonCandyDreamBackgroundUrl,
-  "starlight-palace-energy-1-exterior-background": starlightPalaceEnergy1BackgroundUrl,
-  "starlight-palace-energy-2-exterior-background": starlightPalaceEnergy2BackgroundUrl,
-  "starlight-palace-energy-3-exterior-background": starlightPalaceEnergy3BackgroundUrl,
-  "starlight-palace-energy-4-exterior-background": starlightPalaceEnergy4BackgroundUrl,
-  "starlight-palace-energy-5-exterior-background": starlightPalaceBackgroundUrl,
+const modules = import.meta.glob("../../../assets/room-designs/*.webp", { import: "default" }) as AssetGlobModules;
 
-  "starter-home-sunny-dollhouse-house": starterHomeSunnyDollhouseUrl,
-  "starter-home-halloween-night-house": starterHomeHalloweenNightUrl,
-  "starter-home-christmas-wonderland-house": starterHomeChristmasWonderlandUrl,
-  "starter-home-cotton-candy-dream-house": starterHomeCottonCandyDreamUrl,
-  "starter-home-starlight-palace-house": starterHomeStarlightPalaceUrl,
+// Legacy/renamed art files: these ids don't follow the "<id>.webp" naming convention.
+const HOUSE_EXTERIOR_ASSET_FILE_NAMES = {
+  "sunny-dollhouse-energy-1-exterior-background": "sunny-dollhouse-energy-1-exterior-background.webp",
+  "sunny-dollhouse-energy-2-exterior-background": "sunny-dollhouse-energy-2-exterior-background.webp",
+  "sunny-dollhouse-energy-3-exterior-background": "sunny-dollhouse-energy-3-exterior-background.webp",
+  "sunny-dollhouse-energy-4-exterior-background": "sunny-dollhouse-energy-4-exterior-background.webp",
+  "sunny-dollhouse-energy-5-exterior-background": "starter-home-ladi-background.webp",
+  "halloween-night-energy-1-exterior-background": "halloween-night-energy-1-exterior-background.webp",
+  "halloween-night-energy-2-exterior-background": "halloween-night-energy-2-exterior-background.webp",
+  "halloween-night-energy-3-exterior-background": "halloween-night-energy-3-exterior-background.webp",
+  "halloween-night-energy-4-exterior-background": "halloween-night-energy-4-exterior-background.webp",
+  "halloween-night-energy-5-exterior-background": "halloween-night-exterior-background.webp",
+  "christmas-wonderland-energy-1-exterior-background": "christmas-wonderland-energy-1-exterior-background.webp",
+  "christmas-wonderland-energy-2-exterior-background": "christmas-wonderland-energy-2-exterior-background.webp",
+  "christmas-wonderland-energy-3-exterior-background": "christmas-wonderland-energy-3-exterior-background.webp",
+  "christmas-wonderland-energy-4-exterior-background": "christmas-wonderland-energy-4-exterior-background.webp",
+  "christmas-wonderland-energy-5-exterior-background": "christmas-wonderland-exterior-background.webp",
+  "cotton-candy-dream-energy-1-exterior-background": "cotton-candy-dream-energy-1-exterior-background.webp",
+  "cotton-candy-dream-energy-2-exterior-background": "cotton-candy-dream-energy-2-exterior-background.webp",
+  "cotton-candy-dream-energy-3-exterior-background": "cotton-candy-dream-energy-3-exterior-background.webp",
+  "cotton-candy-dream-energy-4-exterior-background": "cotton-candy-dream-energy-4-exterior-background.webp",
+  "cotton-candy-dream-energy-5-exterior-background": "cotton-candy-dream-exterior-background.webp",
+  "starlight-palace-energy-1-exterior-background": "starlight-palace-energy-1-exterior-background.webp",
+  "starlight-palace-energy-2-exterior-background": "starlight-palace-energy-2-exterior-background.webp",
+  "starlight-palace-energy-3-exterior-background": "starlight-palace-energy-3-exterior-background.webp",
+  "starlight-palace-energy-4-exterior-background": "starlight-palace-energy-4-exterior-background.webp",
+  "starlight-palace-energy-5-exterior-background": "starlight-palace-exterior-background.webp",
 
-  "family-home-sunny-dollhouse-house": familyHomeSunnyDollhouseUrl,
-  "family-home-halloween-night-house": familyHomeHalloweenNightUrl,
-  "family-home-christmas-wonderland-house": familyHomeChristmasWonderlandUrl,
-  "family-home-cotton-candy-dream-house": familyHomeCottonCandyDreamUrl,
-  "family-home-starlight-palace-house": familyHomeStarlightPalaceUrl,
+  "starter-home-sunny-dollhouse-house": "starter-home-ladi-house.webp",
+  "starter-home-halloween-night-house": "starter-home-halloween-night-house.webp",
+  "starter-home-christmas-wonderland-house": "starter-home-christmas-wonderland-house.webp",
+  "starter-home-cotton-candy-dream-house": "starter-home-cotton-candy-dream-house.webp",
+  "starter-home-starlight-palace-house": "starter-home-starlight-palace-house.webp",
 
-  "garden-home-sunny-dollhouse-house": gardenHomeSunnyDollhouseUrl,
-  "garden-home-halloween-night-house": gardenHomeHalloweenNightUrl,
-  "garden-home-christmas-wonderland-house": gardenHomeChristmasWonderlandUrl,
-  "garden-home-cotton-candy-dream-house": gardenHomeCottonCandyDreamUrl,
-  "garden-home-starlight-palace-house": gardenHomeStarlightPalaceUrl,
+  "family-home-sunny-dollhouse-house": "family-home-ladi-house.webp",
+  "family-home-halloween-night-house": "family-home-halloween-night-house.webp",
+  "family-home-christmas-wonderland-house": "family-home-christmas-wonderland-house.webp",
+  "family-home-cotton-candy-dream-house": "family-home-cotton-candy-dream-house.webp",
+  "family-home-starlight-palace-house": "family-home-starlight-palace-house.webp",
 
-  "tower-home-sunny-dollhouse-house": towerHomeSunnyDollhouseUrl,
-  "tower-home-halloween-night-house": towerHomeHalloweenNightUrl,
-  "tower-home-christmas-wonderland-house": towerHomeChristmasWonderlandUrl,
-  "tower-home-cotton-candy-dream-house": towerHomeCottonCandyDreamUrl,
-  "tower-home-starlight-palace-house": towerHomeStarlightPalaceUrl,
+  "garden-home-sunny-dollhouse-house": "modern-home-ladi-house.webp",
+  "garden-home-halloween-night-house": "garden-home-halloween-night-house.webp",
+  "garden-home-christmas-wonderland-house": "garden-home-christmas-wonderland-house.webp",
+  "garden-home-cotton-candy-dream-house": "garden-home-cotton-candy-dream-house.webp",
+  "garden-home-starlight-palace-house": "garden-home-starlight-palace-house.webp",
 
-  "dream-home-sunny-dollhouse-house": dreamHomeSunnyDollhouseUrl,
-  "dream-home-halloween-night-house": dreamHomeHalloweenNightUrl,
-  "dream-home-christmas-wonderland-house": dreamHomeChristmasWonderlandUrl,
-  "dream-home-cotton-candy-dream-house": dreamHomeCottonCandyDreamUrl,
-  "dream-home-starlight-palace-house": dreamHomeStarlightPalaceUrl,
+  "tower-home-sunny-dollhouse-house": "castle-home-ladi-house.webp",
+  "tower-home-halloween-night-house": "tower-home-halloween-night-house.webp",
+  "tower-home-christmas-wonderland-house": "tower-home-christmas-wonderland-house.webp",
+  "tower-home-cotton-candy-dream-house": "tower-home-cotton-candy-dream-house.webp",
+  "tower-home-starlight-palace-house": "tower-home-starlight-palace-house.webp",
+
+  "dream-home-sunny-dollhouse-house": "palace-home-ladi-house.webp",
+  "dream-home-halloween-night-house": "dream-home-halloween-night-house.webp",
+  "dream-home-christmas-wonderland-house": "dream-home-christmas-wonderland-house.webp",
+  "dream-home-cotton-candy-dream-house": "dream-home-cotton-candy-dream-house.webp",
+  "dream-home-starlight-palace-house": "dream-home-starlight-palace-house.webp",
 } as const satisfies Record<HouseExteriorAssetId, string>;
 
-export const houseExteriorBackgroundAssetId = (
-  themeId: HouseThemeId,
-  energy: number,
-): HouseExteriorBackgroundAssetId => `${themeId}-energy-${resolveHouseEnergyVisualLevel(energy)}-exterior-background`;
+export const getHouseExteriorAssetUrl = createLazyAssetLoader<HouseExteriorAssetId>(
+  modules,
+  (id) => HOUSE_EXTERIOR_ASSET_FILE_NAMES[id],
+);
 
-export const houseExteriorHouseAssetId = (
-  stageId: HouseStageId,
-  themeId: HouseThemeId,
-): HouseExteriorHouseAssetId => `${stageId}-${themeId}-house`;
+export const houseExteriorBackgroundAssetId = (themeId: HouseThemeId, energy: number): HouseExteriorBackgroundAssetId =>
+  `${themeId}-energy-${resolveHouseEnergyVisualLevel(energy)}-exterior-background`;
+
+export const houseExteriorHouseAssetId = (stageId: HouseStageId, themeId: HouseThemeId): HouseExteriorHouseAssetId =>
+  `${stageId}-${themeId}-house`;

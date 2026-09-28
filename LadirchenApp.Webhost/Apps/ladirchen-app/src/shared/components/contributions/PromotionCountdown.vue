@@ -1,5 +1,5 @@
 <template>
-  <span class="countdown" :class="{ expired: remainingMilliseconds <= 0, urgent: remainingMilliseconds > 0 && remainingMilliseconds < 3_600_000 }">
+  <span class="countdown" :class="countdownClasses">
     <v-icon aria-hidden="true" size="14">i-mdi:timer-sand</v-icon>
     <span>{{ label }}</span>
   </span>
@@ -13,29 +13,41 @@ import { remainingPromotionMilliseconds } from "@/domain/contributions/promotion
 import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from "@/domain/shared/time";
 import type { IanaTimeZone } from "@/domain/family/time-zone";
 
-const props = defineProps<{ deadline: string; timeZone: IanaTimeZone }>();
-const { t } = useI18n();
-const now = ref(new Date());
 let timer: ReturnType<typeof window.setInterval> | undefined;
 
-const remainingMilliseconds = computed(() =>
-  remainingPromotionMilliseconds(props.deadline, props.timeZone, now.value),
-);
+const props = defineProps<{ deadline: string; timeZone: IanaTimeZone }>();
+const { t } = useI18n();
+
+const now = ref(new Date());
+
+const remainingMilliseconds = computed(() => remainingPromotionMilliseconds(props.deadline, props.timeZone, now.value));
+const countdownClasses = computed(() => ({
+  expired: remainingMilliseconds.value <= 0,
+  urgent: remainingMilliseconds.value > 0 && remainingMilliseconds.value < SECONDS_PER_HOUR * MILLISECONDS_PER_SECOND,
+}));
 const label = computed(() => {
-  if (remainingMilliseconds.value <= 0) return t("contributions.countdown.expired");
+  if (remainingMilliseconds.value <= 0) {
+    return t("contributions.countdown.expired");
+  }
+
   const totalSeconds = Math.floor(remainingMilliseconds.value / MILLISECONDS_PER_SECOND);
   const hours = Math.floor(totalSeconds / SECONDS_PER_HOUR);
   const minutes = Math.floor((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
   const seconds = totalSeconds % SECONDS_PER_MINUTE;
   const time = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
   return t("contributions.countdown.remaining", { time });
 });
 
 onMounted(() => {
-  timer = window.setInterval(() => { now.value = new Date(); }, MILLISECONDS_PER_SECOND);
+  timer = window.setInterval(() => {
+    now.value = new Date();
+  }, MILLISECONDS_PER_SECOND);
 });
 onBeforeUnmount(() => {
-  if (timer) window.clearInterval(timer);
+  if (timer) {
+    window.clearInterval(timer);
+  }
 });
 </script>
 
@@ -46,8 +58,7 @@ onBeforeUnmount(() => {
   padding: 5px 8px;
   --uno: d-inline-flex align-center ga-1 font-weight-black;
   color: var(--lad-color-reward-strong);
-  border: 1px solid
-    color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
   border-radius: 9px;
   background: color-mix(in srgb, var(--lad-color-reward-soft) 90%, transparent);
   font-size: rem(10);
@@ -66,8 +77,7 @@ onBeforeUnmount(() => {
 }
 @keyframes countdown-pulse {
   50% {
-    box-shadow: 0 0 0 4px
-      color-mix(in srgb, var(--lad-color-accent-warm) 10%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--lad-color-accent-warm) 10%, transparent);
   }
 }
 @include reduced-motion {

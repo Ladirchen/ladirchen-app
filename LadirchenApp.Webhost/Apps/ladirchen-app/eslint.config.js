@@ -32,16 +32,42 @@ export default vuetify(
     rules: {
       "@stylistic/quotes": ["error", "double", { allowTemplateLiterals: "avoidEscape" }],
       "@stylistic/semi": ["error", "always"],
-      "func-style": ["error", "expression", { allowArrowFunctions: true }],
+      "func-style": ["error", "declaration", { allowArrowFunctions: true }],
+      curly: ["error", "all"],
+      "@stylistic/padding-line-between-statements": [
+        "error",
+        { blankLine: "always", prev: "*", next: ["if", "for", "while", "try"] },
+        { blankLine: "always", prev: ["if", "for", "while", "try"], next: "*" },
+        { blankLine: "always", prev: "*", next: "return" },
+      ],
+      "vue/html-closing-bracket-newline": [
+        "error",
+        { singleline: "never", multiline: "always", selfClosingTag: { multiline: "always" } },
+      ],
+      "vue/html-self-closing": [
+        "error",
+        {
+          html: {
+            void: "always",
+            normal: "never",
+            component: "always",
+          },
+          svg: "always",
+          math: "always",
+        },
+      ],
     },
   },
   {
     files: ["src/**/*.{ts,vue}"],
     rules: {
       "no-nested-ternary": "error",
-      "no-restricted-imports": ["error", {
-        patterns: [parentImportPattern],
-      }],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [parentImportPattern],
+        },
+      ],
     },
   },
   {
@@ -50,8 +76,12 @@ export default vuetify(
       "vue/attributes-order": "off",
       "vue/custom-event-name-casing": ["error", "kebab-case", { ignores: ["/^update:/u"] }],
       "vue/max-attributes-per-line": "off",
-      "vue/no-restricted-syntax": ["error",
-        { selector: "VExpressionContainer ConditionalExpression", message: "Move conditional template logic to a computed value or typed view model." },
+      "vue/no-restricted-syntax": [
+        "error",
+        {
+          selector: "VExpressionContainer ConditionalExpression",
+          message: "Move conditional template logic to a computed value or typed view model.",
+        },
       ],
       "vue/padding-line-between-tags": "off",
       "vue/script-indent": "off",
@@ -60,31 +90,37 @@ export default vuetify(
   {
     files: ["src/shared/**/*.{ts,vue}"],
     rules: {
-      "no-restricted-imports": ["error", {
-        patterns: [
-          parentImportPattern,
-          {
-            group: ["@/features/*", "@/features/**"],
-            message: "Shared modules must not depend on feature modules.",
-          },
-        ],
-      }],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            parentImportPattern,
+            {
+              group: ["@/features/*", "@/features/**"],
+              message: "Shared modules must not depend on feature modules.",
+            },
+          ],
+        },
+      ],
     },
   },
   ...featureNames.map((featureName) => ({
     files: [`src/features/${featureName}/**/*.{ts,vue}`],
     rules: {
-      "no-restricted-imports": ["error", {
-        patterns: [
-          parentImportPattern,
-          {
-            group: featureNames
-              .filter((otherFeatureName) => otherFeatureName !== featureName)
-              .map((otherFeatureName) => `@/features/${otherFeatureName}/**`),
-            message: "Feature modules must communicate through shared presentation or explicit inputs and events.",
-          },
-        ],
-      }],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            parentImportPattern,
+            {
+              group: featureNames
+                .filter((otherFeatureName) => otherFeatureName !== featureName)
+                .map((otherFeatureName) => `@/features/${otherFeatureName}/**`),
+              message: "Feature modules must communicate through shared presentation or explicit inputs and events.",
+            },
+          ],
+        },
+      ],
     },
   })),
 );

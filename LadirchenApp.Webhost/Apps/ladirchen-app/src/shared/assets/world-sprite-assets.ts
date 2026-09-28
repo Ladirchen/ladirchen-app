@@ -1,9 +1,8 @@
-import guideBranchUrl from "@/assets/world/guide-branch.webp";
-import ladiPerchUrl from "@/assets/world/ladi-perch.webp";
+import { createLazyAssetLoader } from "@/shared/assets/lazy-asset-loader";
+import type { AssetGlobModules } from "@/shared/assets/lazy-asset-loader";
 
 export type WorldDecorationSpriteId = "guide-branch" | "ladi-perch";
 
-export const WORLD_DECORATION_SPRITE_URLS = {
-  "guide-branch": guideBranchUrl,
-  "ladi-perch": ladiPerchUrl,
-} as const satisfies Record<WorldDecorationSpriteId, string>;
+const modules = import.meta.glob("../../assets/world/*.webp", { import: "default" }) as AssetGlobModules;
+
+export const getWorldDecorationSpriteUrl = createLazyAssetLoader<WorldDecorationSpriteId>(modules);

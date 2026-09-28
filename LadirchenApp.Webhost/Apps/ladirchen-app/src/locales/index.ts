@@ -1,9 +1,6 @@
-import de from "./de";
-import en from "./en";
+export const SUPPORTED_LOCALES = ["de", "en"] as const;
 
-export const localeMessages = { de, en } as const;
-
-export type SupportedLocale = keyof typeof localeMessages;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export interface LocaleOption {
   readonly code: SupportedLocale;
@@ -17,5 +14,6 @@ export const localeOptions: ReadonlyArray<LocaleOption> = [
   { code: "en", icon: "🇬🇧", label: "English" },
 ];
 
-export const isSupportedLocale = (value: string | null | undefined): value is SupportedLocale =>
-  value !== null && value !== undefined && Object.hasOwn(localeMessages, value);
+export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
+  return (SUPPORTED_LOCALES as ReadonlyArray<string | null | undefined>).includes(value);
+}
