@@ -91,7 +91,7 @@ pnpm build
 
 ## 🌐 Localization
 
-German and English messages live in `src/locales/`. UI components reference message keys through Vue I18n. `pnpm i18n:check` verifies locale parity, static translation-key references, visible template text, and translatable static attributes. Add a locale by providing the same message shape and registering it in `src/locales/index.ts`.
+German and English messages live as flat, alphabetically sorted JSON files in `src/locales/` (`de.json`, `en.json`); `de.json` defines the typed translation keys. Messages are loaded on demand through the `LocaleMessagesSource` port (currently bundled JSON imports, wired in `src/app/composition-root.ts`), so they can later be served by an API. UI components reference message keys through Vue I18n. `pnpm i18n:check` verifies flat structure, key order, locale parity, static translation-key references, visible template text, and translatable static attributes. Add a locale by providing a JSON file with the same keys, registering it in `SUPPORTED_LOCALES` in `src/locales/index.ts`, and adding it to the bundled locale source.
 
 ## 🔌 Backend integration boundary
 

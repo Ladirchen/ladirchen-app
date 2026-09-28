@@ -1,5 +1,11 @@
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
-import { characterCollidesWithFurniture, DEFAULT_ROOM_DESIGNS, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS, HOUSE_THEMES } from "@/domain/house";
+import {
+  characterCollidesWithFurniture,
+  DEFAULT_ROOM_DESIGNS,
+  furnitureVisualDefinitionFor,
+  HOUSE_LAYOUT_CONSTRAINTS,
+  HOUSE_THEMES,
+} from "@/domain/house";
 import { clamp } from "@/domain/shared/numbers";
 import type { HouseStageLevel, HouseZoneId, RoomDesignId } from "@/domain/house";
 import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from "@/domain/family/types";
@@ -11,8 +17,8 @@ import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 
 export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] => {
-  const guardians = members.filter(member => member.role === "guardian");
-  const hasAdministrator = guardians.some(member => member.guardianAccess === "admin");
+  const guardians = members.filter((member) => member.role === "guardian");
+  const hasAdministrator = guardians.some((member) => member.guardianAccess === "admin");
   return members.map((member) => {
     if (member.role !== "guardian") {
       return {
@@ -31,16 +37,44 @@ export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] 
   });
 };
 
-export const normalizeFamilyPets = (pets: ReadonlyArray<FamilyPet>): FamilyPet[] =>
-  pets.map(pet => ({ ...pet }));
+export const normalizeFamilyPets = (pets: ReadonlyArray<FamilyPet>): FamilyPet[] => pets.map((pet) => ({ ...pet }));
 
 const initialStateValue = <T>(value: T): T => value;
 
 const createDefaultSelectedRoomDesignIds = (): Partial<Record<HouseZoneId, RoomDesignId>> => {
   const selections: Partial<Record<HouseZoneId, RoomDesignId>> = {};
-  for (const design of DEFAULT_ROOM_DESIGNS) { selections[design.zoneId] = design.id; }
+  for (const design of DEFAULT_ROOM_DESIGNS) {
+    selections[design.zoneId] = design.id;
+  }
   return selections;
 };
+
+function savedPlacementYIsValid(
+  savedY: number,
+  entityType: HouseLayoutPlacement["entityType"],
+  minimumY: number | undefined,
+  maximumY: number | undefined,
+  locksScale: boolean,
+): boolean {
+  if (minimumY !== undefined) {
+    return savedY >= minimumY && savedY <= (maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY);
+  }
+
+  if (entityType === "ladi") {
+    return (
+      (savedY >= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMinimumY &&
+        savedY <= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMaximumY) ||
+      savedY >= HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
+    );
+  }
+
+  const minimumSavedY =
+    entityType === "member" || entityType === "pet" || locksScale
+      ? HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
+      : HOUSE_LAYOUT_CONSTRAINTS.furnitureMinimumY;
+
+  return savedY >= minimumSavedY;
+}
 
 export const mergeHouseLayout = (
   stored: ReadonlyArray<HouseLayoutPlacement>,
@@ -48,70 +82,63 @@ export const mergeHouseLayout = (
 ): HouseLayoutPlacement[] => {
   const defaultPlacements = initialData.houseLayout;
   const accessories = initialData.accessories;
-  const storedById = new Map(stored.map(placement => [placement.id, placement]));
-  const fixedAccessoryIds = new Set(accessories
-    .filter(accessory => accessory.mobility === "fixed")
-    .map(accessory => accessory.id));
+  const storedById = new Map(stored.map((placement) => [placement.id, placement]));
+  const fixedAccessoryIds = new Set(
+    accessories.filter((accessory) => accessory.mobility === "fixed").map((accessory) => accessory.id),
+  );
   const mergedPlacements = defaultPlacements.map((placement) => {
-    if (placement.entityType === "furniture" && fixedAccessoryIds.has(placement.entityId)) { return placement; }
+    if (placement.entityType === "furniture" && fixedAccessoryIds.has(placement.entityId)) {
+      return placement;
+    }
     const saved = storedById.get(placement.id);
-    if (!saved) {return placement;}
-    const isCharacter = placement.entityType === "member" || placement.entityType === "pet";
+    if (!saved) {
+      return placement;
+    }
     const isLadi = placement.entityType === "ladi";
     const savedLadiWasPerched = isLadi && saved.y < HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY;
-    const accessory = placement.entityType === "furniture"
-      ? accessories.find(item => item.id === placement.entityId)
-      : undefined;
+    const accessory =
+      placement.entityType === "furniture" ? accessories.find((item) => item.id === placement.entityId) : undefined;
     const visualDefinition = accessory?.visual ? furnitureVisualDefinitionFor(accessory.visual) : undefined;
-    const minimumY = visualDefinition?.minimumY;
     const locksScale = visualDefinition?.locksScale ?? false;
-    let savedYIsValid: boolean;
-    if (minimumY !== undefined) {
-      savedYIsValid = saved.y >= minimumY && saved.y <= (visualDefinition?.maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY);
-    } else if (isLadi) {
-      savedYIsValid = (saved.y >= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMinimumY &&
-        saved.y <= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMaximumY) ||
-        saved.y >= HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY;
-    } else {
-      const minimumSavedY = isCharacter || locksScale
-        ? HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
-        : HOUSE_LAYOUT_CONSTRAINTS.furnitureMinimumY;
-      savedYIsValid = saved.y >= minimumSavedY;
-    }
+    const savedYIsValid = savedPlacementYIsValid(
+      saved.y,
+      placement.entityType,
+      visualDefinition?.minimumY,
+      visualDefinition?.maximumY,
+      locksScale,
+    );
     const coordinates = {
-      scale: locksScale ? placement.scale : clamp(
-        saved.scale,
-        HOUSE_LAYOUT_CONSTRAINTS.minimumScale,
-        HOUSE_LAYOUT_CONSTRAINTS.maximumScale,
-      ),
-      x: savedLadiWasPerched ? placement.x : clamp(
-        saved.x,
-        HOUSE_LAYOUT_CONSTRAINTS.minimumX,
-        HOUSE_LAYOUT_CONSTRAINTS.maximumX,
-      ),
+      scale: locksScale
+        ? placement.scale
+        : clamp(saved.scale, HOUSE_LAYOUT_CONSTRAINTS.minimumScale, HOUSE_LAYOUT_CONSTRAINTS.maximumScale),
+      x: savedLadiWasPerched
+        ? placement.x
+        : clamp(saved.x, HOUSE_LAYOUT_CONSTRAINTS.minimumX, HOUSE_LAYOUT_CONSTRAINTS.maximumX),
       y: savedYIsValid
         ? clamp(saved.y, HOUSE_LAYOUT_CONSTRAINTS.minimumY, HOUSE_LAYOUT_CONSTRAINTS.maximumY)
         : placement.y,
       zoneId: saved.zoneId,
     };
-    if (placement.entityType === "furniture") {return { ...placement, ...coordinates };}
-    if (placement.entityType === "member") {return { ...placement, ...coordinates };}
-    if (placement.entityType === "pet") {return { ...placement, ...coordinates };}
     return {
       ...placement,
       ...coordinates,
     };
   });
   return mergedPlacements.map((placement) => {
-    if (placement.entityType === "furniture" || !characterCollidesWithFurniture(
-      placement.id,
-      placement.zoneId,
-      placement.x,
-      placement.y,
-      mergedPlacements,
-      accessories,
-    )) { return placement; }
-    return defaultPlacements.find(defaultPlacement => defaultPlacement.id === placement.id) ?? placement;
+    if (
+      placement.entityType === "furniture" ||
+      !characterCollidesWithFurniture(
+        placement.id,
+        placement.zoneId,
+        placement.x,
+        placement.y,
+        mergedPlacements,
+        accessories,
+      )
+    ) {
+      return placement;
+    }
+    return defaultPlacements.find((defaultPlacement) => defaultPlacement.id === placement.id) ?? placement;
   });
 };
 
@@ -119,16 +146,42 @@ export const createFamilyWorldState = (initialData: FamilyWorldInitialData) => {
   const viewerRole = initialStateValue<ViewerRole>("child");
   const familyCurrencyCode = initialStateValue<FamilyCurrency>("CHF");
   const simulatedEnergy = initialStateValue<number | null>(null);
-  const rewardAnimation: { visible: boolean; contributionId: ContributionId | undefined; value: number; energy: number; multiplier: number; stars: number; title: string; version: number } =
-    { visible: false, contributionId: undefined, value: 0, energy: 0, multiplier: 1, stars: 0, title: "", version: 0 };
-  const guardianGiftAnimation: { visible: boolean; guardianName: string; goalTitle: string; destination: "balance" | "goal"; amount: number; version: number } =
-    { visible: false, guardianName: "", goalTitle: "", destination: "goal", amount: 0, version: 0 };
+  const rewardAnimation: {
+    visible: boolean;
+    contributionId: ContributionId | undefined;
+    value: number;
+    energy: number;
+    multiplier: number;
+    stars: number;
+    title: string;
+    version: number;
+  } = {
+    visible: false,
+    contributionId: undefined,
+    value: 0,
+    energy: 0,
+    multiplier: 1,
+    stars: 0,
+    title: "",
+    version: 0,
+  };
+  const guardianGiftAnimation: {
+    visible: boolean;
+    guardianName: string;
+    goalTitle: string;
+    destination: "balance" | "goal";
+    amount: number;
+    version: number;
+  } = { visible: false, guardianName: "", goalTitle: "", destination: "goal", amount: 0, version: 0 };
   const pendingGuardianGifts: GuardianGift[] = [];
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const subscriptionTier = initialStateValue<SubscriptionTier>("pro");
   const snackbarParams: Record<string, number | string> = {};
-  const snackbar: { visible: boolean; messageKey: TranslationKey | ""; params: Record<string, number | string> } =
-    { visible: false, messageKey: "", params: snackbarParams };
+  const snackbar: { visible: boolean; messageKey: TranslationKey | ""; params: Record<string, number | string> } = {
+    visible: false,
+    messageKey: "",
+    params: snackbarParams,
+  };
   return {
     currentTimeMilliseconds: Date.now(),
     isAuthenticated: true,
@@ -157,8 +210,8 @@ export const createFamilyWorldState = (initialData: FamilyWorldInitialData) => {
     currentWeekTarget: 7,
     houseLevel,
     houseThemeId: HOUSE_THEMES[0]?.id ?? "sunny-dollhouse",
-    ownedHouseThemeIds: HOUSE_THEMES.filter(theme => theme.ownedByDefault).map(theme => theme.id),
-    ownedRoomDesignIds: DEFAULT_ROOM_DESIGNS.map(design => design.id),
+    ownedHouseThemeIds: HOUSE_THEMES.filter((theme) => theme.ownedByDefault).map((theme) => theme.id),
+    ownedRoomDesignIds: DEFAULT_ROOM_DESIGNS.map((design) => design.id),
     selectedRoomDesignIds: createDefaultSelectedRoomDesignIds(),
     subscriptionTier,
     houseLayout: initialData.houseLayout,

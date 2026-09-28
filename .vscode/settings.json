@@ -25,5 +25,15 @@
     "titleBar.inactiveBackground": "#c988bf99",
     "titleBar.inactiveForeground": "#15202b99"
   },
-  "peacock.color": "#c988bf"
+  "peacock.color": "#c988bf",
+  "i18n-ally.localesPaths": ["LadirchenApp.Webhost/Apps/ladirchen-app/src/locales"],
+  "i18n-ally.pathMatcher": "{locale}.json",
+  "i18n-ally.enabledFrameworks": ["vue"],
+  "i18n-ally.enabledParsers": ["json"],
+  "i18n-ally.keystyle": "flat",
+  "i18n-ally.sourceLanguage": "de",
+  "i18n-ally.displayLanguage": "de",
+  "i18n-ally.sortKeys": true,
+  "i18n-ally.indent": 2,
+  "i18n-ally.tabStyle": "space"
 }
