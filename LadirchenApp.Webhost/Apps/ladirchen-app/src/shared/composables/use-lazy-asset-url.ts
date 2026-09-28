@@ -11,11 +11,11 @@ export function useLazyAssetUrl<T>(
   watch(
     source,
     async (value) => {
+      const currentRequest = ++requestId;
       if (value === undefined) {
         url.value = undefined;
         return;
       }
-      const currentRequest = ++requestId;
       const resolvedUrl = await resolve(value);
       if (currentRequest === requestId) {
         url.value = resolvedUrl;
