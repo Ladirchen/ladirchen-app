@@ -18,10 +18,27 @@ $breakpoints: (
   shell: 37.5em,
 );
 
+$z-index-layers: (
+  furniture-storage: 24,
+  furniture-storage-trigger: 25,
+  room-navigation: 110,
+  entity-speech: 500,
+  app-intro: 1000,
+  global-guide: 3000,
+);
+
 @function breakpoint($value) {
   @if meta.type-of($value) == string and map.has-key($breakpoints, $value) {
     @return map.get($breakpoints, $value);
   }
 
   @return $value;
+}
+
+@function z-index($layer) {
+  @if meta.type-of($layer) == string and map.has-key($z-index-layers, $layer) {
+    @return map.get($z-index-layers, $layer);
+  }
+
+  @error "Unknown z-index layer: #{$layer}";
 }

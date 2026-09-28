@@ -2,7 +2,10 @@
   <button
     :aria-label="accessibleLabel"
     class="layout-entity"
-    :class="[`entity-${placement.entityType}`, { editable, dragging: Boolean(dragOffset), interactive: Boolean(accessory?.interaction) }]"
+    :class="[
+      `entity-${placement.entityType}`,
+      { editable, dragging: Boolean(dragOffset), interactive: Boolean(accessory?.interaction) },
+    ]"
     :style="entityStyle"
     type="button"
     @click="interact"
@@ -20,20 +23,18 @@
       full-body
       :size="ENTITY_VISUAL_CONFIG.avatarSize"
     />
-    <AnimatedPet
-      v-else-if="placement.entityType === 'pet' && pet"
-      :pet="pet"
-      :size="ENTITY_VISUAL_CONFIG.petSize"
-    />
+    <AnimatedPet v-else-if="placement.entityType === 'pet' && pet" :pet="pet" :size="ENTITY_VISUAL_CONFIG.petSize" />
     <span v-else-if="placement.entityType === 'ladi'" class="ladi-on-perch" :class="{ perched }">
-      <LadiMascot
-        :perched="perched"
-        :score="score"
-        :show-score="false"
-        :size="ENTITY_VISUAL_CONFIG.ladiSize"
-      />
+      <LadiMascot :perched="perched" :score="score" :show-score="false" :size="ENTITY_VISUAL_CONFIG.ladiSize" />
       <Transition name="ladi-speech">
-        <span v-if="speech" class="ladi-speech" :class="{ 'opens-left': placement.x > ENTITY_VISUAL_CONFIG.speechFlipThreshold }" role="status">{{ speech }}</span>
+        <output
+          v-if="speech"
+          class="ladi-speech"
+          :class="{ 'opens-left': placement.x > ENTITY_VISUAL_CONFIG.speechFlipThreshold }"
+          aria-live="polite"
+        >
+          {{ speech }}
+        </output>
       </Transition>
     </span>
   </button>
@@ -80,47 +81,78 @@ const emit = defineEmits<{
 const doorOpen = ref(false);
 
 const entityName = computed(() => {
-  if (props.placement.entityType === "furniture") {return props.accessory?.title ?? t("world.scene.entity.furniture");}
+  if (props.placement.entityType === "furniture") {
+    return props.accessory?.title ?? t("world.scene.entity.furniture");
+  }
+
   if (props.placement.entityType === "member") {
-    if (!props.member) return t("world.scene.entity.member");
+    if (!props.member) {
+      return t("world.scene.entity.member");
+    }
+
     const name = props.member.nickname?.trim() || props.member.name;
+
     return props.member.id === props.viewerMemberId ? t("world.scene.memberYou", { name }) : name;
   }
-  if (props.placement.entityType === "pet") {return props.pet?.name ?? t("world.scene.entity.pet");}
+
+  if (props.placement.entityType === "pet") {
+    return props.pet?.name ?? t("world.scene.entity.pet");
+  }
+
   return "Ladi";
 });
 const accessibleLabel = computed(() => {
-  if (props.editable) return t("world.scene.moveEntity", { name: entityName.value });
-  if (props.accessory?.interaction !== "toggle-door") return entityName.value;
+  if (props.editable) {
+    return t("world.scene.moveEntity", { name: entityName.value });
+  }
+
+  if (props.accessory?.interaction !== "toggle-door") {
+    return entityName.value;
+  }
+
   return t(doorOpen.value ? "world.scene.fridge.close" : "world.scene.fridge.open");
 });
-const visualDefinition = computed(() => props.accessory?.visual ? furnitureVisualDefinitionFor(props.accessory.visual) : undefined);
+const visualDefinition = computed(() =>
+  props.accessory?.visual ? furnitureVisualDefinitionFor(props.accessory.visual) : undefined,
+);
 const displayY = computed(() => Math.max(visualDefinition.value?.minimumY ?? 0, props.placement.y));
-const layerY = computed(() => props.accessory?.mobility === "fixed" ? 0 : displayY.value);
+const layerY = computed(() => (props.accessory?.mobility === "fixed" ? 0 : displayY.value));
 const entityStyle = computed(() => ({
   left: `${props.placement.x}%`,
   top: `${displayY.value}%`,
   transform: `translate(-50%, -70%) translate(${props.dragOffset?.x ?? 0}px, ${props.dragOffset?.y ?? 0}px) scale(${props.placement.scale}) scale(var(--world-entity-responsive-scale, 1))`,
-  zIndex: props.dragOffset ? ENTITY_VISUAL_CONFIG.draggingLayer : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
+  zIndex: props.dragOffset
+    ? ENTITY_VISUAL_CONFIG.draggingLayer
+    : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
 }));
-const interact = () => {
+function interact() {
   if (props.placement.entityType === "ladi") {
     emit("ladi-interact");
   }
+
   if (props.accessory?.interaction === "toggle-door") {
     doorOpen.value = !doorOpen.value;
   }
-};
-const forwardPointerDown = (event: PointerEvent) => {
+}
+function forwardPointerDown(event: PointerEvent) {
   emit("pointerdown", event, props.placement);
-};
-const forwardLostPointerCapture = (event: PointerEvent) => emit("lostpointercapture", event);
-const forwardPointerMove = (event: PointerEvent) => emit("pointermove", event);
-const forwardPointerUp = (event: PointerEvent) => emit("pointerup", event);
-const forwardPointerCancel = (event: PointerEvent) => emit("pointercancel", event);
+}
+function forwardLostPointerCapture(event: PointerEvent) {
+  return emit("lostpointercapture", event);
+}
+function forwardPointerMove(event: PointerEvent) {
+  return emit("pointermove", event);
+}
+function forwardPointerUp(event: PointerEvent) {
+  return emit("pointerup", event);
+}
+function forwardPointerCancel(event: PointerEvent) {
+  return emit("pointercancel", event);
+}
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/tokens" as tokens;
 @use "@/styles/mixins" as *;
 .layout-entity {
   width: 72px;
@@ -160,9 +192,7 @@ const forwardPointerCancel = (event: PointerEvent) => emit("pointercancel", even
 }
 .layout-entity.editable:active {
   cursor: grabbing;
-  filter: drop-shadow(
-    0 8px 8px color-mix(in srgb, var(--lad-palette-muted-750) 25%, transparent)
-  );
+  filter: drop-shadow(0 8px 8px color-mix(in srgb, var(--lad-palette-muted-750) 25%, transparent));
 }
 .entity-label {
   --uno: position-absolute text-no-wrap;
@@ -198,20 +228,15 @@ const forwardPointerCancel = (event: PointerEvent) => emit("pointercancel", even
   --uno: position-absolute text-left;
   bottom: 68%;
   left: 66%;
-  z-index: 500;
+  z-index: tokens.z-index("entity-speech");
   padding: 10px 12px;
   color: var(--lad-palette-muted-700);
   border: 2px solid var(--lad-palette-white);
   border-radius: 16px 16px 16px 5px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-background)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-surface), var(--lad-palette-background));
   box-shadow:
     0 6px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
-    0 10px 19px
-      color-mix(in srgb, var(--lad-palette-muted-750) 18%, transparent);
+    0 10px 19px color-mix(in srgb, var(--lad-palette-muted-750) 18%, transparent);
   font-size: rem(11);
   font-weight: var(--lad-font-weight-strong);
   line-height: 1.4;

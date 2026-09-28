@@ -2,24 +2,27 @@
   <section :aria-label="t('world.progress.aria')">
     <div class="house-stage-card mb-3">
       <div class="house-stage-visual" aria-hidden="true">
-        <span class="house-halo" />
+        <span class="house-halo"></span>
         <span class="house-spark house-spark--one">✦</span>
         <span class="house-spark house-spark--two">✦</span>
         <span class="house-stage-icon">{{ currentStage.icon }}</span>
       </div>
       <div class="house-stage-copy">
-        <span class="section-kicker">{{ t('world.progress.currentStage') }}</span>
+        <span class="section-kicker">{{ t("world.progress.currentStage") }}</span>
         <div class="house-stage-title">
           <strong>{{ t(currentStage.nameKey) }}</strong>
-          <span>{{ t('world.progress.level', { value: houseLevel + 1 }) }}</span>
+          <span>{{ t("world.progress.level", { value: houseLevel + 1 }) }}</span>
         </div>
-        <p>{{ t('world.progress.completedWeeks', { count: completedWeeks }) }}</p>
-        <div class="stage-track" :aria-label="t('world.progress.stageAria', { current: houseLevel + 1, total: houseStages.length })">
+        <p>{{ t("world.progress.completedWeeks", { count: completedWeeks }) }}</p>
+        <div
+          class="stage-track"
+          :aria-label="t('world.progress.stageAria', { current: houseLevel + 1, total: houseStages.length })"
+        >
           <span
             v-for="stage in houseStages"
             :key="stage.level"
             :class="{ reached: stage.level <= houseLevel, current: stage.level === houseLevel }"
-          />
+          ></span>
         </div>
         <b>{{ progressionStatus }}</b>
       </div>
@@ -28,14 +31,26 @@
     <div v-if="showEvolution !== false" class="house-evolution">
       <div class="evolution-heading">
         <div class="evolution-icon" aria-hidden="true"><v-icon size="22">i-mdi:home-switch</v-icon></div>
-        <div><span class="section-kicker">{{ t('world.progress.weeklyReview') }}</span><strong>{{ t('world.progress.evolutionTitle') }}</strong></div>
+        <div>
+          <span class="section-kicker">{{ t("world.progress.weeklyReview") }}</span>
+          <strong>{{ t("world.progress.evolutionTitle") }}</strong>
+        </div>
       </div>
       <div class="evolution-steps mt-3">
-        <div><span>{{ minimumHouseEnergyPercent }} %</span><p>{{ t('world.progress.steps.daily', { value: minimumHouseEnergyPercent }) }}</p></div>
-        <div><span>{{ t('world.progress.sevenDays') }}</span><p>{{ t('world.progress.steps.week') }}</p></div>
-        <div><span>{{ t('world.progress.underThreshold', { value: minimumHouseEnergyPercent }) }}</span><p>{{ t('world.progress.steps.fallback') }}</p></div>
+        <div>
+          <span>{{ minimumHouseEnergyPercent }} %</span>
+          <p>{{ t("world.progress.steps.daily", { value: minimumHouseEnergyPercent }) }}</p>
+        </div>
+        <div>
+          <span>{{ t("world.progress.sevenDays") }}</span>
+          <p>{{ t("world.progress.steps.week") }}</p>
+        </div>
+        <div>
+          <span>{{ t("world.progress.underThreshold", { value: minimumHouseEnergyPercent }) }}</span>
+          <p>{{ t("world.progress.steps.fallback") }}</p>
+        </div>
       </div>
-      <p class="evolution-note mt-3">{{ t('world.progress.note') }}</p>
+      <p class="evolution-note mt-3">{{ t("world.progress.note") }}</p>
     </div>
   </section>
 </template>
@@ -48,20 +63,20 @@ import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
 import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
 import type { HouseStageLevel } from "@/domain/house";
 
+const houseStages = HOUSE_STAGES;
+const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
+
 const props = defineProps<{
   completedWeeks: number;
   houseLevel: HouseStageLevel;
   showEvolution?: boolean;
 }>();
-
 const { t } = useI18n();
 
-const houseStages = HOUSE_STAGES;
-const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
 const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOUSE_STAGE);
-const progressionStatus = computed(() => t(props.houseLevel < houseStages.length - 1
-  ? "world.progress.next"
-  : "world.progress.maximum"));
+const progressionStatus = computed(() =>
+  t(props.houseLevel < houseStages.length - 1 ? "world.progress.next" : "world.progress.maximum"),
+);
 </script>
 
 <style lang="scss" scoped>
@@ -80,12 +95,7 @@ const progressionStatus = computed(() => t(props.houseLevel < houseStages.length
     0.25rem,
     rem(1)
   );
-  background: linear-gradient(
-    135deg,
-    var(--lad-surface),
-    var(--lad-color-reward-soft) 58%,
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(135deg, var(--lad-surface), var(--lad-color-reward-soft) 58%, var(--lad-surface-soft));
 }
 .house-stage-visual {
   width: 88px;
@@ -110,10 +120,7 @@ const progressionStatus = computed(() => t(props.houseLevel < houseStages.length
   z-index: 2;
   font-size: 3.25rem;
   line-height: 1;
-  filter: drop-shadow(
-    0 6px 5px
-      color-mix(in srgb, var(--lad-color-accent-warm-deep) 18%, transparent)
-  );
+  filter: drop-shadow(0 6px 5px color-mix(in srgb, var(--lad-color-accent-warm-deep) 18%, transparent));
   animation: house-stage-bounce 3.2s ease-in-out infinite;
 }
 .house-spark {
@@ -137,10 +144,7 @@ const progressionStatus = computed(() => t(props.houseLevel < houseStages.length
   flex: 1;
 }
 .section-kicker {
-  @include overline(
-    var(--lad-color-primary-strong),
-    var(--lad-font-size-micro)
-  );
+  @include overline(var(--lad-color-primary-strong), var(--lad-font-size-micro));
 }
 .house-stage-title {
   margin: 2px 0;
@@ -171,29 +175,22 @@ const progressionStatus = computed(() => t(props.houseLevel < houseStages.length
 .stage-track {
   --uno: mt-2 d-grid ga-1;
   grid-template-columns: repeat(5, 1fr);
-
 }
 .stage-track span {
   height: 6px;
   border-radius: var(--lad-radius-pill);
-  background: color-mix(
-    in srgb,
-    var(--lad-color-primary-supporting) 12%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
 }
 .stage-track span.reached {
   background: var(--lad-color-primary);
 }
 .stage-track span.current {
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--lad-color-primary) 15%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lad-color-primary) 15%, transparent);
   animation: stage-pulse 1.8s ease-in-out infinite;
 }
 .house-evolution {
   padding: 14px;
-  border: 1px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
   border-radius: 20px;
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
 }

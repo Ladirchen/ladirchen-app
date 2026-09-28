@@ -12,7 +12,7 @@
           <v-icon :icon="icon" size="30" />
         </slot>
       </div>
-      <slot name="action" />
+      <slot name="action"></slot>
     </div>
   </header>
 </template>
@@ -22,17 +22,20 @@ import { computed } from "vue";
 
 import HeaderDecoration from "./HeaderDecoration.vue";
 
-const props = withDefaults(defineProps<{
-  description: string;
-  eyebrow: string;
-  icon?: string;
-  title: string;
-  tone?: "mint" | "blue" | "amber" | "coral" | "profile";
-}>(), {
-  icon: undefined,
-  tone: "mint",
-});
-const decorationTone = computed(() => props.tone === "profile" ? "profile" : "world");
+const props = withDefaults(
+  defineProps<{
+    description: string;
+    eyebrow: string;
+    icon?: string;
+    title: string;
+    tone?: "mint" | "blue" | "amber" | "coral" | "profile";
+  }>(),
+  {
+    icon: undefined,
+    tone: "mint",
+  },
+);
+const decorationTone = computed(() => (props.tone === "profile" ? "profile" : "world"));
 </script>
 
 <style lang="scss" scoped>
@@ -50,11 +53,7 @@ const decorationTone = computed(() => props.tone === "profile" ? "profile" : "wo
     rem(5),
     rem(1)
   );
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface) 0%,
-    var(--header-accent-soft) 145%
-  );
+  background: linear-gradient(145deg, var(--lad-surface) 0%, var(--header-accent-soft) 145%);
 }
 .family-world-page-header--blue {
   --header-accent: var(--lad-color-info);
@@ -93,7 +92,6 @@ h1 {
   min-width: rem(54);
   --uno: position-relative d-flex align-center ga-2;
   z-index: 1;
-
 }
 .page-header-icon {
   @include icon-tile(

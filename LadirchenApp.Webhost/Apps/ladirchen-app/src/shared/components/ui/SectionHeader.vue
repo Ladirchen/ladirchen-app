@@ -5,19 +5,22 @@
       <h2>{{ title }}</h2>
       <p v-if="description">{{ description }}</p>
     </div>
-    <div v-if="$slots.action" class="section-action"><slot name="action" /></div>
+    <div v-if="$slots.action" class="section-action"><slot name="action"></slot></div>
   </div>
 </template>
 
 <script lang="ts" setup>
-withDefaults(defineProps<{
-  description?: string;
-  eyebrow?: string;
-  title: string;
-}>(), {
-  description: undefined,
-  eyebrow: undefined,
-});
+withDefaults(
+  defineProps<{
+    description?: string;
+    eyebrow?: string;
+    title: string;
+  }>(),
+  {
+    description: undefined,
+    eyebrow: undefined,
+  },
+);
 </script>
 
 <style lang="scss" scoped>

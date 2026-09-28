@@ -1,19 +1,22 @@
 <template>
   <div class="metric-card" :class="[`metric-card--${tone}`, { 'metric-card--compact': compact }]">
-    <slot />
+    <slot></slot>
   </div>
 </template>
 
 <script lang="ts" setup>
 export type MetricCardTone = "balance" | "bonus" | "energy" | "info" | "neutral" | "reward" | "streak";
 
-withDefaults(defineProps<{
-  compact?: boolean;
-  tone?: MetricCardTone;
-}>(), {
-  compact: false,
-  tone: "neutral",
-});
+withDefaults(
+  defineProps<{
+    compact?: boolean;
+    tone?: MetricCardTone;
+  }>(),
+  {
+    compact: false,
+    tone: "neutral",
+  },
+);
 </script>
 
 <style lang="scss" scoped>

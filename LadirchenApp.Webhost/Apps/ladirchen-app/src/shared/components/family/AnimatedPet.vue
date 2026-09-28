@@ -71,27 +71,25 @@ import { useI18n } from "vue-i18n";
 
 import type { FamilyPet } from "@/domain/family/types";
 
-const { t } = useI18n();
-
-const props = withDefaults(defineProps<{
-  pet: FamilyPet;
-  size?: number;
-}>(), {
-  size: 58,
-});
-const emit = defineEmits<{ interact: [] }>();
-const isReacting = ref(false);
 let reactionTimer: number | undefined;
-const react = () => {
-  emit("interact");
-  isReacting.value = false;
-  window.clearTimeout(reactionTimer);
-  requestAnimationFrame(() => { isReacting.value = true; });
-  reactionTimer = window.setTimeout(() => { isReacting.value = false; }, CHARACTER_REACTION_DURATION_MS);
-};
+
+const { t } = useI18n();
+const props = withDefaults(
+  defineProps<{
+    pet: FamilyPet;
+    size?: number;
+  }>(),
+  {
+    size: 58,
+  },
+);
+const emit = defineEmits<{ interact: [] }>();
+
+const isReacting = ref(false);
 
 const petStyle = computed(() => {
-  const phase = props.pet.id.split("").reduce((sum, character) => sum + character.charCodeAt(0), 0) % 29;
+  const phase = props.pet.id.split("").reduce((sum, character) => sum + (character.codePointAt(0) ?? 0), 0) % 29;
+
   return {
     "--pet-color": props.pet.color,
     "--pet-phase": `${-phase / 10}s`,
@@ -99,29 +97,35 @@ const petStyle = computed(() => {
     height: `${Math.round(props.size * 1.08)}px`,
   };
 });
+
+function react() {
+  emit("interact");
+  isReacting.value = false;
+  window.clearTimeout(reactionTimer);
+  requestAnimationFrame(() => {
+    isReacting.value = true;
+  });
+  reactionTimer = window.setTimeout(() => {
+    isReacting.value = false;
+  }, CHARACTER_REACTION_DURATION_MS);
+}
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .animated-pet {
-  --uno: d-inline-grid place-center;
+  --uno: d-inline-grid place-center cursor-pointer;
   flex: 0 0 auto;
-
   transform-origin: center bottom;
   animation: pet-hop 11s var(--pet-phase) ease-in-out infinite;
-}
-.animated-pet {
   pointer-events: auto;
-  --uno: cursor-pointer;
 }
 .animated-pet.reacting {
   animation: pet-tap 620ms var(--lad-easing-pop);
 }
 svg {
   --uno: w-100 h-100 overflow-visible;
-  filter: drop-shadow(
-    0 5px 3px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent)
-  );
+  filter: drop-shadow(0 5px 3px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent));
 }
 .pet-shadow {
   fill: color-mix(in srgb, var(--lad-palette-text) 18%, transparent);

@@ -1,7 +1,7 @@
 <template>
   <div class="completion-mark" :style="{ '--completion-size': `${size}px` }" aria-hidden="true">
-    <span class="completion-orbit completion-orbit--one" />
-    <span class="completion-orbit completion-orbit--two" />
+    <span class="completion-orbit completion-orbit--one"></span>
+    <span class="completion-orbit completion-orbit--two"></span>
     <span class="completion-core"><v-icon icon="i-mdi:check-bold" /></span>
     <i class="completion-spark completion-spark--one">✦</i>
     <i class="completion-spark completion-spark--two">✦</i>
@@ -27,14 +27,9 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
   --uno: position-relative d-grid place-center;
   z-index: 2;
   color: var(--lad-palette-white);
-  border: 4px solid
-    color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
+  border: 4px solid color-mix(in srgb, var(--lad-palette-white) 95%, transparent);
   border-radius: 22px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-mint-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-teal-400), var(--lad-palette-mint-strong));
   box-shadow:
     0 6px 0 var(--lad-palette-teal-700),
     0 12px 23px color-mix(in srgb, var(--lad-palette-teal-700) 20%, transparent);
@@ -43,9 +38,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
 }
 .completion-core :deep(.v-icon) {
   font-size: calc(var(--completion-size) * 0.31);
-  filter: drop-shadow(
-    0 2px 0 color-mix(in srgb, var(--lad-palette-teal-700) 18%, transparent)
-  );
+  filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--lad-palette-teal-700) 18%, transparent));
 }
 .completion-orbit {
   --uno: position-absolute inset-0;
@@ -65,8 +58,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
   z-index: 3;
   color: var(--lad-palette-amber-450);
   font-style: normal;
-  text-shadow: 0 0 8px
-    color-mix(in srgb, var(--lad-palette-amber-250) 90%, transparent);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--lad-palette-amber-250) 90%, transparent);
   animation: completion-spark 1.9s ease-in-out infinite;
 }
 .completion-spark--one {

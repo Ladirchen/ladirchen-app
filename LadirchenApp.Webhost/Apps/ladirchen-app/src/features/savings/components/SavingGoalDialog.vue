@@ -1,77 +1,168 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="430" scrollable @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog
+    :model-value="modelValue"
+    max-width="430"
+    scrollable
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <v-card class="goal-dialog-card" rounded="xl">
       <header class="goal-dialog-header">
         <div class="goal-dialog-visual" aria-hidden="true">
           <span class="goal-visual-icon">{{ goal.icon }}</span>
-          <i /><i /><i />
+          <i></i>
+          <i></i>
+          <i></i>
         </div>
         <div class="goal-dialog-heading">
-          <p class="eyebrow mb-1">{{ t('savings.goalDialog.eyebrow') }}</p>
+          <p class="eyebrow mb-1">{{ t("savings.goalDialog.eyebrow") }}</p>
           <v-card-title class="pa-0">{{ dialogTitle }}</v-card-title>
           <p>{{ dialogDescription }}</p>
         </div>
-        <v-btn class="goal-dialog-close" :aria-label="t('savings.goalDialog.close')" icon="i-mdi:close" size="small" variant="text" @click="close" />
+        <v-btn
+          class="goal-dialog-close"
+          :aria-label="t('savings.goalDialog.close')"
+          icon="i-mdi:close"
+          size="small"
+          variant="text"
+          @click="close"
+        />
       </header>
 
       <v-card-text class="goal-dialog-content">
         <div class="goal-step">
           <span class="goal-step-number">1</span>
-          <div><strong>{{ t('savings.goalDialog.steps.wish.title') }}</strong><small>{{ t('savings.goalDialog.steps.wish.description') }}</small></div>
+          <div>
+            <strong>{{ t("savings.goalDialog.steps.wish.title") }}</strong>
+            <small>{{ t("savings.goalDialog.steps.wish.description") }}</small>
+          </div>
         </div>
         <div class="goal-icon-picker mb-3" :aria-label="t('savings.goalDialog.iconAria')">
-          <button v-for="icon in iconOptions" :key="icon" :class="{ active: goal.icon === icon }" type="button" @click="goal.icon = icon">{{ icon }}</button>
+          <button
+            v-for="icon in iconOptions"
+            :key="icon"
+            :class="{ active: goal.icon === icon }"
+            type="button"
+            @click="goal.icon = icon"
+          >
+            {{ icon }}
+          </button>
         </div>
-        <v-text-field v-model="goal.title" autofocus class="goal-field" density="comfortable" hide-details :label="t('savings.goalDialog.wishLabel')" :placeholder="t('savings.goalDialog.wishPlaceholder')" variant="outlined" />
+        <v-text-field
+          v-model="goal.title"
+          autofocus
+          class="goal-field"
+          density="comfortable"
+          hide-details
+          :label="t('savings.goalDialog.wishLabel')"
+          :placeholder="t('savings.goalDialog.wishPlaceholder')"
+          variant="outlined"
+        />
 
         <div class="goal-step mt-5">
           <span class="goal-step-number">2</span>
-          <div><strong>{{ t('savings.goalDialog.steps.amount.title') }}</strong><small>{{ t('savings.goalDialog.steps.amount.description') }}</small></div>
-        </div>
-        <div class="goal-target-picker" role="group" :aria-label="t('savings.goalDialog.amountAria')">
-          <button :aria-label="t('savings.goalDialog.decrease')" :disabled="goal.target <= minimumTarget" type="button" @click="adjustTarget(-10)">−</button>
           <div>
-            <small>{{ t('savings.goalDialog.target') }}</small>
-            <output aria-live="polite"><LadirchenCoin small /><strong>{{ validTargetPreview }}</strong></output>
+            <strong>{{ t("savings.goalDialog.steps.amount.title") }}</strong>
+            <small>{{ t("savings.goalDialog.steps.amount.description") }}</small>
+          </div>
+        </div>
+        <fieldset class="goal-target-picker" :aria-label="t('savings.goalDialog.amountAria')">
+          <button
+            :aria-label="t('savings.goalDialog.decrease')"
+            :disabled="goal.target <= minimumTarget"
+            type="button"
+            @click="adjustTarget(-10)"
+          >
+            −
+          </button>
+          <div>
+            <small>{{ t("savings.goalDialog.target") }}</small>
+            <output aria-live="polite">
+              <LadirchenCoin small />
+              <strong>{{ validTargetPreview }}</strong>
+            </output>
           </div>
           <button :aria-label="t('savings.goalDialog.increase')" type="button" @click="adjustTarget(10)">+</button>
           <i class="target-spark target-spark--one" aria-hidden="true">✦</i>
           <i class="target-spark target-spark--two" aria-hidden="true">✧</i>
-        </div>
+        </fieldset>
 
         <div class="goal-step mt-5">
           <span class="goal-step-number">3</span>
-          <div><strong>{{ t('savings.goalDialog.steps.visibility.title') }}</strong><small>{{ t('savings.goalDialog.steps.visibility.description') }}</small></div>
+          <div>
+            <strong>{{ t("savings.goalDialog.steps.visibility.title") }}</strong>
+            <small>{{ t("savings.goalDialog.steps.visibility.description") }}</small>
+          </div>
         </div>
         <div class="visibility-options">
-          <button v-for="option in visibilityOptions" :key="option.value" :class="{ active: goal.visibility === option.value }" type="button" @click="goal.visibility = option.value">
-            <v-icon :icon="option.icon" size="21" /><span><strong>{{ option.shortTitle }}</strong><small>{{ option.subtitle }}</small></span><v-icon v-if="goal.visibility === option.value" class="visibility-check" icon="i-mdi:check-circle" size="18" />
+          <button
+            v-for="option in visibilityOptions"
+            :key="option.value"
+            :class="{ active: goal.visibility === option.value }"
+            type="button"
+            @click="goal.visibility = option.value"
+          >
+            <v-icon :icon="option.icon" size="21" />
+            <span>
+              <strong>{{ option.shortTitle }}</strong>
+              <small>{{ option.subtitle }}</small>
+            </span>
+            <v-icon
+              v-if="goal.visibility === option.value"
+              class="visibility-check"
+              icon="i-mdi:check-circle"
+              size="18"
+            />
           </button>
         </div>
 
         <div v-if="!isEditing" class="starter-bonus mt-4">
           <span class="bonus-gift" aria-hidden="true">🎁</span>
-          <p><small>{{ t('savings.goalDialog.starter.eyebrow') }}</small><strong>{{ t('savings.goalDialog.starter.title') }}</strong><span>{{ t('savings.goalDialog.starter.description') }}</span></p>
-          <span class="bonus-coin" aria-hidden="true"><LadirchenCoin small /><em>5</em></span>
+          <p>
+            <small>{{ t("savings.goalDialog.starter.eyebrow") }}</small>
+            <strong>{{ t("savings.goalDialog.starter.title") }}</strong>
+            <span>{{ t("savings.goalDialog.starter.description") }}</span>
+          </p>
+          <span class="bonus-coin" aria-hidden="true">
+            <LadirchenCoin small />
+            <em>5</em>
+          </span>
           <span class="bonus-spark bonus-spark--one" aria-hidden="true">✦</span>
           <span class="bonus-spark bonus-spark--two" aria-hidden="true">✧</span>
         </div>
 
-        <p v-if="isEditing && minimumTarget > 10" class="saved-hint mt-4">{{ t('savings.goalDialog.savedHint', { amount: minimumTarget }) }}</p>
+        <p v-if="showSavedHint" class="saved-hint mt-4">
+          {{ t("savings.goalDialog.savedHint", { amount: minimumTarget }) }}
+        </p>
 
         <v-alert v-if="removeConfirmation" class="mt-4" color="error" density="compact" variant="tonal">
-          {{ t('savings.goalDialog.removeWarning') }}
+          {{ t("savings.goalDialog.removeWarning") }}
         </v-alert>
       </v-card-text>
 
       <v-card-actions class="goal-dialog-actions">
-        <v-btn v-if="isEditing && !removeConfirmation" color="error" rounded="lg" variant="text" @click="removeConfirmation = true">{{ t('savings.goalDialog.remove') }}</v-btn>
+        <v-btn v-if="showRemoveButton" color="error" rounded="lg" variant="text" @click="removeConfirmation = true">
+          {{ t("savings.goalDialog.remove") }}
+        </v-btn>
         <template v-if="removeConfirmation">
-          <v-btn rounded="lg" variant="text" @click="removeConfirmation = false">{{ t('savings.goalDialog.keep') }}</v-btn>
-          <v-btn color="error" rounded="lg" variant="flat" @click="remove">{{ t('savings.goalDialog.confirmRemove') }}</v-btn>
+          <v-btn rounded="lg" variant="text" @click="removeConfirmation = false">
+            {{ t("savings.goalDialog.keep") }}
+          </v-btn>
+          <v-btn color="error" rounded="lg" variant="flat" @click="remove">
+            {{ t("savings.goalDialog.confirmRemove") }}
+          </v-btn>
         </template>
         <template v-else>
-          <v-btn class="create-goal-button" color="primary" :disabled="!isValid" rounded="lg" variant="flat" @click="submit"><span aria-hidden="true">★</span>{{ submitLabel }}</v-btn>
+          <v-btn
+            class="create-goal-button"
+            color="primary"
+            :disabled="!isValid"
+            rounded="lg"
+            variant="flat"
+            @click="submit"
+          >
+            <span aria-hidden="true">★</span>
+            {{ submitLabel }}
+          </v-btn>
         </template>
       </v-card-actions>
     </v-card>
@@ -79,6 +170,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
@@ -86,14 +178,19 @@ import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import type { GoalVisibility, NewGoal } from "@/domain/savings/types";
 
-const props = withDefaults(defineProps<{
-  modelValue: boolean;
-  initialGoal?: NewGoal | null;
-  minimumTarget?: number;
-}>(), {
-  initialGoal: null,
-  minimumTarget: 10,
-});
+const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    initialGoal?: NewGoal | null;
+    minimumTarget?: number;
+  }>(),
+  {
+    initialGoal: null,
+    minimumTarget: 10,
+  },
+);
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
   submit: [goal: NewGoal];
@@ -101,49 +198,98 @@ const emit = defineEmits<{
 }>();
 const { t } = useI18n();
 
-const initialGoal = (): NewGoal => props.initialGoal
-  ? { ...props.initialGoal }
-  : { title: "", icon: "✨", target: 100, visibility: "family" };
-const goal = reactive<NewGoal>(initialGoal());
+const goal = reactive<NewGoal>(createInitialGoal());
 const removeConfirmation = ref(false);
-const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
-const visibilityOptions = computed<{ icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[]>(() => [
-  { icon: "i-mdi:home-heart", shortTitle: t("savings.goalDialog.visibility.family.title"), subtitle: t("savings.goalDialog.visibility.family.description"), value: "family" },
-  { icon: "i-mdi:lock-outline", shortTitle: t("savings.goalDialog.visibility.private.title"), subtitle: t("savings.goalDialog.visibility.private.description"), value: "private" },
-  { icon: "i-mdi:shield-account-outline", shortTitle: t("savings.goalDialog.visibility.guardians.title"), subtitle: t("savings.goalDialog.visibility.guardians.description"), value: "guardians" },
-]);
+
+const visibilityOptions = computed<{ icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[]>(
+  () => [
+    {
+      icon: "i-mdi:home-heart",
+      shortTitle: t("savings.goalDialog.visibility.family.title"),
+      subtitle: t("savings.goalDialog.visibility.family.description"),
+      value: "family",
+    },
+    {
+      icon: "i-mdi:lock-outline",
+      shortTitle: t("savings.goalDialog.visibility.private.title"),
+      subtitle: t("savings.goalDialog.visibility.private.description"),
+      value: "private",
+    },
+    {
+      icon: "i-mdi:shield-account-outline",
+      shortTitle: t("savings.goalDialog.visibility.guardians.title"),
+      subtitle: t("savings.goalDialog.visibility.guardians.description"),
+      value: "guardians",
+    },
+  ],
+);
 const isEditing = computed(() => props.initialGoal !== null);
-const isValid = computed(() => goal.title.trim().length > 0 && Number.isFinite(goal.target) && goal.target >= props.minimumTarget);
-const validTargetPreview = computed(() => Number.isFinite(goal.target) ? Math.max(0, Math.round(goal.target)) : 0);
-const dialogTitle = computed(() => t(isEditing.value ? "savings.goalDialog.editTitle" : "savings.goalDialog.createTitle"));
-const dialogDescription = computed(() => t(isEditing.value ? "savings.goalDialog.editDescription" : "savings.goalDialog.createDescription"));
+const showSavedHint = computed(() => isEditing.value && props.minimumTarget > 10);
+const showRemoveButton = computed(() => isEditing.value && !removeConfirmation.value);
+const isValid = computed(
+  () => goal.title.trim().length > 0 && Number.isFinite(goal.target) && goal.target >= props.minimumTarget,
+);
+const validTargetPreview = computed(() => (Number.isFinite(goal.target) ? Math.max(0, Math.round(goal.target)) : 0));
+const dialogTitle = computed(() =>
+  t(isEditing.value ? "savings.goalDialog.editTitle" : "savings.goalDialog.createTitle"),
+);
+const dialogDescription = computed(() =>
+  t(isEditing.value ? "savings.goalDialog.editDescription" : "savings.goalDialog.createDescription"),
+);
 const submitLabel = computed(() => t(isEditing.value ? "common.save" : "savings.goalDialog.start"));
 
-const reset = () => Object.assign(goal, initialGoal());
-const adjustTarget = (change: number) => {
+function createInitialGoal(): NewGoal {
+  return props.initialGoal ? { ...props.initialGoal } : { title: "", icon: "✨", target: 100, visibility: "family" };
+}
+
+function reset() {
+  return Object.assign(goal, createInitialGoal());
+}
+function adjustTarget(change: number) {
   goal.target = Math.max(props.minimumTarget, validTargetPreview.value + change);
-};
-const close = () => emit("update:modelValue", false);
-const remove = () => {
+}
+function close() {
+  return emit("update:modelValue", false);
+}
+function remove() {
   emit("remove");
   close();
-};
-const submit = () => {
-  if (!isValid.value) return;
+}
+function submit() {
+  if (!isValid.value) {
+    return;
+  }
+
   emit("submit", { ...goal, title: goal.title.trim(), target: Math.round(goal.target) });
   emit("update:modelValue", false);
-};
+}
 
-watch(() => props.modelValue, (isOpen) => {
-  if (isOpen) {
-    reset();
-    removeConfirmation.value = false;
-    window.setTimeout(() => ladiGuideController.say({
+const { start: startGuide, stop: stopGuide } = useTimeoutFn(
+  () => {
+    ladiGuideController.say({
       heading: t("savings.goalDialog.guideTitle"),
       message: t("savings.goalDialog.guideMessage"),
-    }), 180);
-  }
-});
+    });
+  },
+  180,
+  { immediate: false },
+);
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      reset();
+      removeConfirmation.value = false;
+
+      startGuide();
+
+      return;
+    }
+
+    stopGuide();
+  },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -161,19 +307,14 @@ watch(() => props.modelValue, (isOpen) => {
   padding: 17px 50px 15px 18px;
   --uno: position-relative d-flex align-center overflow-hidden;
   gap: 12px;
-  border-bottom: 2px solid
-    color-mix(in srgb, var(--lad-color-info) 12%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--lad-color-info) 12%, transparent);
   background:
     radial-gradient(
       circle at 94% 5%,
       color-mix(in srgb, var(--lad-color-reward-highlight) 25%, transparent),
       transparent 27%
     ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface-soft),
-      var(--lad-color-reward-soft)
-    );
+    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
 }
 .goal-dialog-header::after {
   content: "✦";
@@ -189,12 +330,7 @@ watch(() => props.modelValue, (isOpen) => {
   --uno: position-relative d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 23px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info) 65%,
-    var(--lad-color-bonus)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info) 65%, var(--lad-color-bonus));
   box-shadow:
     0 6px 0 color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent),
     0 10px 18px color-mix(in srgb, var(--lad-color-info-deep) 15%, transparent);
@@ -203,9 +339,7 @@ watch(() => props.modelValue, (isOpen) => {
 }
 .goal-visual-icon {
   font-size: rem(31);
-  filter: drop-shadow(
-    0 2px 0 color-mix(in srgb, var(--lad-surface-raised) 35%, transparent)
-  );
+  filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--lad-surface-raised) 35%, transparent));
 }
 .goal-dialog-visual i {
   width: 6px;
@@ -264,13 +398,8 @@ watch(() => props.modelValue, (isOpen) => {
   color: var(--lad-text-inverse);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 10px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary),
-    var(--lad-color-primary-strong)
-  );
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
+  background: linear-gradient(145deg, var(--lad-color-primary), var(--lad-color-primary-strong));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
   font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
   transform: rotate(-4deg);
@@ -307,18 +436,9 @@ watch(() => props.modelValue, (isOpen) => {
   transform: translateY(-2px) rotate(-4deg);
 }
 .goal-icon-picker button.active {
-  border-color: color-mix(
-    in srgb,
-    var(--lad-color-primary-muted) 40%,
-    transparent
-  );
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-strong) 15%, transparent);
+  border-color: color-mix(in srgb, var(--lad-color-primary-muted) 40%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-strong) 15%, transparent);
   transform: translateY(-2px) rotate(-4deg);
 }
 .goal-field :deep(.v-field) {
@@ -331,15 +451,10 @@ watch(() => props.modelValue, (isOpen) => {
   --uno: position-relative d-grid align-center overflow-hidden;
   grid-template-columns: 52px 1fr 52px;
   gap: 10px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
   border-radius: 20px;
   background:
-    radial-gradient(
-      circle at 88% 18%,
-      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
-      transparent 27%
-    ),
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--lad-color-reward) 30%, transparent), transparent 27%),
     linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface-soft));
   box-shadow:
     0 5px 0 color-mix(in srgb, var(--lad-color-info-shadow) 10%, transparent),
@@ -353,11 +468,7 @@ watch(() => props.modelValue, (isOpen) => {
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 16px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info));
   box-shadow:
     0 4px 0 var(--lad-color-info-strong),
     0 7px 11px color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
@@ -369,15 +480,10 @@ watch(() => props.modelValue, (isOpen) => {
     box-shadow 0.16s ease;
 }
 .goal-target-picker button:last-of-type {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow:
     0 4px 0 var(--lad-color-primary-deep),
-    0 7px 11px
-      color-mix(in srgb, var(--lad-color-primary-strong) 15%, transparent);
+    0 7px 11px color-mix(in srgb, var(--lad-color-primary-strong) 15%, transparent);
 }
 .goal-target-picker button:hover:not(:disabled) {
   transform: translateY(-2px) rotate(-3deg) scale(1.04);
@@ -517,8 +623,7 @@ watch(() => props.modelValue, (isOpen) => {
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 15px;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-reward-shadow) 12%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-reward-shadow) 12%, transparent);
   font-size: rem(27);
   transform-origin: bottom center;
   animation: bonus-wiggle 2.2s ease-in-out infinite;
@@ -562,8 +667,7 @@ watch(() => props.modelValue, (isOpen) => {
     var(--lad-color-reward-border) 54% 100%
   );
   box-shadow:
-    inset 0 -5px 0
-      color-mix(in srgb, var(--lad-color-reward-deep) 20%, transparent),
+    inset 0 -5px 0 color-mix(in srgb, var(--lad-color-reward-deep) 20%, transparent),
     0 5px 0 var(--lad-color-reward-shadow),
     0 9px 14px color-mix(in srgb, var(--lad-color-reward-ink) 15%, transparent);
   animation: bonus-coin-bounce 2.1s ease-in-out infinite;
@@ -603,8 +707,7 @@ watch(() => props.modelValue, (isOpen) => {
 .goal-dialog-actions {
   padding: 11px 18px 15px;
   --uno: flex-shrink-0 d-flex justify-end ga-2;
-  border-top: 1px solid
-    color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
   background: color-mix(in srgb, var(--lad-surface-raised) 90%, transparent);
 }
 .goal-dialog-actions > :first-child:not(:last-child) {
@@ -613,17 +716,11 @@ watch(() => props.modelValue, (isOpen) => {
 .create-goal-button {
   min-height: 43px;
   padding-inline: 16px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary),
-    var(--lad-color-primary-strong)
-  );
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
+  background: linear-gradient(145deg, var(--lad-color-primary), var(--lad-color-primary-strong));
   box-shadow:
     0 4px 0 var(--lad-color-primary-deep),
-    0 8px 14px
-      color-mix(in srgb, var(--lad-color-primary-strong) 15%, transparent);
+    0 8px 14px color-mix(in srgb, var(--lad-color-primary-strong) 15%, transparent);
   text-transform: none;
   letter-spacing: 0;
 }
