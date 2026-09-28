@@ -103,12 +103,13 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/tokens" as tokens;
 @use "@/styles/mixins" as *;
 .global-ladi-guide {
   --uno: position-fixed pointer-events-none;
   right: calc(var(--lad-shell-inline-offset, 0px) + 4px);
   bottom: 86px;
-  z-index: 3000;
+  z-index: tokens.z-index("global-guide");
 }
 .global-ladi-guide.hidden {
   right: calc(var(--lad-shell-inline-offset, 0px) - 1px);

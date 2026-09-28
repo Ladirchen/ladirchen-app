@@ -152,6 +152,7 @@ function forwardPointerCancel(event: PointerEvent) {
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/tokens" as tokens;
 @use "@/styles/mixins" as *;
 .layout-entity {
   width: 72px;
@@ -227,7 +228,7 @@ function forwardPointerCancel(event: PointerEvent) {
   --uno: position-absolute text-left;
   bottom: 68%;
   left: 66%;
-  z-index: 500;
+  z-index: tokens.z-index("entity-speech");
   padding: 10px 12px;
   color: var(--lad-palette-muted-700);
   border: 2px solid var(--lad-palette-white);

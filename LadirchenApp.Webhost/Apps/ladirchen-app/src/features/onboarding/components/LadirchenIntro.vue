@@ -28,6 +28,7 @@ import { onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import LadiMascot from "@/shared/components/LadiMascot.vue";
+import { APP_INTRO_DURATION_MS, APP_INTRO_REDUCED_MOTION_DURATION_MS } from "@/shared/runtime-timing";
 
 let timer: number | undefined;
 
@@ -42,7 +43,7 @@ onMounted(() => {
     () => {
       visible.value = false;
     },
-    reduceMotion ? 500 : 2200,
+    reduceMotion ? APP_INTRO_REDUCED_MOTION_DURATION_MS : APP_INTRO_DURATION_MS,
   );
 });
 onUnmounted(() => {
@@ -53,10 +54,11 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/tokens" as tokens;
 @use "@/styles/mixins" as *;
 .app-intro {
   --uno: position-fixed inset-0 d-grid place-center overflow-hidden;
-  z-index: 1000;
+  z-index: tokens.z-index("app-intro");
 
   background: linear-gradient(
     155deg,

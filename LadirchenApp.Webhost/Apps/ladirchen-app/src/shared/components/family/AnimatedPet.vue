@@ -114,13 +114,11 @@ function react() {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .animated-pet {
-  --uno: d-inline-grid place-center;
+  --uno: d-inline-grid place-center cursor-pointer;
   flex: 0 0 auto;
-
   transform-origin: center bottom;
   animation: pet-hop 11s var(--pet-phase) ease-in-out infinite;
   pointer-events: auto;
-  --uno: cursor-pointer;
 }
 .animated-pet.reacting {
   animation: pet-tap 620ms var(--lad-easing-pop);

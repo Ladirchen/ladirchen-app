@@ -73,6 +73,7 @@ defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; ope
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/tokens" as tokens;
 @use "@/styles/mixins" as *;
 
 .furniture-storage-trigger {
@@ -81,7 +82,7 @@ defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; ope
   --uno: position-absolute d-grid place-center cursor-pointer;
   top: 8px;
   right: 8px;
-  z-index: 25;
+  z-index: tokens.z-index("furniture-storage-trigger");
   color: var(--lad-palette-mint-strong);
   border: 3px solid var(--lad-palette-white);
   border-radius: 14px;
@@ -107,7 +108,7 @@ defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; ope
   top: 0;
   right: 0;
   bottom: 2%;
-  z-index: 24;
+  z-index: tokens.z-index("furniture-storage");
   padding: 8px 7px 10px;
   border: 2px solid var(--lad-palette-muted-250);
   border-radius: 22px 0 0 22px;

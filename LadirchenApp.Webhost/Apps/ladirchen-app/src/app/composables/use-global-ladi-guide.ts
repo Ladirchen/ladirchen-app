@@ -7,20 +7,19 @@ import { browserClientStorage } from "@/infrastructure/storage/browser-client-st
 import type { TranslationKey } from "@/locales/translation-keys";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import type { LadiGuideActionId, LadiGuideMessage } from "@/shared/services/ladi-guide-controller";
+import {
+  LADI_GUIDE_CELEBRATION_DURATION_MS,
+  LADI_GUIDE_DEFAULT_SPEECH_DURATION_MS,
+  LADI_GUIDE_EMERGE_DURATION_MS,
+  LADI_GUIDE_MOOD_SELECTION_DELAY_MS,
+  LADI_GUIDE_MOTION_DURATION_MS,
+  LADI_GUIDE_RANDOM_MOTION_BASE_DELAY_MS,
+  LADI_GUIDE_RANDOM_MOTION_DELAY_VARIANCE_MS,
+  LADI_GUIDE_REDUCED_MOTION_PROMPT_DELAY_MS,
+  LADI_GUIDE_STANDARD_PROMPT_DELAY_MS,
+} from "@/shared/runtime-timing";
 
 type GuideMood = "gentle" | "calm" | "happy";
-
-const GUIDE_TIMING = Object.freeze({
-  celebrationDuration: 2400,
-  defaultSpeechDuration: 11_000,
-  emergeDuration: 1250,
-  moodSelectionDelay: 1700,
-  motionDuration: 950,
-  randomMotionBaseDelay: 3200,
-  randomMotionDelayVariance: 4200,
-  reducedMotionPromptDelay: 650,
-  standardPromptDelay: 2650,
-});
 
 export const useGlobalLadiGuide = () => {
   const store = useFamilyWorldStore();
@@ -108,10 +107,10 @@ export const useGlobalLadiGuide = () => {
       celebrationTimer = window.setTimeout(() => {
         giftCelebration.value = false;
         randomMotion.value = "";
-      }, GUIDE_TIMING.celebrationDuration);
+      }, LADI_GUIDE_CELEBRATION_DURATION_MS);
     }
     if (!smart) {
-      speechTimer = window.setTimeout(closeSpeech, GUIDE_TIMING.defaultSpeechDuration);
+      speechTimer = window.setTimeout(closeSpeech, LADI_GUIDE_DEFAULT_SPEECH_DURATION_MS);
     }
   };
   const triggerSpeechAction = () => {
@@ -153,7 +152,7 @@ export const useGlobalLadiGuide = () => {
     customHeading.value = t(moodCopy.heading);
     speech.value = t(moodCopy.message);
     clearSpeechTimer();
-    speechTimer = window.setTimeout(speakCurrentPageIntro, GUIDE_TIMING.moodSelectionDelay);
+    speechTimer = window.setTimeout(speakCurrentPageIntro, LADI_GUIDE_MOOD_SELECTION_DELAY_MS);
   };
   const handleGuideMessage = (detail: LadiGuideMessage) => {
     if (detail.pageIntro) {
@@ -203,7 +202,7 @@ export const useGlobalLadiGuide = () => {
     motionTimer = window.setTimeout(() => {
       randomMotion.value = "";
       scheduleRandomMotion();
-    }, GUIDE_TIMING.emergeDuration);
+    }, LADI_GUIDE_EMERGE_DURATION_MS);
   };
   const scheduleRandomMotion = () => {
     motionTimer = window.setTimeout(
@@ -213,9 +212,10 @@ export const useGlobalLadiGuide = () => {
         motionTimer = window.setTimeout(() => {
           randomMotion.value = "";
           scheduleRandomMotion();
-        }, GUIDE_TIMING.motionDuration);
+        }, LADI_GUIDE_MOTION_DURATION_MS);
       },
-      GUIDE_TIMING.randomMotionBaseDelay + Math.round(Math.random() * GUIDE_TIMING.randomMotionDelayVariance),
+      LADI_GUIDE_RANDOM_MOTION_BASE_DELAY_MS +
+        Math.round(Math.random() * LADI_GUIDE_RANDOM_MOTION_DELAY_VARIANCE_MS),
     );
   };
 
@@ -274,7 +274,7 @@ export const useGlobalLadiGuide = () => {
           speech.value = t("guide.mood.promptMessage");
           initialMoodTimer = undefined;
         },
-        reduceMotion ? GUIDE_TIMING.reducedMotionPromptDelay : GUIDE_TIMING.standardPromptDelay,
+        reduceMotion ? LADI_GUIDE_REDUCED_MOTION_PROMPT_DELAY_MS : LADI_GUIDE_STANDARD_PROMPT_DELAY_MS,
       );
     } else {
       moodPromptPending.value = false;

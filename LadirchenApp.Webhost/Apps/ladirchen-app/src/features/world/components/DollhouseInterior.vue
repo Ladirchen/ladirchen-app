@@ -483,6 +483,7 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@use "@/styles/tokens" as tokens;
 @use "@/styles/mixins" as *;
 .dollhouse-layout {
   --uno: position-relative d-grid overflow-hidden;
@@ -713,7 +714,7 @@ onUnmounted(() => {
 .room-navigation-hitbox {
   --uno: position-absolute cursor-pointer;
   inset: 0;
-  z-index: 110;
+  z-index: tokens.z-index("room-navigation");
   border: 0;
   background: transparent;
 }
