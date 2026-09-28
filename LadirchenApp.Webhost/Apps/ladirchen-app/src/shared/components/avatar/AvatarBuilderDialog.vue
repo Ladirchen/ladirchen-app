@@ -155,11 +155,11 @@ import {
   outfitOptions,
   seasonOptions,
   skinToneOptions,
-} from "./data/avatar-options";
+} from "@/shared/components/avatar/data/avatar-options";
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance, GuardianAvatarPreset } from "@/domain/avatar";
 import type { ViewerRole } from "@/domain/family/types";
-import type { AvatarCatalogItemId, AvatarColorOption } from "./data/avatar-options";
+import type { AvatarCatalogItemId, AvatarColorOption } from "@/shared/components/avatar/data/avatar-options";
 
 type Section = "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season";
 type PreviewKind = "face" | "faceShape" | "hair" | "outfit" | "accessory" | "fun" | "season";

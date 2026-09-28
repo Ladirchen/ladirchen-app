@@ -14,7 +14,11 @@ const featureNames = [
 ];
 const parentImportPattern = {
   group: ["../*", "../**"],
-  message: "Use the @/ alias for parent-directory imports; reserve relative imports for files in the same directory.",
+  message: "Use the @/ alias for imports outside the current directory; reserve relative imports for sibling files.",
+};
+const nestedRelativeImportPattern = {
+  regex: String.raw`^\./.+/.+$`,
+  message: "Use the @/ alias for imports outside the current directory; reserve relative imports for sibling files.",
 };
 
 export default vuetify(
@@ -65,7 +69,7 @@ export default vuetify(
       "no-restricted-imports": [
         "error",
         {
-          patterns: [parentImportPattern],
+          patterns: [parentImportPattern, nestedRelativeImportPattern],
         },
       ],
     },
@@ -95,6 +99,7 @@ export default vuetify(
         {
           patterns: [
             parentImportPattern,
+            nestedRelativeImportPattern,
             {
               group: ["@/features/*", "@/features/**"],
               message: "Shared modules must not depend on feature modules.",
@@ -112,6 +117,7 @@ export default vuetify(
         {
           patterns: [
             parentImportPattern,
+            nestedRelativeImportPattern,
             {
               group: featureNames
                 .filter((otherFeatureName) => otherFeatureName !== featureName)
