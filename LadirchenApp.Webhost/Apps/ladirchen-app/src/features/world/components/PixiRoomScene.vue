@@ -4,13 +4,12 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from "vue";
-import type { Application, Container } from "pixi.js";
 import type * as PixiNamespace from "pixi.js";
 
 import type { RoomDesignDefinition, RoomSceneOverlayDefinition } from "@/domain/house";
 import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
 import { MILLISECONDS_PER_SECOND } from "@/domain/shared/time";
-import { ROOM_DESIGN_ASSET_URLS, roomDesignBackgroundAssetId } from "@/shared/visuals/house/room-design-assets";
+import { getRoomDesignBackgroundUrl, roomDesignBackgroundAssetId } from "@/shared/visuals/house/room-design-assets";
 import { visualColorPalette } from "@/theme/color-palette";
 
 const props = defineProps<{
@@ -24,7 +23,7 @@ const OVERLAY_FLOAT_ROTATION = 0.055;
 const OVERLAY_SPIN_SPEED = 0.45;
 
 const host = ref<HTMLElement>();
-let application: Application | undefined;
+let application: PixiNamespace.Application | undefined;
 let resizeObserver: ResizeObserver | undefined;
 let destroyed = false;
 
@@ -57,7 +56,8 @@ onMounted(async () => {
   host.value.append(app.canvas);
 
   const scene = new pixi.Container();
-  const texture = await pixi.Assets.load(ROOM_DESIGN_ASSET_URLS[roomDesignBackgroundAssetId(props.design, props.energy)]);
+  const backgroundUrl = await getRoomDesignBackgroundUrl(roomDesignBackgroundAssetId(props.design, props.energy));
+  const texture = await pixi.Assets.load(backgroundUrl);
   if (destroyed) return;
 
   const background = new pixi.Sprite(texture);
@@ -71,8 +71,8 @@ onMounted(async () => {
   const overlayNodes = props.design.overlays.map((overlay) => {
     const node = new pixi.Container();
     node.position.set(
-      props.design.canvasWidth * overlay.xPercent / PERCENTAGE_BASE,
-      props.design.canvasHeight * overlay.yPercent / PERCENTAGE_BASE,
+      (props.design.canvasWidth * overlay.xPercent) / PERCENTAGE_BASE,
+      (props.design.canvasHeight * overlay.yPercent) / PERCENTAGE_BASE,
     );
     node.scale.set(overlay.scale);
     node.addChild(createOverlay(pixi, overlay, { accent, leaf, outline }));
@@ -100,9 +100,10 @@ onMounted(async () => {
     app.ticker.add((ticker) => {
       elapsed += ticker.deltaMS / MILLISECONDS_PER_SECOND;
       overlayNodes.forEach(({ definition, node }) => {
-        node.rotation = definition.motion === "spin"
-          ? elapsed * OVERLAY_SPIN_SPEED
-          : Math.sin(elapsed * OVERLAY_FLOAT_FREQUENCY) * OVERLAY_FLOAT_ROTATION;
+        node.rotation =
+          definition.motion === "spin"
+            ? elapsed * OVERLAY_SPIN_SPEED
+            : Math.sin(elapsed * OVERLAY_FLOAT_FREQUENCY) * OVERLAY_FLOAT_ROTATION;
       });
     });
   }
@@ -120,7 +121,7 @@ const createOverlay = (
   pixi: Pixi,
   overlay: RoomSceneOverlayDefinition,
   colors: { accent: string; leaf: string; outline: string },
-): Container => {
+): PixiNamespace.Container => {
   const container = new pixi.Container();
   if (overlay.id === "garden-wind-spinner") {
     for (let index = 0; index < 6; index += 1) {
@@ -128,13 +129,12 @@ const createOverlay = (
         .ellipse(0, -25, 8, 20)
         .fill(colors.accent)
         .stroke({ color: colors.outline, width: 3 });
-      petal.rotation = index * Math.PI / 3;
+      petal.rotation = (index * Math.PI) / 3;
       container.addChild(petal);
     }
-    container.addChild(new pixi.Graphics()
-      .circle(0, 0, 9)
-      .fill(colors.accent)
-      .stroke({ color: colors.outline, width: 3 }));
+    container.addChild(
+      new pixi.Graphics().circle(0, 0, 9).fill(colors.accent).stroke({ color: colors.outline, width: 3 }),
+    );
     return container;
   }
 
@@ -143,7 +143,7 @@ const createOverlay = (
       .ellipse(index * 18, Math.abs(index - 1.5) * 6, 13, 7)
       .fill(colors.leaf)
       .stroke({ color: colors.outline, width: 3 });
-    leaf.rotation = index % 2 === 0 ? -.35 : .35;
+    leaf.rotation = index % 2 === 0 ? -0.35 : 0.35;
     container.addChild(leaf);
   }
   return container;
@@ -179,10 +179,8 @@ const createOverlay = (
       color-mix(in srgb, var(--lad-palette-background) 46%, transparent)
     );
   box-shadow:
-    inset 0 0 1.75rem
-      color-mix(in srgb, var(--lad-palette-background) 30%, transparent),
-    inset 0 -1.5rem 2rem
-      color-mix(in srgb, var(--lad-palette-amber-100) 44%, transparent);
+    inset 0 0 1.75rem color-mix(in srgb, var(--lad-palette-background) 30%, transparent),
+    inset 0 -1.5rem 2rem color-mix(in srgb, var(--lad-palette-amber-100) 44%, transparent);
 }
 
 .pixi-room-scene :deep(.pixi-room-scene__canvas) {

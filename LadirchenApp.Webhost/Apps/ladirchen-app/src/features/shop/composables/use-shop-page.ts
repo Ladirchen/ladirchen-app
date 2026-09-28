@@ -9,7 +9,7 @@ import { shopRedemptionIsOpen, shopRewardIsPublished } from "@/domain/shop";
 import type { ShopReward, ShopRewardCategory } from "@/domain/shop";
 import { calendarDateInTimeZone, calendarDateIsWithin } from "@/domain/shared/zoned-calendar";
 import {
-  HOUSE_EXTERIOR_ASSET_URLS,
+  getHouseExteriorAssetUrl,
   houseExteriorBackgroundAssetId,
   houseExteriorHouseAssetId,
 } from "@/shared/visuals/house/house-exterior-assets";
@@ -164,10 +164,27 @@ export const useShopPage = () => {
   const previewHouseStage = computed(
     () => HOUSE_STAGES.find((stage) => stage.level === store.houseLevel) ?? HOUSE_STAGES[0]!,
   );
-  const editionPreviewBackground = (themeId: HouseThemeId) =>
-    HOUSE_EXTERIOR_ASSET_URLS[houseExteriorBackgroundAssetId(themeId, 100)];
-  const editionPreviewHouse = (themeId: HouseThemeId) =>
-    HOUSE_EXTERIOR_ASSET_URLS[houseExteriorHouseAssetId(previewHouseStage.value.id, themeId)];
+  const houseThemePreviewUrls = reactive<Record<HouseThemeId, { backgroundUrl?: string; houseUrl?: string }>>(
+    Object.fromEntries(HOUSE_THEMES.map((theme) => [theme.id, {}])) as Record<
+      HouseThemeId,
+      { backgroundUrl?: string; houseUrl?: string }
+    >,
+  );
+  watch(
+    previewHouseStage,
+    (stage) => {
+      HOUSE_THEMES.forEach(async (theme) => {
+        const [backgroundUrl, houseUrl] = await Promise.all([
+          getHouseExteriorAssetUrl(houseExteriorBackgroundAssetId(theme.id, 100)),
+          getHouseExteriorAssetUrl(houseExteriorHouseAssetId(stage.id, theme.id)),
+        ]);
+        houseThemePreviewUrls[theme.id] = { backgroundUrl, houseUrl };
+      });
+    },
+    { immediate: true },
+  );
+  const editionPreviewBackground = (themeId: HouseThemeId) => houseThemePreviewUrls[themeId]?.backgroundUrl;
+  const editionPreviewHouse = (themeId: HouseThemeId) => houseThemePreviewUrls[themeId]?.houseUrl;
   const setPreviewAccessories = (accessoryIds: ReadonlyArray<HouseAccessoryId>) =>
     accessoryIds
       .slice(0, 3)

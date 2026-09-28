@@ -64,7 +64,7 @@
         <i v-for="index in 6" :key="index" />
       </div>
       <div v-if="room.id === 'living-room'" class="ladi-perch" :class="{ occupied: isLadiOnPerch }" aria-hidden="true">
-        <img :src="WORLD_DECORATION_SPRITE_URLS['ladi-perch']" alt="" />
+        <img v-if="ladiPerchUrl" :src="ladiPerchUrl" alt="" />
       </div>
       <HouseLayoutEntity
         v-for="placement in visiblePlacements(room.id)"
@@ -188,7 +188,7 @@ import type {
 } from "@/domain/house";
 import type { FamilyMember, FamilyPet } from "@/domain/family/types";
 import type { FamilyMemberId, HouseLayoutPlacementId } from "@/domain/shared/identifiers";
-import { WORLD_DECORATION_SPRITE_URLS } from "@/shared/assets/world-sprite-assets";
+import { getWorldDecorationSpriteUrl } from "@/shared/assets/world-sprite-assets";
 
 import HouseLayoutEntity from "./HouseLayoutEntity.vue";
 import { useDollhouseDrag } from "@/features/world/composables/use-dollhouse-drag";
@@ -244,6 +244,10 @@ const emit = defineEmits<{
 
 const ladiMotivation = ref("");
 const perchMessage = ref("");
+const ladiPerchUrl = ref<string>();
+onMounted(async () => {
+  ladiPerchUrl.value = await getWorldDecorationSpriteUrl("ladi-perch");
+});
 let motivationTimer: number | undefined;
 let perchMessageTimer: number | undefined;
 let perchScheduleTimer: number | undefined;

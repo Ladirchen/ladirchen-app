@@ -1,11 +1,11 @@
 <template>
   <aside class="global-ladi-guide" :class="guideClasses" :aria-label="t('guide.aria')">
     <button v-if="isHidden" class="guide-branch" type="button" :aria-label="t('guide.reveal')" @click="revealGuide">
-      <img :src="WORLD_DECORATION_SPRITE_URLS['guide-branch']" alt="" />
+      <img v-if="guideBranchUrl" :src="guideBranchUrl" alt="" />
     </button>
     <template v-else>
       <Transition name="guide-speech">
-        <div v-if="speech" class="guide-speech" role="status">
+        <output v-if="speech" class="guide-speech">
           <button
             v-if="!moodPromptPending"
             :aria-label="t('guide.close')"
@@ -37,7 +37,7 @@
               {{ option.label }}
             </button>
           </div>
-        </div>
+        </output>
       </Transition>
 
       <button class="guide-hide" type="button" :aria-label="t('guide.hide')" @click="hideGuide">›</button>
@@ -58,13 +58,18 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
-import { WORLD_DECORATION_SPRITE_URLS } from "@/shared/assets/world-sprite-assets";
+import { getWorldDecorationSpriteUrl } from "@/shared/assets/world-sprite-assets";
 import { useGlobalLadiGuide } from "@/app/composables/use-global-ladi-guide";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
+
+const guideBranchUrl = ref<string>();
+onMounted(async () => {
+  guideBranchUrl.value = await getWorldDecorationSpriteUrl("guide-branch");
+});
 
 const {
   choosingMood,

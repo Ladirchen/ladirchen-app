@@ -37,6 +37,18 @@ export default vuetify(
         "error",
         { singleline: "never", multiline: "always", selfClosingTag: { multiline: "always" } },
       ],
+      "vue/html-self-closing": [
+        "error",
+        {
+          html: {
+            void: "allways",
+            normal: "never",
+            component: "always",
+          },
+          svg: "always",
+          math: "always",
+        },
+      ],
     },
   },
   {
