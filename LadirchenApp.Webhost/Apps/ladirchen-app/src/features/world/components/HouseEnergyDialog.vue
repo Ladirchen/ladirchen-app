@@ -259,21 +259,21 @@ onUnmounted(() => {
   font-size: rem(11);
 }
 .close-button {
-  --uno: position-absolute;
   top: -7px;
   right: -8px;
   z-index: 4;
+  --uno: position-absolute pa-0;
 }
 .energy-mascot {
   width: 78px;
   height: 78px;
-  --uno: position-absolute d-grid place-center;
   top: 10px;
   right: 19px;
   z-index: 2;
   border-radius: 24px;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info) 12%, transparent);
+  --uno: position-absolute d-grid place-center;
 }
 .summary-grid {
   --uno: position-relative d-grid;
@@ -550,6 +550,14 @@ onUnmounted(() => {
   top: 8px;
   right: 8px;
   @include dialog-close-button;
+  border-color: color-mix(in srgb, var(--lad-text) 22%, var(--lad-surface));
+  box-shadow:
+    0 0.25rem 0 var(--lad-shadow-raised-success),
+    0 0.375rem 0.75rem color-mix(in srgb, var(--lad-text) 14%, transparent);
+
+  &:hover {
+    background: color-mix(in srgb, var(--lad-color-reward-soft) 72%, var(--lad-surface));
+  }
 }
 .energy-dialog .summary-grid {
   grid-template-columns: 1fr 1fr;
