@@ -1,3 +1,4 @@
+import { useStorage } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -25,12 +26,40 @@ export const useGlobalLadiGuide = () => {
   const store = useFamilyWorldStore();
   const route = useRoute();
   const { t } = useI18n();
+  const moodStorageKey = computed(() => `ladirchen:guide-mood:${store.activeChildId}`);
+  const hiddenStorageKey = computed(() => `ladirchen:guide-hidden:${store.activeChildId}`);
   const speech = ref("");
   const customHeading = ref("");
   const choosingMood = ref(false);
-  const mood = ref<GuideMood>("calm");
+  const mood = useStorage<GuideMood>(moodStorageKey, "calm", browserClientStorage, {
+    serializer: {
+      read(value) {
+        return value === "gentle" || value === "happy" || value === "calm" ? value : "calm";
+      },
+      write(value) {
+        return value;
+      },
+    },
+    writeDefaults: false,
+  });
+  const hiddenPreference = useStorage<boolean | null>(hiddenStorageKey, null, browserClientStorage, {
+    serializer: {
+      read(value) {
+        return value === "true" ? true : null;
+      },
+      write(value) {
+        return value ? "true" : "false";
+      },
+    },
+    writeDefaults: false,
+  });
   const randomMotion = ref("");
-  const isHidden = ref(false);
+  const isHidden = computed({
+    get: () => hiddenPreference.value === true,
+    set: (value) => {
+      hiddenPreference.value = value ? true : null;
+    },
+  });
   const isSmart = ref(false);
   const speechProgress = ref("");
   const speechActionLabel = ref("");
@@ -68,9 +97,6 @@ export const useGlobalLadiGuide = () => {
   const speechHeading = computed(
     () => customHeading.value || (mood.value === "gentle" ? t("guide.gentleHeading") : t("guide.defaultHeading")),
   );
-  const moodStorageKey = computed(() => `ladirchen:guide-mood:${store.activeChildId}`);
-  const hiddenStorageKey = computed(() => `ladirchen:guide-hidden:${store.activeChildId}`);
-
   const clearSpeechTimer = () => {
     if (speechTimer !== undefined) {
       window.clearTimeout(speechTimer);
@@ -140,7 +166,6 @@ export const useGlobalLadiGuide = () => {
   };
   const selectMood = (nextMood: GuideMood) => {
     mood.value = nextMood;
-    browserClientStorage.setItem(moodStorageKey.value, nextMood);
     choosingMood.value = false;
     moodPromptPending.value = false;
     const moodCopyKeys: Record<GuideMood, { heading: TranslationKey; message: TranslationKey }> = {
@@ -180,19 +205,13 @@ export const useGlobalLadiGuide = () => {
       showSpeech(message, target?.dataset.ladiHeading);
     }
   };
-  const loadMood = () => {
-    const saved = browserClientStorage.getItem(moodStorageKey.value);
-    mood.value = saved === "gentle" || saved === "happy" || saved === "calm" ? saved : "calm";
-  };
   const hideGuide = () => {
     closeSpeech();
     choosingMood.value = false;
     isHidden.value = true;
-    browserClientStorage.setItem(hiddenStorageKey.value, "true");
   };
   const revealGuide = () => {
     isHidden.value = false;
-    browserClientStorage.removeItem(hiddenStorageKey.value);
     randomMotion.value = "does-emerge";
     customHeading.value = t("guide.welcomeBack.heading");
     speech.value = mood.value === "gentle" ? t("guide.welcomeBack.gentle") : t("guide.welcomeBack.message");
@@ -214,18 +233,10 @@ export const useGlobalLadiGuide = () => {
           scheduleRandomMotion();
         }, LADI_GUIDE_MOTION_DURATION_MS);
       },
-      LADI_GUIDE_RANDOM_MOTION_BASE_DELAY_MS +
-        Math.round(Math.random() * LADI_GUIDE_RANDOM_MOTION_DELAY_VARIANCE_MS),
+      LADI_GUIDE_RANDOM_MOTION_BASE_DELAY_MS + Math.round(Math.random() * LADI_GUIDE_RANDOM_MOTION_DELAY_VARIANCE_MS),
     );
   };
 
-  watch(
-    () => store.activeChildId,
-    () => {
-      loadMood();
-      isHidden.value = browserClientStorage.getItem(hiddenStorageKey.value) === "true";
-    },
-  );
   watch(
     () => route.path,
     () => {
@@ -256,8 +267,6 @@ export const useGlobalLadiGuide = () => {
     },
   );
   onMounted(() => {
-    loadMood();
-    isHidden.value = browserClientStorage.getItem(hiddenStorageKey.value) === "true";
     const intro = pageMessages.value[route.path] ?? fallbackPageMessage();
     pageIntroHeading.value = intro.heading;
     pageIntroMessage.value = intro.message;
