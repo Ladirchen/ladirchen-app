@@ -16,7 +16,7 @@
           </div>
           <AnimatedHouseEnergy class="energy-mascot" :size="86" />
           <button class="close-button" :aria-label="t('world.energy.close')" type="button" @click="close">
-            <v-icon icon="i-mdi:close" />
+            <v-icon icon="i-mdi:close" size="18" />
           </button>
         </div>
 
@@ -550,6 +550,14 @@ onUnmounted(() => {
   top: 8px;
   right: 8px;
   @include dialog-close-button;
+  border-color: color-mix(in srgb, var(--lad-text) 22%, var(--lad-surface));
+  box-shadow:
+    0 0.25rem 0 var(--lad-shadow-raised-success),
+    0 0.375rem 0.75rem color-mix(in srgb, var(--lad-text) 14%, transparent);
+
+  &:hover {
+    background: color-mix(in srgb, var(--lad-color-reward-soft) 72%, var(--lad-surface));
+  }
 }
 .energy-dialog .summary-grid {
   grid-template-columns: 1fr 1fr;
