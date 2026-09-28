@@ -1,4 +1,4 @@
-import type { FamilyMember } from './types';
+import type { FamilyMember } from "./types";
 
 /** Capabilities derived from the signed-in family member. */
 
@@ -24,10 +24,10 @@ const noPermissions: FamilyPermissions = {
 
 export const resolveFamilyPermissions = (member?: FamilyMember): FamilyPermissions => {
   if (!member) {return noPermissions;}
-  if (member.role === 'child') {
+  if (member.role === "child") {
     return { ...noPermissions, canViewFamilyGoals: true };
   }
-  if (member.guardianAccess === 'admin') {
+  if (member.guardianAccess === "admin") {
     return {
       canInviteMembers: true,
       canManageContent: true,

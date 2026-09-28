@@ -1,5 +1,5 @@
-import de from './de';
-import en from './en';
+import de from "./de";
+import en from "./en";
 
 export const localeMessages = { de, en } as const;
 
@@ -11,10 +11,10 @@ export interface LocaleOption {
   readonly label: string;
 }
 
-export const DEFAULT_LOCALE: SupportedLocale = 'de';
+export const DEFAULT_LOCALE: SupportedLocale = "de";
 export const localeOptions: ReadonlyArray<LocaleOption> = [
-  { code: 'de', icon: '🇩🇪', label: 'Deutsch' },
-  { code: 'en', icon: '🇬🇧', label: 'English' },
+  { code: "de", icon: "🇩🇪", label: "Deutsch" },
+  { code: "en", icon: "🇬🇧", label: "English" },
 ];
 
 export const isSupportedLocale = (value: string | null | undefined): value is SupportedLocale =>

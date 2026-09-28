@@ -1,5 +1,5 @@
 <template>
-  <div class="family-world-background">
+  <div class="family-world-background" :class="shellLayoutClasses">
     <AsyncAuthGateway v-if="!store.isAuthenticated" />
     <template v-else>
       <LadirchenIntro @finished="handleIntroFinished" />
@@ -51,7 +51,7 @@
       </div>
 
       <v-snackbar v-model="store.snackbar.visible" color="secondary" location="bottom" rounded="lg" :timeout="2600">
-        {{ store.snackbar.messageKey ? t(store.snackbar.messageKey, store.snackbar.params) : '' }}
+        {{ snackbarMessage }}
       </v-snackbar>
 
       <v-dialog :model-value="store.rewardAnimation.visible" max-width="390" persistent>
@@ -85,9 +85,7 @@
           <h2>{{ t('shell.gift.title', { guardian: store.guardianGiftAnimation.guardianName }) }}</h2>
           <strong class="gift-amount">+{{ store.guardianGiftAnimation.amount }}</strong>
           <p v-if="store.guardianGiftAnimation.destination === 'goal'" class="text-body-small text-medium-emphasis mt-2">{{ t('shell.gift.goal', { goal: store.guardianGiftAnimation.goalTitle }) }}</p>
-          <p v-else class="text-body-small text-medium-emphasis mt-2">{{ store.guardianGiftAnimation.goalTitle
-            ? t('shell.gift.balance', { goal: store.guardianGiftAnimation.goalTitle })
-            : t('shell.gift.balanceDefault') }}</p>
+          <p v-else class="text-body-small text-medium-emphasis mt-2">{{ guardianGiftBalanceMessage }}</p>
           <v-btn class="mt-5" color="primary" rounded="lg" variant="flat" width="100%" @click="store.dismissGuardianGift">{{ t('shell.gift.dismiss') }}</v-btn>
         </v-card>
       </v-dialog>
@@ -100,38 +98,39 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { useDisplay } from "vuetify";
 
-import LadirchenIntro from '@/features/onboarding/components/LadirchenIntro.vue';
-import AnimatedStreakFlame from '@/features/streaks/components/AnimatedStreakFlame.vue';
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import LadirchenIntro from "@/features/onboarding/components/LadirchenIntro.vue";
+import AnimatedStreakFlame from "@/features/streaks/components/AnimatedStreakFlame.vue";
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 
-import AppNavigationIcon from './AppNavigationIcon.vue';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import { CURRENT_TIME_REFRESH_INTERVAL_MS } from '@/shared/runtime-timing';
-import { isInstantInIsoWeek } from '@/domain/shared/zoned-calendar';
+import AppNavigationIcon from "./AppNavigationIcon.vue";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import { CURRENT_TIME_REFRESH_INTERVAL_MS } from "@/shared/runtime-timing";
+import { isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
 
-const AsyncAuthGateway = defineAsyncComponent(() => import('@/features/auth/components/AuthGateway.vue'));
-const AsyncFamilySetupDialog = defineAsyncComponent(() => import('@/features/family/components/FamilySetupDialog.vue'));
-const AsyncGlobalLadiGuide = defineAsyncComponent(() => import('./GlobalLadiGuide.vue'));
-const AsyncSavingsPiggyDialog = defineAsyncComponent(() => import('@/features/savings/components/SavingsPiggyDialog.vue'));
-const AsyncWeeklyStreakDialog = defineAsyncComponent(() => import('@/features/streaks/components/WeeklyStreakDialog.vue'));
+const AsyncAuthGateway = defineAsyncComponent(() => import("@/features/auth/components/AuthGateway.vue"));
+const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
+const AsyncGlobalLadiGuide = defineAsyncComponent(() => import("./GlobalLadiGuide.vue"));
+const AsyncSavingsPiggyDialog = defineAsyncComponent(() => import("@/features/savings/components/SavingsPiggyDialog.vue"));
+const AsyncWeeklyStreakDialog = defineAsyncComponent(() => import("@/features/streaks/components/WeeklyStreakDialog.vue"));
 
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
+const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
 const appHydrated = ref(false);
 const introFinished = ref(false);
 let clockTimer: ReturnType<typeof window.setInterval> | undefined;
-let orientationMedia: MediaQueryList | undefined;
 const contentElement = ref<HTMLElement | null>(null);
 void store.hydrateFamilyAggregates().finally(() => { appHydrated.value = true; });
 const streakDialog = ref(false);
-const headerBalanceMemberId = computed(() => store.viewerRole === 'guardian' ? store.signedInMemberId : store.activeChildId);
-const headerBalance = computed(() => store.viewerRole === 'guardian' ? store.balanceFor(store.signedInMemberId) : store.availableBalance);
-const childMembers = computed(() => store.members.filter(member => member.role === 'child'));
+const headerBalanceMemberId = computed(() => store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId);
+const headerBalance = computed(() => store.viewerRole === "guardian" ? store.balanceFor(store.signedInMemberId) : store.availableBalance);
+const childMembers = computed(() => store.members.filter(member => member.role === "child"));
 const childrenWeekContributions = computed(() => store.contributions.filter(contribution =>
-  contribution.status === 'approved' &&
+  contribution.status === "approved" &&
   contribution.approvedAt !== undefined &&
   isInstantInIsoWeek(contribution.approvedAt, new Date(store.currentTimeMilliseconds), store.familyTimeZone) &&
   childMembers.value.some(child => child.id === contribution.assigneeId),
@@ -143,25 +142,39 @@ const childrenTotalAssets = computed(() => childMembers.value.reduce((sum, child
   store.balanceFor(child.id) +
   store.goals.filter(goal => goal.ownerId === child.id).reduce((goalSum, goal) => goalSum + goal.saved, 0), 0));
 const childrenFamilyCurrency = computed(() => new Intl.NumberFormat(locale.value, {
-  style: 'currency',
+  style: "currency",
   currency: store.familyCurrencyCode,
   maximumFractionDigits: 2,
 }).format(store.familyCurrencyValue(childrenTotalAssets.value)));
-const guardianWeekAriaLabel = computed(() => t('shell.week.aria', { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value, assets: childrenFamilyCurrency.value, balance: headerBalance.value }));
-const guardianWeekTip = computed(() => t('shell.week.tip', { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value }));
-type NavigationIcon = 'family' | 'contributions' | 'profile' | 'world' | 'wishes' | 'shop';
+const guardianWeekAriaLabel = computed(() => t("shell.week.aria", { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value, assets: childrenFamilyCurrency.value, balance: headerBalance.value }));
+const guardianWeekTip = computed(() => t("shell.week.tip", { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value }));
+const snackbarMessage = computed(() => store.snackbar.messageKey
+  ? t(store.snackbar.messageKey, store.snackbar.params)
+  : "");
+const guardianGiftBalanceMessage = computed(() => store.guardianGiftAnimation.goalTitle
+  ? t("shell.gift.balance", { goal: store.guardianGiftAnimation.goalTitle })
+  : t("shell.gift.balanceDefault"));
+const isLandscape = computed(() => viewportWidth.value > viewportHeight.value);
+const usesFullscreenShell = computed(() => smAndDown.value || (md.value && (isLandscape.value || platform.value.touch)));
+const shellLayoutClasses = computed(() => ({
+  "family-world-background--compact": xs.value,
+  "family-world-background--expanded-padding": sm.value || (md.value && platform.value.touch),
+  "family-world-background--fullscreen": usesFullscreenShell.value,
+  "family-world-background--landscape": md.value && isLandscape.value,
+}));
+type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
 interface NavigationItem { to: string; icon: NavigationIcon; label: string; tip: string }
 
 const navigationItems = computed<NavigationItem[]>(() => [
-  { to: '/', icon: 'world', label: t('navigation.world.label'), tip: t('navigation.world.tip') },
-  { to: '/beitraege', icon: 'contributions', label: t('navigation.contributions.label'), tip: t('navigation.contributions.tip') },
-  { to: '/wuensche', icon: 'wishes', label: t('navigation.wishes.label'), tip: t('navigation.wishes.tip') },
-  { to: '/shop', icon: 'shop', label: t('navigation.shop.label'), tip: t('navigation.shop.tip') },
-  { to: '/familie', icon: 'family', label: t('navigation.family.label'), tip: t('navigation.family.tip') },
-  { to: '/ich', icon: 'profile', label: t('navigation.profile.label'), tip: t('navigation.profile.tip') },
+  { to: "/", icon: "world", label: t("navigation.world.label"), tip: t("navigation.world.tip") },
+  { to: "/contributions", icon: "contributions", label: t("navigation.contributions.label"), tip: t("navigation.contributions.tip") },
+  { to: "/wishes", icon: "wishes", label: t("navigation.wishes.label"), tip: t("navigation.wishes.tip") },
+  { to: "/shop", icon: "shop", label: t("navigation.shop.label"), tip: t("navigation.shop.tip") },
+  { to: "/family", icon: "family", label: t("navigation.family.label"), tip: t("navigation.family.tip") },
+  { to: "/profile", icon: "profile", label: t("navigation.profile.label"), tip: t("navigation.profile.tip") },
 ]);
-const navigation = computed(() => store.viewerRole === 'guardian' && !store.permissions.canManageContent
-  ? navigationItems.value.filter(item => !['/beitraege', '/shop'].includes(item.to))
+const navigation = computed(() => store.viewerRole === "guardian" && !store.permissions.canManageContent
+  ? navigationItems.value.filter(item => !["/contributions", "/shop"].includes(item.to))
   : navigationItems.value,
 );
 const handleIntroFinished = () => {
@@ -174,13 +187,11 @@ const resetContentScroll = () => {
 onMounted(() => {
   store.refreshCurrentTime();
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
-  orientationMedia = window.matchMedia('(orientation: landscape)');
-  orientationMedia.addEventListener('change', resetContentScroll);
 });
 onBeforeUnmount(() => {
   if (clockTimer !== undefined) {window.clearInterval(clockTimer);}
-  orientationMedia?.removeEventListener('change', resetContentScroll);
 });
+watch(isLandscape, resetContentScroll);
 
 </script>
 
@@ -203,7 +214,7 @@ onBeforeUnmount(() => {
   transform: translateY(-8px) scale(0.996);
 }
 .contribution-reward-card {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
   background:
@@ -223,7 +234,7 @@ onBeforeUnmount(() => {
     0 28px 60px color-mix(in srgb, var(--lad-text) 25%, transparent);
 }
 .contribution-reward-card h2 {
-  @apply position-relative ma-0;
+  --uno: position-relative ma-0;
   color: var(--lad-text);
   font-size: rem(26);
   letter-spacing: -0.04em;
@@ -241,7 +252,7 @@ onBeforeUnmount(() => {
   width: 100px;
   height: 100px;
   margin: 14px auto 0;
-  @apply position-relative d-grid place-center;
+  --uno: position-relative d-grid place-center;
   border: 4px solid var(--lad-border-on-accent);
   border-radius: 32px;
   background: linear-gradient(
@@ -279,7 +290,7 @@ onBeforeUnmount(() => {
   min-width: 45px;
   height: 35px;
   padding: 4px 8px;
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   right: -17px;
   bottom: -10px;
   color: var(--lad-text-inverse);
@@ -295,7 +306,7 @@ onBeforeUnmount(() => {
   animation: reward-double-pop 0.7s 0.65s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 .reward-rocket {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -17px;
   left: -16px;
   z-index: 2;
@@ -308,14 +319,14 @@ onBeforeUnmount(() => {
   animation: reward-rocket-flight 1.8s 0.35s ease-in-out infinite;
 }
 .reward-results {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1.25fr 1fr;
   gap: 8px;
 }
 .reward-result {
   min-height: 68px;
   padding: 9px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-reward-accent) 20%, transparent);
   border-radius: 17px;
@@ -343,7 +354,7 @@ onBeforeUnmount(() => {
 }
 .reward-result small,
 .reward-result strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .reward-result small {
   color: var(--lad-color-accent-warm-strong);
@@ -363,7 +374,7 @@ onBeforeUnmount(() => {
   color: var(--lad-color-primary-deep);
 }
 .reward-stars {
-  @apply d-flex justify-center;
+  --uno: d-flex justify-center;
   gap: 2px;
 }
 .reward-stars :deep(.v-icon) {
@@ -379,7 +390,7 @@ onBeforeUnmount(() => {
   animation: reward-star-pop 1.7s ease-in-out infinite;
 }
 .reward-double-copy {
-  @apply d-flex align-center justify-center;
+  --uno: d-flex align-center justify-center;
   gap: 5px;
   color: var(--lad-color-info-deep);
   font-size: rem(11);
@@ -401,7 +412,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0;
 }
 .reward-confetti span {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 0;
   color: var(--lad-color-reward-border);
   font-size: 1rem;
@@ -441,7 +452,7 @@ onBeforeUnmount(() => {
   animation-delay: -1.45s;
 }
 .guardian-gift-card {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   background: linear-gradient(
     160deg,
     var(--lad-surface),
@@ -451,17 +462,17 @@ onBeforeUnmount(() => {
     color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
 }
 .guardian-gift-card h2 {
-  @apply position-relative ma-0;
+  --uno: position-relative ma-0;
   font-size: rem(23);
   letter-spacing: -0.035em;
 }
 .gift-coin {
   width: 82px;
   height: 82px;
-  @apply position-relative;
+  --uno: position-relative d-grid place-center;
   z-index: 2;
   margin: 15px auto 0;
-  @apply d-grid place-center;
+
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
   box-shadow: 0 10px 28px
@@ -473,13 +484,13 @@ onBeforeUnmount(() => {
   animation: gift-coin-spin 1.2s 700ms ease-in-out;
 }
 .gift-amount {
-  @apply d-block position-relative mt-3;
+  --uno: d-block position-relative mt-3;
   color: var(--lad-color-primary-strong);
   font-size: rem(35);
   animation: gift-amount-pop 700ms 500ms both var(--lad-easing-pop);
 }
 .gift-confetti span {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 1;
   color: var(--lad-color-reward-border);
   font-size: rem(18);

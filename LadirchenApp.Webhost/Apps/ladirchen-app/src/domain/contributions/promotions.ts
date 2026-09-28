@@ -1,20 +1,17 @@
-import type { Promotion } from './types';
-import type { IanaTimeZone } from '../family/time-zone';
-import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '../shared/time';
-import { secondsSinceStartOfDay } from '../shared/zoned-calendar';
+import { DateTime } from "luxon";
 
-const deadlineSeconds = (deadline: string): number => {
-  const [hours = 0, minutes = 0] = deadline.split(':').map(Number);
-  return hours * SECONDS_PER_HOUR + minutes * SECONDS_PER_MINUTE;
-};
+import type { Promotion } from "./types";
+import type { IanaTimeZone } from "@/domain/family/time-zone";
 
 export const remainingPromotionMilliseconds = (
   deadline: string,
   timeZone: IanaTimeZone,
   now = new Date(),
-): number => Math.max(0,
-  (deadlineSeconds(deadline) - secondsSinceStartOfDay(now, timeZone)) * MILLISECONDS_PER_SECOND - now.getUTCMilliseconds(),
-);
+): number => {
+  const current = DateTime.fromJSDate(now, { zone: timeZone });
+  const deadlineAt = DateTime.fromISO(`${current.toISODate()}T${deadline}`, { zone: timeZone });
+  return Math.max(0, deadlineAt.diff(current).as("milliseconds"));
+};
 
 export const isPromotionAvailable = (
   promotion: Promotion,

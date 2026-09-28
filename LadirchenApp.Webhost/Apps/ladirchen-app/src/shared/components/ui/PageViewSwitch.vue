@@ -38,10 +38,10 @@ withDefaults(defineProps<{
   compact?: boolean;
   label: string;
   options: readonly PageViewOption<T>[];
-  tone?: 'amber' | 'blue';
+  tone?: "amber" | "blue";
 }>(), {
   compact: false,
-  tone: 'blue',
+  tone: "blue",
 });
 </script>
 
@@ -54,10 +54,10 @@ withDefaults(defineProps<{
   --switch-alt: var(--lad-color-primary-strong);
   --switch-alt-dark: var(--lad-color-primary-deep);
   --switch-bg: var(--lad-surface-soft);
-  @apply position-relative;
+  --uno: position-relative d-grid overflow-hidden;
   isolation: isolate;
   padding: 0.5rem;
-  @apply d-grid overflow-hidden;
+
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: rem(9);
   border: rem(2) solid
@@ -105,7 +105,7 @@ withDefaults(defineProps<{
 .page-view-switch button {
   min-height: 4.75rem;
   padding: rem(11) 0.75rem;
-  @apply position-relative d-flex align-center ga-2 text-left cursor-pointer overflow-hidden;
+  --uno: position-relative d-flex align-center ga-2 text-left cursor-pointer overflow-hidden;
   color: var(--lad-muted);
   border: rem(1) solid
     color-mix(in srgb, var(--switch-accent) 9%, var(--lad-border-on-accent));
@@ -119,11 +119,11 @@ withDefaults(defineProps<{
     transform 180ms ease;
 }
 .page-view-switch button:hover {
-  transform: translateY(-rem(2));
+  transform: translateY(rem(-2));
 }
 .page-view-switch button.active {
   color: var(--switch-accent-dark);
-  transform: translateY(-rem(2));
+  transform: translateY(rem(-2));
   border-color: color-mix(
     in srgb,
     var(--switch-accent) 30%,
@@ -169,8 +169,8 @@ withDefaults(defineProps<{
     background var(--lad-motion-normal) ease;
 }
 .page-view-icon :deep(.v-icon) {
-  @apply d-block;
-  @apply ma-auto;
+  --uno: d-block ma-auto;
+
   color: inherit;
   opacity: 1;
 }
@@ -200,11 +200,11 @@ withDefaults(defineProps<{
   box-shadow: 0 rem(3) 0 var(--switch-alt-dark);
 }
 .page-view-copy {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .page-view-copy strong,
 .page-view-copy small {
-  @apply d-block;
+  --uno: d-block;
 }
 .page-view-copy strong {
   font-size: 0.75rem;
@@ -218,7 +218,7 @@ withDefaults(defineProps<{
 .page-view-check {
   width: rem(21);
   height: rem(21);
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   top: rem(7);
   right: rem(7);
   color: var(--lad-text-inverse);
@@ -269,8 +269,8 @@ withDefaults(defineProps<{
 @include respond-down(phone) {
   .page-view-switch--many button {
     min-height: rem(82);
-    @apply flex-column;
-    @apply justify-center;
+    --uno: flex-column justify-center;
+
     padding: rem(7) 0.25rem;
     text-align: center;
   }

@@ -50,10 +50,10 @@
             <v-icon color="info">i-mdi:shield-account-outline</v-icon>
           </div>
           <div class="management-actions">
-            <v-btn color="primary" prepend-icon="i-mdi:plus" rounded="lg" size="small" to="/beitraege?new=1" variant="flat">{{ t('world.management.contribution') }}</v-btn>
-            <v-btn color="warning" prepend-icon="i-mdi:rocket-launch-outline" rounded="lg" size="small" to="/beitraege?promotion=1" variant="tonal">{{ t('world.management.promotion') }}</v-btn>
-            <v-btn color="info" prepend-icon="i-mdi:target" rounded="lg" size="small" to="/wuensche?new=1" variant="tonal">{{ t('world.management.childGoal') }}</v-btn>
-            <v-btn color="info" prepend-icon="i-mdi:account-group-outline" rounded="lg" size="small" to="/wuensche?family=1" variant="tonal">{{ t('world.management.familyGoal') }}</v-btn>
+            <v-btn color="primary" prepend-icon="i-mdi:plus" rounded="lg" size="small" to="/contributions?new=1" variant="flat">{{ t('world.management.contribution') }}</v-btn>
+            <v-btn color="warning" prepend-icon="i-mdi:rocket-launch-outline" rounded="lg" size="small" to="/contributions?promotion=1" variant="tonal">{{ t('world.management.promotion') }}</v-btn>
+            <v-btn color="info" prepend-icon="i-mdi:target" rounded="lg" size="small" to="/wishes?new=1" variant="tonal">{{ t('world.management.childGoal') }}</v-btn>
+            <v-btn color="info" prepend-icon="i-mdi:account-group-outline" rounded="lg" size="small" to="/wishes?family=1" variant="tonal">{{ t('world.management.familyGoal') }}</v-btn>
             <v-btn color="warning" prepend-icon="i-mdi:gift-outline" rounded="lg" size="small" to="/shop?new=1" variant="tonal">{{ t('world.management.reward') }}</v-btn>
             <v-btn color="secondary" prepend-icon="i-mdi:hand-coin-outline" rounded="lg" size="small" variant="tonal" @click="openGiftDialog">{{ t('world.management.gift') }}</v-btn>
             <v-btn color="primary" prepend-icon="i-mdi:account-cog-outline" rounded="lg" size="small" variant="tonal" @click="store.openFamilySetup">{{ t('world.management.family') }}</v-btn>
@@ -72,7 +72,7 @@
             <p class="text-caption text-medium-emphasis mt-1">{{ t('world.supporter.description') }}</p>
           </div>
         </div>
-        <v-btn class="mt-4" color="primary" prepend-icon="i-mdi:gift-outline" rounded="lg" to="/wuensche" variant="flat" width="100%">{{ t('world.supporter.action') }}</v-btn>
+        <v-btn class="mt-4" color="primary" prepend-icon="i-mdi:gift-outline" rounded="lg" to="/wishes" variant="flat" width="100%">{{ t('world.supporter.action') }}</v-btn>
       </BrandedCard>
 
       <v-card v-if="store.viewerRole === 'child' && activePromotion" class="promotion-banner pa-4 mb-6" color="amber-lighten-5" elevation="0" rounded="xl" role="button" tabindex="0" @click="promoDetailsOpen = true" @keydown.enter="promoDetailsOpen = true">
@@ -99,7 +99,7 @@
             <h2>{{ t('world.tasks.title') }}</h2>
             <p>{{ t('world.tasks.description') }}</p>
           </div>
-          <RouterLink class="all-contributions" to="/beitraege"><v-icon icon="i-mdi:view-grid-plus-outline" size="19" /><span>{{ t('world.tasks.all') }}</span><v-icon icon="i-mdi:chevron-right" size="17" /></RouterLink>
+          <RouterLink class="all-contributions" to="/contributions"><v-icon icon="i-mdi:view-grid-plus-outline" size="19" /><span>{{ t('world.tasks.all') }}</span><v-icon icon="i-mdi:chevron-right" size="17" /></RouterLink>
         </div>
 
         <div v-if="personalContributions.length" class="contribution-list">
@@ -125,7 +125,7 @@
             <p class="eyebrow mb-1">{{ emptyTaskEyebrow }}</p>
             <strong>{{ emptyTaskTitle }}</strong>
             <p>{{ emptyTaskMessage }}</p>
-            <RouterLink class="empty-task-link" to="/beitraege">{{ t('world.tasks.openAvailable') }} <v-icon icon="i-mdi:arrow-right" size="15" /></RouterLink>
+            <RouterLink class="empty-task-link" to="/contributions">{{ t('world.tasks.openAvailable') }} <v-icon icon="i-mdi:arrow-right" size="15" /></RouterLink>
           </div>
         </v-card>
       </section>
@@ -172,21 +172,21 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AnimatedHouseEnergy from '../components/AnimatedHouseEnergy.vue';
-import FamilyWorldScene from '../components/FamilyWorldScene.vue';
-import HouseEnergyDialog from '../components/HouseEnergyDialog.vue';
-import ChildContributionCard from '@/shared/components/contributions/ChildContributionCard.vue';
-import AnimatedCompletionMark from '@/shared/components/AnimatedCompletionMark.vue';
-import PromotionCountdown from '@/shared/components/contributions/PromotionCountdown.vue';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import type { ContributionId } from '@/domain/shared/identifiers';
-import { isPromotionAvailable } from '@/domain/contributions/promotions';
-import { useLocalizedDomainContent } from '@/shared/composables/use-localized-domain-content';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import { ROOM_DESIGNS } from '@/domain/house';
+import AnimatedHouseEnergy from "@/features/world/components/AnimatedHouseEnergy.vue";
+import FamilyWorldScene from "@/features/world/components/FamilyWorldScene.vue";
+import HouseEnergyDialog from "@/features/world/components/HouseEnergyDialog.vue";
+import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
+import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
+import PromotionCountdown from "@/shared/components/contributions/PromotionCountdown.vue";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import type { ContributionId } from "@/domain/shared/identifiers";
+import { isPromotionAvailable } from "@/domain/contributions/promotions";
+import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import { ROOM_DESIGNS } from "@/domain/house";
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
@@ -194,7 +194,7 @@ const localize = useLocalizedDomainContent();
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
-const gift = reactive({ childId: store.activeChildId, amount: 20, reason: '' });
+const gift = reactive({ childId: store.activeChildId, amount: 20, reason: "" });
 
 const localizedContributions = computed(() => store.contributions.map(localize.contribution));
 const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
@@ -204,27 +204,27 @@ const activeRoomDesigns = computed(() => ROOM_DESIGNS.filter(
 ));
 const personalContributions = computed(() =>
   localizedContributions.value
-    .filter((contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== 'approved'),
+    .filter((contribution) => contribution.assigneeId === store.activeChildId && contribution.status !== "approved"),
 );
 const completedPersonalContributions = computed(() => localizedContributions.value.filter(
-  contribution => contribution.assigneeId === store.activeChildId && contribution.status === 'approved',
+  contribution => contribution.assigneeId === store.activeChildId && contribution.status === "approved",
 ));
-const emptyTaskEyebrow = computed(() => t(completedPersonalContributions.value.length ? 'world.tasks.empty.completedEyebrow' : 'world.tasks.empty.availableEyebrow'));
-const emptyTaskTitle = computed(() => t(completedPersonalContributions.value.length ? 'world.tasks.empty.completedTitle' : 'world.tasks.empty.availableTitle'));
+const emptyTaskEyebrow = computed(() => t(completedPersonalContributions.value.length ? "world.tasks.empty.completedEyebrow" : "world.tasks.empty.availableEyebrow"));
+const emptyTaskTitle = computed(() => t(completedPersonalContributions.value.length ? "world.tasks.empty.completedTitle" : "world.tasks.empty.availableTitle"));
 const emptyTaskMessage = computed(() => {
-  return t(completedPersonalContributions.value.length ? 'world.tasks.empty.completedMessage' : 'world.tasks.empty.availableMessage');
+  return t(completedPersonalContributions.value.length ? "world.tasks.empty.completedMessage" : "world.tasks.empty.availableMessage");
 });
 const activePromotion = computed(() =>
   localizedPromotions.value.find((promotion) =>
     isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) && localizedContributions.value.some(
       (contribution) => contribution.id === promotion.contributionId &&
         contribution.assigneeId === store.activeChildId &&
-        contribution.status === 'available',
+        contribution.status === "available",
     ),
   ),
 );
 const contributionTitle = (contributionId: ContributionId) =>
-  localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ?? t('contributions.singular');
+  localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ?? t("contributions.singular");
 const promotionRewardTotal = computed(() => {
   if (!activePromotion.value) return 0;
   const baseReward = localizedContributions.value.find((contribution) => contribution.id === activePromotion.value?.contributionId)?.reward ?? 0;
@@ -232,11 +232,11 @@ const promotionRewardTotal = computed(() => {
 });
 const promotionFor = (contributionId: ContributionId) =>
   localizedPromotions.value.find((promotion) => promotion.contributionId === contributionId && isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)));
-const childMembers = computed(() => store.members.filter((member) => member.role === 'child'));
+const childMembers = computed(() => store.members.filter((member) => member.role === "child"));
 const childOptions = computed(() => childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })));
 const canGiveGift = computed(() => gift.amount >= 1 && gift.reason.trim().length >= 3);
 const openGiftDialog = () => {
-  Object.assign(gift, { childId: store.activeChildId, amount: 20, reason: '' });
+  Object.assign(gift, { childId: store.activeChildId, amount: 20, reason: "" });
   giftDialogOpen.value = true;
 };
 const giveDirectGift = () => {
@@ -247,11 +247,10 @@ const giveDirectGift = () => {
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
-@use "@/styles/tokens" as tokens;
 .world-hero {
   padding-top: 20px;
   padding-bottom: 16px;
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   color: var(--lad-text);
   background: linear-gradient(
     180deg,
@@ -262,31 +261,31 @@ const giveDirectGift = () => {
 }
 .world-title {
   max-width: 310px;
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(23);
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
 .energy-value {
-  @apply d-block;
+  --uno: d-block text-no-wrap;
   color: var(--lad-mint-dark);
   font-size: 1.25rem;
   line-height: 1;
-  @apply text-no-wrap;
+
 }
 .energy-label {
-  @apply d-block mt-1;
+  --uno: d-block mt-1;
   color: var(--lad-muted);
   font-size: rem(10);
 }
 .energy-trigger-copy {
-  @apply min-w-0 text-left;
+  --uno: min-w-0 text-left;
 }
 .energy-trigger {
   min-width: 136px;
-  @apply position-relative;
+  --uno: position-relative d-flex align-center cursor-pointer;
   padding: 7px 22px 7px 8px;
-  @apply d-flex align-center;
+
   gap: 6px;
   color: inherit;
   border: 1px solid
@@ -296,7 +295,7 @@ const giveDirectGift = () => {
   box-shadow: 0 3px 0
     color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
   font: inherit;
-  @apply cursor-pointer;
+
   transition:
     background 160ms ease,
     transform 160ms ease,
@@ -313,31 +312,28 @@ const giveDirectGift = () => {
     color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .energy-chevron {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 50%;
   right: 5px;
   color: var(--lad-mint-dark);
   transform: translateY(-50%);
 }
-@media
-  (min-width: tokens.breakpoint(tablet)) and (max-width: tokens.breakpoint(tablet-landscape)) and (orientation: landscape) {
-  .world-hero {
-    height: calc(100dvh - 8.75rem);
-    min-height: 0;
-    padding-top: 0.75rem;
-    padding-bottom: 0.5rem;
-    @apply d-flex flex-column;
-  }
-  .world-hero :deep(.world-scene-wrap) {
-    width: min(100%, calc((100dvh - 13rem) * 1.354));
-    min-height: 0;
-    margin-inline: auto;
-    flex: 1 1 auto;
-  }
-  .world-hero :deep(.scene-drag-layer),
-  .world-hero :deep(.world-scene) {
-    height: 100%;
-  }
+:global(.family-world-background--landscape) .world-hero {
+  height: calc(100dvh - 8.75rem);
+  min-height: 0;
+  padding-top: 0.75rem;
+  padding-bottom: 0.5rem;
+  --uno: d-flex flex-column;
+}
+:global(.family-world-background--landscape) .world-hero :deep(.world-scene-wrap) {
+  width: min(100%, calc((100dvh - 13rem) * 1.354));
+  min-height: 0;
+  margin-inline: auto;
+  flex: 1 1 auto;
+}
+:global(.family-world-background--landscape) .world-hero :deep(.scene-drag-layer),
+:global(.family-world-background--landscape) .world-hero :deep(.world-scene) {
+  height: 100%;
 }
 @include respond-down(mobile) {
   .energy-trigger {
@@ -365,7 +361,7 @@ const giveDirectGift = () => {
     ),
     linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft));
   padding: 15px;
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   @include content-card(
     color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent),
     color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
@@ -378,20 +374,20 @@ const giveDirectGift = () => {
 }
 .contribution-board::after {
   content: "✦";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: 10px;
   right: 13px;
   color: color-mix(in srgb, var(--lad-color-reward-border) 65%, transparent);
   font-size: rem(13);
 }
 .contribution-board-heading {
-  @apply position-relative d-flex align-start justify-space-between;
+  --uno: position-relative d-flex align-start justify-space-between;
   z-index: 1;
   gap: 12px;
   margin-bottom: 14px;
 }
 .contribution-board-heading h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: 1.25rem;
   letter-spacing: -0.035em;
 }
@@ -403,7 +399,7 @@ const giveDirectGift = () => {
 .all-contributions {
   min-height: 46px;
   padding: 7px 8px 7px 10px;
-  @apply d-flex align-center flex-shrink-0;
+  --uno: d-flex align-center flex-shrink-0;
   gap: 5px;
   color: var(--lad-color-primary-deep);
   border: 2px solid
@@ -429,11 +425,11 @@ const giveDirectGift = () => {
     color-mix(in srgb, var(--lad-color-primary-strong) 12%, transparent);
 }
 .contribution-list {
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
   gap: 11px;
 }
 .contribution-empty {
-  @apply d-flex align-center position-relative overflow-hidden;
+  --uno: d-flex align-center position-relative overflow-hidden;
   gap: 13px;
   border: 2px dashed
     color-mix(in srgb, var(--lad-color-primary-muted) 30%, transparent);
@@ -457,7 +453,7 @@ const giveDirectGift = () => {
   line-height: 1.4;
 }
 .empty-task-link {
-  @apply d-inline-flex align-center;
+  --uno: d-inline-flex align-center;
   gap: 4px;
   color: var(--lad-mint-dark);
   font-size: rem(10);
@@ -471,7 +467,7 @@ const giveDirectGift = () => {
     var(--lad-color-reward-soft) 54%,
     var(--lad-surface-soft)
   );
-  @apply position-relative overflow-hidden cursor-pointer;
+  --uno: position-relative overflow-hidden cursor-pointer;
   @include content-card(
     color-mix(in srgb, var(--lad-color-info-subtle) 40%, transparent),
     color-mix(in srgb, var(--lad-color-info-muted) 18%, transparent),
@@ -486,7 +482,7 @@ const giveDirectGift = () => {
   content: "";
   width: 72px;
   height: 180%;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -40%;
   left: -95px;
   transform: rotate(18deg);
@@ -501,7 +497,7 @@ const giveDirectGift = () => {
 .promotion-boost {
   min-width: 78px;
   padding: 7px 9px;
-  @apply position-relative d-grid place-center flex-shrink-0 text-center;
+  --uno: position-relative d-grid place-center flex-shrink-0 text-center;
   z-index: 1;
   color: var(--lad-color-info-deep);
   border: 3px solid
@@ -522,7 +518,7 @@ const giveDirectGift = () => {
 }
 .promotion-boost strong,
 .promotion-boost small {
-  @apply d-block;
+  --uno: d-block;
 }
 .promotion-boost strong {
   font-size: rem(23);
@@ -538,12 +534,12 @@ const giveDirectGift = () => {
 .promotion-stars {
   width: 85px;
   height: 44px;
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: 6px;
   right: 8px;
 }
 .promotion-stars i {
-  @apply position-absolute;
+  --uno: position-absolute;
   color: var(--lad-color-reward-accent);
   text-shadow: 0 0 7px
     color-mix(in srgb, var(--lad-color-reward-highlight) 95%, transparent);
@@ -598,7 +594,7 @@ const giveDirectGift = () => {
 }
 .promotion-gem,
 .promotion-detail-gem {
-  @apply position-relative d-grid place-center flex-shrink-0;
+  --uno: position-relative d-grid place-center flex-shrink-0;
   color: var(--lad-color-reward-pale);
   border: 3px solid var(--lad-surface-raised);
   background: linear-gradient(
@@ -621,7 +617,7 @@ const giveDirectGift = () => {
 .promotion-gem > span {
   width: 19px;
   height: 19px;
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   right: -7px;
   bottom: -5px;
   color: var(--lad-color-reward-pale);
@@ -643,7 +639,7 @@ const giveDirectGift = () => {
 .promotion-detail-gem {
   width: 92px;
   height: 92px;
-  @apply mx-auto;
+  --uno: mx-auto;
   border-radius: 29px;
   box-shadow:
     0 7px 0 var(--lad-color-bonus-muted),
@@ -652,7 +648,7 @@ const giveDirectGift = () => {
 .promotion-detail-gem > span {
   width: 28px;
   height: 28px;
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   right: -8px;
   bottom: -7px;
   color: var(--lad-surface-raised);
@@ -663,7 +659,7 @@ const giveDirectGift = () => {
 }
 .promotion-gem i,
 .promotion-detail-gem i {
-  @apply position-absolute;
+  --uno: position-absolute;
   color: var(--lad-color-reward-pale);
   font-style: normal;
   text-shadow: 0 0 7px var(--lad-surface-raised);
@@ -680,7 +676,7 @@ const giveDirectGift = () => {
   animation-delay: -1s;
 }
 .promotion-detail-card {
-  @apply position-relative overflow-hidden text-center;
+  --uno: position-relative overflow-hidden text-center;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
   background:
@@ -702,7 +698,7 @@ const giveDirectGift = () => {
 }
 .promotion-detail-card::after {
   content: "✦";
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 22px;
   right: 26px;
   color: var(--lad-color-primary-highlight);
@@ -746,7 +742,7 @@ const giveDirectGift = () => {
   animation: bonus-gem 2.2s ease-in-out infinite;
 }
 .promotion-close {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 12px;
   right: 12px;
   z-index: 3;
@@ -754,14 +750,14 @@ const giveDirectGift = () => {
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
 }
 .promotion-breakdown {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 .promotion-breakdown > span {
   min-height: 55px;
   padding: 7px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-info-muted) 15%, transparent);
   border-radius: 14px;
@@ -771,7 +767,7 @@ const giveDirectGift = () => {
 }
 .promotion-breakdown i,
 .promotion-breakdown small {
-  @apply d-block;
+  --uno: d-block;
 }
 .promotion-breakdown i {
   color: var(--lad-color-info-deep);
@@ -787,7 +783,7 @@ const giveDirectGift = () => {
   font-weight: var(--lad-font-weight-strong);
 }
 .promotion-dialog-title {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(22);
   letter-spacing: -0.03em;
 }
@@ -801,22 +797,22 @@ const giveDirectGift = () => {
 .rating-rule {
   color: var(--lad-color-reward-ink);
   font-size: rem(9);
-  @apply font-weight-black;
+  --uno: font-weight-black;
 }
 .management-actions {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 7px;
 }
 .management-actions :deep(.v-btn) {
-  @apply min-w-0;
+  --uno: min-w-0;
   padding-inline: 8px;
   font-size: rem(9);
 }
 .direct-gift-icon {
   width: 58px;
   height: 58px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border-radius: 19px;
   background: var(--lad-color-reward-soft);
   font-size: rem(31);
@@ -931,15 +927,15 @@ const giveDirectGift = () => {
     --contribution-board-padding: 13px;
   }
   .contribution-board-heading {
-    @apply align-stretch;
-    @apply flex-column;
+    --uno: align-stretch flex-column;
+
   }
   .all-contributions {
     width: fit-content;
     min-height: 38px;
   }
   .contribution-empty {
-    @apply align-start;
+    --uno: align-start;
   }
   .contribution-empty :deep(.ladi-mascot) {
     transform: scale(0.9);

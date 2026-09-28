@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts" setup>
-import LadirchenCoin from './LadirchenCoin.vue';
+import LadirchenCoin from "./LadirchenCoin.vue";
 
 withDefaults(defineProps<{
   compact?: boolean;
@@ -15,8 +15,8 @@ withDefaults(defineProps<{
   value: number | string;
 }>(), {
   compact: false,
-  prefix: '',
-  suffix: '',
+  prefix: "",
+  suffix: "",
 });
 </script>
 
@@ -25,7 +25,7 @@ withDefaults(defineProps<{
 
 .ladirchen-amount {
   min-width: 0;
-  @apply d-inline-flex align-center;
+  --uno: d-inline-flex align-center;
   gap: rem(3);
   line-height: 1;
   white-space: nowrap;
@@ -33,7 +33,7 @@ withDefaults(defineProps<{
 }
 
 .ladirchen-amount-value {
-  @apply d-inline-flex align-center flex-shrink-0;
+  --uno: d-inline-flex align-center flex-shrink-0;
   align-self: stretch;
 }
 

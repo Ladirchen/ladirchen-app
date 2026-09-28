@@ -1,6 +1,6 @@
 <template>
   <header class="family-world-page-header" :class="`family-world-page-header--${tone}`">
-    <HeaderDecoration :tone="tone === 'profile' ? 'profile' : 'world'" />
+    <HeaderDecoration :tone="decorationTone" />
     <div class="page-header-copy">
       <p class="page-header-kicker">{{ eyebrow }}</p>
       <h1>{{ title }}</h1>
@@ -18,18 +18,21 @@
 </template>
 
 <script lang="ts" setup>
-import HeaderDecoration from './HeaderDecoration.vue';
+import { computed } from "vue";
 
-withDefaults(defineProps<{
+import HeaderDecoration from "./HeaderDecoration.vue";
+
+const props = withDefaults(defineProps<{
   description: string;
   eyebrow: string;
   icon?: string;
   title: string;
-  tone?: 'mint' | 'blue' | 'amber' | 'coral' | 'profile';
+  tone?: "mint" | "blue" | "amber" | "coral" | "profile";
 }>(), {
   icon: undefined,
-  tone: 'mint',
+  tone: "mint",
 });
+const decorationTone = computed(() => props.tone === "profile" ? "profile" : "world");
 </script>
 
 <style lang="scss" scoped>
@@ -39,7 +42,7 @@ withDefaults(defineProps<{
   --header-accent: var(--lad-color-primary-muted);
   --header-accent-soft: var(--lad-surface-soft);
   min-height: rem(138);
-  @apply mb-5 pa-5 position-relative overflow-hidden d-flex align-center justify-space-between ga-4;
+  --uno: mb-5 pa-5 position-relative overflow-hidden d-flex align-center justify-space-between ga-4;
   @include raised-surface(
     color-mix(in srgb, var(--header-accent) 18%, var(--lad-surface-raised)),
     color-mix(in srgb, var(--header-accent) 14%, transparent),
@@ -71,7 +74,7 @@ withDefaults(defineProps<{
 }
 .page-header-copy {
   max-width: rem(310);
-  @apply position-relative;
+  --uno: position-relative;
   z-index: 1;
 }
 .page-header-kicker {
@@ -79,7 +82,7 @@ withDefaults(defineProps<{
   @include overline(var(--header-accent));
 }
 h1 {
-  @apply ma-0;
+  --uno: ma-0;
   @include heading(var(--lad-font-size-page), 1.08, -0.045em);
 }
 .page-header-copy > p:last-child {
@@ -88,9 +91,9 @@ h1 {
 }
 .page-header-side {
   min-width: rem(54);
-  @apply position-relative;
+  --uno: position-relative d-flex align-center ga-2;
   z-index: 1;
-  @apply d-flex align-center ga-2;
+
 }
 .page-header-icon {
   @include icon-tile(

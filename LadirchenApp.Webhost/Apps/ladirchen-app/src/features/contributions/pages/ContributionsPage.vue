@@ -51,10 +51,10 @@
       </TransitionGroup>
       <BrandedCard v-if="!filteredContributions.length" class="empty-contributions pa-5 text-center" tone="contributions">
         <AnimatedCompletionMark :size="84" />
-        <strong>{{ statusFilter === 'open' ? t('contributions.empty.openTitle') : t('contributions.empty.completedTitle') }}</strong>
-        <p class="text-caption text-medium-emphasis mt-1">{{ statusFilter === 'open' ? t('contributions.empty.openDescription') : t('contributions.empty.completedDescription') }}</p>
-        <v-btn class="mt-3" color="primary" rounded="lg" variant="tonal" @click="statusFilter = statusFilter === 'open' ? 'completed' : 'open'; filter = 'all'">
-          {{ statusFilter === 'open' ? t('contributions.empty.viewCompleted') : t('contributions.empty.viewOpen') }}
+        <strong>{{ emptyStateTitle }}</strong>
+        <p class="text-caption text-medium-emphasis mt-1">{{ emptyStateDescription }}</p>
+        <v-btn class="mt-3" color="primary" rounded="lg" variant="tonal" @click="toggleEmptyStateFilter">
+          {{ emptyStateActionLabel }}
         </v-btn>
       </BrandedCard>
     </template>
@@ -70,7 +70,7 @@
               <v-avatar class="task-icon-avatar task-icon-avatar--small" color="surface-variant" rounded="lg" size="44">{{ contribution.icon }}</v-avatar>
               <div class="flex-grow-1 min-w-0"><strong class="text-body-small">{{ contribution.title }}</strong><p class="text-caption text-medium-emphasis">{{ guardianContributionStatus(contribution) }}</p></div>
               <v-btn v-if="contribution.status === 'available'" class="finish-button guardian-finish-button" color="info" rounded="lg" size="small" variant="flat" @click="store.submitContribution(contribution.id)"><span class="finish-check" aria-hidden="true"><v-icon icon="i-mdi:check" size="24" /></span><span>{{ t('contributions.finish') }}</span></v-btn>
-              <v-chip v-else :color="contribution.status === 'approved' ? 'success' : 'warning'" size="small" variant="tonal">{{ contribution.status === 'approved' ? t('contributions.guardianOwn.rated') : t('contributions.guardianOwn.submitted') }}</v-chip>
+              <v-chip v-else :color="guardianStatusColor(contribution)" size="small" variant="tonal">{{ guardianStatusLabel(contribution) }}</v-chip>
             </div>
           </BrandedCard>
         </div>
@@ -145,7 +145,7 @@
           <BrandedCard v-for="contribution in managedContributions" :key="contribution.id" class="basic-row pa-3" tone="contributions">
             <div class="d-flex align-center ga-3">
               <v-avatar class="task-icon-avatar task-icon-avatar--small" color="surface-variant" rounded="lg" size="44">{{ contribution.icon }}</v-avatar>
-              <div class="flex-grow-1 min-w-0"><strong class="text-body-small">{{ contribution.title }}</strong><p class="text-caption text-medium-emphasis">{{ contribution.kind === 'basic' ? t('contributions.manage.energyPoints', { value: contribution.energy }) : t('contributions.kind.extra') }} · {{ t('contributions.reward.coins', { value: contribution.reward }) }}</p></div>
+              <div class="flex-grow-1 min-w-0"><strong class="text-body-small">{{ contribution.title }}</strong><p class="text-caption text-medium-emphasis">{{ managedContributionDescription(contribution) }} · {{ t('contributions.reward.coins', { value: contribution.reward }) }}</p></div>
               <v-select
                 class="assignment-select"
                 density="compact"
@@ -197,7 +197,7 @@
         <v-avatar class="mb-3" color="error" size="52" variant="tonal"><v-icon icon="i-mdi:delete-alert-outline" /></v-avatar>
         <v-card-title class="pa-0">{{ t('contributions.deleteContribution.title') }}</v-card-title>
         <v-card-subtitle class="pa-0 mt-1 mb-4">{{ contributionToDelete.title }}</v-card-subtitle>
-        <v-alert class="mb-4" color="warning" density="compact" variant="tonal">{{ contributionToDelete.status === 'approved' ? t('contributions.deleteContribution.approved') : t('contributions.deleteContribution.open') }}</v-alert>
+        <v-alert class="mb-4" color="warning" density="compact" variant="tonal">{{ contributionDeleteWarning }}</v-alert>
         <div class="d-flex justify-end ga-2">
           <v-btn rounded="lg" variant="text" @click="contributionToDelete = undefined">{{ t('common.cancel') }}</v-btn>
           <v-btn color="error" rounded="lg" variant="flat" @click="confirmContributionDelete">{{ t('common.delete') }}</v-btn>
@@ -286,15 +286,17 @@
 </template>
 
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AnimatedCompletionMark from '@/shared/components/AnimatedCompletionMark.vue';
-import ChildContributionCard from '@/shared/components/contributions/ChildContributionCard.vue';
-import ContributionFilterPanel from '../components/ContributionFilterPanel.vue';
-import PromotionCountdown from '@/shared/components/contributions/PromotionCountdown.vue';
-import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import { useContributionsPage } from '../composables/use-contributions-page';
+import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
+import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
+import ContributionFilterPanel from "@/features/contributions/components/ContributionFilterPanel.vue";
+import PromotionCountdown from "@/shared/components/contributions/PromotionCountdown.vue";
+import SectionHeader from "@/shared/components/ui/SectionHeader.vue";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import { useContributionsPage } from "@/features/contributions/composables/use-contributions-page";
+import type { Contribution } from "@/domain/contributions/types";
 
 const {
   activePromotions, addContribution, addDialog, addPromotion, assignContribution, assignmentOptions,
@@ -307,12 +309,28 @@ const {
   teamDialog,
 } = useContributionsPage();
 const { t } = useI18n();
+const emptyStateIsOpen = computed(() => statusFilter.value === "open");
+const emptyStateTitle = computed(() => t(emptyStateIsOpen.value ? "contributions.empty.openTitle" : "contributions.empty.completedTitle"));
+const emptyStateDescription = computed(() => t(emptyStateIsOpen.value ? "contributions.empty.openDescription" : "contributions.empty.completedDescription"));
+const emptyStateActionLabel = computed(() => t(emptyStateIsOpen.value ? "contributions.empty.viewCompleted" : "contributions.empty.viewOpen"));
+const contributionDeleteWarning = computed(() => t(contributionToDelete.value?.status === "approved"
+  ? "contributions.deleteContribution.approved"
+  : "contributions.deleteContribution.open"));
+const toggleEmptyStateFilter = () => {
+  statusFilter.value = emptyStateIsOpen.value ? "completed" : "open";
+  filter.value = "all";
+};
+const guardianStatusColor = (contribution: Contribution): "success" | "warning" => contribution.status === "approved" ? "success" : "warning";
+const guardianStatusLabel = (contribution: Contribution) => t(contribution.status === "approved" ? "contributions.guardianOwn.rated" : "contributions.guardianOwn.submitted");
+const managedContributionDescription = (contribution: Contribution) => contribution.kind === "basic"
+  ? t("contributions.manage.energyPoints", { value: contribution.energy })
+  : t("contributions.kind.extra");
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .empty-contributions {
-  @apply d-flex flex-column align-center;
+  --uno: d-flex flex-column align-center;
   border: 2px dashed
     color-mix(in srgb, var(--lad-color-primary) 30%, transparent);
   background:
@@ -356,18 +374,18 @@ const { t } = useI18n();
 .promotion-row {
   border: 1px solid
     color-mix(in srgb, var(--lad-color-reward-border) 25%, transparent);
-  @apply cursor-pointer;
+  --uno: cursor-pointer;
 }
 .promotion-detail-icon {
   width: 62px;
   height: 62px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border-radius: 20px;
   background: var(--lad-color-reward-pale);
   font-size: 2rem;
 }
 .promotion-detail-title {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(22);
   letter-spacing: -0.03em;
 }
@@ -379,7 +397,7 @@ const { t } = useI18n();
 .promotion-reward span,
 .promotion-reward strong,
 .promotion-reward small {
-  @apply d-block;
+  --uno: d-block;
 }
 .promotion-reward span,
 .promotion-reward small {
@@ -393,14 +411,14 @@ const { t } = useI18n();
 .team-dialog-icon {
   width: 58px;
   height: 58px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border-radius: 18px;
   background: var(--lad-surface-soft);
   font-size: rem(30);
 }
 .sibling-rule {
   padding: 10px 12px;
-  @apply d-flex align-start ga-2;
+  --uno: d-flex align-start ga-2;
   color: var(--lad-muted);
   border-radius: 12px;
   background: var(--lad-surface-soft);

@@ -1,10 +1,10 @@
-import type { ContributionTranslationNamespaceKey, PromotionTranslationNamespaceKey, TranslationKey } from '@/locales/translation-keys';
-import type { ContributionId, FamilyMemberId, PromotionId } from '../shared/identifiers';
+import type { ContributionTranslationNamespaceKey, PromotionTranslationNamespaceKey, TranslationKey } from "@/locales/translation-keys";
+import type { ContributionId, FamilyMemberId, PromotionId } from "@/domain/shared/identifiers";
 
-export type ContributionKind = 'basic' | 'extra';
-export const CONTRIBUTION_STATUSES = ['available', 'pending', 'approved'] as const;
+export type ContributionKind = "basic" | "extra";
+export const CONTRIBUTION_STATUSES = ["available", "pending", "approved"] as const;
 export type ContributionStatus = typeof CONTRIBUTION_STATUSES[number];
-export type WorldEffect = 'lights' | 'flowers' | 'garden' | 'sparkle' | 'smoke';
+export type WorldEffect = "lights" | "flowers" | "garden" | "sparkle" | "smoke";
 
 export interface Contribution {
   id: ContributionId;

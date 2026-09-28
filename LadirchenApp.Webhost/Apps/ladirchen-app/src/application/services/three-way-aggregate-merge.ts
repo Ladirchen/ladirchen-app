@@ -1,10 +1,10 @@
 type SerializableRecord = Record<string, unknown>;
 
 const isRecord = (value: unknown): value is SerializableRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isIdentifiedRecord = (value: unknown): value is SerializableRecord & { readonly id: string } =>
-  isRecord(value) && typeof value.id === 'string';
+  isRecord(value) && typeof value.id === "string";
 
 const isIdentifiedRecordArray = (value: unknown): value is Array<SerializableRecord & { readonly id: string }> =>
   Array.isArray(value) && value.every(isIdentifiedRecord);

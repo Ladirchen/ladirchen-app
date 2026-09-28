@@ -45,7 +45,7 @@
                 :class="`edition-${edition.id}`"
                 :style="{ backgroundImage: `url(${editionPreviewBackground(edition.id)})` }"
               >
-                <img class="edition-house-sprite" :src="editionPreviewHouse(edition.id)" alt="" draggable="false">
+                <img class="edition-house-sprite" :src="editionPreviewHouse(edition.id)" alt="" decoding="async" draggable="false" loading="lazy">
                 <v-chip v-if="edition.id === store.houseThemeId" class="edition-status" color="success" size="x-small">{{ t('shop.catalog.active') }}</v-chip>
               </div>
               <strong class="d-block mt-2">{{ edition.name }}</strong>
@@ -73,7 +73,7 @@
         <section v-if="houseArea !== 'special'" class="catalog-section mb-5">
           <div class="catalog-heading mb-3">
             <div><p class="eyebrow mb-1">{{ t('shop.catalog.sets.eyebrow') }}</p><h2 class="section-title">{{ t('shop.catalog.sets.title') }}</h2></div>
-            <span>{{ houseArea === 'inside' ? t('shop.catalog.sets.inside') : t('shop.catalog.sets.outside') }}</span>
+            <span>{{ furnitureSetAreaLabel }}</span>
           </div>
           <div class="set-list">
             <BrandedCard v-for="set in visibleFurnitureSets" :key="set.id" class="set-card pa-3" interactive tone="shop">
@@ -106,8 +106,8 @@
 
         <div class="catalog-heading mb-3">
           <div>
-            <p class="eyebrow mb-1">{{ houseArea === 'special' ? t('shop.catalog.items.specialEyebrow') : t('shop.catalog.items.eyebrow') }}</p>
-            <h2 class="section-title">{{ houseArea === 'special' ? t('shop.catalog.items.specialTitle') : t('shop.catalog.items.title') }}</h2>
+            <p class="eyebrow mb-1">{{ catalogItemsEyebrow }}</p>
+            <h2 class="section-title">{{ catalogItemsTitle }}</h2>
           </div>
           <span v-if="houseArea === 'special'">{{ t('shop.catalog.items.motionHint') }}</span>
         </div>
@@ -183,33 +183,34 @@
 </template>
 
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
+import { useI18n } from "vue-i18n";
 
-import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
-import PageViewSwitch from '@/shared/components/ui/PageViewSwitch.vue';
-import RoomFurniture from '@/shared/components/house/RoomFurniture.vue';
-import ShopRewardCard from '../components/ShopRewardCard.vue';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import { useShopPage } from '../composables/use-shop-page';
+import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
+import PageViewSwitch from "@/shared/components/ui/PageViewSwitch.vue";
+import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
+import ShopRewardCard from "@/features/shop/components/ShopRewardCard.vue";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import { useShopPage } from "@/features/shop/composables/use-shop-page";
 
 const { t } = useI18n();
 const {
   activeTab, addReward, canAddReward, canRequest, categoryOptions, confirmRewardDeletion,
   displayedShopRewards, editionPreviewBackground, editionPreviewHouse, houseArea, houseAreaOptions,
-  houseEditions, iconOptions, minimumAvailableDate, newReward, ownsEdition, ownsSet,
+  houseEditions, iconOptions, minimumAvailableDate, newReward, ownsEdition, ownsSet, furnitureSetAreaLabel,
   publicationModeOptions, redemptionOpen, rewardDialog, rewardPublicationStatus, rewardToDelete,
   setPreviewAccessories, shopViewOptions, store, visibleAccessories, visibleFurnitureSets,
+  catalogItemsEyebrow, catalogItemsTitle,
 } = useShopPage();
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .shop-mode-switch {
-  @apply position-relative;
+  --uno: position-relative overflow-hidden;
   isolation: isolate;
   gap: 10px;
   padding: 9px;
-  @apply overflow-hidden;
+
   border: 2px solid var(--lad-color-reward-muted);
   border-radius: 28px;
   background:
@@ -230,7 +231,7 @@ const {
 }
 .shop-mode-switch::after {
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   right: 11%;
   bottom: -21px;
   left: 11%;
@@ -247,7 +248,7 @@ const {
 .shop-mode-switch :deep(button) {
   min-height: 82px;
   padding: 12px 14px;
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   border: 1px solid
     color-mix(in srgb, var(--lad-color-accent-warm-muted) 12%, transparent);
   border-radius: 21px;
@@ -257,7 +258,7 @@ const {
   content: "";
   width: 68px;
   height: 68px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -34px;
   right: -25px;
   border-radius: 50%;
@@ -334,12 +335,12 @@ const {
 }
 
 .shop-area-switch {
-  @apply position-relative;
+  --uno: position-relative overflow-visible;
   isolation: isolate;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 5px 3px 13px;
-  @apply overflow-visible;
+
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -347,7 +348,7 @@ const {
 }
 .shop-area-switch::before {
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   right: 3px;
   bottom: 2px;
   left: 3px;
@@ -362,8 +363,8 @@ const {
 .shop-area-switch :deep(button) {
   min-height: 92px;
   padding: 9px 5px 12px;
-  @apply flex-column;
-  @apply justify-center;
+  --uno: flex-column justify-center;
+
   gap: 5px;
   text-align: center;
   border: 2px solid var(--lad-color-reward-muted);
@@ -507,12 +508,12 @@ const {
 
 .reward-grid,
 .accessory-grid {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: 1fr 1fr;
   gap: 11px;
 }
 .catalog-heading {
-  @apply d-flex align-end justify-space-between;
+  --uno: d-flex align-end justify-space-between;
   gap: 10px;
 }
 .catalog-heading > span {
@@ -521,14 +522,14 @@ const {
   text-align: right;
 }
 .edition-grid {
-  @apply d-grid align-stretch;
+  --uno: d-grid align-stretch;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 .edition-card {
   min-width: 0;
   height: 100%;
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
 }
 .edition-card.active {
   border-color: color-mix(in srgb, var(--lad-color-primary) 60%, transparent);
@@ -538,7 +539,7 @@ const {
 .edition-preview {
   height: 8.5rem;
   flex: 0 0 8.5rem;
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   border-radius: rem(14);
   background-position: center;
   background-size: cover;
@@ -548,7 +549,7 @@ const {
 .edition-house-sprite {
   width: 86%;
   height: 90%;
-  @apply position-absolute;
+  --uno: position-absolute;
   bottom: -2%;
   left: 50%;
   transform: translateX(-50%);
@@ -559,7 +560,7 @@ const {
   );
 }
 .edition-status {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 5px;
   left: 5px;
   z-index: 5;
@@ -569,9 +570,9 @@ const {
   flex: 1;
 }
 .catalog-actions {
-  @apply mt-auto;
+  --uno: mt-auto d-flex align-center justify-space-between;
   padding-top: 12px;
-  @apply d-flex align-center justify-space-between;
+
   gap: 6px;
 }
 .catalog-actions :deep(.v-btn),
@@ -582,7 +583,7 @@ const {
   width: 100%;
   min-height: 38px;
   padding: 6px 10px;
-  @apply position-relative d-flex align-center justify-center overflow-hidden;
+  --uno: position-relative d-flex align-center justify-center overflow-hidden;
   gap: 6px;
   color: var(--lad-surface-raised);
   border: 2px solid var(--lad-surface-raised);
@@ -605,7 +606,7 @@ const {
   animation: edition-check-pop 2.5s ease-in-out infinite;
 }
 .edition-selected i {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 3px;
   right: 6px;
   color: var(--lad-color-reward-pale);
@@ -614,18 +615,18 @@ const {
   animation: edition-selected-spark 1.7s ease-in-out infinite;
 }
 .set-list {
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
   gap: 12px;
 }
 .set-card {
-  @apply d-grid align-center position-relative overflow-hidden;
+  --uno: d-grid align-center position-relative overflow-hidden;
   grid-template-columns: 76px minmax(0, 1fr) auto;
   gap: 13px;
 }
 .set-preview {
   width: 76px;
   height: 66px;
-  @apply position-relative;
+  --uno: position-relative;
   border: 2px solid
     color-mix(in srgb, var(--lad-surface-raised) 90%, transparent);
   border-radius: 20px;
@@ -641,7 +642,7 @@ const {
 .set-preview :deep(.room-furniture) {
   width: 48px;
   height: 48px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 8px;
 }
 .set-preview :deep(.room-furniture:nth-child(1)) {
@@ -669,7 +670,7 @@ const {
   font-weight: var(--lad-font-weight-heavy);
 }
 .set-action {
-  @apply d-flex justify-end;
+  --uno: d-flex justify-end;
 }
 .set-action :deep(.v-btn__content) {
   gap: 6px;
@@ -677,7 +678,7 @@ const {
 .price {
   min-height: 38px;
   padding: 5px 10px 5px 6px;
-  @apply d-flex align-center font-weight-black;
+  --uno: d-flex align-center font-weight-black;
   gap: 7px;
   color: var(--lad-color-reward-strong);
   border: 2px solid
@@ -697,7 +698,7 @@ const {
 }
 .catalog-buy-price {
   padding: 4px 8px 4px 4px;
-  @apply d-inline-flex align-center;
+  --uno: d-inline-flex align-center;
   gap: 4px;
   border-radius: var(--lad-radius-pill);
   background: color-mix(in srgb, var(--lad-surface-raised) 20%, transparent);
@@ -708,12 +709,12 @@ const {
   padding-inline: 13px;
 }
 .accessory-card {
-  @apply h-100 d-flex flex-column;
+  --uno: h-100 d-flex flex-column;
 }
 .accessory-preview {
   height: 6rem;
   padding: 0.5rem;
-  @apply position-relative d-grid place-center overflow-hidden;
+  --uno: position-relative d-grid place-center overflow-hidden;
   border-radius: 16px;
   background: linear-gradient(
     145deg,
@@ -736,18 +737,18 @@ const {
   max-height: 100%;
 }
 .motion-chip {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 7px;
   left: 7px;
   font-size: 0.5rem;
 }
 .owned-status-row {
-  @apply mt-auto;
+  --uno: mt-auto d-flex justify-center;
   padding-top: 14px;
-  @apply d-flex justify-center;
+
 }
 .catalog-status {
-  @apply position-relative;
+  --uno: position-relative;
   @include status-pill(
     var(--lad-text-strong),
     currentColor,
@@ -821,7 +822,7 @@ const {
   @include field-label;
 }
 .icon-picker {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 7px;
 }
@@ -830,7 +831,7 @@ const {
   border: 1px solid var(--lad-border);
   border-radius: 12px;
   background: var(--lad-surface);
-  @apply cursor-pointer;
+  --uno: cursor-pointer;
   font-size: rem(23);
 }
 .icon-picker button.active {
@@ -845,7 +846,7 @@ const {
     min-height: 0;
   }
   .edition-card {
-    @apply d-grid;
+    --uno: d-grid;
     grid-template-columns: 112px minmax(0, 1fr);
     column-gap: 10px;
   }
@@ -883,7 +884,7 @@ const {
   }
   .set-action {
     grid-column: 2;
-    @apply justify-start;
+    --uno: justify-start;
   }
   .set-action :deep(.v-btn),
   .set-action .catalog-status {

@@ -1,13 +1,13 @@
-import type { IanaTimeZone } from '../family/time-zone';
-import { calendarDateInTimeZone, isInstantInIsoWeek } from '../shared/zoned-calendar';
-import type { Contribution } from './types';
+import type { IanaTimeZone } from "@/domain/family/time-zone";
+import { calendarDateInTimeZone, isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
+import type { Contribution } from "./types";
 
 export const approvedContributionDatesInCurrentWeek = (
   contributions: ReadonlyArray<Contribution>,
   timeZone: IanaTimeZone,
   now = new Date(),
 ): ReadonlySet<string> => new Set(contributions.flatMap((contribution) => {
-  if (contribution.status !== 'approved' || !contribution.approvedAt ||
+  if (contribution.status !== "approved" || !contribution.approvedAt ||
     !isInstantInIsoWeek(contribution.approvedAt, now, timeZone)) {return [];}
   return [calendarDateInTimeZone(new Date(contribution.approvedAt), timeZone)];
 }));

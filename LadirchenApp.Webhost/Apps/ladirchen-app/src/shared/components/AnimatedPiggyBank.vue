@@ -42,10 +42,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 
 const { t } = useI18n();
 
@@ -57,12 +57,12 @@ const props = withDefaults(defineProps<{
   size: 52,
 });
 
-const playMode = ref<'hop' | 'wiggle' | null>(null);
+const playMode = ref<"hop" | "wiggle" | null>(null);
 let playTimer: number | undefined;
 let resetTimer: number | undefined;
 const schedulePlay = () => {
   playTimer = window.setTimeout(() => {
-    playMode.value = Math.random() > .5 ? 'hop' : 'wiggle';
+    playMode.value = Math.random() > .5 ? "hop" : "wiggle";
     resetTimer = window.setTimeout(() => {
       playMode.value = null;
       schedulePlay();
@@ -84,9 +84,9 @@ const piggyStyle = computed(() => ({
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .animated-piggy {
-  @apply d-inline-grid;
+  --uno: d-inline-grid place-center;
   flex: 0 0 auto;
-  @apply place-center;
+
   transform-origin: center bottom;
   animation: piggy-breathe 8s ease-in-out infinite;
 }
@@ -102,7 +102,7 @@ const piggyStyle = computed(() => ({
   animation: piggy-wiggle 900ms ease-in-out;
 }
 svg {
-  @apply w-100 h-100 overflow-visible;
+  --uno: w-100 h-100 overflow-visible;
   filter: drop-shadow(
     0 5px 3px
       color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent)
@@ -184,7 +184,7 @@ svg {
   transform-origin: center;
 }
 .piggy-coin {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -0.25rem;
   left: calc(50% - rem(12.5));
   z-index: 3;

@@ -1,8 +1,8 @@
-import type { VersionedAggregateSnapshot } from './versioned-aggregate-contract';
-import type { HouseStageLevel } from '@/domain/house';
+import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
+import type { HouseStageLevel } from "@/domain/house";
 
-export const FAMILY_PROGRESSION_SCHEMA_VERSION = 2 as const;
-export const FAMILY_PROGRESSION_AGGREGATE_TYPE = 'family-progression' as const;
+export const FAMILY_PROGRESSION_SCHEMA_VERSION = 2;
+export const FAMILY_PROGRESSION_AGGREGATE_TYPE = "family-progression";
 
 export interface FamilyProgressionState {
   readonly completedWeeklyStreak: number;

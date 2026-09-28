@@ -8,9 +8,9 @@
 
 <script lang="ts" setup>
 withDefaults(defineProps<{
-  tone?: 'world' | 'contributions' | 'wishes' | 'shop' | 'family' | 'profile' | 'streak' | 'balance';
+  tone?: "world" | "contributions" | "wishes" | "shop" | "family" | "profile" | "streak" | "balance";
 }>(), {
-  tone: 'world',
+  tone: "world",
 });
 </script>
 
@@ -48,7 +48,7 @@ withDefaults(defineProps<{
   width: 5.5rem;
   height: 2rem;
   right: 3rem;
-  bottom: -rem(18);
+  bottom: rem(-18);
   background: color-mix(in srgb, var(--decoration-companion) 62%, transparent);
 }
 

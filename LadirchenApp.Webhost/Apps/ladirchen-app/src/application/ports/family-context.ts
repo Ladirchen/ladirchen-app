@@ -1,4 +1,4 @@
-import type { FamilyId } from '@/domain/shared/identifiers';
+import type { FamilyId } from "@/domain/shared/identifiers";
 
 export interface FamilyContext {
   readonly activeFamilyId: FamilyId;

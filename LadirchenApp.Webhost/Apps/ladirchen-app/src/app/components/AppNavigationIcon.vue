@@ -36,7 +36,7 @@
 
 <script lang="ts" setup>
 defineProps<{
-  name: 'world' | 'contributions' | 'wishes' | 'shop' | 'family' | 'profile';
+  name: "world" | "contributions" | "wishes" | "shop" | "family" | "profile";
 }>();
 </script>
 
@@ -44,7 +44,7 @@ defineProps<{
 .app-navigation-icon {
   width: 27px;
   height: 27px;
-  @apply d-block overflow-visible;
+  --uno: d-block overflow-visible;
 }
 .line {
   fill: none;

@@ -1,4 +1,4 @@
-import { clamp } from '@/domain/shared/numbers';
+import { clamp } from "@/domain/shared/numbers";
 
 export const SAVINGS_RULES = Object.freeze({
   defaultTransferAmount: 25,

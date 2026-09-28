@@ -1,16 +1,16 @@
-import type { SavingGoalTranslationNamespaceKey } from '@/locales/translation-keys';
-import type { FamilyMemberId, GuardianGiftId, SavingGoalId } from '../shared/identifiers';
+import type { SavingGoalTranslationNamespaceKey } from "@/locales/translation-keys";
+import type { FamilyMemberId, GuardianGiftId, SavingGoalId } from "@/domain/shared/identifiers";
 
-export type FamilyCurrency = 'CHF' | 'EUR' | 'HUF';
-export type GoalVisibility = 'family' | 'guardians' | 'private';
-export type SavingGoalOwnerId = FamilyMemberId | 'family';
+export type FamilyCurrency = "CHF" | "EUR" | "HUF";
+export type GoalVisibility = "family" | "guardians" | "private";
+export type SavingGoalOwnerId = FamilyMemberId | "family";
 
 export interface GuardianGift {
   id: GuardianGiftId;
   childId: FamilyMemberId;
   guardianName: string;
   goalTitle: string;
-  destination: 'balance' | 'goal';
+  destination: "balance" | "goal";
   amount: number;
 }
 

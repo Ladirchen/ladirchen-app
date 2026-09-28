@@ -12,16 +12,16 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import type { FamilyCurrency } from '@/domain/savings/types';
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
+import type { FamilyCurrency } from "@/domain/savings/types";
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 
 const familyCurrencyMarks = {
-  CHF: 'Fr',
-  EUR: '€',
-  HUF: 'Ft',
+  CHF: "Fr",
+  EUR: "€",
+  HUF: "Ft",
 } as const satisfies Record<FamilyCurrency, string>;
 
 const props = defineProps<{ currencyCode: FamilyCurrency }>();
@@ -35,12 +35,12 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
 .exchange-icon {
   width: rem(42);
   height: rem(42);
-  @apply position-relative d-inline-block overflow-visible flex-shrink-0;
+  --uno: position-relative d-inline-block overflow-visible flex-shrink-0;
   border-radius: 50%;
   background: var(--lad-palette-amber-100);
 }
 .exchange-arrows {
-  @apply position-absolute;
+  --uno: position-absolute;
   inset: 0.5rem;
   color: var(--lad-palette-teal-550);
   font-size: rem(26);
@@ -48,12 +48,12 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
   animation: exchange-orbit 5.8s ease-in-out infinite;
 }
 .exchange-coin {
-  @apply position-absolute d-grid place-center;
+  --uno: position-absolute d-grid place-center;
   z-index: 2;
   transform-origin: center;
 }
 .exchange-coin--ladi {
-  left: -rem(1);
+  left: rem(-1);
   bottom: 0;
   animation: coin-ladi-bob 2.8s ease-in-out infinite;
 }
@@ -65,7 +65,7 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
   width: 1.5rem;
   height: 1.5rem;
   top: 0;
-  right: -rem(1);
+  right: rem(-1);
   color: var(--lad-palette-teal-700);
   border: rem(2) solid var(--lad-palette-mint);
   border-radius: 50%;
@@ -80,8 +80,8 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
   animation: coin-family-bob 2.8s -0.7s ease-in-out infinite;
 }
 .exchange-spark {
-  @apply position-absolute;
-  right: -rem(3);
+  --uno: position-absolute;
+  right: rem(-3);
   bottom: rem(3);
   z-index: 3;
   color: var(--lad-palette-white);
@@ -105,13 +105,13 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
     transform: translateY(rem(1)) rotate(-2deg);
   }
   50% {
-    transform: translateY(-rem(2)) rotate(2deg);
+    transform: translateY(rem(-2)) rotate(2deg);
   }
 }
 @keyframes coin-family-bob {
   0%,
   100% {
-    transform: translateY(-rem(1)) rotate(2deg);
+    transform: translateY(rem(-1)) rotate(2deg);
   }
   50% {
     transform: translateY(rem(2)) rotate(-2deg);

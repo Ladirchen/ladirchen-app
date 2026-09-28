@@ -1,9 +1,9 @@
-import type { AggregateDraft, FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
-import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
-import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
-import type { FamilyId } from '@/domain/shared/identifiers';
-import { mergeSerializableAggregateState } from './three-way-aggregate-merge';
-import type { AggregateConflictResolver } from './three-way-aggregate-merge';
+import type { AggregateDraft, FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
+import { AggregateConflictError } from "@/application/ports/versioned-aggregate-repository";
+import type { VersionedAggregateRepository } from "@/application/ports/versioned-aggregate-repository";
+import type { FamilyId } from "@/domain/shared/identifiers";
+import { mergeSerializableAggregateState } from "./three-way-aggregate-merge";
+import type { AggregateConflictResolver } from "./three-way-aggregate-merge";
 
 interface AggregateSaveState<TState> {
   baseState: TState | null;

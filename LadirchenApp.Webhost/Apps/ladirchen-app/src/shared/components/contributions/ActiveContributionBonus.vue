@@ -8,10 +8,10 @@
 </template>
 
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
+import { useI18n } from "vue-i18n";
 
-import PromotionCountdown from './PromotionCountdown.vue';
-import type { IanaTimeZone } from '@/domain/family/types';
+import PromotionCountdown from "./PromotionCountdown.vue";
+import type { IanaTimeZone } from "@/domain/family/types";
 
 const { t } = useI18n();
 
@@ -27,7 +27,7 @@ defineProps<{
 .active-contribution-bonus {
   min-height: 51px;
   padding: 6px 8px;
-  @apply position-relative d-flex align-center overflow-hidden;
+  --uno: position-relative d-flex align-center overflow-hidden;
   gap: 7px;
   color: var(--lad-color-primary-deep);
   border: 2px solid
@@ -51,7 +51,7 @@ defineProps<{
 }
 .active-contribution-bonus::after {
   content: "✦";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: 3px;
   right: 7px;
   color: var(--lad-color-reward-accent);
@@ -61,7 +61,7 @@ defineProps<{
 .bonus-rocket {
   width: 36px;
   height: 36px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-color-reward-pale);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 12px;
@@ -75,11 +75,11 @@ defineProps<{
   animation: bonus-launch 1.9s ease-in-out infinite;
 }
 .bonus-copy {
-  @apply flex-grow-1 min-w-0;
+  --uno: flex-grow-1 min-w-0;
 }
 .bonus-copy small,
 .bonus-copy strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .bonus-copy small {
   color: var(--lad-color-primary-supporting);
@@ -96,7 +96,7 @@ defineProps<{
 .bonus-factor {
   min-width: 45px;
   padding: 5px 7px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-text-inverse);
   border: 2px solid
     color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);

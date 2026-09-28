@@ -1,7 +1,7 @@
-import type { CatalogNewBadgeSchedule } from '../house';
-import type { ShopReward } from './types';
-import type { IanaTimeZone } from '../family/time-zone';
-import { calendarDateInTimeZone, calendarDateIsWithin, zonedCalendarParts } from '../shared/zoned-calendar';
+import type { CatalogNewBadgeSchedule } from "@/domain/house";
+import type { ShopReward } from "./types";
+import type { IanaTimeZone } from "@/domain/family/time-zone";
+import { calendarDateInTimeZone, calendarDateIsWithin, zonedCalendarParts } from "@/domain/shared/zoned-calendar";
 
 export const SHOP_REDEMPTION_CUTOFF_HOUR = 18;
 

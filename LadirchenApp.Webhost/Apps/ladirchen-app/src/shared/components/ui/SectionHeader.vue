@@ -24,18 +24,18 @@ withDefaults(defineProps<{
 @use "@/styles/mixins" as *;
 
 .family-world-section-header {
-  @apply d-flex align-end justify-space-between mb-3 ga-3;
+  --uno: d-flex align-end justify-space-between mb-3 ga-3;
 }
 .section-copy {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .section-copy > span {
-  @apply d-block;
+  --uno: d-block;
   margin-bottom: rem(2);
   @include overline(var(--lad-mint-dark), var(--lad-font-size-micro));
 }
 h2 {
-  @apply ma-0;
+  --uno: ma-0;
   @include heading(var(--lad-font-size-section), 1.2, -0.025em);
 }
 p {
@@ -43,6 +43,6 @@ p {
   @include body-copy(var(--lad-font-size-caption));
 }
 .section-action {
-  @apply flex-shrink-0;
+  --uno: flex-shrink-0;
 }
 </style>

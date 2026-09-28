@@ -74,20 +74,20 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import type { ContributionKind } from '@/domain/contributions/types';
-import { UI_ICONS } from '@/shared/ui-icons';
+import type { ContributionKind } from "@/domain/contributions/types";
+import { UI_ICONS } from "@/shared/ui-icons";
 
-type ContributionScope = 'all' | 'mine' | 'open';
-type KindFilter = 'all' | ContributionKind;
-type StatusFilter = 'open' | 'completed';
+type ContributionScope = "all" | "mine" | "open";
+type KindFilter = "all" | ContributionKind;
+type StatusFilter = "open" | "completed";
 
 defineProps<{ openCount: number }>();
-const scope = defineModel<ContributionScope>('scope', { required: true });
-const kind = defineModel<KindFilter>('kind', { required: true });
-const status = defineModel<StatusFilter>('status', { required: true });
+const scope = defineModel<ContributionScope>("scope", { required: true });
+const kind = defineModel<KindFilter>("kind", { required: true });
+const status = defineModel<StatusFilter>("status", { required: true });
 const { t } = useI18n();
 
 const scopeOptions = computed<Array<{
@@ -96,25 +96,25 @@ const scopeOptions = computed<Array<{
   title: string;
   value: ContributionScope;
 }>>(() => [
-  { value: 'mine', title: t('contributions.filter.scope.mine.title'), description: t('contributions.filter.scope.mine.description'), icon: UI_ICONS.contributionScope.mine },
-  { value: 'open', title: t('contributions.filter.scope.open.title'), description: t('contributions.filter.scope.open.description'), icon: UI_ICONS.contributionScope.open },
-  { value: 'all', title: t('contributions.filter.scope.all.title'), description: t('contributions.filter.scope.all.description'), icon: UI_ICONS.contributionScope.all },
+  { value: "mine", title: t("contributions.filter.scope.mine.title"), description: t("contributions.filter.scope.mine.description"), icon: UI_ICONS.contributionScope.mine },
+  { value: "open", title: t("contributions.filter.scope.open.title"), description: t("contributions.filter.scope.open.description"), icon: UI_ICONS.contributionScope.open },
+  { value: "all", title: t("contributions.filter.scope.all.title"), description: t("contributions.filter.scope.all.description"), icon: UI_ICONS.contributionScope.all },
 ]);
 
 const kindOptions = computed<Array<{ icon: string; title: string; value: KindFilter }>>(() => [
-  { value: 'all', title: t('contributions.filter.kinds.all'), icon: '✨' },
-  { value: 'basic', title: t('contributions.filter.kinds.energy'), icon: '⚡' },
-  { value: 'extra', title: t('contributions.filter.kinds.extra'), icon: '🪙' },
+  { value: "all", title: t("contributions.filter.kinds.all"), icon: "✨" },
+  { value: "basic", title: t("contributions.filter.kinds.energy"), icon: "⚡" },
+  { value: "extra", title: t("contributions.filter.kinds.extra"), icon: "🪙" },
 ]);
 
 const statusOptions = computed<Array<{ icon: string; title: string; value: StatusFilter }>>(() => [
-  { value: 'open', title: t('contributions.filter.statuses.open'), icon: UI_ICONS.contributionStatus.open },
-  { value: 'completed', title: t('contributions.filter.statuses.completed'), icon: UI_ICONS.contributionStatus.completed },
+  { value: "open", title: t("contributions.filter.statuses.open"), icon: UI_ICONS.contributionStatus.open },
+  { value: "completed", title: t("contributions.filter.statuses.completed"), icon: UI_ICONS.contributionStatus.completed },
 ]);
 
 const selectStatus = (value: StatusFilter) => {
   status.value = value;
-  if (value === 'completed' && scope.value === 'open') {scope.value = 'mine';}
+  if (value === "completed" && scope.value === "open") {scope.value = "mine";}
 };
 </script>
 
@@ -122,10 +122,10 @@ const selectStatus = (value: StatusFilter) => {
 @use "@/styles/mixins" as *;
 
 .contribution-filter {
-  @apply position-relative;
+  --uno: position-relative overflow-hidden;
   isolation: isolate;
   padding: rem(15);
-  @apply overflow-hidden;
+
   @include raised-surface(
     color-mix(in srgb, var(--lad-color-primary) 25%, transparent),
     color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
@@ -150,11 +150,11 @@ const selectStatus = (value: StatusFilter) => {
 }
 .filter-heading {
   margin-bottom: rem(13);
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: rem(10);
 }
 .filter-heading h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: 1rem;
   letter-spacing: -0.02em;
 }
@@ -181,7 +181,7 @@ const selectStatus = (value: StatusFilter) => {
 .filter-eyes {
   width: 2rem;
   height: rem(25);
-  @apply overflow-visible;
+  --uno: overflow-visible;
 }
 .filter-eye {
   transform-box: fill-box;
@@ -208,7 +208,7 @@ const selectStatus = (value: StatusFilter) => {
   animation: filter-blink 11.3s 3.2s ease-in-out infinite;
 }
 .scope-options {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   padding-bottom: rem(7);
@@ -217,10 +217,10 @@ const selectStatus = (value: StatusFilter) => {
   border-radius: 0 0 rem(22) rem(22);
 }
 .scope-options button {
-  @apply min-w-0;
+  --uno: min-w-0 position-relative d-flex flex-column align-center justify-center cursor-pointer;
   min-height: 6.25rem;
   padding: rem(10) rem(5) rem(9);
-  @apply position-relative d-flex flex-column align-center justify-center;
+
   gap: rem(3);
   color: var(--lad-text);
   border: rem(2) solid var(--lad-color-primary-soft);
@@ -231,7 +231,7 @@ const selectStatus = (value: StatusFilter) => {
     var(--lad-surface-soft)
   );
   box-shadow: 0 rem(5) 0 var(--lad-color-primary-soft);
-  @apply cursor-pointer;
+
   font: inherit;
   transition:
     transform 150ms ease,
@@ -258,7 +258,7 @@ const selectStatus = (value: StatusFilter) => {
   box-shadow: 0 rem(5) 0 var(--lad-color-bonus-soft);
 }
 .scope-options button:hover {
-  transform: translateY(-rem(3));
+  transform: translateY(rem(-3));
 }
 .scope-options button:active {
   transform: translateY(rem(2));
@@ -267,7 +267,7 @@ const selectStatus = (value: StatusFilter) => {
 }
 .scope-options button.active {
   color: var(--lad-color-primary-deep);
-  transform: translateY(-rem(5)) rotate(-1deg);
+  transform: translateY(rem(-5)) rotate(-1deg);
   border-color: var(--lad-color-primary);
   background: linear-gradient(
     155deg,
@@ -281,7 +281,7 @@ const selectStatus = (value: StatusFilter) => {
 }
 .scope-options button:nth-child(2).active {
   color: var(--lad-color-reward-ink);
-  transform: translateY(-rem(5)) rotate(1deg);
+  transform: translateY(rem(-5)) rotate(1deg);
   border-color: var(--lad-color-reward-border);
   background: linear-gradient(
     155deg,
@@ -329,10 +329,10 @@ const selectStatus = (value: StatusFilter) => {
   min-width: rem(21);
   height: rem(21);
   padding: 0 rem(5);
-  @apply position-absolute;
+  --uno: position-absolute d-grid place-center;
   top: rem(6);
   right: rem(6);
-  @apply d-grid place-center;
+
   color: var(--lad-color-reward-strong);
   border: rem(2) solid var(--lad-border-on-accent);
   border-radius: 0.5rem;
@@ -362,7 +362,7 @@ const selectStatus = (value: StatusFilter) => {
 .scope-options .scope-option-icon :deep(.v-icon) {
   width: 1.5rem;
   height: 1.5rem;
-  @apply ma-0;
+  --uno: ma-0;
   color: inherit;
   background-color: currentColor;
   opacity: 1;
@@ -402,7 +402,7 @@ const selectStatus = (value: StatusFilter) => {
 .kind-filter {
   margin-top: rem(13);
   padding: rem(10);
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: rem(9);
   border: rem(1) dashed
     color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
@@ -419,13 +419,13 @@ const selectStatus = (value: StatusFilter) => {
 }
 .kind-options,
 .status-options {
-  @apply d-flex flex-wrap;
+  --uno: d-flex flex-wrap;
   gap: rem(6);
 }
 .kind-options button,
 .status-options button {
   padding: rem(7) rem(9);
-  @apply d-inline-flex align-center ga-1;
+  --uno: d-inline-flex align-center ga-1 cursor-pointer;
   color: var(--lad-text-strong);
   border: rem(1) solid
     color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
@@ -433,7 +433,7 @@ const selectStatus = (value: StatusFilter) => {
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
   box-shadow: 0 rem(2) 0
     color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
-  @apply cursor-pointer;
+
   font: inherit;
   font-size: 0.5rem;
   font-weight: var(--lad-font-weight-strong);
@@ -441,7 +441,7 @@ const selectStatus = (value: StatusFilter) => {
 .kind-options button.active,
 .status-options button.active {
   color: var(--lad-color-primary-deep);
-  transform: translateY(-rem(1));
+  transform: translateY(rem(-1));
   border-color: var(--lad-color-primary-highlight);
   background: var(--lad-surface-raised);
   box-shadow: 0 0.25rem 0 var(--lad-color-primary-soft);
@@ -483,7 +483,7 @@ const selectStatus = (value: StatusFilter) => {
   }
   28%,
   45% {
-    transform: translateX(-rem(2));
+    transform: translateX(rem(-2));
   }
   58%,
   75% {
@@ -499,7 +499,7 @@ const selectStatus = (value: StatusFilter) => {
     font-size: rem(10);
   }
   .kind-filter {
-    @apply align-start flex-column;
+    --uno: align-start flex-column;
     gap: rem(7);
   }
 }

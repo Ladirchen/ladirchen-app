@@ -5,8 +5,8 @@
       <div class="flex-grow-1 min-w-0">
         <div class="d-flex align-center flex-wrap ga-2 mb-1">
           <strong>{{ contribution.title }}</strong>
-          <span class="contribution-label" :class="contribution.kind === 'basic' ? 'contribution-label--basic' : 'contribution-label--special'"><v-icon :icon="contribution.kind === 'basic' ? 'i-mdi:home-heart' : 'i-mdi:creation'" size="13" />{{ contribution.kind === 'basic' ? t('contributions.kind.basic') : t('contributions.kind.extra') }}</span>
-          <span class="contribution-label" :class="contribution.assigneeId === activeChildId ? 'contribution-label--mine' : 'contribution-label--open'"><v-icon :icon="contribution.assigneeId === activeChildId ? 'i-mdi:account-heart' : 'i-mdi:account-multiple-outline'" size="13" />{{ assigneeLabel }}</span>
+          <span class="contribution-label" :class="kindLabelClass"><v-icon :icon="kindIcon" size="13" />{{ kindLabel }}</span>
+          <span class="contribution-label" :class="assigneeLabelClass"><v-icon :icon="assigneeIcon" size="13" />{{ assigneeLabel }}</span>
         </div>
         <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
         <div v-if="contribution.status === 'approved'" class="approved-reward-summary mt-3">
@@ -36,18 +36,18 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
-import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
-import type { Contribution, Promotion } from '@/domain/contributions/types';
-import type { FamilyMember, IanaTimeZone } from '@/domain/family/types';
-import type { FamilyMemberId } from '@/domain/shared/identifiers';
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import ActiveContributionBonus from './ActiveContributionBonus.vue';
-import ContributionMetaIcon from './ContributionMetaIcon.vue';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import MetricCard from '@/shared/components/ui/MetricCard.vue';
+import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import type { Contribution, Promotion } from "@/domain/contributions/types";
+import type { FamilyMember, IanaTimeZone } from "@/domain/family/types";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import ActiveContributionBonus from "./ActiveContributionBonus.vue";
+import ContributionMetaIcon from "./ContributionMetaIcon.vue";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import MetricCard from "@/shared/components/ui/MetricCard.vue";
 
 const props = withDefaults(defineProps<{
   activeChildId: FamilyMemberId;
@@ -68,26 +68,32 @@ const emit = defineEmits<{
 }>();
 const { t } = useI18n();
 const assignedMember = computed(() => props.familyMembers.find(member => member.id === props.contribution.assigneeId));
-const assigneeLabel = computed(() => !assignedMember.value
-  ? t('contributions.assignment.free')
-  : props.contribution.assigneeId === props.activeChildId
-    ? t('contributions.assignment.forYou')
-    : assignedMember.value.name);
+const isAssignedToActiveChild = computed(() => props.contribution.assigneeId === props.activeChildId);
+const kindLabelClass = computed(() => props.contribution.kind === "basic" ? "contribution-label--basic" : "contribution-label--special");
+const kindIcon = computed(() => props.contribution.kind === "basic" ? "i-mdi:home-heart" : "i-mdi:creation");
+const kindLabel = computed(() => t(props.contribution.kind === "basic" ? "contributions.kind.basic" : "contributions.kind.extra"));
+const assigneeLabelClass = computed(() => isAssignedToActiveChild.value ? "contribution-label--mine" : "contribution-label--open");
+const assigneeIcon = computed(() => isAssignedToActiveChild.value ? "i-mdi:account-heart" : "i-mdi:account-multiple-outline");
+const assigneeLabel = computed(() => {
+  if (!assignedMember.value) return t("contributions.assignment.free");
+  if (isAssignedToActiveChild.value) return t("contributions.assignment.forYou");
+  return assignedMember.value.name;
+});
 const earnedReward = computed(() => props.contribution.earnedReward ?? props.reward);
 const invitedChildNames = computed(() => (props.contribution.invitedChildIds ?? []).map(id => props.familyMembers.find(member => member.id === id)?.name).filter((name): name is string => Boolean(name)));
 const approvalMessage = computed(() => {
   const stars = props.contribution.stars ?? 1;
-  if (stars >= 4) return t('contributions.approval.great');
-  if (stars === 3) return t('contributions.approval.good');
-  if (stars === 2) return t('contributions.approval.careful');
-  return t('contributions.approval.nextTime');
+  if (stars >= 4) return t("contributions.approval.great");
+  if (stars === 3) return t("contributions.approval.good");
+  if (stars === 2) return t("contributions.approval.careful");
+  return t("contributions.approval.nextTime");
 });
 </script>
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .contribution-item {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
 }
 .contribution-item--approved {
   border-color: color-mix(in srgb, var(--lad-color-primary) 30%, transparent);
@@ -132,12 +138,12 @@ const approvalMessage = computed(() => {
   );
 }
 .contribution-meta {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 .contribution-meta-chip > span {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .contribution-meta-chip :deep(.contribution-meta-icon) {
   width: 30px;
@@ -149,7 +155,7 @@ const approvalMessage = computed(() => {
   font-size: 0.5rem;
 }
 .approved-reward-summary {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 8px;
 }
@@ -167,7 +173,7 @@ const approvalMessage = computed(() => {
 }
 .invited-team,
 .approved-celebration {
-  @apply d-flex align-center flex-wrap;
+  --uno: d-flex align-center flex-wrap;
   gap: 7px;
 }
 .invited-team > span {
@@ -179,7 +185,7 @@ const approvalMessage = computed(() => {
 .pending-celebration {
   min-height: 45px;
   padding: 5px 10px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 7px;
   border-radius: 16px;
   background: var(--lad-surface-soft);
@@ -189,7 +195,7 @@ const approvalMessage = computed(() => {
 .assigned-member strong,
 .pending-celebration strong,
 .pending-celebration small {
-  @apply d-block;
+  --uno: d-block;
 }
 .assigned-member small,
 .pending-celebration small {
@@ -236,7 +242,7 @@ const approvalMessage = computed(() => {
 .pending-celebration-icon {
   width: 35px;
   height: 35px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border-radius: 12px;
   background: var(--lad-surface-raised);
 }

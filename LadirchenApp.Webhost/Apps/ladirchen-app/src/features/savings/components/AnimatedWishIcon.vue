@@ -20,7 +20,7 @@
 .animated-wish-icon {
   width: 45px;
   height: 45px;
-  @apply d-block overflow-visible;
+  --uno: d-block overflow-visible;
 }
 .wish-orbit {
   fill: none;

@@ -5,5 +5,5 @@
 </template>
 
 <script lang="ts" setup>
-import FamilyWorldShell from '@/app/components/FamilyWorldShell.vue';
+import FamilyWorldShell from "@/app/components/FamilyWorldShell.vue";
 </script>

@@ -65,7 +65,7 @@
       <v-icon class="logout-arrow" icon="i-mdi:arrow-right" />
     </button>
 
-    <DevelopmentToolsPanel v-if="isDevelopment" />
+    <AsyncDevelopmentToolsPanel v-if="isDevelopment" />
 
     <v-dialog v-model="profileEditorOpen" max-width="420">
       <v-card class="profile-editor-card pa-5" rounded="xl">
@@ -98,32 +98,33 @@
       </v-card>
     </v-dialog>
 
-    <AvatarBuilderDialog v-model="avatarBuilderOpen" :initial-appearance="activeAppearance" :profile-role="store.viewerRole" :user-name="store.displayNameFor(store.signedInMemberId)" @save="store.saveOwnAppearance" />
+    <AsyncAvatarBuilderDialog v-if="avatarBuilderOpen" v-model="avatarBuilderOpen" :initial-appearance="activeAppearance" :profile-role="store.viewerRole" :user-name="store.displayNameFor(store.signedInMemberId)" @save="store.saveOwnAppearance" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, defineAsyncComponent, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 
-import AvatarBuilderDialog from '@/shared/components/avatar/AvatarBuilderDialog.vue';
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import DevelopmentToolsPanel from '../components/DevelopmentToolsPanel.vue';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import PageHeader from '@/shared/components/ui/PageHeader.vue';
-import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import { setActiveLocale } from '@/plugins/i18n';
-import type { SupportedLocale } from '@/plugins/i18n';
-import { DEFAULT_LOCALE, isSupportedLocale, localeOptions } from '@/locales';
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import PageHeader from "@/shared/components/ui/PageHeader.vue";
+import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import { setActiveLocale } from "@/plugins/i18n";
+import type { SupportedLocale } from "@/plugins/i18n";
+import { DEFAULT_LOCALE, isSupportedLocale, localeOptions } from "@/locales";
+
+const AsyncAvatarBuilderDialog = defineAsyncComponent(() => import("@/shared/components/avatar/AvatarBuilderDialog.vue"));
+const AsyncDevelopmentToolsPanel = defineAsyncComponent(() => import("@/features/profile/components/DevelopmentToolsPanel.vue"));
 
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
-const localDevelopmentHostnames = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+const localDevelopmentHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const isDevelopment = import.meta.env.DEV || localDevelopmentHostnames.has(window.location.hostname);
 const avatarBuilderOpen = ref(false);
 const profileEditorOpen = ref(false);
-const nicknameDraft = ref(store.activeChild.nickname ?? '');
+const nicknameDraft = ref(store.activeChild.nickname ?? "");
 const activeLocale = computed<SupportedLocale>({
   get: () => isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE,
   set: setActiveLocale,
@@ -135,14 +136,14 @@ const languageOptions = localeOptions.map(option => ({
 }));
 const activeAppearance = computed(() => resolveFamilyMemberAvatarAppearance(store.signedInMember, store.members));
 const profileDescription = computed(() => {
-  if (store.viewerRole === 'child') {return t('profile.editor.childDescription');}
+  if (store.viewerRole === "child") {return t("profile.editor.childDescription");}
   return store.isFamilyAdmin
-    ? t('profile.editor.administratorDescription')
-    : t('profile.editor.guardianDescription');
+    ? t("profile.editor.administratorDescription")
+    : t("profile.editor.guardianDescription");
 });
-const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild.nickname ?? ''));
+const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild.nickname ?? ""));
 const saveNickname = () => store.setOwnNickname(nicknameDraft.value);
-watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild.nickname ?? ''; });
+watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild.nickname ?? ""; });
 </script>
 
 <style lang="scss" scoped>
@@ -150,7 +151,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 .profile-header-avatar {
   width: rem(74);
   height: rem(74);
-  @apply position-relative d-grid place-center;
+  --uno: position-relative d-grid place-center;
   border-radius: 1.5rem;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
   box-shadow: 0 0.25rem 0
@@ -169,7 +170,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   );
 }
 .profile-editor-card h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: rem(21);
   letter-spacing: -0.03em;
 }
@@ -181,11 +182,11 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
 }
 .profile-editor-label {
-  @apply d-flex align-center ga-2;
+  --uno: d-flex align-center ga-2;
 }
 .profile-editor-label strong,
 .profile-editor-label small {
-  @apply d-block;
+  --uno: d-block;
 }
 .profile-editor-label strong {
   font-size: 0.75rem;
@@ -198,17 +199,17 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 .profile-nickname-icon {
   width: rem(31);
   height: rem(31);
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border-radius: rem(11);
   background: var(--lad-color-reward-soft);
   font-size: 1rem;
   animation: nickname-spark 3s ease-in-out infinite;
 }
 .profile-editor-actions {
-  @apply d-grid ga-2;
+  --uno: d-grid ga-2;
 }
 .profile-quick-actions {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: rem(11);
 }
@@ -219,7 +220,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   width: 100%;
   min-height: rem(82);
   padding: rem(11) 0.75rem rem(11) rem(9);
-  @apply position-relative d-flex align-center overflow-hidden text-left cursor-pointer;
+  --uno: position-relative d-flex align-center overflow-hidden text-left cursor-pointer;
   gap: rem(9);
   color: var(--lad-text);
   border: rem(2) solid
@@ -251,9 +252,9 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   width: rem(42);
   height: 160%;
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -30%;
-  left: -rem(65);
+  left: rem(-65);
   transform: rotate(18deg);
   background: linear-gradient(
     90deg,
@@ -267,7 +268,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   animation-delay: -2s;
 }
 .profile-action-button:hover {
-  transform: translateY(-rem(3));
+  transform: translateY(rem(-3));
   box-shadow:
     0 0.5rem 0 color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent),
     0 1rem 1.5rem
@@ -279,12 +280,12 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
 }
 .profile-action-button > span:nth-child(2) {
-  @apply flex-grow-1 min-w-0;
+  --uno: flex-grow-1 min-w-0;
   z-index: 1;
 }
 .profile-action-button strong,
 .profile-action-button small {
-  @apply d-block;
+  --uno: d-block;
 }
 .profile-action-button strong {
   font-size: rem(13);
@@ -292,7 +293,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 }
 .profile-action-button small {
   margin-top: rem(3);
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   color: var(--lad-muted);
   font-size: 0.5rem;
   line-height: 1.25;
@@ -302,7 +303,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 .profile-action-icon {
   width: rem(46);
   height: rem(46);
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   z-index: 1;
   color: var(--lad-text-inverse);
   border: rem(3) solid var(--lad-border-on-accent);
@@ -359,7 +360,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   animation-delay: -0.9s;
 }
 .profile-action-spark {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: rem(7);
   right: rem(9);
   z-index: 2;
@@ -368,25 +369,25 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   animation: edit-spark-twinkle 1.7s ease-in-out infinite;
 }
 .nickname-actions {
-  @apply d-grid;
+  --uno: d-grid align-center ga-2;
   grid-template-columns: minmax(0, 1fr) auto;
-  @apply align-center ga-2;
+
 }
 .setting-row {
   min-height: rem(55);
-  @apply d-flex align-center justify-space-between;
+  --uno: d-flex align-center justify-space-between;
   border-top: rem(1) dashed
     color-mix(in srgb, var(--lad-color-info) 20%, transparent);
 }
 .setting-row > span {
-  @apply d-flex align-center ga-2;
+  --uno: d-flex align-center ga-2 font-weight-bold;
   font-size: rem(13);
-  @apply font-weight-bold;
+
 }
 .setting-icon {
   width: rem(33);
   height: rem(33);
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border: rem(2) solid var(--lad-border-on-accent);
   border-radius: rem(11);
   background: var(--lad-surface-raised);
@@ -400,7 +401,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   opacity: 1;
 }
 .language-options {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: rem(6);
 }
@@ -408,7 +409,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   min-width: rem(70);
   min-height: 2.75rem;
   padding: rem(5) 0.5rem;
-  @apply d-grid align-center cursor-pointer;
+  --uno: d-grid align-center cursor-pointer;
   grid-template-columns: auto auto;
   column-gap: rem(5);
   color: var(--lad-text-strong);
@@ -426,7 +427,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     box-shadow 0.15s ease;
 }
 .language-options button:hover {
-  transform: translateY(-rem(2));
+  transform: translateY(rem(-2));
 }
 .language-options button.active {
   color: var(--lad-color-primary-deep);
@@ -456,7 +457,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   line-height: 1.15;
 }
 .permission-list {
-  @apply d-grid;
+  --uno: d-grid;
   gap: rem(10);
   color: var(--lad-muted);
   font-size: rem(13);
@@ -465,7 +466,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
   width: 100%;
   min-height: rem(66);
   padding: rem(9) rem(13);
-  @apply d-flex align-center text-left cursor-pointer;
+  --uno: d-flex align-center text-left cursor-pointer;
   gap: rem(10);
   color: var(--lad-color-accent-warm-deep);
   border: rem(2) solid
@@ -480,7 +481,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     box-shadow 0.16s ease;
 }
 .logout-card:hover {
-  transform: translateY(-rem(2));
+  transform: translateY(rem(-2));
   box-shadow: 0 rem(7) 0
     color-mix(in srgb, var(--lad-color-danger-muted) 8%, transparent);
 }
@@ -490,11 +491,11 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     color-mix(in srgb, var(--lad-color-danger-muted) 8%, transparent);
 }
 .logout-card > span:nth-child(2) {
-  @apply flex-grow-1;
+  --uno: flex-grow-1;
 }
 .logout-card strong,
 .logout-card small {
-  @apply d-block;
+  --uno: d-block;
 }
 .logout-card strong {
   font-size: rem(13);
@@ -507,7 +508,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 .logout-icon {
   width: 2.5rem;
   height: 2.5rem;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-color-danger-muted);
   border: rem(2) solid var(--lad-border-on-accent);
   border-radius: rem(13);
@@ -542,7 +543,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
 @keyframes appearance-shine {
   0%,
   45% {
-    left: -rem(70);
+    left: rem(-70);
   }
   72%,
   100% {
@@ -555,7 +556,7 @@ watch(() => store.activeChildId, () => { nicknameDraft.value = store.activeChild
     transform: translateY(rem(1)) rotate(-5deg);
   }
   50% {
-    transform: translateY(-rem(3)) rotate(4deg);
+    transform: translateY(rem(-3)) rotate(4deg);
   }
 }
 @include respond-down(narrow) {

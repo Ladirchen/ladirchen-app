@@ -37,14 +37,14 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{ name: 'base' | 'face' | 'hair' | 'outfit' | 'extras' | 'fun' | 'season' }>();
+defineProps<{ name: "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season" }>();
 </script>
 
 <style scoped>
 .category-icon {
   width: 34px;
   height: 34px;
-  @apply overflow-visible;
+  --uno: overflow-visible;
 }
 .line {
   fill: none;

@@ -1,6 +1,6 @@
-import { onUnmounted, ref } from 'vue';
+import { onUnmounted, ref } from "vue";
 
-import type { HouseLayoutPlacementId } from '@/domain/shared/identifiers';
+import type { HouseLayoutPlacementId } from "@/domain/shared/identifiers";
 
 export interface EntityDragState {
   captureTarget: HTMLElement;
@@ -32,10 +32,10 @@ export const useEntityDrag = ({ commit, reset }: EntityDragOptions) => {
   };
 
   const stopTracking = (activeDrag = drag.value) => {
-    window.removeEventListener('pointermove', track);
-    window.removeEventListener('pointerup', finish);
-    window.removeEventListener('pointercancel', cancel);
-    window.removeEventListener('blur', cancel);
+    window.removeEventListener("pointermove", track);
+    window.removeEventListener("pointerup", finish);
+    window.removeEventListener("pointercancel", cancel);
+    window.removeEventListener("blur", cancel);
     if (activeDrag?.captureTarget.hasPointerCapture(activeDrag.pointerId)) {
       activeDrag.captureTarget.releasePointerCapture(activeDrag.pointerId);
     }
@@ -86,10 +86,10 @@ export const useEntityDrag = ({ commit, reset }: EntityDragOptions) => {
     } catch {
       // Window listeners keep mouse and touch drags reliable without capture support.
     }
-    window.addEventListener('pointermove', track);
-    window.addEventListener('pointerup', finish);
-    window.addEventListener('pointercancel', cancel);
-    window.addEventListener('blur', cancel);
+    window.addEventListener("pointermove", track);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", cancel);
     return true;
   };
 

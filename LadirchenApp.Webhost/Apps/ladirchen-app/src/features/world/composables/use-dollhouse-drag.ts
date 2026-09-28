@@ -1,12 +1,12 @@
-import { computed } from 'vue';
-import type { ComputedRef } from 'vue';
+import { computed } from "vue";
+import type { ComputedRef } from "vue";
 
-import { isHouseZoneId } from '@/application/contracts/family-aggregate-validation';
-import { characterCollidesWithFurniture, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS } from '@/domain/house';
-import type { HouseAccessory, HouseLayoutPlacement, HouseZoneId } from '@/domain/house';
-import type { HouseLayoutPlacementId } from '@/domain/shared/identifiers';
-import { PERCENTAGE_BASE } from '@/domain/shared/numbers';
-import { useEntityDrag } from './use-entity-drag';
+import { isHouseZoneId } from "@/application/contracts/family-aggregate-validation";
+import { characterCollidesWithFurniture, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS } from "@/domain/house";
+import type { HouseAccessory, HouseLayoutPlacement, HouseZoneId } from "@/domain/house";
+import type { HouseLayoutPlacementId } from "@/domain/shared/identifiers";
+import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
+import { useEntityDrag } from "./use-entity-drag";
 
 interface DollhouseDragProps {
   accessories: HouseAccessory[];
@@ -16,10 +16,10 @@ interface DollhouseDragProps {
 }
 
 interface DollhouseDragEmit {
-  (event: 'drag-state', entityType: HouseLayoutPlacement['entityType'] | null): void;
-  (event: 'move', placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number): void;
-  (event: 'reset', placementId: HouseLayoutPlacementId): void;
-  (event: 'store', accessoryId: HouseAccessory['id']): void;
+  (event: "drag-state", entityType: HouseLayoutPlacement["entityType"] | null): void;
+  (event: "move", placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number): void;
+  (event: "reset", placementId: HouseLayoutPlacementId): void;
+  (event: "store", accessoryId: HouseAccessory["id"]): void;
 }
 
 const isLadiPerchDrop = (
@@ -27,7 +27,7 @@ const isLadiPerchDrop = (
   zoneId: HouseZoneId,
   x: number,
   y: number,
-): boolean => placement?.entityType === 'ladi' && zoneId === 'living-room' &&
+): boolean => placement?.entityType === "ladi" && zoneId === "living-room" &&
   x >= HOUSE_LAYOUT_CONSTRAINTS.perch.minimumX && x <= HOUSE_LAYOUT_CONSTRAINTS.perch.maximumX &&
   y >= HOUSE_LAYOUT_CONSTRAINTS.perch.minimumY && y <= HOUSE_LAYOUT_CONSTRAINTS.perch.maximumY;
 
@@ -42,13 +42,13 @@ export const useDollhouseDrag = (
     placement: HouseLayoutPlacement | undefined,
     elementsAtDropPoint: Element[],
   ): boolean => {
-    if (!elementsAtDropPoint.some(element => element.closest('[data-furniture-storage]'))) {return false;}
+    if (!elementsAtDropPoint.some(element => element.closest("[data-furniture-storage]"))) {return false;}
     try {
-      if (placement?.entityType === 'furniture') {emit('store', placement.entityId);}
-      else {emit('reset', activeDrag.placementId);}
+      if (placement?.entityType === "furniture") {emit("store", placement.entityId);}
+      else {emit("reset", activeDrag.placementId);}
     } finally {
       clearDrag();
-      emit('drag-state', null);
+      emit("drag-state", null);
     }
     return true;
   };
@@ -59,16 +59,16 @@ export const useDollhouseDrag = (
     const placement = props.placements.find(item => item.id === activeDrag.placementId);
     if (finishStorageDrop(activeDrag, placement, elementsAtDropPoint)) {return;}
     const zone = elementsAtDropPoint
-      .map(element => element.closest<HTMLElement>('[data-zone-id]'))
+      .map(element => element.closest<HTMLElement>("[data-zone-id]"))
       .find(element => isHouseZoneId(element?.dataset.zoneId) && unlockedZones.value.includes(element.dataset.zoneId));
     try {
       const zoneId = zone?.dataset.zoneId;
       if (!zone || !isHouseZoneId(zoneId)) {
-        emit('reset', activeDrag.placementId);
+        emit("reset", activeDrag.placementId);
         return;
       }
       const bounds = zone.getBoundingClientRect();
-      const isFloorEntity = placement?.entityType === 'member' || placement?.entityType === 'pet' || placement?.entityType === 'ladi';
+      const isFloorEntity = placement?.entityType === "member" || placement?.entityType === "pet" || placement?.entityType === "ladi";
       const accessory = placement ? accessoryFor(placement) : undefined;
       const visualDefinition = accessory?.visual ? furnitureVisualDefinitionFor(accessory.visual) : undefined;
       const rawX = ((clientX - bounds.left) / bounds.width) * PERCENTAGE_BASE;
@@ -84,10 +84,10 @@ export const useDollhouseDrag = (
       const collidesWithFurniture = isFloorEntity && !snapsToLadiPerch && placement
         ? characterCollidesWithFurniture(placement.id, zoneId, x, y, props.placements, props.accessories)
         : false;
-      if (!collidesWithFurniture) {emit('move', activeDrag.placementId, zoneId, x, y);}
+      if (!collidesWithFurniture) {emit("move", activeDrag.placementId, zoneId, x, y);}
     } finally {
       clearDrag();
-      emit('drag-state', null);
+      emit("drag-state", null);
     }
   };
   const {
@@ -95,19 +95,19 @@ export const useDollhouseDrag = (
     finishAtLastPosition: finishDragAtLastPosition, start: startEntityDrag, track: trackDrag,
   } = useEntityDrag({
     commit: commitDrag,
-    reset: (placementId) => { emit('drag-state', null); emit('reset', placementId); },
+    reset: (placementId) => { emit("drag-state", null); emit("reset", placementId); },
   });
   const draggingFurniture = computed(() => {
     const placement = props.placements.find(item => item.id === drag.value?.placementId);
-    return placement?.entityType === 'furniture';
+    return placement?.entityType === "furniture";
   });
   const dragOffset = (placementId: HouseLayoutPlacementId) => drag.value?.placementId === placementId
     ? { x: drag.value.offsetX, y: drag.value.offsetY }
     : undefined;
   const startDrag = (event: PointerEvent, placement: HouseLayoutPlacement) => {
-    if (!props.editable && !(props.storageOpen && placement.entityType === 'furniture')) {return;}
-    if (placement.entityType === 'furniture' && accessoryFor(placement)?.mobility === 'fixed') {return;}
-    if (startEntityDrag(event, placement.id)) {emit('drag-state', placement.entityType);}
+    if (!props.editable && !(props.storageOpen && placement.entityType === "furniture")) {return;}
+    if (placement.entityType === "furniture" && accessoryFor(placement)?.mobility === "fixed") {return;}
+    if (startEntityDrag(event, placement.id)) {emit("drag-state", placement.entityType);}
   };
 
   return { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag };

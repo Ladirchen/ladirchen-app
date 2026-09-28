@@ -1,13 +1,13 @@
 export type LadiGuideActionId =
-  | 'house-energy:next'
-  | 'piggy:next'
-  | 'savings-interest:next'
-  | 'savings-interest:start';
+  | "house-energy:next"
+  | "piggy:next"
+  | "savings-interest:next"
+  | "savings-interest:start";
 
 export interface LadiGuideMessage {
   readonly actionId?: LadiGuideActionId;
   readonly actionLabel?: string;
-  readonly celebration?: 'gift';
+  readonly celebration?: "gift";
   readonly heading?: string;
   readonly message: string;
   readonly pageIntro?: boolean;

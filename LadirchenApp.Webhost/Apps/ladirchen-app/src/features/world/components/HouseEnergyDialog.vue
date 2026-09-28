@@ -30,7 +30,7 @@
             </div>
             <div>
               <span>{{ t('world.energy.dailyGoal') }}</span>
-              <strong>{{ store.houseMeetsMinimumEnergy ? t('world.energy.reached') : t('world.energy.remaining', { value: 60 - store.familyEnergy }) }}</strong>
+              <strong>{{ dailyGoalStatus }}</strong>
               <small>{{ t('world.energy.threshold') }}</small>
             </div>
           </MetricCard>
@@ -68,56 +68,59 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { ladiGuideController } from '@/shared/services/ladi-guide-controller';
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 
-import AvatarFigure from '@/shared/components/avatar/AvatarFigure.vue';
-import { resolveFamilyMemberAvatarAppearance } from '@/domain/avatar';
-import type { AvatarAppearance } from '@/domain/avatar';
-import type { FamilyMember } from '@/domain/family/types';
-import type { FamilyMemberId } from '@/domain/shared/identifiers';
-import { useFamilyWorldStore } from '@/stores/family-world';
-import MetricCard from '@/shared/components/ui/MetricCard.vue';
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import type { AvatarAppearance } from "@/domain/avatar";
+import type { FamilyMember } from "@/domain/family/types";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import { useFamilyWorldStore } from "@/stores/family-world";
+import MetricCard from "@/shared/components/ui/MetricCard.vue";
 
-import AnimatedEnergyStar from './AnimatedEnergyStar.vue';
-import AnimatedHouseEnergy from './AnimatedHouseEnergy.vue';
-import HouseProgressPanel from './HouseProgressPanel.vue';
+import AnimatedEnergyStar from "./AnimatedEnergyStar.vue";
+import AnimatedHouseEnergy from "./AnimatedHouseEnergy.vue";
+import HouseProgressPanel from "./HouseProgressPanel.vue";
 
 const props = defineProps<{ modelValue: boolean }>();
-const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
+const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const guideStep = ref(-1);
 let guideStartTimer: number | undefined;
-const children = computed(() => store.members.filter((member) => member.role === 'child'));
+const children = computed(() => store.members.filter((member) => member.role === "child"));
 const energyState = computed(() => {
-  if (store.familyEnergy === 100) return { title: t('world.energy.states.full.title'), copy: t('world.energy.states.full.description') };
-  if (store.familyEnergy >= 60) return { title: t('world.energy.states.good.title'), copy: t('world.energy.states.good.description') };
-  return { title: t('world.energy.states.low.title'), copy: t('world.energy.states.low.description') };
+  if (store.familyEnergy === 100) return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
+  if (store.familyEnergy >= 60) return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
+  return { title: t("world.energy.states.low.title"), copy: t("world.energy.states.low.description") };
 });
-const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === 'basic' && item.assigneeId === childId);
+const dailyGoalStatus = computed(() => store.houseMeetsMinimumEnergy
+  ? t("world.energy.reached")
+  : t("world.energy.remaining", { value: 60 - store.familyEnergy }));
+const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
 const baseCount = (childId: FamilyMemberId) => baseContributions(childId).length;
-const approvedCount = (childId: FamilyMemberId) => baseContributions(childId).filter((item) => item.status === 'approved').length;
+const approvedCount = (childId: FamilyMemberId) => baseContributions(childId).filter((item) => item.status === "approved").length;
 const childAppearance = (child: FamilyMember, _index: number): AvatarAppearance => {
   return resolveFamilyMemberAvatarAppearance(child, store.members);
 };
 const guideSteps = computed(() => [
   {
-    heading: t('world.energy.guide.calculation.title'),
-    message: t('world.energy.guide.calculation.message', { count: Math.max(1, children.value.length) }),
+    heading: t("world.energy.guide.calculation.title"),
+    message: t("world.energy.guide.calculation.message", { count: Math.max(1, children.value.length) }),
   },
   {
-    heading: t('world.energy.guide.day.title'),
-    message: t('world.energy.guide.day.message'),
+    heading: t("world.energy.guide.day.title"),
+    message: t("world.energy.guide.day.message"),
   },
   {
-    heading: t('world.energy.guide.growth.title'),
-    message: t('world.energy.guide.growth.message'),
+    heading: t("world.energy.guide.growth.title"),
+    message: t("world.energy.guide.growth.message"),
   },
   {
-    heading: t('world.energy.guide.safe.title'),
-    message: t('world.energy.guide.safe.message'),
+    heading: t("world.energy.guide.safe.title"),
+    message: t("world.energy.guide.safe.message"),
   },
 ]);
 const startEnergyGuide = () => {
@@ -129,8 +132,8 @@ const startEnergyGuide = () => {
     message: step.message,
     smart: true,
     progress: `${guideStep.value + 1} / ${guideSteps.value.length}`,
-    actionLabel: t(guideStep.value === guideSteps.value.length - 1 ? 'world.energy.guide.again' : 'common.next'),
-    actionId: 'house-energy:next',
+    actionLabel: t(guideStep.value === guideSteps.value.length - 1 ? "world.energy.guide.again" : "common.next"),
+    actionId: "house-energy:next",
   });
 };
 watch(() => props.modelValue, (isOpen) => {
@@ -143,12 +146,12 @@ watch(() => props.modelValue, (isOpen) => {
   }, 280);
 });
 let unregisterGuideAction: (() => void) | undefined;
-onMounted(() => { unregisterGuideAction = ladiGuideController.registerAction('house-energy:next', startEnergyGuide); });
+onMounted(() => { unregisterGuideAction = ladiGuideController.registerAction("house-energy:next", startEnergyGuide); });
 onUnmounted(() => {
   if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
   unregisterGuideAction?.();
 });
-const close = () => emit('update:modelValue', false);
+const close = () => emit("update:modelValue", false);
 </script>
 
 <style lang="scss" scoped>
@@ -156,14 +159,14 @@ const close = () => emit('update:modelValue', false);
 
 .energy-dialog {
   max-height: min(820px, 94dvh);
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   @include dialog-frame(
     color-mix(in srgb, var(--lad-color-accent-warm-muted) 20%, transparent),
     color-mix(in srgb, var(--lad-color-accent-warm-deep) 12%, transparent)
   );
 }
 .energy-dialog-header {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   flex: 0 0 auto;
   border-bottom: 1px solid
     color-mix(in srgb, var(--lad-color-accent-warm-supporting) 15%, transparent);
@@ -177,9 +180,9 @@ const close = () => emit('update:modelValue', false);
 .energy-dialog-header::before,
 .energy-dialog-header::after {
   content: "";
-  @apply position-absolute;
+  --uno: position-absolute pointer-events-none;
   border-radius: 50%;
-  @apply pointer-events-none;
+
 }
 .energy-dialog-header::before {
   width: 190px;
@@ -200,15 +203,15 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-title-row {
   min-height: 108px;
-  @apply position-relative;
+  --uno: position-relative d-flex align-start;
   z-index: 1;
-  @apply d-flex align-start;
+
 }
 .energy-title-row > div:first-child {
   max-width: 280px;
 }
 .energy-dialog-header h2 {
-  @apply ma-0;
+  --uno: ma-0;
   @include heading(var(--lad-font-size-page), 1.1, -0.04em);
 }
 .energy-subtitle {
@@ -216,36 +219,36 @@ const close = () => emit('update:modelValue', false);
   @include body-copy(var(--lad-font-size-body));
 }
 .close-button {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: -7px;
   right: -8px;
   z-index: 4;
 }
 .energy-mascot {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 10px;
   right: 19px;
 }
 .summary-grid {
-  @apply position-relative;
+  --uno: position-relative d-grid;
   z-index: 1;
-  @apply d-grid;
+
   grid-template-columns: 1.2fr 0.8fr;
   gap: 10px;
 }
 .summary-tile {
-  @apply min-w-0;
+  --uno: min-w-0;
   padding: 11px;
   gap: 10px;
 }
 .summary-tile--energy {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
 }
 .summary-tile--energy::after {
   width: 48px;
   height: 130%;
   content: "";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: -15%;
   left: -70px;
   background: linear-gradient(
@@ -260,12 +263,12 @@ const close = () => emit('update:modelValue', false);
   animation: energy-card-shimmer 4s 1s ease-in-out infinite;
 }
 .summary-tile > div:last-child {
-  @apply min-w-0;
+  --uno: min-w-0;
 }
 .summary-tile span,
 .summary-tile strong,
 .summary-tile small {
-  @apply d-block;
+  --uno: d-block;
 }
 .summary-tile span {
   color: var(--lad-muted);
@@ -278,13 +281,13 @@ const close = () => emit('update:modelValue', false);
 }
 .summary-tile small {
   margin-top: 3px;
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   color: var(--lad-text-supporting);
   font-size: 0.5rem;
   line-height: 1.3;
 }
 .energy-state-title {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 4px;
 }
 .energy-state-spark {
@@ -295,7 +298,7 @@ const close = () => emit('update:modelValue', false);
 .energy-orb {
   width: 60px;
   height: 60px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   flex: 0 0 60px;
   border-radius: 50%;
   background: conic-gradient(
@@ -323,7 +326,7 @@ const close = () => emit('update:modelValue', false);
   font-weight: var(--lad-font-weight-black);
 }
 .energy-orb small {
-  @apply d-inline;
+  --uno: d-inline;
   font-size: rem(9);
 }
 .summary-icon {
@@ -349,7 +352,7 @@ const close = () => emit('update:modelValue', false);
 .energy-content {
   min-height: 0;
   flex: 1 1 auto;
-  @apply overflow-y-auto;
+  --uno: overflow-y-auto;
   background: linear-gradient(
     180deg,
     var(--lad-surface),
@@ -363,7 +366,7 @@ const close = () => emit('update:modelValue', false);
   );
 }
 .children-heading {
-  @apply d-flex align-end justify-space-between ga-3;
+  --uno: d-flex align-end justify-space-between ga-3;
 }
 .energy-dialog h3 {
   margin: 1px 0 0;
@@ -375,13 +378,13 @@ const close = () => emit('update:modelValue', false);
   font-weight: 800;
 }
 .child-energy-list {
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
   gap: 10px;
 }
 .child-energy-row {
   min-height: 78px;
   padding: 11px 12px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 12px;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
@@ -410,7 +413,7 @@ const close = () => emit('update:modelValue', false);
 .child-avatar {
   width: 58px;
   height: 58px;
-  @apply d-grid place-center overflow-hidden;
+  --uno: d-grid place-center overflow-hidden;
   flex: 0 0 58px;
   border: 2px solid
     color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
@@ -429,11 +432,11 @@ const close = () => emit('update:modelValue', false);
   transform: rotate(-2deg);
 }
 .child-energy-copy {
-  @apply min-w-0;
+  --uno: min-w-0;
   flex: 1;
 }
 .child-energy-title {
-  @apply d-flex align-center justify-space-between ga-2;
+  --uno: d-flex align-center justify-space-between ga-2;
 }
 .child-energy-row strong {
   font-size: rem(13);
@@ -446,14 +449,14 @@ const close = () => emit('update:modelValue', false);
   font-size: rem(11);
 }
 .child-energy-description {
-  @apply ma-0 mt-2;
+  --uno: ma-0 mt-2;
   color: var(--lad-color-primary-supporting);
   font-size: rem(10);
   font-weight: 650;
   line-height: 1.35;
 }
 .child-energy-description span {
-  @apply d-inline;
+  --uno: d-inline;
   color: var(--lad-color-primary-strong);
   font-weight: var(--lad-font-weight-heavy);
 }
@@ -492,7 +495,7 @@ const close = () => emit('update:modelValue', false);
 .energy-dialog {
   height: min(660px, calc(100dvh - 28px));
   max-height: min(660px, calc(100dvh - 28px));
-  @apply d-flex flex-column;
+  --uno: d-flex flex-column;
   @include dialog-frame;
 }
 .energy-dialog-header {
@@ -506,13 +509,13 @@ const close = () => emit('update:modelValue', false);
 .energy-title-row {
   min-height: 126px;
   padding: 18px;
-  @apply align-center;
+  --uno: align-center;
   @include dialog-title-panel;
 }
 .energy-title-row::before,
 .energy-title-row::after {
   content: "";
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   border-radius: 50%;
 }
 .energy-title-row::before {
@@ -533,7 +536,7 @@ const close = () => emit('update:modelValue', false);
 }
 .energy-title-row > div:first-child {
   max-width: 245px;
-  @apply position-relative;
+  --uno: position-relative;
   z-index: 1;
 }
 .dialog-kicker {
@@ -550,7 +553,7 @@ const close = () => emit('update:modelValue', false);
 .energy-mascot {
   width: 78px;
   height: 78px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   top: 24px;
   right: 45px;
   z-index: 2;

@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = withDefaults(defineProps<{ size?: number }>(), { size: 82 });
 const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.round(props.size * .89)}px` }));
@@ -41,12 +41,12 @@ const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.ro
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .animated-house-energy {
-  @apply d-inline-grid;
+  --uno: d-inline-grid place-center;
   flex: 0 0 auto;
-  @apply place-center;
+
 }
 svg {
-  @apply w-100 h-100 d-block overflow-visible;
+  --uno: w-100 h-100 d-block overflow-visible;
 }
 .soft-glow {
   fill: var(--lad-palette-amber-150);

@@ -65,11 +65,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
-import { CHARACTER_REACTION_DURATION_MS } from '@/shared/runtime-timing';
-import { useI18n } from 'vue-i18n';
+import { computed, ref } from "vue";
+import { CHARACTER_REACTION_DURATION_MS } from "@/shared/runtime-timing";
+import { useI18n } from "vue-i18n";
 
-import type { FamilyPet } from '@/domain/family/types';
+import type { FamilyPet } from "@/domain/family/types";
 
 const { t } = useI18n();
 
@@ -83,7 +83,7 @@ const emit = defineEmits<{ interact: [] }>();
 const isReacting = ref(false);
 let reactionTimer: number | undefined;
 const react = () => {
-  emit('interact');
+  emit("interact");
   isReacting.value = false;
   window.clearTimeout(reactionTimer);
   requestAnimationFrame(() => { isReacting.value = true; });
@@ -91,10 +91,10 @@ const react = () => {
 };
 
 const petStyle = computed(() => {
-  const phase = props.pet.id.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0) % 29;
+  const phase = props.pet.id.split("").reduce((sum, character) => sum + character.charCodeAt(0), 0) % 29;
   return {
-    '--pet-color': props.pet.color,
-    '--pet-phase': `${-phase / 10}s`,
+    "--pet-color": props.pet.color,
+    "--pet-phase": `${-phase / 10}s`,
     width: `${props.size}px`,
     height: `${Math.round(props.size * 1.08)}px`,
   };
@@ -104,21 +104,21 @@ const petStyle = computed(() => {
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
 .animated-pet {
-  @apply d-inline-grid;
+  --uno: d-inline-grid place-center;
   flex: 0 0 auto;
-  @apply place-center;
+
   transform-origin: center bottom;
   animation: pet-hop 11s var(--pet-phase) ease-in-out infinite;
 }
 .animated-pet {
   pointer-events: auto;
-  @apply cursor-pointer;
+  --uno: cursor-pointer;
 }
 .animated-pet.reacting {
   animation: pet-tap 620ms var(--lad-easing-pop);
 }
 svg {
-  @apply w-100 h-100 overflow-visible;
+  --uno: w-100 h-100 overflow-visible;
   filter: drop-shadow(
     0 5px 3px color-mix(in srgb, var(--lad-palette-muted-750) 15%, transparent)
   );

@@ -7,6 +7,7 @@ allowBuilds:
 catalogs:
   dependencies:
     "@fontsource/roboto": ^5.3.0
+    luxon: ^3.7.2
     motion-v: ^2.4.2
     pixi.js: ^8.20.1
     vue: ^3.5.42
@@ -16,7 +17,9 @@ catalogs:
     vue-router: ^5.3.0
   devDependencies:
     "@iconify-json/mdi": ^1.2.3
+    "@stylistic/eslint-plugin": ^5.10.0
     "@tsconfig/node22": ^22.0.6
+    "@types/luxon": ^3.7.5
     "@types/node": ^24.13.3
     "@unocss/transformer-directives": ^66.8.1
     "@vitejs/plugin-vue": ^6.0.8

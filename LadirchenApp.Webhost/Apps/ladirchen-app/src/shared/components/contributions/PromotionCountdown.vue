@@ -6,12 +6,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
-import { remainingPromotionMilliseconds } from '@/domain/contributions/promotions';
-import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/domain/shared/time';
-import type { IanaTimeZone } from '@/domain/family/types';
+import { remainingPromotionMilliseconds } from "@/domain/contributions/promotions";
+import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from "@/domain/shared/time";
+import type { IanaTimeZone } from "@/domain/family/time-zone";
 
 const props = defineProps<{ deadline: string; timeZone: IanaTimeZone }>();
 const { t } = useI18n();
@@ -22,13 +22,13 @@ const remainingMilliseconds = computed(() =>
   remainingPromotionMilliseconds(props.deadline, props.timeZone, now.value),
 );
 const label = computed(() => {
-  if (remainingMilliseconds.value <= 0) return t('contributions.countdown.expired');
+  if (remainingMilliseconds.value <= 0) return t("contributions.countdown.expired");
   const totalSeconds = Math.floor(remainingMilliseconds.value / MILLISECONDS_PER_SECOND);
   const hours = Math.floor(totalSeconds / SECONDS_PER_HOUR);
   const minutes = Math.floor((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
   const seconds = totalSeconds % SECONDS_PER_MINUTE;
-  const time = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  return t('contributions.countdown.remaining', { time });
+  const time = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return t("contributions.countdown.remaining", { time });
 });
 
 onMounted(() => {
@@ -44,7 +44,7 @@ onBeforeUnmount(() => {
 .countdown {
   width: fit-content;
   padding: 5px 8px;
-  @apply d-inline-flex align-center ga-1;
+  --uno: d-inline-flex align-center ga-1 font-weight-black;
   color: var(--lad-color-reward-strong);
   border: 1px solid
     color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
@@ -52,7 +52,7 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--lad-color-reward-soft) 90%, transparent);
   font-size: rem(10);
   font-variant-numeric: tabular-nums;
-  @apply font-weight-black;
+
   letter-spacing: 0.01em;
 }
 .countdown.urgent {

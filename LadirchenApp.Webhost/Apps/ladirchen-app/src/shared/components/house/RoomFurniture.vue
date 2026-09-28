@@ -5,10 +5,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
-import { FURNITURE_SPRITE_DEFINITIONS } from '@/shared/visuals/house/furniture-sprite-assets';
-import type { HouseAccessory } from '@/domain/house';
+import { FURNITURE_SPRITE_DEFINITIONS } from "@/shared/visuals/house/furniture-sprite-assets";
+import type { HouseAccessory } from "@/domain/house";
 
 const props = withDefaults(defineProps<{ item: HouseAccessory; open?: boolean }>(), { open: false });
 const spriteUrl = computed(() => {
@@ -20,11 +20,11 @@ const spriteUrl = computed(() => {
 
 <style scoped>
 .room-furniture {
-  @apply d-grid w-100 h-100 place-center overflow-visible;
+  --uno: d-grid w-100 h-100 place-center overflow-visible;
 }
 .room-furniture img {
-  @apply d-block w-100 h-100;
-  @apply overflow-visible;
+  --uno: d-block w-100 h-100 overflow-visible;
+
   object-fit: contain;
   filter: drop-shadow(
     0 0.25rem 2px

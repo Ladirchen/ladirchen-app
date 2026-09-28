@@ -1,11 +1,11 @@
-import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from '@/application/contracts/versioned-aggregate-contract';
-import type { FamilyAggregateDescriptor } from '@/application/contracts/family-aggregate-descriptors';
-import { isVersionedAggregateSnapshot } from '@/application/contracts/family-aggregate-validation';
-import { AggregateConflictError } from '@/application/ports/versioned-aggregate-repository';
-import type { VersionedAggregateRepository } from '@/application/ports/versioned-aggregate-repository';
-import type { FamilyId } from '@/domain/shared/identifiers';
-import type { ClientStorage } from '@/application/ports/client-storage';
-import { browserClientStorage } from '@/infrastructure/storage/browser-client-storage';
+import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
+import type { FamilyAggregateDescriptor } from "@/application/contracts/family-aggregate-descriptors";
+import { isVersionedAggregateSnapshot } from "@/application/contracts/family-aggregate-validation";
+import { AggregateConflictError } from "@/application/ports/versioned-aggregate-repository";
+import type { VersionedAggregateRepository } from "@/application/ports/versioned-aggregate-repository";
+import type { FamilyId } from "@/domain/shared/identifiers";
+import type { ClientStorage } from "@/application/ports/client-storage";
+import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 
 const parseStoredValue = (storage: ClientStorage, key: string): unknown => {
   try {

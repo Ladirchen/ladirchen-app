@@ -1,10 +1,10 @@
-import type { ContributionsState } from '../contributions-contract';
-import type { StateGuard } from './runtime-validation';
-import { exhaustiveValues, hasLocalizedValue, hasOptionalDomainId, hasUniqueIds, isArrayOf, isClockTime, isDomainId, isFamilyMemberId, isFiniteNumber, isInteger, isIsoDateTime, isKnownString, isNonEmptyString, isOptionalBoolean, isOptionalNonNegativeNumber, isOptionalPositiveNumber, isOptionalString, isRecord, values } from './runtime-validation';
-import { CONTRIBUTION_STATUSES } from '@/domain/contributions/types';
-import { CONTRIBUTION_RATING } from '@/domain/contributions/rating';
-import type { Contribution, ContributionKind, ContributionStatus, Promotion, WorldEffect } from '@/domain/contributions/types';
-import type { ContributionId } from '@/domain/shared/identifiers';
+import type { ContributionsState } from "@/application/contracts/contributions-contract";
+import type { StateGuard } from "./runtime-validation";
+import { exhaustiveValues, hasLocalizedValue, hasOptionalDomainId, hasUniqueIds, isArrayOf, isClockTime, isDomainId, isFamilyMemberId, isFiniteNumber, isInteger, isIsoDateTime, isKnownString, isNonEmptyString, isOptionalBoolean, isOptionalNonNegativeNumber, isOptionalPositiveNumber, isOptionalString, isRecord, values } from "./runtime-validation";
+import { CONTRIBUTION_STATUSES } from "@/domain/contributions/types";
+import { CONTRIBUTION_RATING } from "@/domain/contributions/rating";
+import type { Contribution, ContributionKind, ContributionStatus, Promotion, WorldEffect } from "@/domain/contributions/types";
+import type { ContributionId } from "@/domain/shared/identifiers";
 
 const contributionKinds = exhaustiveValues<ContributionKind>({ basic: true, extra: true });
 const contributionStatuses = values<ContributionStatus>(CONTRIBUTION_STATUSES);
@@ -12,12 +12,12 @@ const worldEffects = exhaustiveValues<WorldEffect>({ flowers: true, garden: true
 
 const hasValidContent = (value: Record<string, unknown>): boolean =>
   isOptionalString(value.translationKey) &&
-  hasLocalizedValue(value, 'title') &&
-  typeof value.description === 'string' &&
+  hasLocalizedValue(value, "title") &&
+  typeof value.description === "string" &&
   isNonEmptyString(value.icon) &&
-  (hasLocalizedValue(value, 'area') || isNonEmptyString(value.areaKey)) &&
+  (hasLocalizedValue(value, "area") || isNonEmptyString(value.areaKey)) &&
   isOptionalString(value.areaKey) &&
-  typeof value.dueLabel === 'string' &&
+  typeof value.dueLabel === "string" &&
   isOptionalString(value.dueLabelKey);
 const hasValidResult = (value: Record<string, unknown>): boolean =>
   (value.stars === undefined || (isInteger(value.stars) &&
@@ -49,12 +49,12 @@ const isPromotion = (value: unknown): value is Promotion =>
   isDomainId(value.id) &&
   isOptionalString(value.translationKey) &&
   isDomainId(value.contributionId) &&
-  (hasLocalizedValue(value, 'title') || isNonEmptyString(value.titleKey)) &&
+  (hasLocalizedValue(value, "title") || isNonEmptyString(value.titleKey)) &&
   isOptionalString(value.titleKey) &&
   isFiniteNumber(value.multiplier) && value.multiplier > 0 &&
   isClockTime(value.deadline) &&
   isFiniteNumber(value.teamworkBonus) && value.teamworkBonus >= 0 &&
-  typeof value.active === 'boolean';
+  typeof value.active === "boolean";
 
 export const isContributionsState: StateGuard<ContributionsState> = (value): value is ContributionsState => {
   if (!isRecord(value) || !isArrayOf(value.contributions, isContribution) || !hasUniqueIds(value.contributions) ||

@@ -1,4 +1,4 @@
-import type de from './de';
+import type de from "./de";
 
 type StringKey<T> = Extract<keyof T, string>;
 type StringShape<T> = { readonly [Key in keyof T]: T[Key] extends string ? string : StringShape<T[Key]> };
@@ -25,10 +25,10 @@ export type TranslationNamespaceKey =
   | SavingGoalTranslationNamespaceKey
   | ShopRewardTranslationNamespaceKey;
 export type TranslationField<Namespace extends TranslationNamespaceKey> =
-  Namespace extends ContributionTranslationNamespaceKey ? 'area' | 'description' | 'dueLabel' | 'title'
-    : Namespace extends HouseAccessoryTranslationNamespaceKey ? 'description' | 'title'
-      : Namespace extends ShopRewardTranslationNamespaceKey ? 'conditions' | 'description' | 'title'
-        : 'title';
+  Namespace extends ContributionTranslationNamespaceKey ? "area" | "description" | "dueLabel" | "title"
+    : Namespace extends HouseAccessoryTranslationNamespaceKey ? "description" | "title"
+      : Namespace extends ShopRewardTranslationNamespaceKey ? "conditions" | "description" | "title"
+        : "title";
 export const appendTranslationKey = <
   Namespace extends TranslationNamespaceKey,
   Field extends TranslationField<Namespace>,

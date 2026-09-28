@@ -12,8 +12,8 @@
       <SavingsInterestGuideCard v-if="store.viewerRole === 'child'" />
 
       <SectionHeader
-        :description="t(activeTab === 'children' ? 'wishes.sections.childrenDescription' : 'wishes.sections.ownDescription')"
-        :title="t(activeTab === 'children' ? 'wishes.sections.childrenTitle' : 'wishes.sections.ownTitle')"
+        :description="personalSectionDescription"
+        :title="personalSectionTitle"
       />
 
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
@@ -23,7 +23,7 @@
             <div class="flex-grow-1 min-w-0">
               <div class="d-flex align-center justify-space-between ga-2">
                 <div><strong>{{ goal.title }}</strong><p v-if="goal.ownerId !== store.signedInMemberId" class="text-caption text-medium-emphasis">{{ ownerName(goal.ownerId) }}</p></div>
-                <v-chip v-if="goal.ownerId !== store.signedInMemberId" color="primary" size="x-small" variant="tonal">{{ goal.shared ? t('wishes.shared') : visibilityLabel(goal.visibility) }}</v-chip>
+                <v-chip v-if="goal.ownerId !== store.signedInMemberId" color="primary" size="x-small" variant="tonal">{{ personalGoalVisibilityLabel(goal) }}</v-chip>
               </div>
               <div class="goal-account-stats mt-3">
                 <MetricCard compact tone="info"><b class="goal-stat-icon"><v-icon icon="i-mdi:wallet-plus-outline" /></b><i><small>{{ t('wishes.stats.deposited') }}</small><strong><LadirchenAmount compact :value="depositedAmount(goal)" /></strong></i></MetricCard>
@@ -121,7 +121,7 @@
 
           <button class="save-submit" :disabled="saveAmount <= 0 || saveMotion" type="button" @click="saveToGoal">
             <LadirchenCoin class="save-submit-coin" small />
-            <strong>{{ t(saveMotion ? 'wishes.save.sending' : 'wishes.save.submit') }}</strong>
+            <strong>{{ saveSubmitLabel }}</strong>
             <span aria-hidden="true">→</span>
             <i aria-hidden="true">✦</i>
           </button>
@@ -150,7 +150,7 @@
         <div class="d-grid dialog-actions ga-2">
           <v-btn :disabled="supportSending" rounded="lg" variant="text" @click="supportDialog = false">{{ t('wishes.back') }}</v-btn>
           <v-btn class="support-submit" color="info" :disabled="supportMaximum <= 0 || supportAmount <= 0 || supportSending" rounded="lg" variant="flat" @click="giveSupport">
-            <span aria-hidden="true">✋</span>{{ t(supportSending ? 'wishes.support.sending' : 'wishes.support.submit') }}<span aria-hidden="true">🎁</span>
+            <span aria-hidden="true">✋</span>{{ supportSubmitLabel }}<span aria-hidden="true">🎁</span>
           </v-btn>
         </div>
       </v-card>
@@ -159,16 +159,19 @@
 </template>
 
 <script lang="ts" setup>
-import SavingGoalDialog from '../components/SavingGoalDialog.vue';
-import SavingsInterestGuideCard from '../components/SavingsInterestGuideCard.vue';
-import { useWishesPage } from '../composables/use-wishes-page';
-import PageViewSwitch from '@/shared/components/ui/PageViewSwitch.vue';
-import SectionHeader from '@/shared/components/ui/SectionHeader.vue';
-import BrandedCard from '@/shared/components/ui/BrandedCard.vue';
-import MetricCard from '@/shared/components/ui/MetricCard.vue';
-import LadirchenAmount from '@/shared/components/LadirchenAmount.vue';
-import LadirchenCoin from '@/shared/components/LadirchenCoin.vue';
-import { useI18n } from 'vue-i18n';
+import { computed } from "vue";
+
+import SavingGoalDialog from "@/features/savings/components/SavingGoalDialog.vue";
+import SavingsInterestGuideCard from "@/features/savings/components/SavingsInterestGuideCard.vue";
+import { useWishesPage } from "@/features/savings/composables/use-wishes-page";
+import PageViewSwitch from "@/shared/components/ui/PageViewSwitch.vue";
+import SectionHeader from "@/shared/components/ui/SectionHeader.vue";
+import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
+import MetricCard from "@/shared/components/ui/MetricCard.vue";
+import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
+import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import { useI18n } from "vue-i18n";
+import type { SavingGoal } from "@/domain/savings/types";
 
 const { t } = useI18n();
 
@@ -179,6 +182,17 @@ const {
   supportDialog, supportExplanation, supportGoal, supportMaximum, supportSending, visibilityLabel,
   visibleFamilyGoals, weeklyInterestForGoal, wishViewOptions,
 } = useWishesPage();
+const personalSectionDescription = computed(() => t(activeTab.value === "children"
+  ? "wishes.sections.childrenDescription"
+  : "wishes.sections.ownDescription"));
+const personalSectionTitle = computed(() => t(activeTab.value === "children"
+  ? "wishes.sections.childrenTitle"
+  : "wishes.sections.ownTitle"));
+const saveSubmitLabel = computed(() => t(saveMotion.value ? "wishes.save.sending" : "wishes.save.submit"));
+const supportSubmitLabel = computed(() => t(supportSending.value ? "wishes.support.sending" : "wishes.support.submit"));
+const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
+  ? t("wishes.shared")
+  : visibilityLabel(goal.visibility);
 </script>
 
 <style lang="scss" scoped>
@@ -187,7 +201,7 @@ const {
   width: 100%;
   min-height: 66px;
   padding: 9px 12px;
-  @apply d-flex align-center text-left cursor-pointer;
+  --uno: d-flex align-center text-left cursor-pointer;
   gap: 10px;
   color: var(--lad-text);
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 25%, transparent);
@@ -224,7 +238,7 @@ const {
 .create-goal-icon {
   width: 43px;
   height: 43px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 15px;
@@ -236,11 +250,11 @@ const {
   box-shadow: 0 4px 0 var(--lad-color-info-strong);
 }
 .create-goal-card > span:nth-child(2) {
-  @apply flex-grow-1 min-w-0;
+  --uno: flex-grow-1 min-w-0;
 }
 .create-goal-card strong,
 .create-goal-card small {
-  @apply d-block;
+  --uno: d-block;
 }
 .create-goal-card strong {
   font-size: rem(15);
@@ -254,20 +268,20 @@ const {
   color: var(--lad-blue-dark);
 }
 .goal-grid {
-  @apply d-grid;
+  --uno: d-grid;
   gap: 11px;
 }
 .goal-account-stats {
-  @apply d-grid;
+  --uno: d-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 .goal-account-stats > .metric-card {
   min-height: 47px;
-  @apply text-left;
+  --uno: text-left;
 }
 .goal-account-stats i {
-  @apply min-w-0;
+  --uno: min-w-0;
   font-style: normal;
 }
 .goal-account-stats strong {
@@ -279,7 +293,7 @@ const {
 }
 .goal-total small,
 .goal-total strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .goal-total small {
   color: var(--lad-muted);
@@ -308,7 +322,7 @@ const {
 .goal-stat-icon :deep(.v-icon) {
   width: rem(18);
   height: rem(18);
-  @apply ma-auto;
+  --uno: ma-auto;
   color: inherit;
   background-color: currentColor;
   opacity: 1;
@@ -342,7 +356,7 @@ const {
 .goal-icon {
   width: 45px;
   height: 45px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 15px;
   background: linear-gradient(
@@ -359,7 +373,7 @@ const {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .goal-account-stats > .metric-card {
-    @apply justify-center;
+    --uno: justify-center;
     min-height: 66px;
   }
   .goal-stat-icon {
@@ -378,7 +392,7 @@ const {
 .cheer-button {
   width: 48px;
   height: 42px;
-  @apply position-relative d-grid place-center flex-shrink-0;
+  --uno: position-relative d-grid place-center flex-shrink-0;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   border-radius: 15px;
   color: var(--lad-color-info-deep);
@@ -424,7 +438,7 @@ const {
     0 0 18px color-mix(in srgb, var(--lad-color-reward) 30%, transparent);
 }
 .cheer-hands {
-  @apply d-flex align-center justify-center;
+  --uno: d-flex align-center justify-center;
   width: 34px;
   height: 27px;
 }
@@ -446,7 +460,7 @@ const {
   animation-duration: 0.72s;
 }
 .cheer-spark {
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   color: var(--lad-color-reward-accent);
   opacity: 0.45;
   font-size: rem(9);
@@ -468,17 +482,17 @@ const {
 .support-icon {
   width: 58px;
   height: 58px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   border-radius: 19px;
   background: var(--lad-surface-soft);
   font-size: rem(31);
   animation: goal-float 2.8s ease-in-out infinite;
 }
 .family-gift-button {
-  @apply position-relative overflow-visible;
+  --uno: position-relative overflow-visible;
 }
 .support-dialog-card {
-  @apply position-relative overflow-hidden;
+  --uno: position-relative overflow-hidden;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   background:
     radial-gradient(
@@ -497,16 +511,16 @@ const {
     0 24px 54px color-mix(in srgb, var(--lad-text) 25%, transparent);
 }
 .support-dialog-heading {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 13px;
 }
 .support-dialog-heading h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: 1.25rem;
   line-height: 1.15;
 }
 .support-dialog-heading span {
-  @apply d-block;
+  --uno: d-block;
   margin-top: 4px;
   color: var(--lad-muted);
   font-size: rem(10);
@@ -514,7 +528,7 @@ const {
 .support-journey {
   height: 54px;
   padding-inline: 8px;
-  @apply position-relative d-flex align-center justify-space-between;
+  --uno: position-relative d-flex align-center justify-space-between;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
   border-radius: 18px;
@@ -530,7 +544,7 @@ const {
 .support-present {
   width: 36px;
   height: 36px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   z-index: 2;
   border: 3px solid var(--lad-border-on-accent);
   box-shadow: 0 3px 0
@@ -650,13 +664,13 @@ const {
   }
 }
 .family-goal-actions {
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 6px;
 }
 .assign-button {
   min-height: 38px;
   padding-inline: 8px;
-  @apply position-relative overflow-visible;
+  --uno: position-relative overflow-visible;
   border: 2px solid
     color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
   background: linear-gradient(
@@ -678,7 +692,7 @@ const {
 .assign-coin {
   width: 23px;
   height: 23px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   animation: assign-coin-travel 2.3s ease-in-out infinite;
 }
 .assign-coin :deep(.ladirchen-coin) {
@@ -686,7 +700,7 @@ const {
   height: 23px;
 }
 .assign-spark {
-  @apply position-absolute pointer-events-none;
+  --uno: position-absolute pointer-events-none;
   top: -7px;
   right: 5px;
   color: var(--lad-color-reward-border);
@@ -695,7 +709,7 @@ const {
   animation: assign-spark 2.3s ease-in-out infinite;
 }
 .save-dialog-card {
-  @apply overflow-hidden;
+  --uno: overflow-hidden;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 20%, transparent);
   background: linear-gradient(
     180deg,
@@ -709,7 +723,7 @@ const {
 }
 .save-dialog-header {
   padding: 16px 14px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 11px;
   border-bottom: 2px solid
     color-mix(in srgb, var(--lad-color-info) 12%, transparent);
@@ -726,12 +740,12 @@ const {
     );
 }
 .save-dialog-header h2 {
-  @apply ma-0;
+  --uno: ma-0;
   font-size: 1.25rem;
   letter-spacing: -0.035em;
 }
 .save-dialog-header div > span {
-  @apply d-block;
+  --uno: d-block;
   margin-top: 2px;
   color: var(--lad-muted);
   font-size: rem(9);
@@ -739,7 +753,7 @@ const {
 .save-goal-icon {
   width: 54px;
   height: 54px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 18px;
   background: linear-gradient(
@@ -758,7 +772,7 @@ const {
 .save-balance {
   min-height: 65px;
   padding: 10px 12px;
-  @apply d-flex align-center;
+  --uno: d-flex align-center;
   gap: 9px;
   border: 2px solid
     color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
@@ -771,7 +785,7 @@ const {
 .save-goal-star {
   width: 38px;
   height: 38px;
-  @apply d-grid place-center flex-shrink-0;
+  --uno: d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   box-shadow: 0 3px 0
     color-mix(in srgb, var(--lad-color-reward-strong) 12%, transparent);
@@ -801,7 +815,7 @@ const {
 }
 .save-balance small,
 .save-balance strong {
-  @apply d-block;
+  --uno: d-block;
 }
 .save-balance small {
   color: var(--lad-muted);
@@ -812,7 +826,7 @@ const {
 }
 .save-journey {
   height: 8px;
-  @apply position-relative flex-grow-1;
+  --uno: position-relative flex-grow-1;
   border-radius: var(--lad-radius-pill);
   background: repeating-linear-gradient(
     90deg,
@@ -823,7 +837,7 @@ const {
 .save-journey i {
   width: 7px;
   height: 7px;
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 0;
   left: 2px;
   border-radius: 50%;
@@ -845,14 +859,14 @@ const {
 }
 .save-value {
   margin: 12px auto 15px;
-  @apply d-flex align-center justify-center;
+  --uno: d-flex align-center justify-center;
   gap: 7px;
   color: var(--lad-blue-dark);
 }
 .save-value > span {
   width: 31px;
   height: 31px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   color: var(--lad-color-reward-strong);
   border: 2px solid var(--lad-color-reward-pale);
   border-radius: 50%;
@@ -873,7 +887,7 @@ const {
 .save-empty-note {
   margin: -3px 8px 14px;
   color: var(--lad-muted);
-  @apply text-center;
+  --uno: text-center;
   font-size: rem(9);
   line-height: 1.4;
 }
@@ -881,7 +895,7 @@ const {
   width: 100%;
   min-height: 49px;
   padding: 8px 13px;
-  @apply position-relative d-flex align-center justify-center overflow-hidden cursor-pointer;
+  --uno: position-relative d-flex align-center justify-center overflow-hidden cursor-pointer;
   gap: 8px;
   color: var(--lad-text-inverse);
   border: 3px solid
@@ -919,7 +933,7 @@ const {
 .save-submit > span:first-child {
   width: 27px;
   height: 27px;
-  @apply d-grid place-center;
+  --uno: d-grid place-center;
   color: var(--lad-color-reward-strong);
   border: 2px solid var(--lad-color-reward-pale);
   border-radius: 50%;
@@ -932,7 +946,7 @@ const {
   font-size: rem(18);
 }
 .save-submit > i {
-  @apply position-absolute;
+  --uno: position-absolute;
   top: 4px;
   right: 9px;
   color: var(--lad-color-reward-pale);

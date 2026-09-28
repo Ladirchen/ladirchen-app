@@ -18,13 +18,13 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
 .completion-mark {
   width: var(--completion-size);
   height: var(--completion-size);
-  @apply position-relative d-grid place-center flex-shrink-0;
+  --uno: position-relative d-grid place-center flex-shrink-0;
   animation: completion-float 3s ease-in-out infinite;
 }
 .completion-core {
   width: 64%;
   height: 64%;
-  @apply position-relative d-grid place-center;
+  --uno: position-relative d-grid place-center;
   z-index: 2;
   color: var(--lad-palette-white);
   border: 4px solid
@@ -48,7 +48,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
   );
 }
 .completion-orbit {
-  @apply position-absolute inset-0;
+  --uno: position-absolute inset-0;
   border: 2px solid color-mix(in srgb, var(--lad-palette-mint) 25%, transparent);
   border-radius: 32%;
   animation: completion-orbit 7s linear infinite;
@@ -61,7 +61,7 @@ withDefaults(defineProps<{ size?: number }>(), { size: 88 });
   animation-direction: reverse;
 }
 .completion-spark {
-  @apply position-absolute;
+  --uno: position-absolute;
   z-index: 3;
   color: var(--lad-palette-amber-450);
   font-style: normal;

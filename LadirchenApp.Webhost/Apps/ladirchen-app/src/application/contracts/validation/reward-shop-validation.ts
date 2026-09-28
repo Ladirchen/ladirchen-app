@@ -1,6 +1,6 @@
-import type { RewardShopState } from '../reward-shop-contract';
-import { SHOP_REWARD_STATUSES } from '@/domain/shop/types';
-import type { ShopReward, ShopRewardCategory, ShopRewardStatus } from '@/domain/shop/types';
+import type { RewardShopState } from "@/application/contracts/reward-shop-contract";
+import { SHOP_REWARD_STATUSES } from "@/domain/shop/types";
+import type { ShopReward, ShopRewardCategory, ShopRewardStatus } from "@/domain/shop/types";
 import {
   exhaustiveValues,
   hasLocalizedValue,
@@ -18,7 +18,7 @@ import {
   isRecord,
   type StateGuard,
   values,
-} from './runtime-validation';
+} from "./runtime-validation";
 
 const statuses = values<ShopRewardStatus>(SHOP_REWARD_STATUSES);
 const categories = exhaustiveValues<ShopRewardCategory>({ activity: true, allowance: true, custom: true, gift: true, privilege: true, time: true });
@@ -27,13 +27,13 @@ const isShopReward = (value: unknown): value is ShopReward =>
   isRecord(value) &&
   isDomainId(value.id) &&
   isOptionalString(value.translationKey) &&
-  hasLocalizedValue(value, 'title') &&
-  typeof value.description === 'string' &&
+  hasLocalizedValue(value, "title") &&
+  typeof value.description === "string" &&
   isNonEmptyString(value.icon) &&
   isFiniteNumber(value.price) && value.price >= 0 &&
   isKnownString(value.category, categories) &&
   isNonNegativeInteger(value.quantity) &&
-  typeof value.conditions === 'string' &&
+  typeof value.conditions === "string" &&
   (value.availableFrom === undefined || isCalendarDate(value.availableFrom)) &&
   (value.availableUntil === undefined || isCalendarDate(value.availableUntil)) &&
   isOptionalBoolean(value.isVisible) &&

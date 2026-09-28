@@ -1,4 +1,4 @@
-import type { FamilyId, FamilyMemberId } from '@/domain/shared/identifiers';
+import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 
 export interface AuthenticationSession {
   readonly familyId: FamilyId;
