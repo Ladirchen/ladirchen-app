@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>PingPong Akka.NET Actor System (Browser/Bootsharp)</title>
+</head>
+<body>
+<h1>Ping-Pong Akka.NET Actor System - Browser Host</h1>
+<button id="run" type="button" disabled>Run match (5 rallies)</button>
+<pre id="log"></pre>
+<div id="status">idle</div>
+
+<script type="module">
+    // Named exports are auto-generated on C# build (dotnet publish).
+    import bootsharp, {Program} from "./bin/bootsharp/index.mjs";
+
+    const logEl = document.getElementById("log");
+    const statusEl = document.getElementById("status");
+    const runButton = document.getElementById("run");
+
+    // Subscribing to the 'Program.OnLog' C# event: every actor message logs a line here.
+    Program.onLog.subscribe(line => {
+        logEl.textContent += line + "\n";
+        console.log(line);
+    });
+
+    statusEl.textContent = "booting";
+    await bootsharp.boot();
+    statusEl.textContent = "ready";
+    runButton.disabled = false;
+
+    runButton.addEventListener("click", async () => {
+        runButton.disabled = true;
+        statusEl.textContent = "running";
+        const finalRally = await Program.runMatchAsync(5);
+        statusEl.textContent = `done (${finalRally} rallies)`;
+        runButton.disabled = false;
+    });
+</script>
+</body>
+</html>
