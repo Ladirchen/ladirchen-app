@@ -16,12 +16,12 @@
         </svg>
       </div>
       <div>
-        <h2 id="contribution-filter-title">{{ t('contributions.filter.title') }}</h2>
-        <p>{{ t('contributions.filter.description') }}</p>
+        <h2 id="contribution-filter-title">{{ t("contributions.filter.title") }}</h2>
+        <p>{{ t("contributions.filter.description") }}</p>
       </div>
     </div>
 
-    <div class="scope-options" role="group" :aria-label="t('contributions.filter.scopeAria')">
+    <fieldset class="scope-options" :aria-label="t('contributions.filter.scopeAria')">
       <button
         v-for="option in scopeOptions"
         :key="option.value"
@@ -37,11 +37,11 @@
         <span>{{ option.description }}</span>
         <b v-if="option.value === 'open'">{{ openCount }}</b>
       </button>
-    </div>
+    </fieldset>
 
-    <div class="kind-filter">
-      <span class="kind-filter-label">{{ t('contributions.filter.status') }}</span>
-      <div class="status-options" role="group" :aria-label="t('contributions.filter.statusAria')">
+    <fieldset class="kind-filter">
+      <legend class="kind-filter-label">{{ t("contributions.filter.status") }}</legend>
+      <div class="status-options">
         <button
           v-for="option in statusOptions"
           :key="option.value"
@@ -50,14 +50,15 @@
           type="button"
           @click="selectStatus(option.value)"
         >
-          <v-icon :icon="option.icon" size="15" />{{ option.title }}
+          <v-icon :icon="option.icon" size="15" />
+          {{ option.title }}
         </button>
       </div>
-    </div>
+    </fieldset>
 
-    <div class="kind-filter kind-filter--type">
-      <span class="kind-filter-label">{{ t('contributions.filter.kind') }}</span>
-      <div class="kind-options" role="group" :aria-label="t('contributions.filter.kindAria')">
+    <fieldset class="kind-filter kind-filter--type">
+      <legend class="kind-filter-label">{{ t("contributions.filter.kind") }}</legend>
+      <div class="kind-options">
         <button
           v-for="option in kindOptions"
           :key="option.value"
@@ -66,10 +67,11 @@
           type="button"
           @click="kind = option.value"
         >
-          <span aria-hidden="true">{{ option.icon }}</span>{{ option.title }}
+          <span aria-hidden="true">{{ option.icon }}</span>
+          {{ option.title }}
         </button>
       </div>
-    </div>
+    </fieldset>
   </section>
 </template>
 
@@ -84,38 +86,62 @@ type ContributionScope = "all" | "mine" | "open";
 type KindFilter = "all" | ContributionKind;
 type StatusFilter = "open" | "completed";
 
-defineProps<{ openCount: number }>();
 const scope = defineModel<ContributionScope>("scope", { required: true });
 const kind = defineModel<KindFilter>("kind", { required: true });
 const status = defineModel<StatusFilter>("status", { required: true });
+
 const { t } = useI18n();
 
-const scopeOptions = computed<Array<{
-  description: string;
-  icon: string;
-  title: string;
-  value: ContributionScope;
-}>>(() => [
-  { value: "mine", title: t("contributions.filter.scope.mine.title"), description: t("contributions.filter.scope.mine.description"), icon: UI_ICONS.contributionScope.mine },
-  { value: "open", title: t("contributions.filter.scope.open.title"), description: t("contributions.filter.scope.open.description"), icon: UI_ICONS.contributionScope.open },
-  { value: "all", title: t("contributions.filter.scope.all.title"), description: t("contributions.filter.scope.all.description"), icon: UI_ICONS.contributionScope.all },
+const scopeOptions = computed<
+  Array<{
+    description: string;
+    icon: string;
+    title: string;
+    value: ContributionScope;
+  }>
+>(() => [
+  {
+    value: "mine",
+    title: t("contributions.filter.scope.mine.title"),
+    description: t("contributions.filter.scope.mine.description"),
+    icon: UI_ICONS.contributionScope.mine,
+  },
+  {
+    value: "open",
+    title: t("contributions.filter.scope.open.title"),
+    description: t("contributions.filter.scope.open.description"),
+    icon: UI_ICONS.contributionScope.open,
+  },
+  {
+    value: "all",
+    title: t("contributions.filter.scope.all.title"),
+    description: t("contributions.filter.scope.all.description"),
+    icon: UI_ICONS.contributionScope.all,
+  },
 ]);
-
 const kindOptions = computed<Array<{ icon: string; title: string; value: KindFilter }>>(() => [
   { value: "all", title: t("contributions.filter.kinds.all"), icon: "✨" },
   { value: "basic", title: t("contributions.filter.kinds.energy"), icon: "⚡" },
   { value: "extra", title: t("contributions.filter.kinds.extra"), icon: "🪙" },
 ]);
-
 const statusOptions = computed<Array<{ icon: string; title: string; value: StatusFilter }>>(() => [
   { value: "open", title: t("contributions.filter.statuses.open"), icon: UI_ICONS.contributionStatus.open },
-  { value: "completed", title: t("contributions.filter.statuses.completed"), icon: UI_ICONS.contributionStatus.completed },
+  {
+    value: "completed",
+    title: t("contributions.filter.statuses.completed"),
+    icon: UI_ICONS.contributionStatus.completed,
+  },
 ]);
 
-const selectStatus = (value: StatusFilter) => {
+function selectStatus(value: StatusFilter) {
   status.value = value;
-  if (value === "completed" && scope.value === "open") {scope.value = "mine";}
-};
+
+  if (value === "completed" && scope.value === "open") {
+    scope.value = "mine";
+  }
+}
+
+defineProps<{ openCount: number }>();
 </script>
 
 <style lang="scss" scoped>
@@ -138,15 +164,10 @@ const selectStatus = (value: StatusFilter) => {
       color-mix(in srgb, var(--lad-color-reward) 20%, transparent) 0 rem(38),
       transparent rem(39)
     ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface-soft),
-      var(--lad-color-reward-soft)
-    );
+    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
   box-shadow:
     0 rem(7) 0 color-mix(in srgb, var(--lad-color-primary) 12%, transparent),
-    0 rem(14) 1.5rem
-      color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
+    0 rem(14) 1.5rem color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .filter-heading {
   margin-bottom: rem(13);
@@ -167,11 +188,7 @@ const selectStatus = (value: StatusFilter) => {
   @include icon-tile(
     rem(45),
     1rem,
-    linear-gradient(
-      145deg,
-      var(--lad-surface-soft),
-      var(--lad-color-reward-pale)
-    ),
+    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale)),
     color-mix(in srgb, var(--lad-color-primary-strong) 20%, transparent),
     -4deg,
     rem(3) solid var(--lad-surface-raised)
@@ -212,8 +229,7 @@ const selectStatus = (value: StatusFilter) => {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   padding-bottom: rem(7);
-  border-bottom: 0.5rem solid
-    color-mix(in srgb, var(--lad-color-reward-muted) 35%, transparent);
+  border-bottom: 0.5rem solid color-mix(in srgb, var(--lad-color-reward-muted) 35%, transparent);
   border-radius: 0 0 rem(22) rem(22);
 }
 .scope-options button {
@@ -225,11 +241,7 @@ const selectStatus = (value: StatusFilter) => {
   color: var(--lad-text);
   border: rem(2) solid var(--lad-color-primary-soft);
   border-radius: rem(23) rem(23) rem(17) rem(17);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow: 0 rem(5) 0 var(--lad-color-primary-soft);
 
   font: inherit;
@@ -241,20 +253,12 @@ const selectStatus = (value: StatusFilter) => {
 }
 .scope-options button:nth-child(2) {
   border-color: var(--lad-color-reward-muted);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-color-reward-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-color-reward-soft));
   box-shadow: 0 rem(5) 0 var(--lad-color-reward-muted);
 }
 .scope-options button:nth-child(3) {
   border-color: var(--lad-color-info-soft);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow: 0 rem(5) 0 var(--lad-color-bonus-soft);
 }
 .scope-options button:hover {
@@ -262,49 +266,33 @@ const selectStatus = (value: StatusFilter) => {
 }
 .scope-options button:active {
   transform: translateY(rem(2));
-  box-shadow: 0 rem(2) 0
-    color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
+  box-shadow: 0 rem(2) 0 color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
 }
 .scope-options button.active {
   color: var(--lad-color-primary-deep);
   transform: translateY(rem(-5)) rotate(-1deg);
   border-color: var(--lad-color-primary);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow:
     0 0.5rem 0 var(--lad-neutral-soft),
-    0 0.75rem 1rem
-      color-mix(in srgb, var(--lad-color-primary-deep) 10%, transparent);
+    0 0.75rem 1rem color-mix(in srgb, var(--lad-color-primary-deep) 10%, transparent);
 }
 .scope-options button:nth-child(2).active {
   color: var(--lad-color-reward-ink);
   transform: translateY(rem(-5)) rotate(1deg);
   border-color: var(--lad-color-reward-border);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-color-reward-pale)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-color-reward-pale));
   box-shadow:
     0 0.5rem 0 var(--lad-color-accent-warm-soft),
-    0 0.75rem 1rem
-      color-mix(in srgb, var(--lad-color-reward-ink) 10%, transparent);
+    0 0.75rem 1rem color-mix(in srgb, var(--lad-color-reward-ink) 10%, transparent);
 }
 .scope-options button:nth-child(3).active {
   color: var(--lad-color-bonus-muted);
   border-color: var(--lad-color-bonus-highlight);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow:
     0 0.5rem 0 var(--lad-color-bonus-soft),
-    0 0.75rem 1rem
-      color-mix(in srgb, var(--lad-color-bonus-strong) 10%, transparent);
+    0 0.75rem 1rem color-mix(in srgb, var(--lad-color-bonus-strong) 10%, transparent);
 }
 .scope-options button :deep(.v-icon) {
   width: 2.5rem;
@@ -313,8 +301,7 @@ const selectStatus = (value: StatusFilter) => {
   border: rem(3) solid var(--lad-border-on-accent);
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
-  box-shadow: 0 0.25rem 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
+  box-shadow: 0 0.25rem 0 color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
 }
 .scope-options button strong {
   font-size: rem(10);
@@ -346,17 +333,12 @@ const selectStatus = (value: StatusFilter) => {
   @include icon-tile(
     rem(42),
     rem(15),
-    linear-gradient(
-      145deg,
-      var(--lad-color-primary-highlight),
-      var(--lad-color-primary-strong)
-    ),
+    linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong)),
     var(--lad-color-primary-deep),
     -4deg,
     rem(3) solid var(--lad-border-on-accent),
     0.25rem,
-    0 rem(7) 0.75rem
-      color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent)
+    0 rem(7) 0.75rem color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent)
   );
 }
 .scope-options .scope-option-icon :deep(.v-icon) {
@@ -366,9 +348,7 @@ const selectStatus = (value: StatusFilter) => {
   color: inherit;
   background-color: currentColor;
   opacity: 1;
-  filter: drop-shadow(
-    0 rem(1) rem(1) color-mix(in srgb, var(--lad-text) 22%, transparent)
-  );
+  filter: drop-shadow(0 rem(1) rem(1) color-mix(in srgb, var(--lad-text) 22%, transparent));
 }
 .scope-options button .scope-option-icon {
   color: var(--lad-text-inverse);
@@ -376,27 +356,17 @@ const selectStatus = (value: StatusFilter) => {
   line-height: 1;
 }
 .scope-options button:nth-child(2) .scope-option-icon {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-reward-accent),
-    var(--lad-color-reward-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-reward-accent), var(--lad-color-reward-strong));
   box-shadow:
     0 0.25rem 0 var(--lad-color-reward-deep),
-    0 rem(7) 0.75rem
-      color-mix(in srgb, var(--lad-color-reward-deep) 20%, transparent);
+    0 rem(7) 0.75rem color-mix(in srgb, var(--lad-color-reward-deep) 20%, transparent);
   transform: rotate(4deg);
 }
 .scope-options button:nth-child(3) .scope-option-icon {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-highlight),
-    var(--lad-color-info-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-highlight), var(--lad-color-info-strong));
   box-shadow:
     0 0.25rem 0 var(--lad-color-info-deep),
-    0 rem(7) 0.75rem
-      color-mix(in srgb, var(--lad-color-info-deep) 20%, transparent);
+    0 rem(7) 0.75rem color-mix(in srgb, var(--lad-color-info-deep) 20%, transparent);
   transform: rotate(-3deg);
 }
 .kind-filter {
@@ -404,8 +374,7 @@ const selectStatus = (value: StatusFilter) => {
   padding: rem(10);
   --uno: d-flex align-center;
   gap: rem(9);
-  border: rem(1) dashed
-    color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
+  border: rem(1) dashed color-mix(in srgb, var(--lad-text-strong) 20%, transparent);
   border-radius: 1rem;
   background: color-mix(in srgb, var(--lad-surface-raised) 50%, transparent);
 }
@@ -427,12 +396,10 @@ const selectStatus = (value: StatusFilter) => {
   padding: rem(7) rem(9);
   --uno: d-inline-flex align-center ga-1 cursor-pointer;
   color: var(--lad-text-strong);
-  border: rem(1) solid
-    color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
+  border: rem(1) solid color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
   border-radius: var(--lad-radius-pill);
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
-  box-shadow: 0 rem(2) 0
-    color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
+  box-shadow: 0 rem(2) 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
 
   font: inherit;
   font-size: 0.5rem;

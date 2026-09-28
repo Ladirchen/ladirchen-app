@@ -48,7 +48,7 @@
           <i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:translate" size="19" /></i>
           {{ t("profile.language.label") }}
         </span>
-        <div class="language-options" role="group" :aria-label="t('profile.language.label')">
+        <fieldset class="language-options" :aria-label="t('profile.language.label')">
           <button
             v-for="option in languageOptions"
             :key="option.value"
@@ -61,7 +61,7 @@
             <strong>{{ option.value.toUpperCase() }}</strong>
             <small>{{ option.title }}</small>
           </button>
-        </div>
+        </fieldset>
       </div>
       <template v-if="store.viewerRole === 'child'">
         <div class="setting-row">
@@ -97,7 +97,8 @@
     <button class="logout-card mt-5" type="button" @click="store.signOut">
       <span class="logout-icon" aria-hidden="true"><v-icon icon="i-mdi:logout-variant" /></span>
       <span>
-        <strong>{{ t("profile.logout.title") }}</strong> <small>{{ t("profile.logout.description") }}</small>
+        <strong>{{ t("profile.logout.title") }}</strong>
+        <small>{{ t("profile.logout.description") }}</small>
       </span>
       <v-icon class="logout-arrow" icon="i-mdi:arrow-right" />
     </button>
@@ -142,9 +143,9 @@
               maxlength="18"
               variant="outlined"
             />
-            <v-btn color="secondary" :disabled="!nicknameChanged" rounded="lg" variant="flat" @click="saveNickname">{{
-              t("common.save")
-            }}</v-btn>
+            <v-btn color="secondary" :disabled="!nicknameChanged" rounded="lg" variant="flat" @click="saveNickname">
+              {{ t("common.save") }}
+            </v-btn>
           </div>
         </div>
 
@@ -194,32 +195,39 @@ const AsyncAvatarBuilderDialog = defineAsyncComponent(
 const AsyncDevelopmentToolsPanel = defineAsyncComponent(
   () => import("@/features/profile/components/DevelopmentToolsPanel.vue"),
 );
-
-const store = useFamilyWorldStore();
-const { locale, t } = useI18n();
 const localDevelopmentHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const isDevelopment = import.meta.env.DEV || localDevelopmentHostnames.has(window.location.hostname);
-const avatarBuilderOpen = ref(false);
-const profileEditorOpen = ref(false);
-const nicknameDraft = ref(store.activeChild.nickname ?? "");
-const activeLocale = computed<SupportedLocale>({
-  get: () => (isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE),
-  set: setActiveLocale,
-});
 const languageOptions = localeOptions.map((option) => ({
   icon: option.icon,
   title: option.label,
   value: option.code,
 }));
+
+const store = useFamilyWorldStore();
+const { locale, t } = useI18n();
+
+const avatarBuilderOpen = ref(false);
+const profileEditorOpen = ref(false);
+const nicknameDraft = ref(store.activeChild.nickname ?? "");
+
+const activeLocale = computed<SupportedLocale>({
+  get: () => (isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE),
+  set: setActiveLocale,
+});
 const activeAppearance = computed(() => resolveFamilyMemberAvatarAppearance(store.signedInMember, store.members));
 const profileDescription = computed(() => {
   if (store.viewerRole === "child") {
     return t("profile.editor.childDescription");
   }
+
   return store.isFamilyAdmin ? t("profile.editor.administratorDescription") : t("profile.editor.guardianDescription");
 });
 const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild.nickname ?? ""));
-const saveNickname = () => store.setOwnNickname(nicknameDraft.value);
+
+function saveNickname() {
+  return store.setOwnNickname(nicknameDraft.value);
+}
+
 watch(
   () => store.activeChildId,
   () => {

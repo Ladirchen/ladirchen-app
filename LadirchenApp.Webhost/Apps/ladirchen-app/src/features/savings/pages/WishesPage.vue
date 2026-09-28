@@ -191,9 +191,9 @@
               <strong><LadirchenAmount :value="store.availableBalance" /></strong>
             </div>
             <span class="save-journey" aria-hidden="true">
-              <i />
-              <i />
-              <i />
+              <i></i>
+              <i></i>
+              <i></i>
             </span>
             <span class="save-goal-star" aria-hidden="true">★</span>
           </div>
@@ -245,9 +245,9 @@
         </div>
         <div class="support-journey mt-4" aria-hidden="true">
           <LadirchenCoin class="support-coin" small />
-          <i />
-          <i />
-          <i />
+          <i></i>
+          <i></i>
+          <i></i>
           <span class="support-high-five">✋</span>
           <span class="support-present">🎁</span>
         </div>
@@ -300,7 +300,6 @@ import { useI18n } from "vue-i18n";
 import type { SavingGoal } from "@/domain/savings/types";
 
 const { t } = useI18n();
-
 const {
   activeGoal,
   activeTab,
@@ -335,6 +334,7 @@ const {
   weeklyInterestForGoal,
   wishViewOptions,
 } = useWishesPage();
+
 const personalSectionDescription = computed(() =>
   t(activeTab.value === "children" ? "wishes.sections.childrenDescription" : "wishes.sections.ownDescription"),
 );
@@ -343,12 +343,11 @@ const personalSectionTitle = computed(() =>
 );
 const saveSubmitLabel = computed(() => t(saveMotion.value ? "wishes.save.sending" : "wishes.save.submit"));
 const supportSubmitLabel = computed(() => t(supportSending.value ? "wishes.support.sending" : "wishes.support.submit"));
-const personalGoalVisibilityLabel = (goal: SavingGoal) =>
-  goal.shared ? t("wishes.shared") : visibilityLabel(goal.visibility);
 const interestRateLabel = computed(() => formatInterestRate(store.savingsInterestRate));
 const personalGoalCards = computed(() =>
   personalGoals.value.map((goal) => {
     const isOwn = goal.ownerId === store.signedInMemberId;
+
     return {
       goal,
       isOwn,
@@ -378,6 +377,10 @@ const saveSliderMax = computed(() => Math.max(1, maxAssignable.value));
 const supportSliderMax = computed(() => Math.max(1, supportMaximum.value));
 const canSubmitSave = computed(() => saveAmount.value > 0 && !saveMotion.value);
 const canSubmitSupport = computed(() => supportMaximum.value > 0 && supportAmount.value > 0 && !supportSending.value);
+
+function personalGoalVisibilityLabel(goal: SavingGoal) {
+  return goal.shared ? t("wishes.shared") : visibilityLabel(goal.visibility);
+}
 </script>
 
 <style lang="scss" scoped>

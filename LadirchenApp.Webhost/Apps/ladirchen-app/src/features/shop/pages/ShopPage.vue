@@ -240,8 +240,8 @@
         <v-card class="pa-5" rounded="xl">
           <v-card-title class="pa-0 mb-1">{{ t("shop.form.title") }}</v-card-title>
           <v-card-subtitle class="pa-0 mb-4">{{ t("shop.form.description") }}</v-card-subtitle>
-          <label class="field-label">{{ t("shop.form.selectIcon") }}</label>
-          <div class="icon-picker mt-2 mb-4">
+          <div id="icon-picker-label" class="field-label">{{ t("shop.form.selectIcon") }}</div>
+          <div class="icon-picker mt-2 mb-4" aria-labelledby="icon-picker-label">
             <button
               v-for="icon in iconOptions"
               :key="icon"
@@ -345,6 +345,9 @@ import ShopRewardCard from "@/features/shop/components/ShopRewardCard.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { useShopPage } from "@/features/shop/composables/use-shop-page";
 
+type EditionAction = "buy" | "childPurchase" | "use" | "selected";
+type FurnitureSetStatus = "owned" | "locked" | "buy" | "childPurchase";
+
 const { t } = useI18n();
 const {
   activeTab,
@@ -380,13 +383,11 @@ const {
   catalogItemsTitle,
 } = useShopPage();
 
-type EditionAction = "buy" | "childPurchase" | "use" | "selected";
-type FurnitureSetStatus = "owned" | "locked" | "buy" | "childPurchase";
-
 const canViewShop = computed(() => store.viewerRole === "child" || store.permissions.canManageContent);
 const editionCards = computed(() =>
   houseEditions.value.map((edition) => {
     const isActive = edition.id === store.houseThemeId;
+
     return {
       edition,
       isActive,
@@ -419,15 +420,18 @@ function editionAction(owned: boolean, isActive: boolean): EditionAction {
   if (!owned) {
     return store.viewerRole === "child" ? "buy" : "childPurchase";
   }
+
   return isActive ? "selected" : "use";
 }
 function furnitureSetStatus(owned: boolean, minimumHouseLevel: number): FurnitureSetStatus {
   if (owned) {
     return "owned";
   }
+
   if (minimumHouseLevel > store.houseLevel) {
     return "locked";
   }
+
   return store.viewerRole === "child" ? "buy" : "childPurchase";
 }
 function onDeleteDialogToggle(open: boolean) {

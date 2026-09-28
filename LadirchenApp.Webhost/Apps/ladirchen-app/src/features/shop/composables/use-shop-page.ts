@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -256,17 +257,21 @@ export const useShopPage = () => {
     },
     { immediate: true },
   );
+  const { start: startPageIntroGuide } = useTimeoutFn(
+    () => {
+      ladiGuideController.say({
+        heading: redemptionOpen.value ? t("shop.guide.openTitle") : t("shop.guide.closedTitle"),
+        message: redemptionOpen.value ? t("shop.guide.openMessage") : t("shop.guide.closedMessage"),
+        pageIntro: true,
+      });
+    },
+    PAGE_INTRO_GUIDE_DELAY_MS,
+    { immediate: false },
+  );
+
   onMounted(() => {
     if (store.viewerRole === "child") {
-      window.setTimeout(
-        () =>
-          ladiGuideController.say({
-            heading: redemptionOpen.value ? t("shop.guide.openTitle") : t("shop.guide.closedTitle"),
-            message: redemptionOpen.value ? t("shop.guide.openMessage") : t("shop.guide.closedMessage"),
-            pageIntro: true,
-          }),
-        PAGE_INTRO_GUIDE_DELAY_MS,
-      );
+      startPageIntroGuide();
     }
   });
 

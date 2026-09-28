@@ -1,3 +1,4 @@
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -16,12 +17,51 @@ import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
 const SAVE_ANIMATION_DURATION_MS = 620;
 const SUPPORT_ANIMATION_DURATION_MS = 950;
 
-export const useWishesPage = () => {
+type WishView = "own" | "children" | "family";
+
+type FamilyGoalViewer = {
+  role: "child" | "guardian";
+  memberId: FamilyMemberId;
+  canViewGuardianGoals: boolean;
+};
+
+function goalBalanceLabel(goal: SavingGoal) {
+  return `${goal.saved} / ${goal.target}`;
+}
+
+function remainingGoalAmount(goal: Pick<SavingGoal, "saved" | "target">) {
+  return Math.max(0, goal.target - goal.saved);
+}
+
+function isVisibleFamilyGoal(goal: SavingGoal, viewer: FamilyGoalViewer, ownerRole?: FamilyGoalViewer["role"]) {
+  if (viewer.role === "guardian") {
+    if (goal.ownerId === "family") {
+      return true;
+    }
+
+    return (
+      goal.ownerId !== viewer.memberId &&
+      ownerRole === "guardian" &&
+      (goal.visibility === "family" || (viewer.canViewGuardianGoals && goal.visibility === "guardians"))
+    );
+  }
+
+  return goal.ownerId !== viewer.memberId && goal.visibility === "family";
+}
+
+function progress(saved: number, target: number) {
+  return percentageOfTotal(saved, target);
+}
+
+function depositedAmount(goal: SavingGoal) {
+  return Math.max(0, goal.saved - (goal.interestEarned ?? 0));
+}
+
+export function useWishesPage() {
   const store = useFamilyWorldStore();
   const route = useRoute();
   const { locale, t } = useI18n();
   const localize = useLocalizedDomainContent();
-  type WishView = "own" | "children" | "family";
   const activeTab = ref<WishView>("own");
   const saveDialog = ref(false);
   const goalDialog = ref(false);
@@ -37,7 +77,7 @@ export const useWishesPage = () => {
 
   const localizedGoals = computed(() => store.goals.map(localize.goal));
   const activeGoal = computed(() => localize.goal(store.activeGoal));
-  const activeGoalRemaining = computed(() => Math.max(0, activeGoal.value.target - activeGoal.value.saved));
+  const activeGoalRemaining = computed(() => remainingGoalAmount(activeGoal.value));
   const maxAssignable = computed(() => Math.min(store.availableBalance, activeGoalRemaining.value));
   const personalGoalOwnerId = computed<FamilyMemberId>(() => store.signedInMemberId);
   const childrenGoals = computed(() =>
@@ -52,23 +92,22 @@ export const useWishesPage = () => {
       : localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId),
   );
   const canCreatePersonalGoal = computed(() => activeTab.value === "own");
-  const visibleFamilyGoals = computed(() =>
-    localizedGoals.value.filter((goal) => {
-      if (store.viewerRole === "guardian") {
-        if (goal.ownerId === "family") {
-          return true;
-        }
-        const owner = store.members.find((member) => member.id === goal.ownerId);
-        return (
-          owner?.role === "guardian" &&
-          goal.ownerId !== store.signedInMemberId &&
-          (goal.visibility === "family" || (store.permissions.canViewGuardianGoals && goal.visibility === "guardians"))
-        );
-      }
+  const visibleFamilyGoals = computed(() => {
+    const viewer: FamilyGoalViewer = {
+      role: store.viewerRole,
+      memberId: store.signedInMemberId,
+      canViewGuardianGoals: store.permissions.canViewGuardianGoals,
+    };
 
-      return goal.ownerId !== store.signedInMemberId && goal.visibility === "family";
-    }),
-  );
+    return localizedGoals.value.filter((goal) => {
+      const ownerRole =
+        store.viewerRole === "guardian" && goal.ownerId !== "family"
+          ? store.members.find((member) => member.id === goal.ownerId)?.role
+          : undefined;
+
+      return isVisibleFamilyGoal(goal, viewer, ownerRole);
+    });
+  });
   const wishViewOptions = computed<Array<PageViewOption<WishView>>>(() => {
     const ownGoals = localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId);
     const options: Array<PageViewOption<WishView>> = [
@@ -102,30 +141,32 @@ export const useWishesPage = () => {
     if (!supportGoal.value) {
       return 0;
     }
-    const remaining = Math.max(0, supportGoal.value.target - supportGoal.value.saved);
+    const remaining = remainingGoalAmount(supportGoal.value);
     return store.viewerRole === "child" ? Math.min(store.availableBalance, remaining) : remaining;
   });
   const supportExplanation = computed(() =>
     store.viewerRole === "child" ? t("wishes.support.childExplanation") : t("wishes.support.guardianExplanation"),
   );
 
-  const progress = (saved: number, target: number) => percentageOfTotal(saved, target);
-  function goalBalanceLabel(goal: SavingGoal) {
-    return `${goal.saved} / ${goal.target}`;
+  function weeklyInterestForGoal(goal: SavingGoal) {
+    return calculateSavingsCredit(goal.saved, goal.target, store.savingsInterestRate);
   }
-  const depositedAmount = (goal: SavingGoal) => Math.max(0, goal.saved - (goal.interestEarned ?? 0));
-  const weeklyInterestForGoal = (goal: SavingGoal) =>
-    calculateSavingsCredit(goal.saved, goal.target, store.savingsInterestRate);
-  const formatInterestRate = (value: number) =>
-    value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-  const ownerName = (ownerId: SavingGoalOwnerId) =>
-    ownerId === "family"
+
+  function formatInterestRate(value: number) {
+    return value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+  }
+
+  function ownerName(ownerId: SavingGoalOwnerId) {
+    return ownerId === "family"
       ? t("wishes.owner.myFamily")
       : (store.members.find((member) => member.id === ownerId)?.name ?? t("wishes.owner.family"));
-  const visibilityLabel = (visibility: GoalVisibility) => {
+  }
+
+  function visibilityLabel(visibility: GoalVisibility) {
     return t(`wishes.visibility.${visibility}`);
-  };
-  const saveToGoal = () => {
+  }
+
+  function saveToGoal() {
     if (saveAmount.value <= 0 || saveMotion.value) {
       return;
     }
@@ -137,20 +178,22 @@ export const useWishesPage = () => {
       saveMotion.value = false;
       saveTimer = undefined;
     }, SAVE_ANIMATION_DURATION_MS);
-  };
-  const openSave = (goalId: SavingGoalId) => {
+  }
+
+  function openSave(goalId: SavingGoalId) {
     store.activeGoalId = goalId;
     saveAmount.value = Math.min(
       SAVINGS_RULES.defaultTransferAmount,
       store.availableBalance,
-      Math.max(0, store.activeGoal.target - store.activeGoal.saved),
+      remainingGoalAmount(store.activeGoal),
     );
     saveDialog.value = true;
-  };
-  const openSupport = (goalId: SavingGoalId) => {
+  }
+
+  function openSupport(goalId: SavingGoalId) {
     supportGoalId.value = goalId;
     const goal = store.goals.find((item) => item.id === goalId);
-    const remaining = goal ? Math.max(0, goal.target - goal.saved) : 0;
+    const remaining = goal ? remainingGoalAmount(goal) : 0;
     supportAmount.value = Math.max(
       0,
       Math.min(
@@ -160,8 +203,9 @@ export const useWishesPage = () => {
       ),
     );
     supportDialog.value = true;
-  };
-  const giveSupport = () => {
+  }
+
+  function giveSupport() {
     if (!supportGoalId.value || supportSending.value) {
       return;
     }
@@ -184,12 +228,16 @@ export const useWishesPage = () => {
       supportSending.value = false;
       supportTimer = undefined;
     }, SUPPORT_ANIMATION_DURATION_MS);
-  };
-  const openGoalDialog = (ownerId: SavingGoalOwnerId) => {
+  }
+
+  function openGoalDialog(ownerId: SavingGoalOwnerId) {
     newGoalOwnerId.value = ownerId;
     goalDialog.value = true;
-  };
-  const addGoal = (goal: NewGoal) => store.addGoal(goal, newGoalOwnerId.value);
+  }
+
+  function addGoal(goal: NewGoal) {
+    store.addGoal(goal, newGoalOwnerId.value);
+  }
   watch(
     () => route.query.new,
     (value) => {
@@ -227,19 +275,23 @@ export const useWishesPage = () => {
       message: t("wishes.guide.familyMessage"),
     });
   });
+  const { start: startPageIntroGuide } = useTimeoutFn(
+    () => {
+      ladiGuideController.say({
+        heading: t("guide.pages.wishes.heading"),
+        message: t("guide.pages.wishes.message"),
+        pageIntro: true,
+      });
+    },
+    PAGE_INTRO_GUIDE_DELAY_MS,
+    { immediate: false },
+  );
+
   onMounted(() => {
     if (store.viewerRole !== "child") {
       return;
     }
-    window.setTimeout(
-      () =>
-        ladiGuideController.say({
-          heading: t("guide.pages.wishes.heading"),
-          message: t("guide.pages.wishes.message"),
-          pageIntro: true,
-        }),
-      PAGE_INTRO_GUIDE_DELAY_MS,
-    );
+    startPageIntroGuide();
   });
   onUnmounted(() => {
     if (saveTimer !== undefined) {
@@ -249,6 +301,7 @@ export const useWishesPage = () => {
       window.clearTimeout(supportTimer);
     }
   });
+
   return {
     activeGoal,
     activeTab,
@@ -283,4 +336,4 @@ export const useWishesPage = () => {
     weeklyInterestForGoal,
     wishViewOptions,
   };
-};
+}

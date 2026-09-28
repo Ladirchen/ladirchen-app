@@ -259,9 +259,9 @@
 
       <div v-if="view === 'front' && frontExterior" class="front-scene-art" aria-hidden="true">
         <img class="front-scene-art__background" :src="frontExterior.backgroundUrl" alt="" />
-        <i class="front-scene-sun" />
-        <i class="front-scene-cloud front-scene-cloud--left" />
-        <i class="front-scene-cloud front-scene-cloud--right" />
+        <i class="front-scene-sun"></i>
+        <i class="front-scene-cloud front-scene-cloud--left"></i>
+        <i class="front-scene-cloud front-scene-cloud--right"></i>
         <span class="front-scene-art__house">
           <img :src="frontExterior.houseUrl" alt="" />
         </span>
@@ -325,9 +325,9 @@
               :class="['world-family-member', 'is-background-member', memberRoleClass(member)]"
             >
               <Transition name="member-name">
-                <span v-if="speakingMemberId === member.id" class="member-name-bubble" role="status">
+                <output v-if="speakingMemberId === member.id" class="member-name-bubble">
                   {{ worldMemberName(member) }}
-                </span>
+                </output>
               </Transition>
               <AvatarFigure
                 :appearance="appearanceFor(member, index)"
@@ -341,9 +341,9 @@
         </div>
         <div v-if="activeFamilyMember" class="world-family-member is-active-member">
           <Transition name="member-name">
-            <span v-if="speakingMemberId === activeFamilyMember.id" class="member-name-bubble" role="status">
+            <output v-if="speakingMemberId === activeFamilyMember.id" class="member-name-bubble">
               {{ worldMemberName(activeFamilyMember) }}
-            </span>
+            </output>
           </Transition>
           <AvatarFigure
             :appearance="appearanceFor(activeFamilyMember, 0)"
@@ -358,7 +358,7 @@
       <div v-if="view === 'front'" class="world-pets" :aria-label="t('world.scene.petsAria')">
         <div v-for="pet in pets" :key="pet.id" class="world-pet">
           <Transition name="member-name">
-            <span v-if="activePetId === pet.id" class="pet-name-bubble" role="status">{{ pet.name }}</span>
+            <output v-if="activePetId === pet.id" class="pet-name-bubble">{{ pet.name }}</output>
           </Transition>
           <AnimatedPet :pet="pet" :size="48" @interact="showPetName(pet.id)" />
         </div>
@@ -461,8 +461,12 @@ const roofHighlightPath = computed(() =>
 const roofDetailPath = computed(() =>
   houseHasUpperFloor.value ? "M170 82l60-33 61 34M184 89l46-25 47 25" : "M143 145l87-51 88 51M160 151l70-41 71 41",
 );
-const memberRoleClass = (member: FamilyMember) => (member.role === "child" ? "is-child" : "is-guardian");
-const backgroundMemberSize = (member: FamilyMember) => (member.role === "child" ? 42 : 55);
+function memberRoleClass(member: FamilyMember) {
+  return member.role === "child" ? "is-child" : "is-guardian";
+}
+function backgroundMemberSize(member: FamilyMember) {
+  return member.role === "child" ? 42 : 55;
+}
 </script>
 
 <style lang="scss" scoped>

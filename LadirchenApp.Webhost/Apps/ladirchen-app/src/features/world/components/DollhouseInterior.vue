@@ -39,29 +39,29 @@
         type="button"
         :aria-label="t('catalog.rooms.open', { room: t(room.nameKey) })"
         @click="selectPreviewZone(room.id)"
-      />
+      ></button>
       <header v-if="showRoomLabels">
         <span>{{ room.icon }}</span>
         <strong>{{ t(room.nameKey) }}</strong>
       </header>
       <div class="room-window" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
       </div>
-      <div class="room-baseboard" aria-hidden="true" />
-      <div class="room-floor" aria-hidden="true" />
-      <div class="room-partition" aria-hidden="true" />
+      <div class="room-baseboard" aria-hidden="true"></div>
+      <div class="room-floor" aria-hidden="true"></div>
+      <div class="room-partition" aria-hidden="true"></div>
       <div v-if="energy < HOUSE_ENERGY_THRESHOLDS.bright" class="room-wear" aria-hidden="true">
-        <i v-for="mark in ROOM_WEAR_MARK_COUNT" :key="mark" />
+        <i v-for="mark in ROOM_WEAR_MARK_COUNT" :key="mark"></i>
       </div>
-      <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true" />
+      <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true"></div>
       <div v-if="room.id === 'children-room'" class="room-detail bunting" aria-hidden="true">
-        <i v-for="index in 5" :key="index" />
+        <i v-for="index in 5" :key="index"></i>
       </div>
       <div v-if="room.id === 'creative-room'" class="room-detail paint-dots" aria-hidden="true">
-        <i v-for="index in 6" :key="index" />
+        <i v-for="index in 6" :key="index"></i>
       </div>
       <div v-if="room.id === 'living-room'" class="ladi-perch" :class="{ occupied: isLadiOnPerch }" aria-hidden="true">
         <img v-if="ladiPerchUrl" :src="ladiPerchUrl" alt="" />
@@ -100,22 +100,22 @@
         type="button"
         :aria-label="t('catalog.rooms.open', { room: t('catalog.rooms.garden') })"
         @click="selectPreviewZone('garden')"
-      />
+      ></button>
       <header v-if="showRoomLabels">
         <span>🌿</span>
         <strong>{{ t("catalog.rooms.garden") }}</strong>
       </header>
-      <div class="garden-sky" aria-hidden="true"><i /></div>
+      <div class="garden-sky" aria-hidden="true"><i></i></div>
       <div class="garden-mountains" aria-hidden="true">
-        <i />
-        <i />
-        <i />
+        <i></i>
+        <i></i>
+        <i></i>
       </div>
-      <div class="garden-trellis" aria-hidden="true"><i v-for="index in 6" :key="index" /></div>
+      <div class="garden-trellis" aria-hidden="true"><i v-for="index in 6" :key="index"></i></div>
       <div class="garden-plant-shelf" aria-hidden="true">
-        <span v-for="index in 3" :key="index"><i /></span>
+        <span v-for="index in 3" :key="index"><i></i></span>
       </div>
-      <div class="garden-patio" aria-hidden="true" />
+      <div class="garden-patio" aria-hidden="true"></div>
       <div
         v-if="showsTerraceTransition"
         class="terrace-transition"
@@ -123,24 +123,24 @@
         aria-hidden="true"
       >
         <span class="terrace-frame">
-          <i class="terrace-glass terrace-glass--fixed" />
-          <i class="terrace-glass terrace-glass--door" />
-          <b class="terrace-handle" />
+          <i class="terrace-glass terrace-glass--fixed"></i>
+          <i class="terrace-glass terrace-glass--door"></i>
+          <b class="terrace-handle"></b>
         </span>
-        <span class="terrace-threshold" />
+        <span class="terrace-threshold"></span>
       </div>
       <div class="garden-path" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
       </div>
       <div class="garden-flower-bed" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
+        <i></i>
       </div>
       <HouseLayoutEntity
         v-for="placement in visiblePlacements('garden')"
@@ -194,16 +194,19 @@ import HouseLayoutEntity from "./HouseLayoutEntity.vue";
 import { useDollhouseDrag } from "@/features/world/composables/use-dollhouse-drag";
 
 const PixiRoomScene = defineAsyncComponent(() => import("./PixiRoomScene.vue"));
-
 const LADI_MOTIVATION_DURATION_MS = 4800;
 const PERCH_MESSAGE_BASE_DELAY_MS = 6500;
 const PERCH_MESSAGE_DELAY_VARIANCE_MS = 4500;
 const PERCH_MESSAGE_DURATION_MS = 4200;
 const ROOM_WEAR_MARK_COUNT = 6;
 const ROOM_PREVIEW_COLUMN_WIDTH_PX = 30;
+const perchMessageKeys = ["together", "smallSteps", "whoHelps", "believe"] as const;
+
+let motivationTimer: number | undefined;
+let perchMessageTimer: number | undefined;
+let perchScheduleTimer: number | undefined;
 
 const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     accessories: HouseAccessory[];
@@ -245,31 +248,54 @@ const emit = defineEmits<{
 const ladiMotivation = ref("");
 const perchMessage = ref("");
 const ladiPerchUrl = ref<string>();
-onMounted(async () => {
-  ladiPerchUrl.value = await getWorldDecorationSpriteUrl("ladi-perch");
-});
-let motivationTimer: number | undefined;
-let perchMessageTimer: number | undefined;
-let perchScheduleTimer: number | undefined;
+
 const unlockedZones = computed<HouseZoneId[]>(() =>
   props.includeGarden ? [...props.rooms.map((room) => room.id), "garden"] : props.rooms.map((room) => room.id),
 );
+
+const { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag } =
+  useDollhouseDrag(props, emit, unlockedZones, accessoryFor);
+
 const orderedZoneIds = computed<HouseZoneId[]>(() => {
   const roomIds = props.rooms.map((room) => room.id);
-  if (!props.includeGarden) return roomIds;
+
+  if (!props.includeGarden) {
+    return roomIds;
+  }
+
   const kitchenIndex = roomIds.indexOf("kitchen");
-  if (kitchenIndex < 0) return [...roomIds, "garden"];
+
+  if (kitchenIndex < 0) {
+    return [...roomIds, "garden"];
+  }
+
   return [...roomIds.slice(0, kitchenIndex + 1), "garden", ...roomIds.slice(kitchenIndex + 1)];
 });
 const contextualZoneIds = computed<HouseZoneId[]>(() => {
-  if (props.selectedZoneId === "all") return props.rooms.map((room) => room.id);
-  if (!props.contextualNeighbors) return [props.selectedZoneId];
-  if (props.selectedZoneId === "garden" && orderedZoneIds.value.includes("kitchen")) return ["kitchen", "garden"];
-  if (props.selectedZoneId === "living-room" && orderedZoneIds.value.includes("kitchen"))
+  if (props.selectedZoneId === "all") {
+    return props.rooms.map((room) => room.id);
+  }
+
+  if (!props.contextualNeighbors) {
+    return [props.selectedZoneId];
+  }
+
+  if (props.selectedZoneId === "garden" && orderedZoneIds.value.includes("kitchen")) {
+    return ["kitchen", "garden"];
+  }
+
+  if (props.selectedZoneId === "living-room" && orderedZoneIds.value.includes("kitchen")) {
     return ["living-room", "kitchen"];
+  }
+
   const selectedIndex = orderedZoneIds.value.indexOf(props.selectedZoneId);
-  if (selectedIndex < 0) return [props.selectedZoneId];
+
+  if (selectedIndex < 0) {
+    return [props.selectedZoneId];
+  }
+
   const startIndex = Math.max(0, Math.min(selectedIndex - 1, orderedZoneIds.value.length - 3));
+
   return orderedZoneIds.value.slice(startIndex, startIndex + 3);
 });
 const displayedRooms = computed(() => props.rooms.filter((room) => contextualZoneIds.value.includes(room.id)));
@@ -291,51 +317,23 @@ const activeSceneDesign = computed(() =>
 );
 const pixiSceneKey = computed(() => `${activeSceneDesign.value?.id}-${resolveHouseEnergyVisualLevel(props.energy)}`);
 const contextGridStyle = computed(() => {
-  if (!isContextualZone.value) return undefined;
+  if (!isContextualZone.value) {
+    return undefined;
+  }
+
   const selectedZoneId = props.selectedZoneId;
-  if (selectedZoneId === "all") return undefined;
+
+  if (selectedZoneId === "all") {
+    return undefined;
+  }
+
   const selectedIndex = visibleZoneIds.value.indexOf(selectedZoneId);
   const columns = visibleZoneIds.value
     .map((_, index) => (index === selectedIndex ? "minmax(0, 1fr)" : `${ROOM_PREVIEW_COLUMN_WIDTH_PX}px`))
     .join(" ");
+
   return { "--context-columns": columns };
 });
-const isPreviewZone = (zoneId: HouseZoneId) => isContextualZone.value && zoneId !== props.selectedZoneId;
-const selectPreviewZone = (zoneId: HouseZoneId) => {
-  if (isPreviewZone(zoneId)) emit("select-zone", zoneId);
-};
-const visiblePlacements = (zoneId: HouseZoneId) =>
-  props.placements
-    .filter((placement) => placement.zoneId === zoneId)
-    .filter(() => !isPreviewZone(zoneId))
-    .filter(
-      (placement) =>
-        placement.entityType !== "furniture" ||
-        Boolean(accessoryFor(placement)?.owned && accessoryFor(placement)?.equipped),
-    )
-    .filter((placement) => {
-      const visual = accessoryFor(placement)?.visual;
-      return !visual || furnitureVisualDefinitionFor(visual).renderInLayout !== false;
-    })
-    .sort((left, right) => left.y - right.y);
-const accessoryFor = (placement: HouseLayoutPlacement) =>
-  placement.entityType === "furniture"
-    ? props.accessories.find((accessory) => accessory.id === placement.entityId)
-    : undefined;
-const placementIsEditable = (placement: HouseLayoutPlacement) =>
-  accessoryFor(placement)?.mobility !== "fixed" &&
-  (props.editable || (props.storageOpen && placement.entityType === "furniture"));
-const placementSpeech = (placement: HouseLayoutPlacement) => (placement.entityType === "ladi" ? ladiSpeech.value : "");
-const memberFor = (
-  placement: HouseLayoutPlacement,
-): (FamilyMember & { resolvedAppearance: AvatarAppearance }) | undefined => {
-  if (placement.entityType !== "member") return undefined;
-  const member = props.members.find((item) => item.id === placement.entityId);
-  if (!member) return undefined;
-  return { ...member, resolvedAppearance: resolveFamilyMemberAvatarAppearance(member, props.members) };
-};
-const petFor = (placement: HouseLayoutPlacement): FamilyPet | undefined =>
-  placement.entityType === "pet" ? props.pets.find((pet) => pet.id === placement.entityId) : undefined;
 const ladiPlacement = computed(() => props.placements.find((placement) => placement.entityType === "ladi"));
 const isLadiOnPerch = computed(
   () =>
@@ -345,50 +343,142 @@ const isLadiOnPerch = computed(
     Math.abs(ladiPlacement.value.y - HOUSE_LAYOUT_CONSTRAINTS.perch.y) <=
       HOUSE_LAYOUT_CONSTRAINTS.perch.proximityToleranceY,
 );
-const ladiIsPerched = (placement: HouseLayoutPlacement) => placement.entityType === "ladi" && isLadiOnPerch.value;
 const ladiSpeech = computed(() => ladiMotivation.value || perchMessage.value);
 const energyClass = computed(() => {
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) return "energy-critical";
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) return "energy-low";
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) return "energy-tired";
+  if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
+    return "energy-critical";
+  }
+
+  if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
+    return "energy-low";
+  }
+
+  if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
+    return "energy-tired";
+  }
+
   return "energy-bright";
 });
-const { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag } =
-  useDollhouseDrag(props, emit, unlockedZones, accessoryFor);
-const motivateLadi = () => {
+const perchMessages = computed(() => perchMessageKeys.map((key) => t(`world.interior.perch.${key}`)));
+
+function isPreviewZone(zoneId: HouseZoneId) {
+  return isContextualZone.value && zoneId !== props.selectedZoneId;
+}
+function selectPreviewZone(zoneId: HouseZoneId) {
+  if (isPreviewZone(zoneId)) {
+    emit("select-zone", zoneId);
+  }
+}
+function visiblePlacements(zoneId: HouseZoneId) {
+  return props.placements
+    .filter((placement) => placement.zoneId === zoneId)
+    .filter(() => !isPreviewZone(zoneId))
+    .filter(
+      (placement) =>
+        placement.entityType !== "furniture" ||
+        Boolean(accessoryFor(placement)?.owned && accessoryFor(placement)?.equipped),
+    )
+    .filter((placement) => {
+      const visual = accessoryFor(placement)?.visual;
+
+      return !visual || furnitureVisualDefinitionFor(visual).renderInLayout !== false;
+    })
+    .sort((left, right) => left.y - right.y);
+}
+function accessoryFor(placement: HouseLayoutPlacement) {
+  return placement.entityType === "furniture"
+    ? props.accessories.find((accessory) => accessory.id === placement.entityId)
+    : undefined;
+}
+function placementIsEditable(placement: HouseLayoutPlacement) {
+  return (
+    accessoryFor(placement)?.mobility !== "fixed" &&
+    (props.editable || (props.storageOpen && placement.entityType === "furniture"))
+  );
+}
+function placementSpeech(placement: HouseLayoutPlacement) {
+  return placement.entityType === "ladi" ? ladiSpeech.value : "";
+}
+function memberFor(
+  placement: HouseLayoutPlacement,
+): (FamilyMember & { resolvedAppearance: AvatarAppearance }) | undefined {
+  if (placement.entityType !== "member") {
+    return undefined;
+  }
+
+  const member = props.members.find((item) => item.id === placement.entityId);
+
+  if (!member) {
+    return undefined;
+  }
+
+  return { ...member, resolvedAppearance: resolveFamilyMemberAvatarAppearance(member, props.members) };
+}
+function petFor(placement: HouseLayoutPlacement): FamilyPet | undefined {
+  return placement.entityType === "pet" ? props.pets.find((pet) => pet.id === placement.entityId) : undefined;
+}
+function ladiIsPerched(placement: HouseLayoutPlacement) {
+  return placement.entityType === "ladi" && isLadiOnPerch.value;
+}
+function motivateLadi() {
   const tier = getLadiStage(props.score).tier;
-  if (tier === "spark") ladiMotivation.value = t("world.interior.motivation.wakeUp");
-  else if (tier === "super") ladiMotivation.value = t("world.interior.motivation.superTeam");
-  else if (tier === "aurora") ladiMotivation.value = t("world.interior.motivation.coolTeam");
-  else ladiMotivation.value = t("world.interior.motivation.default");
-  if (motivationTimer !== undefined) window.clearTimeout(motivationTimer);
+
+  if (tier === "spark") {
+    ladiMotivation.value = t("world.interior.motivation.wakeUp");
+  } else if (tier === "super") {
+    ladiMotivation.value = t("world.interior.motivation.superTeam");
+  } else if (tier === "aurora") {
+    ladiMotivation.value = t("world.interior.motivation.coolTeam");
+  } else {
+    ladiMotivation.value = t("world.interior.motivation.default");
+  }
+
+  if (motivationTimer !== undefined) {
+    window.clearTimeout(motivationTimer);
+  }
+
   motivationTimer = window.setTimeout(() => {
     ladiMotivation.value = "";
   }, LADI_MOTIVATION_DURATION_MS);
-};
-const perchMessageKeys = ["together", "smallSteps", "whoHelps", "believe"] as const;
-const perchMessages = computed(() => perchMessageKeys.map((key) => t(`world.interior.perch.${key}`)));
-const schedulePerchMessage = () => {
+}
+function schedulePerchMessage() {
   perchScheduleTimer = window.setTimeout(
     () => {
       if (isLadiOnPerch.value) {
         perchMessage.value =
           perchMessages.value[Math.floor(Math.random() * perchMessages.value.length)] ?? perchMessages.value[0]!;
-        if (perchMessageTimer !== undefined) window.clearTimeout(perchMessageTimer);
+
+        if (perchMessageTimer !== undefined) {
+          window.clearTimeout(perchMessageTimer);
+        }
+
         perchMessageTimer = window.setTimeout(() => {
           perchMessage.value = "";
         }, PERCH_MESSAGE_DURATION_MS);
       }
+
       schedulePerchMessage();
     },
     PERCH_MESSAGE_BASE_DELAY_MS + Math.round(Math.random() * PERCH_MESSAGE_DELAY_VARIANCE_MS),
   );
-};
+}
+
+onMounted(async () => {
+  ladiPerchUrl.value = await getWorldDecorationSpriteUrl("ladi-perch");
+});
 onMounted(schedulePerchMessage);
 onUnmounted(() => {
-  if (motivationTimer !== undefined) window.clearTimeout(motivationTimer);
-  if (perchMessageTimer !== undefined) window.clearTimeout(perchMessageTimer);
-  if (perchScheduleTimer !== undefined) window.clearTimeout(perchScheduleTimer);
+  if (motivationTimer !== undefined) {
+    window.clearTimeout(motivationTimer);
+  }
+
+  if (perchMessageTimer !== undefined) {
+    window.clearTimeout(perchMessageTimer);
+  }
+
+  if (perchScheduleTimer !== undefined) {
+    window.clearTimeout(perchScheduleTimer);
+  }
 });
 </script>
 

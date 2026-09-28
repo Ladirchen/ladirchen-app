@@ -8,9 +8,9 @@
 import { onMounted, ref } from "vue";
 import { getLadirchenCoinUrl } from "@/shared/assets/currency-assets";
 
-withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: false, animated: false });
-
 const coinUrl = ref<string>();
+
+withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: false, animated: false });
 onMounted(async () => {
   coinUrl.value = await getLadirchenCoinUrl();
 });

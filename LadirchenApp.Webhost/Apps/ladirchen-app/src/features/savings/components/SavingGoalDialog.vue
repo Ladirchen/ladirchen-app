@@ -9,9 +9,9 @@
       <header class="goal-dialog-header">
         <div class="goal-dialog-visual" aria-hidden="true">
           <span class="goal-visual-icon">{{ goal.icon }}</span>
-          <i />
-          <i />
-          <i />
+          <i></i>
+          <i></i>
+          <i></i>
         </div>
         <div class="goal-dialog-heading">
           <p class="eyebrow mb-1">{{ t("savings.goalDialog.eyebrow") }}</p>
@@ -65,7 +65,7 @@
             <small>{{ t("savings.goalDialog.steps.amount.description") }}</small>
           </div>
         </div>
-        <div class="goal-target-picker" role="group" :aria-label="t('savings.goalDialog.amountAria')">
+        <fieldset class="goal-target-picker" :aria-label="t('savings.goalDialog.amountAria')">
           <button
             :aria-label="t('savings.goalDialog.decrease')"
             :disabled="goal.target <= minimumTarget"
@@ -84,7 +84,7 @@
           <button :aria-label="t('savings.goalDialog.increase')" type="button" @click="adjustTarget(10)">+</button>
           <i class="target-spark target-spark--one" aria-hidden="true">✦</i>
           <i class="target-spark target-spark--two" aria-hidden="true">✧</i>
-        </div>
+        </fieldset>
 
         <div class="goal-step mt-5">
           <span class="goal-step-number">3</span>
@@ -170,12 +170,15 @@
 </template>
 
 <script lang="ts" setup>
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import type { GoalVisibility, NewGoal } from "@/domain/savings/types";
+
+const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
 
 const props = withDefaults(
   defineProps<{
@@ -195,11 +198,9 @@ const emit = defineEmits<{
 }>();
 const { t } = useI18n();
 
-const initialGoal = (): NewGoal =>
-  props.initialGoal ? { ...props.initialGoal } : { title: "", icon: "✨", target: 100, visibility: "family" };
-const goal = reactive<NewGoal>(initialGoal());
+const goal = reactive<NewGoal>(createInitialGoal());
 const removeConfirmation = ref(false);
-const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
+
 const visibilityOptions = computed<{ icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[]>(
   () => [
     {
@@ -237,20 +238,42 @@ const dialogDescription = computed(() =>
 );
 const submitLabel = computed(() => t(isEditing.value ? "common.save" : "savings.goalDialog.start"));
 
-const reset = () => Object.assign(goal, initialGoal());
-const adjustTarget = (change: number) => {
+function createInitialGoal(): NewGoal {
+  return props.initialGoal ? { ...props.initialGoal } : { title: "", icon: "✨", target: 100, visibility: "family" };
+}
+
+function reset() {
+  return Object.assign(goal, createInitialGoal());
+}
+function adjustTarget(change: number) {
   goal.target = Math.max(props.minimumTarget, validTargetPreview.value + change);
-};
-const close = () => emit("update:modelValue", false);
-const remove = () => {
+}
+function close() {
+  return emit("update:modelValue", false);
+}
+function remove() {
   emit("remove");
   close();
-};
-const submit = () => {
-  if (!isValid.value) return;
+}
+function submit() {
+  if (!isValid.value) {
+    return;
+  }
+
   emit("submit", { ...goal, title: goal.title.trim(), target: Math.round(goal.target) });
   emit("update:modelValue", false);
-};
+}
+
+const { start: startGuide, stop: stopGuide } = useTimeoutFn(
+  () => {
+    ladiGuideController.say({
+      heading: t("savings.goalDialog.guideTitle"),
+      message: t("savings.goalDialog.guideMessage"),
+    });
+  },
+  180,
+  { immediate: false },
+);
 
 watch(
   () => props.modelValue,
@@ -258,15 +281,13 @@ watch(
     if (isOpen) {
       reset();
       removeConfirmation.value = false;
-      window.setTimeout(
-        () =>
-          ladiGuideController.say({
-            heading: t("savings.goalDialog.guideTitle"),
-            message: t("savings.goalDialog.guideMessage"),
-          }),
-        180,
-      );
+
+      startGuide();
+
+      return;
     }
+
+    stopGuide();
   },
 );
 </script>

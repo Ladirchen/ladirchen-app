@@ -388,6 +388,7 @@ import { ROOM_DESIGNS } from "@/domain/house";
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
+
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
@@ -447,35 +448,44 @@ const activePromotion = computed(() =>
 );
 const showGuardianManagement = computed(() => store.viewerRole === "guardian" && store.permissions.canManageContent);
 const bannerPromotion = computed(() => (store.viewerRole === "child" ? activePromotion.value : undefined));
-const contributionTitle = (contributionId: ContributionId) =>
-  localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
-  t("contributions.singular");
 const promotionRewardTotal = computed(() => {
-  if (!activePromotion.value) return 0;
+  if (!activePromotion.value) {
+    return 0;
+  }
+
   const baseReward =
     localizedContributions.value.find((contribution) => contribution.id === activePromotion.value?.contributionId)
       ?.reward ?? 0;
+
   return baseReward * activePromotion.value.multiplier + activePromotion.value.teamworkBonus;
 });
-const promotionFor = (contributionId: ContributionId) =>
-  localizedPromotions.value.find(
-    (promotion) =>
-      promotion.contributionId === contributionId &&
-      isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
-  );
 const childMembers = computed(() => store.members.filter((member) => member.role === "child"));
 const childOptions = computed(() =>
   childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })),
 );
 const canGiveGift = computed(() => gift.amount >= 1 && gift.reason.trim().length >= 3);
-const openGiftDialog = () => {
+
+function contributionTitle(contributionId: ContributionId) {
+  return (
+    localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
+    t("contributions.singular")
+  );
+}
+function promotionFor(contributionId: ContributionId) {
+  return localizedPromotions.value.find(
+    (promotion) =>
+      promotion.contributionId === contributionId &&
+      isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
+  );
+}
+function openGiftDialog() {
   Object.assign(gift, { childId: store.activeChildId, amount: 20, reason: "" });
   giftDialogOpen.value = true;
-};
-const giveDirectGift = () => {
+}
+function giveDirectGift() {
   store.giftLadirchenToChild(gift.childId, gift.amount, gift.reason);
   giftDialogOpen.value = false;
-};
+}
 </script>
 
 <style lang="scss" scoped>

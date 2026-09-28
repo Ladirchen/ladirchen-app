@@ -614,6 +614,7 @@ const {
   teamDialog,
 } = useContributionsPage();
 const { t } = useI18n();
+
 const emptyStateIsOpen = computed(() => statusFilter.value === "open");
 const emptyStateTitle = computed(() =>
   t(emptyStateIsOpen.value ? "contributions.empty.openTitle" : "contributions.empty.completedTitle"),
@@ -631,10 +632,6 @@ const contributionDeleteWarning = computed(() =>
       : "contributions.deleteContribution.open",
   ),
 );
-const toggleEmptyStateFilter = () => {
-  statusFilter.value = emptyStateIsOpen.value ? "completed" : "open";
-  filter.value = "all";
-};
 const childReviewCards = computed(() =>
   guardianTasksToRate.value.map((contribution) => ({
     contribution,
@@ -644,6 +641,7 @@ const childReviewCards = computed(() =>
 const guardianOwnCards = computed(() =>
   guardianOwnContributions.value.map((contribution) => {
     const approved = contribution.status === "approved";
+
     return {
       contribution,
       statusDescription: guardianContributionStatus(contribution),
@@ -667,6 +665,11 @@ const managedContributionCards = computed(() =>
 );
 const canAddContribution = computed(() => Boolean(newContribution.title.trim()));
 const canStartPromotion = computed(() => Boolean(newPromotion.contributionId && newPromotion.deadline));
+
+function toggleEmptyStateFilter() {
+  statusFilter.value = emptyStateIsOpen.value ? "completed" : "open";
+  filter.value = "all";
+}
 function managedContributionDescription(contribution: Contribution) {
   return contribution.kind === "basic"
     ? t("contributions.manage.energyPoints", { value: contribution.energy })

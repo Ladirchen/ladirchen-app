@@ -1,3 +1,4 @@
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -237,19 +238,23 @@ export const useContributionsPage = () => {
     });
   };
 
+  const { start: startPageIntroGuide } = useTimeoutFn(
+    () => {
+      ladiGuideController.say({
+        heading: t("guide.pages.contributions.heading"),
+        message: t("guide.pages.contributions.message"),
+        pageIntro: true,
+      });
+    },
+    PAGE_INTRO_GUIDE_DELAY_MS,
+    { immediate: false },
+  );
+
   onMounted(() => {
     if (store.viewerRole !== "child") {
       return;
     }
-    window.setTimeout(
-      () =>
-        ladiGuideController.say({
-          heading: t("guide.pages.contributions.heading"),
-          message: t("guide.pages.contributions.message"),
-          pageIntro: true,
-        }),
-      PAGE_INTRO_GUIDE_DELAY_MS,
-    );
+    startPageIntroGuide();
   });
   watch(
     () => route.query.new,

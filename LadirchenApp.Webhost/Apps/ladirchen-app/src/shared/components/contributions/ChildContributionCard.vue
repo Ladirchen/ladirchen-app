@@ -124,13 +124,13 @@
             />
           </span>
         </div>
-        <div v-else-if="contribution.status === 'pending'" class="pending-celebration" role="status">
+        <output v-else-if="contribution.status === 'pending'" class="pending-celebration">
           <span class="pending-celebration-icon" aria-hidden="true">✨</span>
           <span>
             <strong>{{ t("contributions.pending.title") }}</strong>
             <small>{{ t("contributions.pending.description") }}</small>
           </span>
-        </div>
+        </output>
         <v-btn
           v-else
           class="finish-button"
@@ -207,8 +207,14 @@ const assigneeIcon = computed(() =>
   isAssignedToActiveChild.value ? "i-mdi:account-heart" : "i-mdi:account-multiple-outline",
 );
 const assigneeLabel = computed(() => {
-  if (!assignedMember.value) return t("contributions.assignment.free");
-  if (isAssignedToActiveChild.value) return t("contributions.assignment.forYou");
+  if (!assignedMember.value) {
+    return t("contributions.assignment.free");
+  }
+
+  if (isAssignedToActiveChild.value) {
+    return t("contributions.assignment.forYou");
+  }
+
   return assignedMember.value.name;
 });
 const assignedMemberAppearance = computed(() =>
@@ -227,9 +233,19 @@ const invitedChildNames = computed(() =>
 );
 const approvalMessage = computed(() => {
   const stars = earnedStars.value;
-  if (stars >= 4) return t("contributions.approval.great");
-  if (stars === 3) return t("contributions.approval.good");
-  if (stars === 2) return t("contributions.approval.careful");
+
+  if (stars >= 4) {
+    return t("contributions.approval.great");
+  }
+
+  if (stars === 3) {
+    return t("contributions.approval.good");
+  }
+
+  if (stars === 2) {
+    return t("contributions.approval.careful");
+  }
+
   return t("contributions.approval.nextTime");
 });
 </script>

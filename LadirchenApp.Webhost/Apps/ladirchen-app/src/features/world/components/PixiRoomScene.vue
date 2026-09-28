@@ -1,5 +1,5 @@
 <template>
-  <div ref="host" class="pixi-room-scene" aria-hidden="true" />
+  <div ref="host" class="pixi-room-scene" aria-hidden="true"></div>
 </template>
 
 <script lang="ts" setup>
@@ -12,30 +12,75 @@ import { MILLISECONDS_PER_SECOND } from "@/domain/shared/time";
 import { getRoomDesignBackgroundUrl, roomDesignBackgroundAssetId } from "@/shared/visuals/house/room-design-assets";
 import { visualColorPalette } from "@/theme/color-palette";
 
-const props = defineProps<{
-  design: RoomDesignDefinition;
-  energy: number;
-}>();
+type Pixi = typeof PixiNamespace;
 
 const MAXIMUM_DEVICE_PIXEL_RATIO = 2;
 const OVERLAY_FLOAT_FREQUENCY = 1.15;
 const OVERLAY_FLOAT_ROTATION = 0.055;
 const OVERLAY_SPIN_SPEED = 0.45;
 
-const host = ref<HTMLElement>();
 let application: PixiNamespace.Application | undefined;
 let resizeObserver: ResizeObserver | undefined;
 let destroyed = false;
 
-const paletteColor = (token: string, fallback: string): string => {
+const props = defineProps<{
+  design: RoomDesignDefinition;
+  energy: number;
+}>();
+
+const host = ref<HTMLElement>();
+
+function paletteColor(token: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+
   return value || fallback;
-};
+}
+function createOverlay(
+  pixi: Pixi,
+  overlay: RoomSceneOverlayDefinition,
+  colors: { accent: string; leaf: string; outline: string },
+): PixiNamespace.Container {
+  const container = new pixi.Container();
+
+  if (overlay.id === "garden-wind-spinner") {
+    for (let index = 0; index < 6; index += 1) {
+      const petal = new pixi.Graphics()
+        .ellipse(0, -25, 8, 20)
+        .fill(colors.accent)
+        .stroke({ color: colors.outline, width: 3 });
+      petal.rotation = (index * Math.PI) / 3;
+      container.addChild(petal);
+    }
+
+    container.addChild(
+      new pixi.Graphics().circle(0, 0, 9).fill(colors.accent).stroke({ color: colors.outline, width: 3 }),
+    );
+
+    return container;
+  }
+
+  for (let index = 0; index < 4; index += 1) {
+    const leaf = new pixi.Graphics()
+      .ellipse(index * 18, Math.abs(index - 1.5) * 6, 13, 7)
+      .fill(colors.leaf)
+      .stroke({ color: colors.outline, width: 3 });
+    leaf.rotation = index % 2 === 0 ? -0.35 : 0.35;
+    container.addChild(leaf);
+  }
+
+  return container;
+}
 
 onMounted(async () => {
-  if (!host.value) return;
+  if (!host.value) {
+    return;
+  }
+
   const pixi = await import("pixi.js");
-  if (destroyed || !host.value) return;
+
+  if (destroyed || !host.value) {
+    return;
+  }
 
   const app = new pixi.Application();
   await app.init({
@@ -46,8 +91,10 @@ onMounted(async () => {
     resolution: Math.min(window.devicePixelRatio, MAXIMUM_DEVICE_PIXEL_RATIO),
     resizeTo: host.value,
   });
+
   if (destroyed || !host.value) {
     app.destroy(true);
+
     return;
   }
 
@@ -58,7 +105,10 @@ onMounted(async () => {
   const scene = new pixi.Container();
   const backgroundUrl = await getRoomDesignBackgroundUrl(roomDesignBackgroundAssetId(props.design, props.energy));
   const texture = await pixi.Assets.load(backgroundUrl);
-  if (destroyed) return;
+
+  if (destroyed) {
+    return;
+  }
 
   const background = new pixi.Sprite(texture);
   background.width = props.design.canvasWidth;
@@ -77,11 +127,12 @@ onMounted(async () => {
     node.scale.set(overlay.scale);
     node.addChild(createOverlay(pixi, overlay, { accent, leaf, outline }));
     scene.addChild(node);
+
     return { definition: overlay, node };
   });
   app.stage.addChild(scene);
 
-  const layout = () => {
+  function layout() {
     const width = app.screen.width;
     const height = app.screen.height;
     const scale = Math.max(width / props.design.canvasWidth, height / props.design.canvasHeight);
@@ -90,7 +141,7 @@ onMounted(async () => {
       (width - props.design.canvasWidth * scale) / 2,
       (height - props.design.canvasHeight * scale) / 2,
     );
-  };
+  }
   layout();
   resizeObserver = new ResizeObserver(layout);
   resizeObserver.observe(host.value);
@@ -108,46 +159,11 @@ onMounted(async () => {
     });
   }
 });
-
 onUnmounted(() => {
   destroyed = true;
   resizeObserver?.disconnect();
   application?.destroy(true, { children: true, texture: false });
 });
-
-type Pixi = typeof PixiNamespace;
-
-const createOverlay = (
-  pixi: Pixi,
-  overlay: RoomSceneOverlayDefinition,
-  colors: { accent: string; leaf: string; outline: string },
-): PixiNamespace.Container => {
-  const container = new pixi.Container();
-  if (overlay.id === "garden-wind-spinner") {
-    for (let index = 0; index < 6; index += 1) {
-      const petal = new pixi.Graphics()
-        .ellipse(0, -25, 8, 20)
-        .fill(colors.accent)
-        .stroke({ color: colors.outline, width: 3 });
-      petal.rotation = (index * Math.PI) / 3;
-      container.addChild(petal);
-    }
-    container.addChild(
-      new pixi.Graphics().circle(0, 0, 9).fill(colors.accent).stroke({ color: colors.outline, width: 3 }),
-    );
-    return container;
-  }
-
-  for (let index = 0; index < 4; index += 1) {
-    const leaf = new pixi.Graphics()
-      .ellipse(index * 18, Math.abs(index - 1.5) * 6, 13, 7)
-      .fill(colors.leaf)
-      .stroke({ color: colors.outline, width: 3 });
-    leaf.rotation = index % 2 === 0 ? -0.35 : 0.35;
-    container.addChild(leaf);
-  }
-  return container;
-};
 </script>
 
 <style lang="scss" scoped>

@@ -1,7 +1,11 @@
 <template>
   <div
     class="animated-piggy"
-    :class="{ receiving, 'play-hop': !receiving && playMode === 'hop', 'play-wiggle': !receiving && playMode === 'wiggle' }"
+    :class="{
+      receiving,
+      'play-hop': !receiving && playMode === 'hop',
+      'play-wiggle': !receiving && playMode === 'wiggle',
+    }"
     :style="piggyStyle"
     role="img"
     :aria-label="t('savings.piggy.animatedAria')"
@@ -47,38 +51,51 @@ import { useI18n } from "vue-i18n";
 
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 
-const { t } = useI18n();
-
-const props = withDefaults(defineProps<{
-  receiving?: boolean;
-  size?: number;
-}>(), {
-  receiving: false,
-  size: 52,
-});
-
-const playMode = ref<"hop" | "wiggle" | null>(null);
 let playTimer: number | undefined;
 let resetTimer: number | undefined;
-const schedulePlay = () => {
-  playTimer = window.setTimeout(() => {
-    playMode.value = Math.random() > .5 ? "hop" : "wiggle";
-    resetTimer = window.setTimeout(() => {
-      playMode.value = null;
-      schedulePlay();
-    }, 950);
-  }, 4000 + Math.random() * 7000);
-};
-onMounted(schedulePlay);
-onUnmounted(() => {
-  if (playTimer !== undefined) window.clearTimeout(playTimer);
-  if (resetTimer !== undefined) window.clearTimeout(resetTimer);
-});
+
+const { t } = useI18n();
+const props = withDefaults(
+  defineProps<{
+    receiving?: boolean;
+    size?: number;
+  }>(),
+  {
+    receiving: false,
+    size: 52,
+  },
+);
+
+const playMode = ref<"hop" | "wiggle" | null>(null);
 
 const piggyStyle = computed(() => ({
   width: `${props.size}px`,
-  height: `${Math.round(props.size * .86)}px`,
+  height: `${Math.round(props.size * 0.86)}px`,
 }));
+
+function schedulePlay() {
+  playTimer = window.setTimeout(
+    () => {
+      playMode.value = Math.random() > 0.5 ? "hop" : "wiggle";
+      resetTimer = window.setTimeout(() => {
+        playMode.value = null;
+        schedulePlay();
+      }, 950);
+    },
+    4000 + Math.random() * 7000,
+  );
+}
+
+onMounted(schedulePlay);
+onUnmounted(() => {
+  if (playTimer !== undefined) {
+    window.clearTimeout(playTimer);
+  }
+
+  if (resetTimer !== undefined) {
+    window.clearTimeout(resetTimer);
+  }
+});
 </script>
 
 <style lang="scss" scoped>
@@ -103,10 +120,7 @@ const piggyStyle = computed(() => ({
 }
 svg {
   --uno: w-100 h-100 overflow-visible;
-  filter: drop-shadow(
-    0 5px 3px
-      color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent)
-  );
+  filter: drop-shadow(0 5px 3px color-mix(in srgb, var(--lad-palette-muted-750-2) 18%, transparent));
 }
 .body,
 .leg {

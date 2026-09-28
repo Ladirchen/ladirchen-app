@@ -11,16 +11,31 @@
     <v-icon class="storage-plus" icon="i-mdi:plus" size="12" />
   </button>
   <Transition name="storage-tray">
-    <aside v-if="open" class="furniture-storage" :class="{ dragging }" data-furniture-storage :aria-label="t('world.scene.storage.title')">
+    <aside
+      v-if="open"
+      class="furniture-storage"
+      :class="{ dragging }"
+      data-furniture-storage
+      :aria-label="t('world.scene.storage.title')"
+    >
       <header>
         <div class="storage-title">
           <span class="storage-title-icon"><v-icon icon="i-mdi:archive-star-outline" size="19" /></span>
-          <span><strong>{{ t('world.scene.storage.title') }}</strong><small>{{ t('world.scene.storage.count', { count: accessories.length }) }}</small></span>
+          <span>
+            <strong>{{ t("world.scene.storage.title") }}</strong>
+            <small>{{ t("world.scene.storage.count", { count: accessories.length }) }}</small>
+          </span>
         </div>
-        <button :aria-label="t('world.scene.storage.close')" type="button" @click="emit('update:open', false)"><v-icon icon="i-mdi:close" size="18" /></button>
+        <button :aria-label="t('world.scene.storage.close')" type="button" @click="emit('update:open', false)">
+          <v-icon icon="i-mdi:close" size="18" />
+        </button>
       </header>
       <div class="storage-items">
-        <p v-if="accessories.length === 0" class="storage-empty"><span><v-icon icon="i-mdi:inbox-arrow-down-outline" size="25" /></span><strong>{{ t('world.scene.storage.emptyTitle') }}</strong><small>{{ t('world.scene.storage.emptyDescription') }}</small></p>
+        <p v-if="accessories.length === 0" class="storage-empty">
+          <span><v-icon icon="i-mdi:inbox-arrow-down-outline" size="25" /></span>
+          <strong>{{ t("world.scene.storage.emptyTitle") }}</strong>
+          <small>{{ t("world.scene.storage.emptyDescription") }}</small>
+        </p>
         <button
           v-for="accessory in accessories"
           :key="accessory.id"
@@ -31,9 +46,15 @@
         >
           <span class="stored-preview"><RoomFurniture :item="accessory" /></span>
           <strong>{{ accessory.title }}</strong>
-          <span class="stored-action"><v-icon icon="i-mdi:plus" size="10" />{{ t('world.scene.storage.place') }}</span>
+          <span class="stored-action">
+            <v-icon icon="i-mdi:plus" size="10" />
+            {{ t("world.scene.storage.place") }}
+          </span>
         </button>
-        <p v-if="accessories.length > 0" class="storage-drop-hint"><v-icon icon="i-mdi:inbox-arrow-down-outline" size="15" />{{ t('world.scene.storage.dropMore') }}</p>
+        <p v-if="accessories.length > 0" class="storage-drop-hint">
+          <v-icon icon="i-mdi:inbox-arrow-down-outline" size="15" />
+          {{ t("world.scene.storage.dropMore") }}
+        </p>
       </div>
     </aside>
   </Transition>
@@ -45,9 +66,10 @@ import { useI18n } from "vue-i18n";
 import type { HouseAccessory } from "@/domain/house";
 import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
 
-defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; open: boolean }>();
 const emit = defineEmits<{ place: [accessory: HouseAccessory]; "update:open": [open: boolean] }>();
 const { t } = useI18n();
+
+defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; open: boolean }>();
 </script>
 
 <style lang="scss" scoped>
@@ -108,8 +130,7 @@ const { t } = useI18n();
     );
   box-shadow:
     -7px 0 0 color-mix(in srgb, var(--lad-palette-teal-400) 30%, transparent),
-    -13px 0 25px
-      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
+    -13px 0 25px color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
   backdrop-filter: blur(12px);
 }
 .furniture-storage::after {
@@ -128,8 +149,7 @@ const { t } = useI18n();
   gap: 4px;
   margin: -3px -2px 8px;
   padding: 6px 5px 8px;
-  border-bottom: 1px dashed
-    color-mix(in srgb, var(--lad-palette-teal-600) 25%, transparent);
+  border-bottom: 1px dashed color-mix(in srgb, var(--lad-palette-teal-600) 25%, transparent);
 }
 .storage-title {
   min-width: 0;
@@ -160,11 +180,7 @@ const { t } = useI18n();
   color: var(--lad-palette-white);
   border: 2px solid var(--lad-palette-white);
   border-radius: 10px 10px 8px 8px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-teal-550)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-teal-400), var(--lad-palette-teal-550));
   box-shadow: 0 3px 0 var(--lad-palette-teal-700);
   transform: rotate(-4deg);
 }
@@ -196,18 +212,13 @@ const { t } = useI18n();
   border: 2px dashed var(--lad-palette-teal-400);
   border-radius: 17px;
   background:
-    radial-gradient(
-      circle at 82% 16%,
-      color-mix(in srgb, var(--lad-palette-yellow) 40%, transparent),
-      transparent 25%
-    ),
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--lad-palette-yellow) 40%, transparent), transparent 25%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--lad-palette-background) 95%, transparent),
       color-mix(in srgb, var(--lad-palette-background) 90%, transparent)
     );
-  box-shadow: inset 0 0 0 4px
-    color-mix(in srgb, var(--lad-palette-white) 40%, transparent);
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--lad-palette-white) 40%, transparent);
   font-weight: 750;
 }
 .storage-empty::after {
@@ -226,11 +237,7 @@ const { t } = useI18n();
   color: var(--lad-palette-white);
   border: 3px solid var(--lad-palette-white);
   border-radius: 15px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-blue)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-teal-400), var(--lad-palette-blue));
   box-shadow: 0 4px 0 var(--lad-palette-blue-550);
 }
 .storage-empty strong {
@@ -249,11 +256,7 @@ const { t } = useI18n();
   color: var(--lad-palette-muted-700);
   border: 1px solid var(--lad-palette-teal-150);
   border-radius: 17px;
-  background: linear-gradient(
-    155deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
-  );
+  background: linear-gradient(155deg, var(--lad-palette-white), var(--lad-palette-background));
   box-shadow:
     0 4px 0 var(--lad-palette-teal-150),
     0 8px 12px color-mix(in srgb, var(--lad-palette-muted-700) 8%, transparent);
@@ -265,8 +268,7 @@ const { t } = useI18n();
   transform: translateY(-2px);
   box-shadow:
     0 6px 0 var(--lad-palette-teal-150),
-    0 10px 14px
-      color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
+    0 10px 14px color-mix(in srgb, var(--lad-palette-muted-700) 10%, transparent);
 }
 .storage-items > button.stored > strong {
   max-width: 92px;
@@ -284,11 +286,7 @@ const { t } = useI18n();
   border-radius: 18px;
   background:
     radial-gradient(circle, var(--lad-palette-white) 0 48%, transparent 49%),
-    linear-gradient(
-      145deg,
-      var(--lad-palette-background),
-      var(--lad-palette-amber-100)
-    );
+    linear-gradient(145deg, var(--lad-palette-background), var(--lad-palette-amber-100));
 }
 .stored-preview :deep(.room-furniture) {
   width: 62px;
@@ -301,11 +299,7 @@ const { t } = useI18n();
   padding: 4px 7px;
   color: var(--lad-palette-white);
   border-radius: var(--lad-radius-pill);
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-teal-400),
-    var(--lad-palette-mint-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-teal-400), var(--lad-palette-mint-strong));
   box-shadow: 0 3px 0 var(--lad-palette-teal-700);
   font-size: rem(6);
   font-weight: var(--lad-font-weight-strong);
@@ -318,11 +312,7 @@ const { t } = useI18n();
   color: var(--lad-palette-teal-600);
   border: 1px dashed var(--lad-palette-muted-250);
   border-radius: 11px;
-  background: color-mix(
-    in srgb,
-    var(--lad-palette-background) 70%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--lad-palette-background) 70%, transparent);
   font-size: rem(6);
   font-weight: 800;
 }
@@ -342,8 +332,7 @@ const { t } = useI18n();
   background: var(--lad-palette-surface);
   box-shadow:
     inset 0 0 0 3px color-mix(in srgb, var(--lad-palette-mint) 12%, transparent),
-    -7px 0 18px
-      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
+    -7px 0 18px color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent);
 }
 .furniture-storage.dragging .storage-empty {
   color: var(--lad-palette-mint-strong);

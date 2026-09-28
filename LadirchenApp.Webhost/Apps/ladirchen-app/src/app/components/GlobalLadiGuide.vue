@@ -65,12 +65,6 @@ import { useGlobalLadiGuide } from "@/app/composables/use-global-ladi-guide";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
-
-const guideBranchUrl = ref<string>();
-onMounted(async () => {
-  guideBranchUrl.value = await getWorldDecorationSpriteUrl("guide-branch");
-});
-
 const {
   choosingMood,
   closeSpeech,
@@ -93,12 +87,19 @@ const {
   store,
   triggerSpeechAction,
 } = useGlobalLadiGuide();
+
+const guideBranchUrl = ref<string>();
+
 const guideClasses = computed(() => [
   `mood-${mood.value}`,
   { hidden: isHidden.value, "gift-celebration": giftCelebration.value },
 ]);
 const hasSpeechActions = computed(() => Boolean(speechProgress.value || speechActionLabel.value));
 const mascotIsSmart = computed(() => store.piggyBankOpen || isSmart.value);
+
+onMounted(async () => {
+  guideBranchUrl.value = await getWorldDecorationSpriteUrl("guide-branch");
+});
 </script>
 
 <style lang="scss" scoped>

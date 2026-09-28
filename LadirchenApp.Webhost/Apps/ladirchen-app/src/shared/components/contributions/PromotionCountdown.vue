@@ -13,10 +13,12 @@ import { remainingPromotionMilliseconds } from "@/domain/contributions/promotion
 import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from "@/domain/shared/time";
 import type { IanaTimeZone } from "@/domain/family/time-zone";
 
+let timer: ReturnType<typeof window.setInterval> | undefined;
+
 const props = defineProps<{ deadline: string; timeZone: IanaTimeZone }>();
 const { t } = useI18n();
+
 const now = ref(new Date());
-let timer: ReturnType<typeof window.setInterval> | undefined;
 
 const remainingMilliseconds = computed(() => remainingPromotionMilliseconds(props.deadline, props.timeZone, now.value));
 const countdownClasses = computed(() => ({
@@ -24,12 +26,16 @@ const countdownClasses = computed(() => ({
   urgent: remainingMilliseconds.value > 0 && remainingMilliseconds.value < SECONDS_PER_HOUR * MILLISECONDS_PER_SECOND,
 }));
 const label = computed(() => {
-  if (remainingMilliseconds.value <= 0) return t("contributions.countdown.expired");
+  if (remainingMilliseconds.value <= 0) {
+    return t("contributions.countdown.expired");
+  }
+
   const totalSeconds = Math.floor(remainingMilliseconds.value / MILLISECONDS_PER_SECOND);
   const hours = Math.floor(totalSeconds / SECONDS_PER_HOUR);
   const minutes = Math.floor((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
   const seconds = totalSeconds % SECONDS_PER_MINUTE;
   const time = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
   return t("contributions.countdown.remaining", { time });
 });
 
@@ -39,7 +45,9 @@ onMounted(() => {
   }, MILLISECONDS_PER_SECOND);
 });
 onBeforeUnmount(() => {
-  if (timer) window.clearInterval(timer);
+  if (timer) {
+    window.clearInterval(timer);
+  }
 });
 </script>
 

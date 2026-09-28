@@ -33,6 +33,13 @@ export default vuetify(
       "@stylistic/quotes": ["error", "double", { allowTemplateLiterals: "avoidEscape" }],
       "@stylistic/semi": ["error", "always"],
       "func-style": ["error", "declaration", { allowArrowFunctions: true }],
+      curly: ["error", "all"],
+      "@stylistic/padding-line-between-statements": [
+        "error",
+        { blankLine: "always", prev: "*", next: ["if", "for", "while", "try"] },
+        { blankLine: "always", prev: ["if", "for", "while", "try"], next: "*" },
+        { blankLine: "always", prev: "*", next: "return" },
+      ],
       "vue/html-closing-bracket-newline": [
         "error",
         { singleline: "never", multiline: "always", selfClosingTag: { multiline: "always" } },
@@ -41,7 +48,7 @@ export default vuetify(
         "error",
         {
           html: {
-            void: "allways",
+            void: "always",
             normal: "never",
             component: "always",
           },

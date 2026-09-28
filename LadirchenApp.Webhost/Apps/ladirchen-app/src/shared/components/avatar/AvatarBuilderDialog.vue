@@ -15,8 +15,8 @@
       </header>
 
       <section class="studio-preview mx-5 mt-3" :aria-label="t('avatar.builder.previewAria')">
-        <div class="preview-decoration preview-star-one" />
-        <div class="preview-decoration preview-star-two" />
+        <div class="preview-decoration preview-star-one"></div>
+        <div class="preview-decoration preview-star-two"></div>
         <AvatarFigure :appearance="draft" :size="156" />
         <div class="preview-tools">
           <strong>{{ userName }}</strong>
@@ -64,7 +64,7 @@
             type="button"
             @click="draft.skinToneId = tone.value"
           >
-            <span :style="{ '--swatch-color': tone.color }" />
+            <span :style="{ '--swatch-color': tone.color }"></span>
             <strong>{{ t(tone.id) }}</strong>
           </button>
         </div>
@@ -128,7 +128,7 @@
           <v-icon class="studio-save-icon" icon="i-mdi:check-circle-outline" />
           <span>{{ t("avatar.builder.save") }}</span>
           <v-icon class="studio-save-arrow" icon="i-mdi:arrow-right" />
-          <i class="studio-save-shine" aria-hidden="true" />
+          <i class="studio-save-shine" aria-hidden="true"></i>
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -164,6 +164,85 @@ import type { AvatarCatalogItemId, AvatarColorOption } from "./data/avatar-optio
 type Section = "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season";
 type PreviewKind = "face" | "faceShape" | "hair" | "outfit" | "accessory" | "fun" | "season";
 
+const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
+  accessory: "accessoryId",
+  face: "face",
+  faceShape: "faceShape",
+  fun: "funAccessoryId",
+  hair: "hair",
+  outfit: "outfit",
+  season: "seasonalAccessoryId",
+};
+const ColorPicker = defineComponent({
+  props: {
+    modelValue: { type: String, required: true },
+    options: { type: Array as () => AvatarColorOption<string>[], required: true },
+    label: { type: String, required: true },
+  },
+  emits: ["update:modelValue"],
+  setup:
+    (colorProps, { emit: colorEmit }) =>
+    () =>
+      h("div", { class: "compact-colors" }, [
+        h("strong", colorProps.label),
+        h(
+          "div",
+          { class: "color-row" },
+          colorProps.options.map((option) =>
+            h("button", {
+              class: ["color-choice", { active: colorProps.modelValue === option.value }],
+              type: "button",
+              "data-catalog-id": option.id,
+              "aria-label": t(option.id),
+              "aria-pressed": colorProps.modelValue === option.value,
+              style: { background: option.color },
+              onClick: () => colorEmit("update:modelValue", option.value),
+            }),
+          ),
+        ),
+      ]),
+});
+const OptionGrid = defineComponent({
+  props: {
+    modelValue: { type: String, required: true },
+    options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true },
+    previewKind: { type: String as () => PreviewKind, required: true },
+  },
+  emits: ["update:modelValue"],
+  setup:
+    (gridProps, { emit: gridEmit }) =>
+    () =>
+      h(
+        "div",
+        { class: "option-grid mt-4" },
+        gridProps.options.map((option) =>
+          h(
+            "button",
+            {
+              class: ["option-choice", { active: gridProps.modelValue === option.value }],
+              type: "button",
+              "data-catalog-id": option.id,
+              "data-preview-kind": gridProps.previewKind,
+              "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
+              "aria-pressed": gridProps.modelValue === option.value,
+              onClick: () => gridEmit("update:modelValue", option.value),
+            },
+            {
+              default: () => [
+                h("span", { class: "option-art", "aria-hidden": "true" }, [
+                  h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 }),
+                ]),
+                h("strong", t(option.id)),
+                gridProps.modelValue === option.value
+                  ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓")
+                  : null,
+              ],
+            },
+          ),
+        ),
+      ),
+});
+
 const props = withDefaults(
   defineProps<{
     modelValue: boolean;
@@ -175,10 +254,12 @@ const props = withDefaults(
 );
 const emit = defineEmits<{ "update:modelValue": [value: boolean]; save: [appearance: AvatarAppearance] }>();
 const { t } = useI18n();
+
 const section = ref<Section>("base");
-const showGuardianPresets = computed(() => section.value === "base" && props.profileRole === "guardian");
 const optionsPanel = ref<HTMLElement | { $el?: HTMLElement }>();
 const draft = reactive<AvatarAppearance>(createDefaultAvatarAppearance());
+
+const showGuardianPresets = computed(() => section.value === "base" && props.profileRole === "guardian");
 const categories = computed<Array<{ value: Section; label: string; kicker: string; title: string; hint: string }>>(
   () => [
     {
@@ -235,8 +316,6 @@ const categories = computed<Array<{ value: Section; label: string; kicker: strin
 const activeCategory = computed(
   () => categories.value.find((category) => category.value === section.value) ?? categories.value[0]!,
 );
-const baseAppearance = () =>
-  props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
 const visibleHairOptions = computed(() => (props.profileRole === "guardian" ? adultHairOptions : hairOptions));
 const visibleHairColorOptions = computed(() =>
   props.profileRole === "guardian" ? adultHairColorOptions : hairColorOptions,
@@ -260,123 +339,62 @@ const guardianPresets = computed<Array<{ value: GuardianAvatarPreset; label: str
   },
 ]);
 const activeGuardianPreset = computed<GuardianAvatarPreset>(() => {
-  if (draft.age !== "senior") return "adult";
+  if (draft.age !== "senior") {
+    return "adult";
+  }
+
   return draft.outfit === "cardigan" ? "grandma" : "grandpa";
 });
-const guardianPresetAppearance = (preset: GuardianAvatarPreset) => ({
-  ...createGuardianAvatarAppearance(preset),
-  skinToneId: draft.skinToneId,
-});
-const selectGuardianPreset = (preset: GuardianAvatarPreset) => Object.assign(draft, guardianPresetAppearance(preset));
-const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
-  accessory: "accessoryId",
-  face: "face",
-  faceShape: "faceShape",
-  fun: "funAccessoryId",
-  hair: "hair",
-  outfit: "outfit",
-  season: "seasonalAccessoryId",
-};
-const previewAppearance = (kind: PreviewKind, value: string): AvatarAppearance => ({
-  ...baseAppearance(),
-  age: draft.age,
-  skinToneId: draft.skinToneId,
-  hairColorId: draft.hairColorId,
-  outfitColorId: draft.outfitColorId,
-  [previewField[kind]]: value,
-});
 
-const OptionGrid = defineComponent({
-  props: {
-    modelValue: { type: String, required: true },
-    options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true },
-    previewKind: { type: String as () => PreviewKind, required: true },
-  },
-  emits: ["update:modelValue"],
-  setup:
-    (gridProps, { emit: gridEmit }) =>
-    () =>
-      h(
-        "div",
-        { class: "option-grid mt-4" },
-        gridProps.options.map((option) =>
-          h(
-            "button",
-            {
-              class: ["option-choice", { active: gridProps.modelValue === option.value }],
-              type: "button",
-              "data-catalog-id": option.id,
-              "data-preview-kind": gridProps.previewKind,
-              "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
-              "aria-pressed": gridProps.modelValue === option.value,
-              onClick: () => gridEmit("update:modelValue", option.value),
-            },
-            {
-              default: () => [
-                h("span", { class: "option-art", "aria-hidden": "true" }, [
-                  h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 }),
-                ]),
-                h("strong", t(option.id)),
-                gridProps.modelValue === option.value
-                  ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓")
-                  : null,
-              ],
-            },
-          ),
-        ),
-      ),
-});
-
-const ColorPicker = defineComponent({
-  props: {
-    modelValue: { type: String, required: true },
-    options: { type: Array as () => AvatarColorOption<string>[], required: true },
-    label: { type: String, required: true },
-  },
-  emits: ["update:modelValue"],
-  setup:
-    (colorProps, { emit: colorEmit }) =>
-    () =>
-      h("div", { class: "compact-colors" }, [
-        h("strong", colorProps.label),
-        h(
-          "div",
-          { class: "color-row" },
-          colorProps.options.map((option) =>
-            h("button", {
-              class: ["color-choice", { active: colorProps.modelValue === option.value }],
-              type: "button",
-              "data-catalog-id": option.id,
-              "aria-label": t(option.id),
-              "aria-pressed": colorProps.modelValue === option.value,
-              style: { background: option.color },
-              onClick: () => colorEmit("update:modelValue", option.value),
-            }),
-          ),
-        ),
-      ]),
-});
-
-const randomItem = <T,>(items: T[]): T => {
+function baseAppearance() {
+  return props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
+}
+function guardianPresetAppearance(preset: GuardianAvatarPreset) {
+  return {
+    ...createGuardianAvatarAppearance(preset),
+    skinToneId: draft.skinToneId,
+  };
+}
+function selectGuardianPreset(preset: GuardianAvatarPreset) {
+  return Object.assign(draft, guardianPresetAppearance(preset));
+}
+function previewAppearance(kind: PreviewKind, value: string): AvatarAppearance {
+  return {
+    ...baseAppearance(),
+    age: draft.age,
+    skinToneId: draft.skinToneId,
+    hairColorId: draft.hairColorId,
+    outfitColorId: draft.outfitColorId,
+    [previewField[kind]]: value,
+  };
+}
+function randomItem<T>(items: T[]): T {
   const item = items[Math.floor(Math.random() * items.length)];
+
   if (item === undefined) {
     throw new RangeError("Cannot select a random item from an empty list.");
   }
+
   return item;
-};
-const resetDraft = () => Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
-const scrollOptionsToTop = () =>
-  void nextTick(() => {
+}
+function resetDraft() {
+  return Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
+}
+function scrollOptionsToTop() {
+  return void nextTick(() => {
     const panel = optionsPanel.value;
     const element = panel instanceof HTMLElement ? panel : panel?.$el;
     element?.scrollTo({ top: 0, behavior: "smooth" });
   });
-const selectSection = (value: Section) => {
+}
+function selectSection(value: Section) {
   section.value = value;
   scrollOptionsToTop();
-};
-const categoryAriaCurrent = (value: Section): "page" | undefined => (section.value === value ? "page" : undefined);
-const randomLook = (funny: boolean) => {
+}
+function categoryAriaCurrent(value: Section): "page" | undefined {
+  return section.value === value ? "page" : undefined;
+}
+function randomLook(funny: boolean) {
   const funnyParts = funOptions.filter((option) => option.value !== "none");
   Object.assign(draft, {
     skinToneId: randomItem(skinToneOptions).value,
@@ -390,16 +408,22 @@ const randomLook = (funny: boolean) => {
     funAccessoryId: funny ? randomItem(funnyParts).value : "none",
     seasonalAccessoryId: funny && Math.random() > 0.55 ? randomItem(seasonOptions).value : "none",
   });
-};
-const close = () => emit("update:modelValue", false);
-const save = () => {
+}
+function close() {
+  return emit("update:modelValue", false);
+}
+function save() {
   emit("save", { ...draft });
   close();
-};
+}
+
 watch(
   () => props.modelValue,
   (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
+
     resetDraft();
     section.value = "base";
     scrollOptionsToTop();

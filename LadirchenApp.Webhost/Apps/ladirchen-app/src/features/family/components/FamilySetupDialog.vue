@@ -205,25 +205,8 @@ import { percentageOfTotal } from "@/domain/shared/numbers";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { familyMemberColorPalette } from "@/theme/color-palette";
 
-const store = useFamilyWorldStore();
-const { t } = useI18n();
-// Appends a hex alpha channel (~14 %) to the member color.
-function avatarStyle(color: string) {
-  return { background: `${color}24` };
-}
 const SETUP_STEPS = Object.freeze({ children: 1, guardians: 3, pets: 2 });
-const step = ref(SETUP_STEPS.children);
-const children = ref<FamilyMember[]>([]);
-const guardians = ref<FamilyMember[]>([]);
-const pets = ref<FamilyPet[]>([]);
-const petKindIds: readonly FamilyPetKindId[] = ["cat", "dog", "rabbit", "bird", "other"];
-const petKinds = computed(() =>
-  petKindIds.map((value) => ({
-    title: t(`familyPets.kinds.${value}`),
-    value,
-  })),
-);
-
+const petKindIds: FamilyPetKindId[] = ["cat", "dog", "rabbit", "bird", "other"] as const;
 const SetupSectionHeader = defineComponent({
   props: {
     icon: { type: String, required: true },
@@ -240,6 +223,21 @@ const SetupSectionHeader = defineComponent({
     ]),
 });
 
+const store = useFamilyWorldStore();
+const { t } = useI18n();
+
+const step = ref(SETUP_STEPS.children);
+const children = ref<FamilyMember[]>([]);
+const guardians = ref<FamilyMember[]>([]);
+const pets = ref<FamilyPet[]>([]);
+
+const petKinds = computed(() =>
+  petKindIds.map((value) => ({
+    title: t(`familyPets.kinds.${value}`),
+    value,
+  })),
+);
+
 const stepProgress = computed(() => percentageOfTotal(step.value, SETUP_STEPS.guardians));
 const childrenAreValid = computed(
   () => children.value.length > 0 && children.value.every((child) => child.name.trim()),
@@ -249,8 +247,14 @@ const guardiansAreValid = computed(
   () => guardians.value.length > 0 && guardians.value.every((guardian) => guardian.name.trim()),
 );
 const currentStepIsValid = computed(() => {
-  if (step.value === SETUP_STEPS.children) return childrenAreValid.value;
-  if (step.value === SETUP_STEPS.pets) return petsAreValid.value;
+  if (step.value === SETUP_STEPS.children) {
+    return childrenAreValid.value;
+  }
+
+  if (step.value === SETUP_STEPS.pets) {
+    return petsAreValid.value;
+  }
+
   return guardiansAreValid.value;
 });
 const setupIsValid = computed(() => childrenAreValid.value && petsAreValid.value && guardiansAreValid.value);
@@ -258,15 +262,22 @@ const setupEyebrow = computed(() =>
   t(store.onboardingCompleted ? "family.setup.editEyebrow" : "family.setup.welcomeEyebrow"),
 );
 
-const newId = (prefix: string, index: number) => `${prefix}-${Date.now()}-${index}`;
-const resetDraft = () => {
+// Appends a hex alpha channel (~14 %) to the member color.
+function avatarStyle(color: string) {
+  return { background: `${color}24` };
+}
+
+function newId(prefix: string, index: number) {
+  return `${prefix}-${Date.now()}-${index}`;
+}
+function resetDraft() {
   children.value = store.members.filter((member) => member.role === "child").map((member) => ({ ...member }));
   guardians.value = store.members.filter((member) => member.role === "guardian").map((member) => ({ ...member }));
   pets.value = store.pets.map((pet) => ({ ...pet }));
   step.value = SETUP_STEPS.children;
-};
-const addChild = () =>
-  children.value.push({
+}
+function addChild() {
+  return children.value.push({
     id: createDomainId.familyMember(newId("child", children.value.length)),
     name: "",
     avatar: "🧒",
@@ -276,8 +287,9 @@ const addChild = () =>
     weeklyStreak: 0,
     appearance: createDefaultAvatarAppearance(),
   });
-const addGuardian = () =>
-  guardians.value.push({
+}
+function addGuardian() {
+  return guardians.value.push({
     id: createDomainId.familyMember(newId("guardian", guardians.value.length)),
     name: "",
     avatar: "🧑",
@@ -287,28 +299,35 @@ const addGuardian = () =>
     participatesInWeeklyGoal: false,
     weeklyStreak: 0,
   });
-const addPet = () =>
-  pets.value.push({
+}
+function addPet() {
+  return pets.value.push({
     id: createDomainId.familyPet(newId("pet", pets.value.length)),
     name: "",
     kind: "cat",
     avatar: "🐈",
     color: familyMemberColorPalette.petAnna,
   });
-const updatePetAvatar = (pet: FamilyPet) => {
+}
+function updatePetAvatar(pet: FamilyPet) {
   const avatars: Record<FamilyPetKindId, string> = { cat: "🐈", dog: "🐕", rabbit: "🐇", bird: "🐦", other: "🐾" };
   pet.avatar = avatars[pet.kind] ?? "🐾";
-};
-const finishSetup = () =>
-  store.completeFamilySetup(
+}
+function finishSetup() {
+  return store.completeFamilySetup(
     [...children.value.map((member) => ({ ...member })), ...guardians.value.map((member) => ({ ...member }))],
     pets.value.map((pet) => ({ ...pet })),
   );
+}
 
 watch(
   () => store.familySetupOpen,
   (isOpen) => {
-    if (isOpen) resetDraft();
+    if (!isOpen) {
+      return;
+    }
+
+    resetDraft();
   },
   { immediate: true },
 );

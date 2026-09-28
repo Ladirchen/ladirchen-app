@@ -217,6 +217,14 @@ import { useFamilyWorldStore } from "@/stores/family-world";
 import { CURRENT_TIME_REFRESH_INTERVAL_MS } from "@/shared/runtime-timing";
 import { isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
 
+type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
+interface NavigationItem {
+  to: string;
+  icon: NavigationIcon;
+  label: string;
+  tip: string;
+}
+
 const AsyncAuthGateway = defineAsyncComponent(() => import("@/features/auth/components/AuthGateway.vue"));
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
 const AsyncGlobalLadiGuide = defineAsyncComponent(() => import("./GlobalLadiGuide.vue"));
@@ -227,18 +235,18 @@ const AsyncWeeklyStreakDialog = defineAsyncComponent(
   () => import("@/features/streaks/components/WeeklyStreakDialog.vue"),
 );
 
+let clockTimer: ReturnType<typeof window.setInterval> | undefined;
+
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
+
 const appHydrated = ref(false);
 const introFinished = ref(false);
-const showLadiGuide = computed(() => appHydrated.value && introFinished.value && store.viewerRole === "child");
-let clockTimer: ReturnType<typeof window.setInterval> | undefined;
 const contentElement = ref<HTMLElement | null>(null);
-void store.hydrateFamilyAggregates().finally(() => {
-  appHydrated.value = true;
-});
 const streakDialog = ref(false);
+
+const showLadiGuide = computed(() => appHydrated.value && introFinished.value && store.viewerRole === "child");
 const headerBalanceMemberId = computed(() =>
   store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId,
 );
@@ -308,14 +316,6 @@ const shellLayoutClasses = computed(() => ({
   "family-world-background--fullscreen": usesFullscreenShell.value,
   "family-world-background--landscape": md.value && isLandscape.value,
 }));
-type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
-interface NavigationItem {
-  to: string;
-  icon: NavigationIcon;
-  label: string;
-  tip: string;
-}
-
 const navigationItems = computed<NavigationItem[]>(() => [
   { to: "/", icon: "world", label: t("navigation.world.label"), tip: t("navigation.world.tip") },
   {
@@ -334,13 +334,18 @@ const navigation = computed(() =>
     ? navigationItems.value.filter((item) => !["/contributions", "/shop"].includes(item.to))
     : navigationItems.value,
 );
-const handleIntroFinished = () => {
+
+function handleIntroFinished() {
   introFinished.value = true;
   store.revealNextContributionReward();
-};
-const resetContentScroll = () => {
+}
+function resetContentScroll() {
   window.requestAnimationFrame(() => contentElement.value?.scrollTo({ top: 0, left: 0 }));
-};
+}
+
+void store.hydrateFamilyAggregates().finally(() => {
+  appHydrated.value = true;
+});
 onMounted(() => {
   store.refreshCurrentTime();
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);

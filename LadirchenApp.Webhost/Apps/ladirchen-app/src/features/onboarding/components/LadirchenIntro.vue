@@ -1,19 +1,23 @@
 <template>
   <Transition name="intro-fade" @after-leave="emit('finished')">
     <div v-if="visible" class="app-intro" aria-live="polite" :aria-label="t('onboarding.intro.loadingAria')">
-      <div class="intro-sun" aria-hidden="true" />
-      <div class="intro-cloud intro-cloud-one" aria-hidden="true" />
-      <div class="intro-cloud intro-cloud-two" aria-hidden="true" />
+      <div class="intro-sun" aria-hidden="true"></div>
+      <div class="intro-cloud intro-cloud-one" aria-hidden="true"></div>
+      <div class="intro-cloud intro-cloud-two" aria-hidden="true"></div>
       <div class="intro-card">
         <div class="intro-mascot">
           <LadiMascot :score="5" :show-score="false" :size="142" />
         </div>
         <div class="intro-logo-row">
-          <span class="intro-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
-          <h1>{{ t('common.appName') }}</h1>
+          <span class="intro-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png" /></span>
+          <h1>{{ t("common.appName") }}</h1>
         </div>
-        <p>{{ t('onboarding.intro.message') }}</p>
-        <div class="intro-dots" aria-hidden="true"><i /><i /><i /></div>
+        <p>{{ t("onboarding.intro.message") }}</p>
+        <div class="intro-dots" aria-hidden="true">
+          <i></i>
+          <i></i>
+          <i></i>
+        </div>
       </div>
     </div>
   </Transition>
@@ -25,18 +29,26 @@ import { useI18n } from "vue-i18n";
 
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 
+let timer: number | undefined;
+
 const emit = defineEmits<{ finished: [] }>();
 const { t } = useI18n();
+
 const visible = ref(true);
-let timer: number | undefined;
 
 onMounted(() => {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  timer = window.setTimeout(() => { visible.value = false; }, reduceMotion ? 500 : 2200);
+  timer = window.setTimeout(
+    () => {
+      visible.value = false;
+    },
+    reduceMotion ? 500 : 2200,
+  );
 });
-
 onUnmounted(() => {
-  if (timer !== undefined) window.clearTimeout(timer);
+  if (timer !== undefined) {
+    window.clearTimeout(timer);
+  }
 });
 </script>
 
@@ -61,8 +73,7 @@ onUnmounted(() => {
   right: -25px;
   border-radius: 50%;
   background: var(--lad-palette-amber-250);
-  box-shadow: 0 0 0 22px
-    color-mix(in srgb, var(--lad-palette-amber-250) 20%, transparent);
+  box-shadow: 0 0 0 22px color-mix(in srgb, var(--lad-palette-amber-250) 20%, transparent);
   animation: intro-sun-pulse 2.2s ease-in-out infinite;
 }
 .intro-cloud {
@@ -107,14 +118,12 @@ onUnmounted(() => {
   --uno: position-relative text-center;
   padding: 28px 26px 24px;
 
-  border: 3px solid
-    color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
+  border: 3px solid color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent);
   border-radius: 38px;
   background: color-mix(in srgb, var(--lad-palette-white) 80%, transparent);
   box-shadow:
     0 18px 0 color-mix(in srgb, var(--lad-palette-teal-600) 12%, transparent),
-    0 30px 55px
-      color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
+    0 30px 55px color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   backdrop-filter: blur(10px);
   animation: intro-card-arrive 650ms cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
@@ -123,7 +132,6 @@ onUnmounted(() => {
   height: 164px;
   --uno: position-relative d-grid place-center;
   margin: -5px auto 3px;
-
 }
 .intro-mascot :deep(.ladi-wrap) {
   width: var(--ladi-size);

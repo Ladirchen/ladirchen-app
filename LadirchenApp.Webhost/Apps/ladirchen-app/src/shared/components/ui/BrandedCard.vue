@@ -5,7 +5,7 @@
     elevation="0"
     rounded="xl"
   >
-    <slot />
+    <slot></slot>
   </v-card>
 </template>
 
@@ -20,12 +20,15 @@ export type BrandedCardTone =
   | "wishes"
   | "world";
 
-withDefaults(defineProps<{
-  interactive?: boolean;
-  tone: BrandedCardTone;
-}>(), {
-  interactive: false,
-});
+withDefaults(
+  defineProps<{
+    interactive?: boolean;
+    tone: BrandedCardTone;
+  }>(),
+  {
+    interactive: false,
+  },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -40,9 +43,7 @@ withDefaults(defineProps<{
     transform var(--lad-motion-normal) ease;
 }
 
-@each $tone in world, contributions, wishes, shop, family, profile, streak,
-  balance
-{
+@each $tone in world, contributions, wishes, shop, family, profile, streak, balance {
   .branded-card--#{$tone} {
     --branded-card-accent: var(--lad-tone-#{$tone}-accent);
     --branded-card-tint: var(--lad-tone-#{$tone}-tint);
@@ -55,7 +56,6 @@ withDefaults(defineProps<{
   transform: translateY(rem(-2));
   box-shadow:
     0 rem(7) 0 color-mix(in srgb, var(--branded-card-lift) 18%, transparent),
-    0 rem(15) rem(26)
-      color-mix(in srgb, var(--branded-card-accent) 11%, transparent);
+    0 rem(15) rem(26) color-mix(in srgb, var(--branded-card-accent) 11%, transparent);
 }
 </style>

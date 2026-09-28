@@ -17,6 +17,7 @@ const spriteSelection = computed(() =>
 );
 const spriteUrl = useLazyAssetUrl(spriteSelection, ({ visual, open }) => {
   const urls = getFurnitureSpriteUrls(visual);
+
   return open ? (urls.openUrl ?? urls.closedUrl) : urls.closedUrl;
 });
 </script>
