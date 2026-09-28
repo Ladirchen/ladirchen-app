@@ -1,25 +1,43 @@
 <template>
-  <v-dialog content-class="energy-summary-dialog-frame" :model-value="modelValue" max-width="460" scrollable @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog
+    content-class="energy-summary-dialog-frame"
+    :model-value="modelValue"
+    max-width="460"
+    scrollable
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <v-card class="energy-dialog" rounded="xl">
       <div class="energy-dialog-header pa-4">
         <div class="energy-title-row">
           <div>
-            <p class="dialog-kicker">{{ t('world.energy.eyebrow') }}</p>
-            <h2>{{ t('world.energy.title') }}</h2>
-            <p class="energy-subtitle mt-1">{{ t('world.energy.description') }}</p>
+            <p class="dialog-kicker">{{ t("world.energy.eyebrow") }}</p>
+            <h2>{{ t("world.energy.title") }}</h2>
+            <p class="energy-subtitle mt-1">{{ t("world.energy.description") }}</p>
           </div>
           <AnimatedHouseEnergy class="energy-mascot" :size="86" />
-          <button class="close-button" :aria-label="t('world.energy.close')" type="button" @click="close"><v-icon icon="i-mdi:close" /></button>
+          <button class="close-button" :aria-label="t('world.energy.close')" type="button" @click="close">
+            <v-icon icon="i-mdi:close" />
+          </button>
         </div>
 
         <div class="summary-grid mt-4">
-          <MetricCard class="summary-tile summary-tile--energy" :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }" tone="energy">
-            <div class="energy-orb" :style="{ '--energy': `${store.familyEnergy * 3.6}deg` }">
-              <span>{{ store.familyEnergy }}<small>%</small></span>
+          <MetricCard
+            class="summary-tile summary-tile--energy"
+            :class="{ 'is-achieved': store.houseMeetsMinimumEnergy }"
+            tone="energy"
+          >
+            <div class="energy-orb" :style="energyOrbStyle">
+              <span>
+                {{ store.familyEnergy }}
+                <small>%</small>
+              </span>
             </div>
             <div>
-              <span>{{ t('world.energy.shared') }}</span>
-              <strong class="energy-state-title">{{ energyState.title }}<span v-if="store.houseMeetsMinimumEnergy" class="energy-state-spark" aria-hidden="true">✦</span></strong>
+              <span>{{ t("world.energy.shared") }}</span>
+              <strong class="energy-state-title">
+                {{ energyState.title }}
+                <span v-if="store.houseMeetsMinimumEnergy" class="energy-state-spark" aria-hidden="true">✦</span>
+              </strong>
               <small>{{ energyState.copy }}</small>
             </div>
           </MetricCard>
@@ -29,9 +47,9 @@
               <v-icon v-else size="25">i-mdi:progress-clock</v-icon>
             </div>
             <div>
-              <span>{{ t('world.energy.dailyGoal') }}</span>
+              <span>{{ t("world.energy.dailyGoal") }}</span>
               <strong>{{ dailyGoalStatus }}</strong>
-              <small>{{ t('world.energy.threshold') }}</small>
+              <small>{{ t("world.energy.threshold") }}</small>
             </div>
           </MetricCard>
         </div>
@@ -46,22 +64,40 @@
         />
 
         <div class="children-heading mb-3">
-          <div><span class="section-kicker">{{ t('world.energy.collected') }}</span><h3>{{ t('world.energy.breakdown') }}</h3></div>
-          <span class="average-label">{{ t('world.energy.average') }}</span>
+          <div>
+            <span class="section-kicker">{{ t("world.energy.collected") }}</span>
+            <h3>{{ t("world.energy.breakdown") }}</h3>
+          </div>
+          <span class="average-label">{{ t("world.energy.average") }}</span>
         </div>
         <div class="child-energy-list">
-          <div v-for="(child, childIndex) in children" :key="child.id" class="child-energy-row" :style="{ '--avatar-color': child.color }">
+          <div
+            v-for="(child, childIndex) in children"
+            :key="child.id"
+            class="child-energy-row"
+            :style="{ '--avatar-color': child.color }"
+          >
             <div class="child-avatar">
               <AvatarFigure :appearance="childAppearance(child, childIndex)" calm :size="54" />
             </div>
             <div class="child-energy-copy">
-              <div class="child-energy-title"><strong>{{ child.name }}</strong><b>{{ store.contributionProgress(child.id) }} %</b></div>
-              <v-progress-linear class="mt-2" color="primary" height="8" :model-value="store.contributionProgress(child.id)" rounded />
-              <p class="child-energy-description">{{ t('world.energy.approved', { approved: approvedCount(child.id), total: baseCount(child.id) }) }}</p>
+              <div class="child-energy-title">
+                <strong>{{ child.name }}</strong>
+                <b>{{ store.contributionProgress(child.id) }} %</b>
+              </div>
+              <v-progress-linear
+                class="mt-2"
+                color="primary"
+                height="8"
+                :model-value="store.contributionProgress(child.id)"
+                rounded
+              />
+              <p class="child-energy-description">
+                {{ t("world.energy.approved", { approved: approvedCount(child.id), total: baseCount(child.id) }) }}
+              </p>
             </div>
           </div>
         </div>
-
       </v-card-text>
     </v-card>
   </v-dialog>
@@ -91,17 +127,25 @@ const { t } = useI18n();
 const guideStep = ref(-1);
 let guideStartTimer: number | undefined;
 const children = computed(() => store.members.filter((member) => member.role === "child"));
+// 100 % energy maps to a full 360deg ring.
+const energyOrbStyle = computed(() => ({ "--energy": `${store.familyEnergy * 3.6}deg` }));
 const energyState = computed(() => {
-  if (store.familyEnergy === 100) return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
-  if (store.familyEnergy >= 60) return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
+  if (store.familyEnergy === 100)
+    return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
+  if (store.familyEnergy >= 60)
+    return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
   return { title: t("world.energy.states.low.title"), copy: t("world.energy.states.low.description") };
 });
-const dailyGoalStatus = computed(() => store.houseMeetsMinimumEnergy
-  ? t("world.energy.reached")
-  : t("world.energy.remaining", { value: 60 - store.familyEnergy }));
-const baseContributions = (childId: FamilyMemberId) => store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
+const dailyGoalStatus = computed(() =>
+  store.houseMeetsMinimumEnergy
+    ? t("world.energy.reached")
+    : t("world.energy.remaining", { value: 60 - store.familyEnergy }),
+);
+const baseContributions = (childId: FamilyMemberId) =>
+  store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
 const baseCount = (childId: FamilyMemberId) => baseContributions(childId).length;
-const approvedCount = (childId: FamilyMemberId) => baseContributions(childId).filter((item) => item.status === "approved").length;
+const approvedCount = (childId: FamilyMemberId) =>
+  baseContributions(childId).filter((item) => item.status === "approved").length;
 const childAppearance = (child: FamilyMember, _index: number): AvatarAppearance => {
   return resolveFamilyMemberAvatarAppearance(child, store.members);
 };
@@ -136,17 +180,22 @@ const startEnergyGuide = () => {
     actionId: "house-energy:next",
   });
 };
-watch(() => props.modelValue, (isOpen) => {
-  if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
-  if (!isOpen) return;
-  guideStep.value = -1;
-  guideStartTimer = window.setTimeout(() => {
-    startEnergyGuide();
-    guideStartTimer = undefined;
-  }, 280);
-});
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
+    if (!isOpen) return;
+    guideStep.value = -1;
+    guideStartTimer = window.setTimeout(() => {
+      startEnergyGuide();
+      guideStartTimer = undefined;
+    }, 280);
+  },
+);
 let unregisterGuideAction: (() => void) | undefined;
-onMounted(() => { unregisterGuideAction = ladiGuideController.registerAction("house-energy:next", startEnergyGuide); });
+onMounted(() => {
+  unregisterGuideAction = ladiGuideController.registerAction("house-energy:next", startEnergyGuide);
+});
 onUnmounted(() => {
   if (guideStartTimer !== undefined) window.clearTimeout(guideStartTimer);
   unregisterGuideAction?.();
@@ -168,8 +217,7 @@ const close = () => emit("update:modelValue", false);
 .energy-dialog-header {
   --uno: position-relative overflow-hidden;
   flex: 0 0 auto;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--lad-color-accent-warm-supporting) 15%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--lad-color-accent-warm-supporting) 15%, transparent);
   background: linear-gradient(
     145deg,
     var(--lad-surface-soft) 0%,
@@ -182,7 +230,6 @@ const close = () => emit("update:modelValue", false);
   content: "";
   --uno: position-absolute pointer-events-none;
   border-radius: 50%;
-
 }
 .energy-dialog-header::before {
   width: 190px;
@@ -190,8 +237,7 @@ const close = () => emit("update:modelValue", false);
   top: -113px;
   right: -34px;
   background: color-mix(in srgb, var(--lad-surface-raised) 35%, transparent);
-  box-shadow: 0 0 0 22px
-    color-mix(in srgb, var(--lad-surface-raised) 15%, transparent);
+  box-shadow: 0 0 0 22px color-mix(in srgb, var(--lad-surface-raised) 15%, transparent);
 }
 .energy-dialog-header::after {
   width: 105px;
@@ -205,7 +251,6 @@ const close = () => emit("update:modelValue", false);
   min-height: 108px;
   --uno: position-relative d-flex align-start;
   z-index: 1;
-
 }
 .energy-title-row > div:first-child {
   max-width: 280px;
@@ -341,29 +386,17 @@ const close = () => emit("update:modelValue", false);
   color: var(--lad-color-reward-deep);
 }
 .summary-icon.is-achieved {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-reward-soft),
-    var(--lad-color-reward-pale)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-reward-deep) 12%, transparent);
+  background: linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-color-reward-pale));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-reward-deep) 12%, transparent);
 }
 .energy-content {
   min-height: 0;
   flex: 1 1 auto;
   --uno: overflow-y-auto;
-  background: linear-gradient(
-    180deg,
-    var(--lad-surface),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(180deg, var(--lad-surface), var(--lad-surface-soft));
 }
 .section-kicker {
-  @include overline(
-    var(--lad-color-primary-strong),
-    var(--lad-font-size-micro)
-  );
+  @include overline(var(--lad-color-primary-strong), var(--lad-font-size-micro));
 }
 .children-heading {
   --uno: d-flex align-end justify-space-between ga-3;
@@ -386,21 +419,15 @@ const close = () => emit("update:modelValue", false);
   padding: 11px 12px;
   --uno: d-flex align-center;
   gap: 12px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 18px;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--lad-surface-raised) 95%, transparent),
-    color-mix(
-      in srgb,
-      var(--avatar-color, var(--lad-color-bonus-info)) 7%,
-      var(--lad-surface-raised)
-    )
+    color-mix(in srgb, var(--avatar-color, var(--lad-color-bonus-info)) 7%, var(--lad-surface-raised))
   );
   box-shadow:
-    0 5px 0
-      color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent),
+    0 5px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent),
     0 10px 20px color-mix(in srgb, var(--lad-text-strong) 5%, transparent);
   transition:
     transform 0.2s ease,
@@ -415,20 +442,10 @@ const close = () => emit("update:modelValue", false);
   height: 58px;
   --uno: d-grid place-center overflow-hidden;
   flex: 0 0 58px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
   border-radius: 19px;
-  background: color-mix(
-    in srgb,
-    var(--avatar-color, var(--lad-color-bonus-info)) 18%,
-    var(--lad-surface-raised)
-  );
-  box-shadow: 0 4px 0
-    color-mix(
-      in srgb,
-      var(--avatar-color, var(--lad-color-bonus-info)) 18%,
-      transparent
-    );
+  background: color-mix(in srgb, var(--avatar-color, var(--lad-color-bonus-info)) 18%, var(--lad-surface-raised));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--avatar-color, var(--lad-color-bonus-info)) 18%, transparent);
   transform: rotate(-2deg);
 }
 .child-energy-copy {
@@ -524,8 +541,7 @@ const close = () => emit("update:modelValue", false);
   top: -72px;
   right: -28px;
   background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
-  box-shadow: 0 0 0 17px
-    color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
+  box-shadow: 0 0 0 17px color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
 }
 .energy-title-row::after {
   width: 84px;
@@ -593,35 +609,19 @@ const close = () => emit("update:modelValue", false);
   flex-basis: 40px;
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-border-on-accent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-accent-pink),
-    var(--lad-color-bonus)
-  );
+  background: linear-gradient(145deg, var(--lad-color-accent-pink), var(--lad-color-bonus));
   box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
 }
 .summary-icon.is-achieved {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-accent-pink),
-    var(--lad-color-bonus)
-  );
+  background: linear-gradient(145deg, var(--lad-color-accent-pink), var(--lad-color-bonus));
   box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
 }
 .energy-content {
-  background: linear-gradient(
-    180deg,
-    var(--lad-surface),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(180deg, var(--lad-surface), var(--lad-surface-soft));
 }
 .energy-content :deep(.house-progress-panel) {
   border-color: color-mix(in srgb, var(--lad-color-info) 15%, transparent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
   box-shadow: 0 7px 0 color-mix(in srgb, var(--lad-color-info) 10%, transparent);
 }
 :global(.energy-summary-dialog-frame) {

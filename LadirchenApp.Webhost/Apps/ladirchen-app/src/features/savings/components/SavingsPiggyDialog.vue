@@ -11,57 +11,126 @@
           </div>
           <div class="piggy-title-actions">
             <span class="header-coin"><LadirchenCoin animated /></span>
-            <button class="piggy-close" :aria-label="t('savings.piggy.close')" type="button" @click="store.piggyBankOpen = false"><v-icon icon="i-mdi:close" /></button>
+            <button
+              class="piggy-close"
+              :aria-label="t('savings.piggy.close')"
+              type="button"
+              @click="store.piggyBankOpen = false"
+            >
+              <v-icon icon="i-mdi:close" />
+            </button>
           </div>
         </div>
         <template v-if="store.viewerRole === 'child'">
           <div class="balance-grid mt-3">
             <MetricCard class="balance-tile balance-tile--wallet" tone="balance">
-              <span class="balance-icon balance-icon--wallet" aria-hidden="true"><v-icon icon="i-mdi:wallet-outline" /></span>
+              <span class="balance-icon balance-icon--wallet" aria-hidden="true">
+                <v-icon icon="i-mdi:wallet-outline" />
+              </span>
               <span>
-                <small>{{ t('savings.piggy.balance.available') }}</small>
+                <small>{{ t("savings.piggy.balance.available") }}</small>
                 <strong><LadirchenAmount :value="store.availableBalance" /></strong>
-                <span class="today-earned"><v-icon aria-hidden="true" icon="i-mdi:sparkles" />{{ t('savings.piggy.balance.earnedToday') }} <b><LadirchenAmount compact prefix="+" :value="store.todayEarned" /></b></span>
+                <span class="today-earned">
+                  <v-icon aria-hidden="true" icon="i-mdi:sparkles" />
+                  {{ t("savings.piggy.balance.earnedToday") }}
+                  <b><LadirchenAmount compact prefix="+" :value="store.todayEarned" /></b>
+                </span>
               </span>
             </MetricCard>
-            <MetricCard class="balance-tile balance-tile--plans" tone="bonus"><span class="balance-icon balance-icon--plans" aria-hidden="true"><v-icon icon="i-mdi:star-four-points-outline" /></span><span><small>{{ t('savings.piggy.balance.inGoals') }}</small><strong><LadirchenAmount :value="store.totalSaved" /></strong></span></MetricCard>
+            <MetricCard class="balance-tile balance-tile--plans" tone="bonus">
+              <span class="balance-icon balance-icon--plans" aria-hidden="true">
+                <v-icon icon="i-mdi:star-four-points-outline" />
+              </span>
+              <span>
+                <small>{{ t("savings.piggy.balance.inGoals") }}</small>
+                <strong><LadirchenAmount :value="store.totalSaved" /></strong>
+              </span>
+            </MetricCard>
           </div>
           <div class="balance-detail-grid mt-2">
-            <MetricCard class="balance-tile interest-earned" tone="energy"><span class="balance-icon balance-icon--interest" aria-hidden="true"><v-icon icon="i-mdi:chart-line" /></span><span><small>{{ t('savings.piggy.balance.interestEarned') }}</small><strong><LadirchenAmount prefix="+" :value="store.totalInterestEarned" /></strong></span></MetricCard>
+            <MetricCard class="balance-tile interest-earned" tone="energy">
+              <span class="balance-icon balance-icon--interest" aria-hidden="true">
+                <v-icon icon="i-mdi:chart-line" />
+              </span>
+              <span>
+                <small>{{ t("savings.piggy.balance.interestEarned") }}</small>
+                <strong><LadirchenAmount prefix="+" :value="store.totalInterestEarned" /></strong>
+              </span>
+            </MetricCard>
             <MetricCard class="family-currency-value" tone="balance">
               <AnimatedExchangeIcon :currency-code="store.familyCurrencyCode" />
               <div>
-                <span>{{ t('savings.piggy.balance.familyCurrency') }}</span>
-                <strong><LadirchenAmount :value="`${store.availableBalance} = ${formattedFamilyValue}`" /></strong>
+                <span>{{ t("savings.piggy.balance.familyCurrency") }}</span>
+                <strong><LadirchenAmount :value="balanceEquivalenceLabel" /></strong>
               </div>
-              <small>{{ t('savings.piggy.balance.exchangeRate', { amount: store.ladirchenPerCurrencyUnit, currency: store.familyCurrencyCode }) }}</small>
+              <small>
+                {{
+                  t("savings.piggy.balance.exchangeRate", {
+                    amount: store.ladirchenPerCurrencyUnit,
+                    currency: store.familyCurrencyCode,
+                  })
+                }}
+              </small>
             </MetricCard>
           </div>
         </template>
       </div>
 
       <v-card-text class="piggy-content pa-3">
-        <section v-if="store.viewerRole === 'guardian'" class="guardian-balances" aria-labelledby="guardian-balances-title">
+        <section
+          v-if="store.viewerRole === 'guardian'"
+          class="guardian-balances"
+          aria-labelledby="guardian-balances-title"
+        >
           <div class="guardian-balances-heading">
-            <div><p class="eyebrow mb-1">{{ t('savings.piggy.guardianAccounts.eyebrow') }}</p><h3 id="guardian-balances-title" class="dialog-section-title">{{ t('savings.piggy.guardianAccounts.title') }}</h3></div>
-            <span>{{ t('savings.piggy.guardianAccounts.childCount', { count: guardianChildren.length }) }}</span>
+            <div>
+              <p class="eyebrow mb-1">{{ t("savings.piggy.guardianAccounts.eyebrow") }}</p>
+              <h3 id="guardian-balances-title" class="dialog-section-title">
+                {{ t("savings.piggy.guardianAccounts.title") }}
+              </h3>
+            </div>
+            <span>{{ t("savings.piggy.guardianAccounts.childCount", { count: guardianChildren.length }) }}</span>
           </div>
           <div class="guardian-balance-list mt-3">
             <article v-for="child in guardianChildren" :key="child.id" class="guardian-balance-row">
-              <span class="guardian-child-avatar" aria-hidden="true"><AvatarFigure :appearance="memberAppearance(child.id)" :size="40" /></span>
-              <span class="guardian-child-name"><strong>{{ child.name }}</strong><small>{{ t('savings.piggy.guardianAccounts.balanceSplit', { available: child.available, saved: child.saved }) }}</small></span>
-              <span class="guardian-child-stat"><small>{{ t('savings.piggy.guardianAccounts.balance') }}</small><strong><LadirchenAmount compact :value="child.total" /></strong></span>
-              <span class="guardian-child-stat"><small>{{ t('savings.piggy.guardianAccounts.thisWeek') }}</small><strong><LadirchenAmount compact prefix="+" :value="child.weekEarned" /></strong></span>
-              <span class="guardian-child-stat"><small>{{ t('savings.piggy.guardianAccounts.tasks') }}</small><strong>{{ child.completedThisWeek }}</strong></span>
-              <span class="guardian-child-stat guardian-child-stat--level"><small>{{ t('savings.piggy.guardianAccounts.level') }}</small><strong>{{ child.ladiLevel }}</strong></span>
+              <span class="guardian-child-avatar" aria-hidden="true">
+                <AvatarFigure :appearance="memberAppearance(child.id)" :size="40" />
+              </span>
+              <span class="guardian-child-name">
+                <strong>{{ child.name }}</strong>
+                <small>
+                  {{
+                    t("savings.piggy.guardianAccounts.balanceSplit", { available: child.available, saved: child.saved })
+                  }}
+                </small>
+              </span>
+              <span class="guardian-child-stat">
+                <small>{{ t("savings.piggy.guardianAccounts.balance") }}</small>
+                <strong><LadirchenAmount compact :value="child.total" /></strong>
+              </span>
+              <span class="guardian-child-stat">
+                <small>{{ t("savings.piggy.guardianAccounts.thisWeek") }}</small>
+                <strong><LadirchenAmount compact prefix="+" :value="child.weekEarned" /></strong>
+              </span>
+              <span class="guardian-child-stat">
+                <small>{{ t("savings.piggy.guardianAccounts.tasks") }}</small>
+                <strong>{{ child.completedThisWeek }}</strong>
+              </span>
+              <span class="guardian-child-stat guardian-child-stat--level">
+                <small>{{ t("savings.piggy.guardianAccounts.level") }}</small>
+                <strong>{{ child.ladiLevel }}</strong>
+              </span>
             </article>
           </div>
         </section>
 
-        <v-card v-if="store.viewerRole === 'guardian' && store.permissions.canManageFamily" class="currency-settings-card pa-4 mt-4" elevation="0" rounded="xl">
+        <v-card v-if="showCurrencySettings" class="currency-settings-card pa-4 mt-4" elevation="0" rounded="xl">
           <div class="currency-settings-heading">
             <span aria-hidden="true">↔</span>
-            <div><p class="eyebrow mb-1">{{ t('savings.piggy.currency.eyebrow') }}</p><h3 class="dialog-section-title">{{ t('savings.piggy.currency.title') }}</h3></div>
+            <div>
+              <p class="eyebrow mb-1">{{ t("savings.piggy.currency.eyebrow") }}</p>
+              <h3 class="dialog-section-title">{{ t("savings.piggy.currency.title") }}</h3>
+            </div>
           </div>
           <div class="currency-settings-fields mt-3">
             <v-select
@@ -86,32 +155,68 @@
               @update:model-value="store.setLadirchenExchangeRate(Number($event))"
             />
           </div>
-          <div class="currency-settings-example mt-2"><span>{{ t('savings.piggy.currency.example') }}</span><strong>{{ formattedGuardianFamilyValue }}</strong></div>
+          <div class="currency-settings-example mt-2">
+            <span>{{ t("savings.piggy.currency.example") }}</span>
+            <strong>{{ formattedGuardianFamilyValue }}</strong>
+          </div>
         </v-card>
 
-        <v-card v-if="store.viewerRole === 'child'" class="transfer-card pa-3" :class="transferDirectionClass" color="blue-lighten-5" elevation="0" rounded="xl">
+        <v-card
+          v-if="store.viewerRole === 'child'"
+          class="transfer-card pa-3"
+          :class="transferDirectionClass"
+          color="blue-lighten-5"
+          elevation="0"
+          rounded="xl"
+        >
           <div class="transfer-heading">
             <div class="transfer-title">
               <span class="transfer-title-icon" aria-hidden="true">
                 <LadirchenCoin animated small />
               </span>
               <div>
-                <p class="eyebrow mb-1">{{ t('savings.piggy.transfer.eyebrow') }}</p>
-                <h3 class="dialog-section-title">{{ t('savings.piggy.transfer.title') }}</h3>
+                <p class="eyebrow mb-1">{{ t("savings.piggy.transfer.eyebrow") }}</p>
+                <h3 class="dialog-section-title">{{ t("savings.piggy.transfer.title") }}</h3>
               </div>
             </div>
           </div>
-          <div v-if="store.viewerRole === 'child'" class="destination-switch mt-3" :aria-label="t('savings.piggy.transfer.destinationAria')" role="group">
-            <button :aria-pressed="transferDestination === 'goal'" :class="{ active: transferDestination === 'goal' }" type="button" @click="setTransferDestination('goal')">
-              <span aria-hidden="true"><v-icon icon="i-mdi:piggy-bank-outline" /></span><span><strong>{{ t('savings.piggy.transfer.goal') }}</strong><small>{{ t('savings.piggy.transfer.goalHint') }}</small></span>
+          <div
+            v-if="store.viewerRole === 'child'"
+            class="destination-switch mt-3"
+            :aria-label="t('savings.piggy.transfer.destinationAria')"
+            role="group"
+          >
+            <button
+              :aria-pressed="transferDestination === 'goal'"
+              :class="{ active: transferDestination === 'goal' }"
+              type="button"
+              @click="setTransferDestination('goal')"
+            >
+              <span aria-hidden="true"><v-icon icon="i-mdi:piggy-bank-outline" /></span>
+              <span>
+                <strong>{{ t("savings.piggy.transfer.goal") }}</strong>
+                <small>{{ t("savings.piggy.transfer.goalHint") }}</small>
+              </span>
             </button>
-            <button :aria-pressed="transferDestination === 'member'" :class="{ active: transferDestination === 'member' }" type="button" @click="setTransferDestination('member')">
-              <span aria-hidden="true"><v-icon icon="i-mdi:account-heart-outline" /></span><span><strong>{{ t('savings.piggy.transfer.gift') }}</strong><small>{{ t('savings.piggy.transfer.giftHint') }}</small></span>
+            <button
+              :aria-pressed="transferDestination === 'member'"
+              :class="{ active: transferDestination === 'member' }"
+              type="button"
+              @click="setTransferDestination('member')"
+            >
+              <span aria-hidden="true"><v-icon icon="i-mdi:account-heart-outline" /></span>
+              <span>
+                <strong>{{ t("savings.piggy.transfer.gift") }}</strong>
+                <small>{{ t("savings.piggy.transfer.giftHint") }}</small>
+              </span>
             </button>
           </div>
           <div class="transfer-fields mt-3">
             <label class="transfer-field">
-              <span><i>1</i>{{ t('savings.piggy.transfer.destination') }}</span>
+              <span>
+                <i>1</i>
+                {{ t("savings.piggy.transfer.destination") }}
+              </span>
               <v-select
                 v-if="transferDestination === 'goal'"
                 v-model="selectedGoalId"
@@ -127,15 +232,26 @@
                 <template #selection="{ item }">
                   <span class="selected-goal-option">
                     <span class="goal-option-icon" aria-hidden="true">{{ item.icon }}</span>
-                    <span><strong>{{ item.title }}</strong><small>{{ t('savings.piggy.transfer.goalProgress', { saved: item.saved, target: item.target }) }}</small></span>
+                    <span>
+                      <strong>{{ item.title }}</strong>
+                      <small>
+                        {{ t("savings.piggy.transfer.goalProgress", { saved: item.saved, target: item.target }) }}
+                      </small>
+                    </span>
                   </span>
                 </template>
                 <template #item="{ props: itemProps, item }">
                   <v-list-item v-bind="itemProps" class="goal-option" :title="undefined">
-                    <template #prepend><span class="goal-option-icon" aria-hidden="true">{{ item.icon }}</span></template>
+                    <template #prepend>
+                      <span class="goal-option-icon" aria-hidden="true">{{ item.icon }}</span>
+                    </template>
                     <v-list-item-title>{{ item.title }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ t('savings.piggy.transfer.goalSaved', { saved: item.saved, target: item.target }) }}</v-list-item-subtitle>
-                    <template #append><span class="goal-option-progress">{{ goalProgress(item.saved, item.target) }} %</span></template>
+                    <v-list-item-subtitle>
+                      {{ t("savings.piggy.transfer.goalSaved", { saved: item.saved, target: item.target }) }}
+                    </v-list-item-subtitle>
+                    <template #append>
+                      <span class="goal-option-progress">{{ goalProgress(item.saved, item.target) }} %</span>
+                    </template>
                   </v-list-item>
                 </template>
               </v-select>
@@ -153,50 +269,120 @@
               >
                 <template #selection="{ item }">
                   <span class="selected-goal-option">
-                    <span class="goal-option-icon member-option-icon" aria-hidden="true"><AvatarFigure :appearance="memberAppearance(item.value)" :size="34" /></span>
-                    <span><strong>{{ item.title }}</strong><small>{{ t('savings.piggy.transfer.giftCoins') }}</small></span>
+                    <span class="goal-option-icon member-option-icon" aria-hidden="true">
+                      <AvatarFigure :appearance="memberAppearance(item.value)" :size="34" />
+                    </span>
+                    <span>
+                      <strong>{{ item.title }}</strong>
+                      <small>{{ t("savings.piggy.transfer.giftCoins") }}</small>
+                    </span>
                   </span>
                 </template>
                 <template #item="{ props: itemProps, item }">
                   <v-list-item v-bind="itemProps" class="goal-option" :title="undefined">
-                    <template #prepend><span class="goal-option-icon member-option-icon" aria-hidden="true"><AvatarFigure :appearance="memberAppearance(item.value)" :size="36" /></span></template>
+                    <template #prepend>
+                      <span class="goal-option-icon member-option-icon" aria-hidden="true">
+                        <AvatarFigure :appearance="memberAppearance(item.value)" :size="36" />
+                      </span>
+                    </template>
                     <v-list-item-title>{{ item.title }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ t('savings.piggy.transfer.giftDescription') }}</v-list-item-subtitle>
+                    <v-list-item-subtitle>{{ t("savings.piggy.transfer.giftDescription") }}</v-list-item-subtitle>
                   </v-list-item>
                 </template>
               </v-select>
             </label>
             <div class="transfer-field">
-              <span><i>2</i>{{ t('savings.piggy.transfer.amount') }}</span>
+              <span>
+                <i>2</i>
+                {{ t("savings.piggy.transfer.amount") }}
+              </span>
               <div class="amount-stepper" role="group" :aria-label="t('savings.piggy.transfer.amountAria')">
-                <button :aria-label="t('savings.piggy.transfer.decrease')" :disabled="amount <= 0" type="button" @click="adjustTransferAmount(-5)">−</button>
-                <output aria-live="polite"><span>{{ amount }}</span><LadirchenCoin small /></output>
-                <button :aria-label="t('savings.piggy.transfer.increase')" :disabled="amount >= transferAmountMaximum" type="button" @click="adjustTransferAmount(5)">+</button>
+                <button
+                  :aria-label="t('savings.piggy.transfer.decrease')"
+                  :disabled="amount <= 0"
+                  type="button"
+                  @click="adjustTransferAmount(-5)"
+                >
+                  −
+                </button>
+                <output aria-live="polite">
+                  <span>{{ amount }}</span>
+                  <LadirchenCoin small />
+                </output>
+                <button
+                  :aria-label="t('savings.piggy.transfer.increase')"
+                  :disabled="amount >= transferAmountMaximum"
+                  type="button"
+                  @click="adjustTransferAmount(5)"
+                >
+                  +
+                </button>
               </div>
             </div>
           </div>
           <div v-if="transferDestination === 'goal'" class="d-grid transfer-actions ga-2 mt-3">
-            <v-btn class="transfer-button transfer-button--withdraw" :disabled="amount <= 0 || amount > selectedGoalWithdrawable" rounded="lg" variant="tonal" @click="withdraw">{{ t('savings.piggy.transfer.withdraw') }}</v-btn>
-            <v-btn class="transfer-button transfer-button--deposit" color="info" :disabled="amount <= 0 || amount > maxDeposit" rounded="lg" variant="flat" @click="deposit">{{ t('savings.piggy.transfer.deposit') }}</v-btn>
+            <v-btn
+              class="transfer-button transfer-button--withdraw"
+              :disabled="!canWithdraw"
+              rounded="lg"
+              variant="tonal"
+              @click="withdraw"
+            >
+              {{ t("savings.piggy.transfer.withdraw") }}
+            </v-btn>
+            <v-btn
+              class="transfer-button transfer-button--deposit"
+              color="info"
+              :disabled="!canDeposit"
+              rounded="lg"
+              variant="flat"
+              @click="deposit"
+            >
+              {{ t("savings.piggy.transfer.deposit") }}
+            </v-btn>
           </div>
-          <v-btn v-else class="transfer-button transfer-button--gift mt-3" block :disabled="!selectedMemberId || amount <= 0 || amount > store.availableBalance" rounded="lg" variant="flat" @click="giftToMember">
-            {{ t('savings.piggy.transfer.send', { name: selectedMemberName }) }}<v-icon icon="i-mdi:send-variant-outline" />
+          <v-btn
+            v-else
+            class="transfer-button transfer-button--gift mt-3"
+            block
+            :disabled="!canGiftToMember"
+            rounded="lg"
+            variant="flat"
+            @click="giftToMember"
+          >
+            {{ t("savings.piggy.transfer.send", { name: selectedMemberName }) }}
+            <v-icon icon="i-mdi:send-variant-outline" />
           </v-btn>
         </v-card>
 
         <v-card v-if="store.viewerRole === 'guardian'" class="conditions-card pa-4 mt-5" elevation="0" rounded="xl">
-          <p class="eyebrow mb-1">{{ t('savings.piggy.interest.eyebrow') }}</p>
-          <h3 class="dialog-section-title">{{ t('savings.piggy.interest.title') }}</h3>
-          <p class="text-caption text-medium-emphasis mt-1 mb-4">{{ t('savings.piggy.interest.description') }}</p>
-          <label class="setting-label">{{ t('savings.piggy.interest.base') }} <strong>{{ formatRate(store.baseSavingsRatePercent) }} %</strong></label>
+          <p class="eyebrow mb-1">{{ t("savings.piggy.interest.eyebrow") }}</p>
+          <h3 class="dialog-section-title">{{ t("savings.piggy.interest.title") }}</h3>
+          <p class="text-caption text-medium-emphasis mt-1 mb-4">{{ t("savings.piggy.interest.description") }}</p>
+          <label class="setting-label">
+            {{ t("savings.piggy.interest.base") }}
+            <strong>{{ formatRate(store.baseSavingsRatePercent) }} %</strong>
+          </label>
           <v-slider v-model="store.baseSavingsRatePercent" color="primary" hide-details max="5" min="0" step="0.1" />
-          <label class="setting-label">{{ t('savings.piggy.interest.streak') }} <strong>+{{ formatRate(store.streakBonusRate) }} %</strong></label>
+          <label class="setting-label">
+            {{ t("savings.piggy.interest.streak") }}
+            <strong>+{{ formatRate(store.streakBonusRate) }} %</strong>
+          </label>
           <v-slider v-model="store.streakBonusRate" color="primary" hide-details max="2" min="0" step="0.1" />
-          <label class="setting-label">{{ t('savings.piggy.interest.completion') }} <strong>+{{ formatRate(store.completionBonusRate) }} %</strong></label>
+          <label class="setting-label">
+            {{ t("savings.piggy.interest.completion") }}
+            <strong>+{{ formatRate(store.completionBonusRate) }} %</strong>
+          </label>
           <v-slider v-model="store.completionBonusRate" color="primary" hide-details max="5" min="0" step="0.1" />
-          <label class="setting-label">{{ t('savings.piggy.interest.rating') }} <strong>+{{ formatRate(store.ratingBonusRate) }} %</strong></label>
+          <label class="setting-label">
+            {{ t("savings.piggy.interest.rating") }}
+            <strong>+{{ formatRate(store.ratingBonusRate) }} %</strong>
+          </label>
           <v-slider v-model="store.ratingBonusRate" color="primary" hide-details max="5" min="0" step="0.1" />
-          <label class="setting-label">{{ t('savings.piggy.interest.maximum') }} <strong>{{ formatRate(store.maxSavingsRatePercent) }} %</strong></label>
+          <label class="setting-label">
+            {{ t("savings.piggy.interest.maximum") }}
+            <strong>{{ formatRate(store.maxSavingsRatePercent) }} %</strong>
+          </label>
           <v-slider v-model="store.maxSavingsRatePercent" color="warning" hide-details max="20" min="1" step="0.5" />
         </v-card>
       </v-card-text>
@@ -218,16 +404,46 @@ import { useSavingsPiggy } from "@/features/savings/composables/use-savings-pigg
 
 const { t } = useI18n();
 const {
-  adjustTransferAmount, amount, currencyOptions, deposit, formatRate, formattedFamilyValue,
-  formattedGuardianFamilyValue, giftToMember, goalOptions, goalProgress, guardianChildren,
-  maxDeposit, memberAppearance, memberOptions, selectedGoalId, selectedGoalWithdrawable,
-  selectedMemberId, selectedMemberName, setCurrency, setTransferDestination, store, transferAmountMaximum,
-  transferDestination, transferDirection, withdraw,
+  adjustTransferAmount,
+  amount,
+  currencyOptions,
+  deposit,
+  formatRate,
+  formattedFamilyValue,
+  formattedGuardianFamilyValue,
+  giftToMember,
+  goalOptions,
+  goalProgress,
+  guardianChildren,
+  maxDeposit,
+  memberAppearance,
+  memberOptions,
+  selectedGoalId,
+  selectedGoalWithdrawable,
+  selectedMemberId,
+  selectedMemberName,
+  setCurrency,
+  setTransferDestination,
+  store,
+  transferAmountMaximum,
+  transferDestination,
+  transferDirection,
+  withdraw,
 } = useSavingsPiggy();
-const dialogTitle = computed(() => store.viewerRole === "guardian"
-  ? t("savings.piggy.header.guardian.title")
-  : t("savings.piggy.header.child.title", { name: store.activeChild.name }));
-const transferDirectionClass = computed(() => transferDirection.value ? `transfer-${transferDirection.value}` : "");
+const dialogTitle = computed(() =>
+  store.viewerRole === "guardian"
+    ? t("savings.piggy.header.guardian.title")
+    : t("savings.piggy.header.child.title", { name: store.activeChild.name }),
+);
+const transferDirectionClass = computed(() => (transferDirection.value ? `transfer-${transferDirection.value}` : ""));
+const balanceEquivalenceLabel = computed(() => `${store.availableBalance} = ${formattedFamilyValue.value}`);
+const showCurrencySettings = computed(() => store.viewerRole === "guardian" && store.permissions.canManageFamily);
+const hasTransferAmount = computed(() => amount.value > 0);
+const canWithdraw = computed(() => hasTransferAmount.value && amount.value <= selectedGoalWithdrawable.value);
+const canDeposit = computed(() => hasTransferAmount.value && amount.value <= maxDeposit.value);
+const canGiftToMember = computed(
+  () => Boolean(selectedMemberId.value) && hasTransferAmount.value && amount.value <= store.availableBalance,
+);
 </script>
 
 <style lang="scss" scoped>
@@ -253,11 +469,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   background: var(--lad-surface);
 }
 .piggy-content {
-  background: linear-gradient(
-    180deg,
-    var(--lad-surface),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(180deg, var(--lad-surface), var(--lad-surface-soft));
 }
 .piggy-title-row {
   min-height: 108px;
@@ -278,8 +490,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   top: -68px;
   right: -25px;
   background: color-mix(in srgb, var(--lad-color-info-soft) 60%, transparent);
-  box-shadow: 0 0 0 15px
-    color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
+  box-shadow: 0 0 0 15px color-mix(in srgb, var(--lad-surface-soft) 40%, transparent);
 }
 .piggy-title-row::after {
   width: 78px;
@@ -321,9 +532,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .header-coin :deep(.ladirchen-coin) {
   scale: 0.76;
-  filter: drop-shadow(
-    0 7px 7px color-mix(in srgb, var(--lad-color-reward-deep) 15%, transparent)
-  );
+  filter: drop-shadow(0 7px 7px color-mix(in srgb, var(--lad-color-reward-deep) 15%, transparent));
 }
 .piggy-close {
   --uno: position-absolute;
@@ -348,11 +557,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   @include icon-tile(
     2.5rem,
     rem(14),
-    linear-gradient(
-      145deg,
-      var(--lad-color-primary-highlight),
-      var(--lad-color-info)
-    ),
+    linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-info)),
     var(--lad-color-info-strong),
     -5deg,
     rem(3) solid var(--lad-surface-raised)
@@ -360,19 +565,11 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   color: var(--lad-text-inverse);
 }
 .balance-icon--plans {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-accent-pink),
-    var(--lad-color-bonus)
-  );
+  background: linear-gradient(145deg, var(--lad-color-accent-pink), var(--lad-color-bonus));
   box-shadow: 0 4px 0 var(--lad-color-bonus-muted);
 }
 .balance-icon--interest {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-muted)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-muted));
   box-shadow: 0 4px 0 var(--lad-color-primary-deep);
 }
 .today-earned {
@@ -383,11 +580,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   gap: 2px;
   color: var(--lad-color-primary-deep);
   border-radius: var(--lad-radius-pill);
-  background: color-mix(
-    in srgb,
-    var(--lad-color-primary-soft) 90%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--lad-color-primary-soft) 90%, transparent);
   font-size: rem(7);
   font-weight: var(--lad-font-weight-strong);
   line-height: 1;
@@ -454,22 +647,16 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   letter-spacing: -0.025em;
 }
 .conditions-card {
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
 }
 .guardian-balances {
   padding: 12px;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: 20px;
   background:
-    radial-gradient(
-      circle at 94% 4%,
-      color-mix(in srgb, var(--lad-color-reward) 20%, transparent),
-      transparent 28%
-    ),
+    radial-gradient(circle at 94% 4%, color-mix(in srgb, var(--lad-color-reward) 20%, transparent), transparent 28%),
     linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent);
 }
 .guardian-balances-heading {
   --uno: d-flex align-end justify-space-between;
@@ -496,23 +683,17 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
     42px minmax(76px, 1fr) repeat(3, minmax(47px, 0.62fr))
     minmax(45px, 0.56fr);
   gap: 6px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
   border-radius: 15px;
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .guardian-child-avatar {
   width: 42px;
   height: 42px;
   --uno: d-grid place-center overflow-hidden;
   border-radius: 12px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-pale)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale));
 }
 .guardian-child-avatar :deep(.avatar-figure) {
   border: 0;
@@ -542,8 +723,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .guardian-child-stat {
   padding-left: 5px;
-  border-left: 1px solid
-    color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
 }
 .guardian-child-stat small {
   --uno: overflow-hidden;
@@ -564,15 +744,9 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   font-size: rem(15);
 }
 .currency-settings-card {
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-reward-border) 25%, transparent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface),
-    var(--lad-surface-soft)
-  );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-color-reward-accent) 10%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-reward-border) 25%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft));
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--lad-color-reward-accent) 10%, transparent);
 }
 .currency-settings-heading {
   --uno: d-flex align-center;
@@ -613,25 +787,13 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .transfer-card {
   --uno: position-relative overflow-hidden;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 18%, transparent);
   background:
-    radial-gradient(
-      circle at 94% 4%,
-      color-mix(in srgb, var(--lad-color-reward) 25%, transparent),
-      transparent 27%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface),
-      var(--lad-surface-soft) 62%,
-      var(--lad-surface-soft)
-    );
+    radial-gradient(circle at 94% 4%, color-mix(in srgb, var(--lad-color-reward) 25%, transparent), transparent 27%),
+    linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft) 62%, var(--lad-surface-soft));
   box-shadow:
-    0 5px 0
-      color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
-    0 12px 22px
-      color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
+    0 5px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
+    0 12px 22px color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .transfer-card::after {
   content: "✦";
@@ -651,13 +813,8 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   grid-template-columns: 1fr 1fr;
   gap: 5px;
   border-radius: 16px;
-  background: color-mix(
-    in srgb,
-    var(--lad-color-primary-soft) 65%,
-    transparent
-  );
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent);
+  background: color-mix(in srgb, var(--lad-color-primary-soft) 65%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent);
 }
 .destination-switch button {
   min-width: 0;
@@ -696,18 +853,9 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .destination-switch button.active {
   color: var(--lad-color-primary-deep);
-  border-color: color-mix(
-    in srgb,
-    var(--lad-border-on-accent) 90%,
-    transparent
-  );
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-color-reward-soft)
-  );
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
+  border-color: color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-color-reward-soft));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
   transform: translateY(-1px);
 }
 .destination-switch button {
@@ -737,36 +885,23 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   z-index: 2;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 12px;
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-info-strong) 12%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-info-strong) 12%, transparent);
   font-weight: var(--lad-font-weight-black);
 }
 .transfer-wallet {
   color: var(--lad-color-reward-strong);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-reward-highlight),
-    var(--lad-color-reward)
-  );
+  background: linear-gradient(145deg, var(--lad-color-reward-highlight), var(--lad-color-reward));
 }
 .transfer-goal {
   color: var(--lad-color-primary-strong);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-primary-soft)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-primary-soft));
 }
 .transfer-track {
   height: 6px;
   --uno: position-relative flex-grow-1;
   margin-inline: -3px;
   border-radius: var(--lad-radius-pill);
-  background: repeating-linear-gradient(
-    90deg,
-    var(--lad-color-info-soft) 0 7px,
-    transparent 7px 11px
-  );
+  background: repeating-linear-gradient(90deg, var(--lad-color-info-soft) 0 7px, transparent 7px 11px);
 }
 .transfer-track i {
   width: 9px;
@@ -777,8 +912,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 50%;
   background: var(--lad-color-reward);
-  box-shadow: 0 2px 3px
-    color-mix(in srgb, var(--lad-color-reward-strong) 18%, transparent);
+  box-shadow: 0 2px 3px color-mix(in srgb, var(--lad-color-reward-strong) 18%, transparent);
   opacity: 0;
 }
 .transfer-card.transfer-deposit .transfer-track i {
@@ -802,8 +936,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .transfer-button {
   min-height: 42px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
   border-radius: 14px;
   font-size: rem(9);
   font-weight: var(--lad-font-weight-heavy);
@@ -818,20 +951,11 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .transfer-button--withdraw {
   color: var(--lad-color-info-deep);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-surface-soft)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface-soft));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent);
 }
 .transfer-button--deposit {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info-strong));
   box-shadow:
     0 4px 0 var(--lad-color-info-strong),
     0 8px 14px color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
@@ -844,15 +968,10 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .transfer-button--gift {
   color: var(--lad-text-inverse);
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-muted)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-muted));
   box-shadow:
     0 4px 0 var(--lad-color-primary-deep),
-    0 8px 14px
-      color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
+    0 8px 14px color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
 }
 .transfer-title {
   --uno: d-flex align-center;
@@ -865,13 +984,8 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   color: var(--lad-color-primary-supporting);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 12px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-pale)
-  );
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 15%, transparent);
   animation: money-path-float 1.8s ease-in-out infinite;
 }
 .transfer-title-icon :deep(.ladirchen-coin) {
@@ -886,12 +1000,10 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 .transfer-field {
   min-width: 0;
   padding: 7px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
   border-radius: 15px;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .transfer-field > span {
   margin: 0 2px 5px;
@@ -915,14 +1027,9 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 .transfer-input :deep(.v-field) {
   border: 0;
   border-radius: 11px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-surface)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface));
   box-shadow:
-    inset 0 0 0 1px
-      color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
     0 2px 0 color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .transfer-input :deep(.v-field__overlay),
@@ -973,29 +1080,18 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   --uno: d-grid place-center flex-shrink-0;
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 10px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-pale)
-  );
-  box-shadow: 0 2px 0
-    color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale));
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
   font-size: rem(17);
   transform: rotate(-4deg);
 }
 .goal-option {
   min-height: 57px;
   margin: 5px 7px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
   border-radius: 15px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-surface)
-  );
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .goal-option :deep(.v-list-item-title) {
   font-size: 0.75rem;
@@ -1015,11 +1111,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
 }
 .member-option-icon {
   --uno: overflow-hidden;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
 }
 .member-option-icon :deep(.avatar-figure) {
   transform-origin: center;
@@ -1030,14 +1122,9 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   --uno: d-grid align-center overflow-hidden;
   grid-template-columns: 36px 1fr 36px;
   border-radius: 11px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-raised),
-    var(--lad-surface)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-raised), var(--lad-surface));
   box-shadow:
-    inset 0 0 0 1px
-      color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--lad-color-primary-supporting) 10%, transparent),
     0 2px 0 color-mix(in srgb, var(--lad-color-primary-deep) 8%, transparent);
 }
 .amount-stepper button {
@@ -1047,11 +1134,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
   color: var(--lad-text-inverse);
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 10px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info));
   box-shadow: 0 2px 0 var(--lad-color-info-strong);
   font-size: 1.25rem;
   font-weight: var(--lad-font-weight-heavy);
@@ -1061,11 +1144,7 @@ const transferDirectionClass = computed(() => transferDirection.value ? `transfe
     box-shadow 0.14s ease;
 }
 .amount-stepper button:last-child {
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow: 0 2px 0 var(--lad-color-primary-deep);
 }
 .amount-stepper button:hover:not(:disabled) {

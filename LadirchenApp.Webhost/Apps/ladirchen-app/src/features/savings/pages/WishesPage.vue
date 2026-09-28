@@ -3,43 +3,98 @@
     <PageViewSwitch v-model="activeTab" class="mb-5" :label="t('wishes.viewLabel')" :options="wishViewOptions" />
 
     <template v-if="activeTab !== 'family'">
-      <button v-if="canCreatePersonalGoal" class="create-goal-card mb-5" type="button" @click="openGoalDialog(personalGoalOwnerId)">
+      <button
+        v-if="canCreatePersonalGoal"
+        class="create-goal-card mb-5"
+        type="button"
+        @click="openGoalDialog(personalGoalOwnerId)"
+      >
         <span class="create-goal-icon"><v-icon icon="i-mdi:plus" /></span>
-        <span><strong>{{ t('wishes.create.title') }}</strong><small>{{ t('wishes.create.description') }}</small></span>
+        <span>
+          <strong>{{ t("wishes.create.title") }}</strong>
+          <small>{{ t("wishes.create.description") }}</small>
+        </span>
         <v-icon class="create-goal-arrow" icon="i-mdi:arrow-right" />
       </button>
 
       <SavingsInterestGuideCard v-if="store.viewerRole === 'child'" />
 
-      <SectionHeader
-        :description="personalSectionDescription"
-        :title="personalSectionTitle"
-      />
+      <SectionHeader :description="personalSectionDescription" :title="personalSectionTitle" />
 
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
-        <BrandedCard v-for="goal in personalGoals" :key="goal.id" class="family-goal pa-3" tone="wishes">
+        <BrandedCard v-for="card in personalGoalCards" :key="card.goal.id" class="family-goal pa-3" tone="wishes">
           <div class="d-flex align-start ga-3">
-            <div class="goal-icon">{{ goal.icon }}</div>
+            <div class="goal-icon">{{ card.goal.icon }}</div>
             <div class="flex-grow-1 min-w-0">
               <div class="d-flex align-center justify-space-between ga-2">
-                <div><strong>{{ goal.title }}</strong><p v-if="goal.ownerId !== store.signedInMemberId" class="text-caption text-medium-emphasis">{{ ownerName(goal.ownerId) }}</p></div>
-                <v-chip v-if="goal.ownerId !== store.signedInMemberId" color="primary" size="x-small" variant="tonal">{{ personalGoalVisibilityLabel(goal) }}</v-chip>
+                <div>
+                  <strong>{{ card.goal.title }}</strong>
+                  <p v-if="!card.isOwn" class="text-caption text-medium-emphasis">{{ card.ownerLabel }}</p>
+                </div>
+                <v-chip v-if="!card.isOwn" color="primary" size="x-small" variant="tonal">
+                  {{ card.visibilityLabel }}
+                </v-chip>
               </div>
               <div class="goal-account-stats mt-3">
-                <MetricCard compact tone="info"><b class="goal-stat-icon"><v-icon icon="i-mdi:wallet-plus-outline" /></b><i><small>{{ t('wishes.stats.deposited') }}</small><strong><LadirchenAmount compact :value="depositedAmount(goal)" /></strong></i></MetricCard>
-                <MetricCard compact tone="energy"><b class="goal-stat-icon"><v-icon icon="i-mdi:chart-line" /></b><i><small>{{ t('wishes.stats.interest') }}</small><strong>{{ formatInterestRate(store.savingsInterestRate) }} %</strong></i></MetricCard>
-                <MetricCard compact tone="reward"><b class="goal-stat-icon"><v-icon icon="i-mdi:calendar-star" /></b><i><small>{{ t('wishes.stats.nextWeek') }}</small><strong><LadirchenAmount compact prefix="+" :value="weeklyInterestForGoal(goal)" /></strong></i></MetricCard>
-                <MetricCard compact tone="bonus"><b class="goal-stat-icon"><v-icon icon="i-mdi:star-four-points" /></b><i><small>{{ t('wishes.stats.earned') }}</small><strong><LadirchenAmount compact prefix="+" :value="goal.interestEarned ?? 0" /></strong></i></MetricCard>
+                <MetricCard compact tone="info">
+                  <b class="goal-stat-icon"><v-icon icon="i-mdi:wallet-plus-outline" /></b>
+                  <i>
+                    <small>{{ t("wishes.stats.deposited") }}</small>
+                    <strong><LadirchenAmount compact :value="card.deposited" /></strong>
+                  </i>
+                </MetricCard>
+                <MetricCard compact tone="energy">
+                  <b class="goal-stat-icon"><v-icon icon="i-mdi:chart-line" /></b>
+                  <i>
+                    <small>{{ t("wishes.stats.interest") }}</small>
+                    <strong>{{ interestRateLabel }} %</strong>
+                  </i>
+                </MetricCard>
+                <MetricCard compact tone="reward">
+                  <b class="goal-stat-icon"><v-icon icon="i-mdi:calendar-star" /></b>
+                  <i>
+                    <small>{{ t("wishes.stats.nextWeek") }}</small>
+                    <strong><LadirchenAmount compact prefix="+" :value="card.weeklyInterest" /></strong>
+                  </i>
+                </MetricCard>
+                <MetricCard compact tone="bonus">
+                  <b class="goal-stat-icon"><v-icon icon="i-mdi:star-four-points" /></b>
+                  <i>
+                    <small>{{ t("wishes.stats.earned") }}</small>
+                    <strong><LadirchenAmount compact prefix="+" :value="card.interestEarned" /></strong>
+                  </i>
+                </MetricCard>
               </div>
-              <v-progress-linear class="mt-3" color="primary" height="8" :model-value="progress(goal.saved, goal.target)" rounded />
+              <v-progress-linear class="mt-3" color="primary" height="8" :model-value="card.progress" rounded />
               <div class="d-flex align-center justify-space-between mt-2">
-                <span class="goal-total"><small>{{ t('wishes.stats.balance') }}</small><strong><LadirchenAmount :value="`${goal.saved} / ${goal.target}`" /></strong></span>
-                <v-btn v-if="goal.ownerId === store.signedInMemberId && store.viewerRole === 'child'" class="assign-button" color="info" rounded="lg" size="small" variant="tonal" @click="openSave(goal.id)">
+                <span class="goal-total">
+                  <small>{{ t("wishes.stats.balance") }}</small>
+                  <strong><LadirchenAmount :value="card.balanceLabel" /></strong>
+                </span>
+                <v-btn
+                  v-if="card.canSave"
+                  class="assign-button"
+                  color="info"
+                  rounded="lg"
+                  size="small"
+                  variant="tonal"
+                  @click="openSave(card.goal.id)"
+                >
                   <span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span>
-                  <span>{{ t('wishes.assign') }}</span>
+                  <span>{{ t("wishes.assign") }}</span>
                   <i class="assign-spark" aria-hidden="true">✦</i>
                 </v-btn>
-                <v-btn v-else-if="goal.ownerId !== store.signedInMemberId" color="info" prepend-icon="i-mdi:gift-outline" rounded="lg" size="small" variant="tonal" @click="openSupport(goal.id)">{{ t('wishes.gift') }}</v-btn>
+                <v-btn
+                  v-else-if="!card.isOwn"
+                  color="info"
+                  prepend-icon="i-mdi:gift-outline"
+                  rounded="lg"
+                  size="small"
+                  variant="tonal"
+                  @click="openSupport(card.goal.id)"
+                >
+                  {{ t("wishes.gift") }}
+                </v-btn>
               </div>
             </div>
           </div>
@@ -50,43 +105,58 @@
     <template v-else>
       <button class="create-goal-card create-family-goal-card mb-5" type="button" @click="openGoalDialog('family')">
         <span class="create-goal-icon"><v-icon icon="i-mdi:account-group-outline" /></span>
-        <span><strong>{{ t('wishes.createFamily.title') }}</strong><small>{{ t('wishes.createFamily.description') }}</small></span>
+        <span>
+          <strong>{{ t("wishes.createFamily.title") }}</strong>
+          <small>{{ t("wishes.createFamily.description") }}</small>
+        </span>
         <v-icon class="create-goal-arrow" icon="i-mdi:plus" />
       </button>
       <TransitionGroup class="goal-grid" name="goal-list" tag="div">
-        <BrandedCard v-for="goal in visibleFamilyGoals" :key="goal.id" class="family-goal pa-3" tone="wishes">
+        <BrandedCard v-for="card in familyGoalCards" :key="card.goal.id" class="family-goal pa-3" tone="wishes">
           <div class="d-flex align-start ga-3">
-            <div class="goal-icon">{{ goal.icon }}</div>
+            <div class="goal-icon">{{ card.goal.icon }}</div>
             <div class="flex-grow-1 min-w-0">
               <div class="d-flex align-center justify-space-between ga-2">
-                <div><strong>{{ goal.title }}</strong><p class="text-caption text-medium-emphasis">{{ ownerName(goal.ownerId) }}</p></div>
-                <v-chip v-if="goal.shared" color="primary" size="x-small" variant="tonal">{{ t('wishes.shared') }}</v-chip>
+                <div>
+                  <strong>{{ card.goal.title }}</strong>
+                  <p class="text-caption text-medium-emphasis">{{ card.ownerLabel }}</p>
+                </div>
+                <v-chip v-if="card.goal.shared" color="primary" size="x-small" variant="tonal">
+                  {{ t("wishes.shared") }}
+                </v-chip>
               </div>
-              <v-progress-linear class="mt-3" color="primary" height="8" :model-value="progress(goal.saved, goal.target)" rounded />
+              <v-progress-linear class="mt-3" color="primary" height="8" :model-value="card.progress" rounded />
               <div class="d-flex align-center justify-space-between flex-wrap ga-2 mt-2">
-                <LadirchenAmount class="text-caption font-weight-bold" :value="`${goal.saved} / ${goal.target}`" />
+                <LadirchenAmount class="text-caption font-weight-bold" :value="card.balanceLabel" />
                 <div class="family-goal-actions">
                   <button
                     class="cheer-button"
-                    :class="{ 'is-cheered': goal.cheered }"
-                    :aria-label="t('wishes.cheerAria', { title: goal.title })"
-                    :aria-pressed="goal.cheered"
+                    :class="{ 'is-cheered': card.goal.cheered }"
+                    :aria-label="card.cheerAriaLabel"
+                    :aria-pressed="card.goal.cheered"
                     type="button"
-                    @click="store.toggleCheer(goal.id)"
+                    @click="store.toggleCheer(card.goal.id)"
                   >
-                    <span class="cheer-hands" aria-hidden="true"><i>🤚</i><i>✋</i></span>
+                    <span class="cheer-hands" aria-hidden="true">
+                      <i>🤚</i>
+                      <i>✋</i>
+                    </span>
                     <span class="cheer-spark cheer-spark--one" aria-hidden="true">✦</span>
                     <span class="cheer-spark cheer-spark--two" aria-hidden="true">✧</span>
                   </button>
                   <v-btn
-                    v-if="goal.saved < goal.target && (store.viewerRole === 'child' || store.permissions.canSupportChildGoals)"
+                    v-if="card.canGift"
                     class="family-gift-button assign-button"
                     color="info"
                     rounded="lg"
                     size="small"
                     variant="tonal"
-                    @click="openSupport(goal.id)"
-                  ><span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span><span>{{ t('wishes.giftCoins') }}</span><i class="assign-spark" aria-hidden="true">✦</i></v-btn>
+                    @click="openSupport(card.goal.id)"
+                  >
+                    <span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span>
+                    <span>{{ t("wishes.giftCoins") }}</span>
+                    <i class="assign-spark" aria-hidden="true">✦</i>
+                  </v-btn>
                 </div>
               </div>
             </div>
@@ -100,26 +170,53 @@
         <header class="save-dialog-header">
           <div class="save-goal-icon" aria-hidden="true">{{ activeGoal.icon }}</div>
           <div class="flex-grow-1 min-w-0">
-            <p class="eyebrow mb-1">{{ t('wishes.save.title') }}</p>
+            <p class="eyebrow mb-1">{{ t("wishes.save.title") }}</p>
             <h2>{{ activeGoal.title }}</h2>
-            <span>{{ t('wishes.save.progress', { saved: activeGoal.saved, target: activeGoal.target }) }}</span>
+            <span>{{ t("wishes.save.progress", { saved: activeGoal.saved, target: activeGoal.target }) }}</span>
           </div>
-          <v-btn :aria-label="t('wishes.save.close')" icon="i-mdi:close" size="small" variant="text" @click="saveDialog = false" />
+          <v-btn
+            :aria-label="t('wishes.save.close')"
+            icon="i-mdi:close"
+            size="small"
+            variant="text"
+            @click="saveDialog = false"
+          />
         </header>
 
         <div class="save-dialog-content">
           <div class="save-balance">
             <LadirchenCoin class="save-balance-coin" small />
-            <div><small>{{ t('wishes.save.available') }}</small><strong><LadirchenAmount :value="store.availableBalance" /></strong></div>
-            <span class="save-journey" aria-hidden="true"><i /><i /><i /></span>
+            <div>
+              <small>{{ t("wishes.save.available") }}</small>
+              <strong><LadirchenAmount :value="store.availableBalance" /></strong>
+            </div>
+            <span class="save-journey" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
             <span class="save-goal-star" aria-hidden="true">★</span>
           </div>
 
-          <v-slider v-model="saveAmount" class="save-slider mt-5" color="info" :disabled="maxAssignable <= 0" hide-details :max="Math.max(1, maxAssignable)" min="0" step="5" thumb-label />
-          <div class="save-value"><LadirchenCoin small /><strong>{{ saveAmount }}</strong><small>{{ t('wishes.save.currency') }}</small></div>
-          <p v-if="maxAssignable <= 0" class="save-empty-note">{{ t('wishes.save.empty') }}</p>
+          <v-slider
+            v-model="saveAmount"
+            class="save-slider mt-5"
+            color="info"
+            :disabled="maxAssignable <= 0"
+            hide-details
+            :max="saveSliderMax"
+            min="0"
+            step="5"
+            thumb-label
+          />
+          <div class="save-value">
+            <LadirchenCoin small />
+            <strong>{{ saveAmount }}</strong>
+            <small>{{ t("wishes.save.currency") }}</small>
+          </div>
+          <p v-if="maxAssignable <= 0" class="save-empty-note">{{ t("wishes.save.empty") }}</p>
 
-          <button class="save-submit" :disabled="saveAmount <= 0 || saveMotion" type="button" @click="saveToGoal">
+          <button class="save-submit" :disabled="!canSubmitSave" type="button" @click="saveToGoal">
             <LadirchenCoin class="save-submit-coin" small />
             <strong>{{ saveSubmitLabel }}</strong>
             <span aria-hidden="true">→</span>
@@ -132,25 +229,54 @@
     <SavingGoalDialog v-model="goalDialog" @submit="addGoal" />
 
     <v-dialog v-model="supportDialog" max-width="420" :persistent="supportSending">
-      <v-card v-if="supportGoal" class="support-dialog-card pa-5" :class="{ 'is-sending': supportSending }" rounded="xl">
+      <v-card
+        v-if="supportGoal"
+        class="support-dialog-card pa-5"
+        :class="{ 'is-sending': supportSending }"
+        rounded="xl"
+      >
         <div class="support-dialog-heading">
           <div class="support-icon">🎁</div>
           <div>
-            <p class="eyebrow mb-1">{{ t('wishes.support.eyebrow') }}</p>
+            <p class="eyebrow mb-1">{{ t("wishes.support.eyebrow") }}</p>
             <h2>{{ supportGoal.title }}</h2>
-            <span>{{ t('wishes.support.description', { name: ownerName(supportGoal.ownerId) }) }}</span>
+            <span>{{ t("wishes.support.description", { name: ownerName(supportGoal.ownerId) }) }}</span>
           </div>
         </div>
         <div class="support-journey mt-4" aria-hidden="true">
-          <LadirchenCoin class="support-coin" small /><i /><i /><i /><span class="support-high-five">✋</span><span class="support-present">🎁</span>
+          <LadirchenCoin class="support-coin" small />
+          <i />
+          <i />
+          <i />
+          <span class="support-high-five">✋</span>
+          <span class="support-present">🎁</span>
         </div>
-        <v-slider v-model="supportAmount" color="info" :disabled="supportMaximum <= 0" :max="Math.max(1, supportMaximum)" min="1" step="1" thumb-label />
+        <v-slider
+          v-model="supportAmount"
+          color="info"
+          :disabled="supportMaximum <= 0"
+          :max="supportSliderMax"
+          min="1"
+          step="1"
+          thumb-label
+        />
         <div class="save-value text-center mb-2"><LadirchenAmount :value="supportAmount" /></div>
         <p class="text-caption text-medium-emphasis text-center mb-4">{{ supportExplanation }}</p>
         <div class="d-grid dialog-actions ga-2">
-          <v-btn :disabled="supportSending" rounded="lg" variant="text" @click="supportDialog = false">{{ t('wishes.back') }}</v-btn>
-          <v-btn class="support-submit" color="info" :disabled="supportMaximum <= 0 || supportAmount <= 0 || supportSending" rounded="lg" variant="flat" @click="giveSupport">
-            <span aria-hidden="true">✋</span>{{ supportSubmitLabel }}<span aria-hidden="true">🎁</span>
+          <v-btn :disabled="supportSending" rounded="lg" variant="text" @click="supportDialog = false">
+            {{ t("wishes.back") }}
+          </v-btn>
+          <v-btn
+            class="support-submit"
+            color="info"
+            :disabled="!canSubmitSupport"
+            rounded="lg"
+            variant="flat"
+            @click="giveSupport"
+          >
+            <span aria-hidden="true">✋</span>
+            {{ supportSubmitLabel }}
+            <span aria-hidden="true">🎁</span>
           </v-btn>
         </div>
       </v-card>
@@ -176,23 +302,82 @@ import type { SavingGoal } from "@/domain/savings/types";
 const { t } = useI18n();
 
 const {
-  activeGoal, activeTab, addGoal, canCreatePersonalGoal, depositedAmount, formatInterestRate, giveSupport,
-  goalDialog, maxAssignable, openGoalDialog, openSave, openSupport, ownerName, personalGoalOwnerId,
-  personalGoals, progress, saveAmount, saveDialog, saveMotion, saveToGoal, store, supportAmount,
-  supportDialog, supportExplanation, supportGoal, supportMaximum, supportSending, visibilityLabel,
-  visibleFamilyGoals, weeklyInterestForGoal, wishViewOptions,
+  activeGoal,
+  activeTab,
+  addGoal,
+  canCreatePersonalGoal,
+  depositedAmount,
+  formatInterestRate,
+  giveSupport,
+  goalBalanceLabel,
+  goalDialog,
+  maxAssignable,
+  openGoalDialog,
+  openSave,
+  openSupport,
+  ownerName,
+  personalGoalOwnerId,
+  personalGoals,
+  progress,
+  saveAmount,
+  saveDialog,
+  saveMotion,
+  saveToGoal,
+  store,
+  supportAmount,
+  supportDialog,
+  supportExplanation,
+  supportGoal,
+  supportMaximum,
+  supportSending,
+  visibilityLabel,
+  visibleFamilyGoals,
+  weeklyInterestForGoal,
+  wishViewOptions,
 } = useWishesPage();
-const personalSectionDescription = computed(() => t(activeTab.value === "children"
-  ? "wishes.sections.childrenDescription"
-  : "wishes.sections.ownDescription"));
-const personalSectionTitle = computed(() => t(activeTab.value === "children"
-  ? "wishes.sections.childrenTitle"
-  : "wishes.sections.ownTitle"));
+const personalSectionDescription = computed(() =>
+  t(activeTab.value === "children" ? "wishes.sections.childrenDescription" : "wishes.sections.ownDescription"),
+);
+const personalSectionTitle = computed(() =>
+  t(activeTab.value === "children" ? "wishes.sections.childrenTitle" : "wishes.sections.ownTitle"),
+);
 const saveSubmitLabel = computed(() => t(saveMotion.value ? "wishes.save.sending" : "wishes.save.submit"));
 const supportSubmitLabel = computed(() => t(supportSending.value ? "wishes.support.sending" : "wishes.support.submit"));
-const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
-  ? t("wishes.shared")
-  : visibilityLabel(goal.visibility);
+const personalGoalVisibilityLabel = (goal: SavingGoal) =>
+  goal.shared ? t("wishes.shared") : visibilityLabel(goal.visibility);
+const interestRateLabel = computed(() => formatInterestRate(store.savingsInterestRate));
+const personalGoalCards = computed(() =>
+  personalGoals.value.map((goal) => {
+    const isOwn = goal.ownerId === store.signedInMemberId;
+    return {
+      goal,
+      isOwn,
+      ownerLabel: ownerName(goal.ownerId),
+      visibilityLabel: personalGoalVisibilityLabel(goal),
+      canSave: isOwn && store.viewerRole === "child",
+      deposited: depositedAmount(goal),
+      weeklyInterest: weeklyInterestForGoal(goal),
+      interestEarned: goal.interestEarned ?? 0,
+      progress: progress(goal.saved, goal.target),
+      balanceLabel: goalBalanceLabel(goal),
+    };
+  }),
+);
+const canGiftToFamilyGoals = computed(() => store.viewerRole === "child" || store.permissions.canSupportChildGoals);
+const familyGoalCards = computed(() =>
+  visibleFamilyGoals.value.map((goal) => ({
+    goal,
+    ownerLabel: ownerName(goal.ownerId),
+    progress: progress(goal.saved, goal.target),
+    balanceLabel: goalBalanceLabel(goal),
+    cheerAriaLabel: t("wishes.cheerAria", { title: goal.title }),
+    canGift: goal.saved < goal.target && canGiftToFamilyGoals.value,
+  })),
+);
+const saveSliderMax = computed(() => Math.max(1, maxAssignable.value));
+const supportSliderMax = computed(() => Math.max(1, supportMaximum.value));
+const canSubmitSave = computed(() => saveAmount.value > 0 && !saveMotion.value);
+const canSubmitSupport = computed(() => supportMaximum.value > 0 && supportAmount.value > 0 && !supportSending.value);
 </script>
 
 <style lang="scss" scoped>
@@ -212,11 +397,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
       color-mix(in srgb, var(--lad-color-reward-highlight) 25%, transparent),
       transparent 29%
     ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface-soft),
-      var(--lad-color-reward-soft)
-    );
+    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
   box-shadow:
     0 5px 0 color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent),
     0 10px 19px color-mix(in srgb, var(--lad-color-info-deep) 8%, transparent);
@@ -232,8 +413,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
 }
 .create-goal-card:active {
   transform: translateY(3px);
-  box-shadow: 0 2px 0
-    color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
 }
 .create-goal-icon {
   width: 43px;
@@ -242,11 +422,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 15px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info));
   box-shadow: 0 4px 0 var(--lad-color-info-strong);
 }
 .create-goal-card > span:nth-child(2) {
@@ -359,11 +535,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   --uno: d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 15px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   font-size: 1.5rem;
   transform: rotate(-4deg);
@@ -396,13 +568,8 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   border-radius: 15px;
   color: var(--lad-color-info-deep);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-surface-soft)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-info-shadow) 18%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-surface-soft));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info-shadow) 18%, transparent);
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -411,28 +578,18 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
 }
 .cheer-button:hover {
   transform: translateY(-2px) rotate(-2deg);
-  box-shadow: 0 6px 0
-    color-mix(in srgb, var(--lad-color-info-shadow) 18%, transparent);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--lad-color-info-shadow) 18%, transparent);
 }
 .cheer-button:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0
-    color-mix(in srgb, var(--lad-color-info-shadow) 18%, transparent);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--lad-color-info-shadow) 18%, transparent);
 }
 .cheer-button:focus-visible {
   @include focus-ring(color-mix(in srgb, var(--lad-blue) 42%, transparent));
 }
 .cheer-button.is-cheered {
-  border-color: color-mix(
-    in srgb,
-    var(--lad-color-reward-accent) 35%,
-    transparent
-  );
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-reward-soft),
-    var(--lad-color-reward-pale)
-  );
+  border-color: color-mix(in srgb, var(--lad-color-reward-accent) 35%, transparent);
+  background: linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-color-reward-pale));
   box-shadow:
     0 4px 0 color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent),
     0 0 18px color-mix(in srgb, var(--lad-color-reward) 30%, transparent);
@@ -495,17 +652,8 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   --uno: position-relative overflow-hidden;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 18%, transparent);
   background:
-    radial-gradient(
-      circle at 88% 5%,
-      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
-      transparent 27%
-    ),
-    linear-gradient(
-      155deg,
-      var(--lad-surface),
-      var(--lad-surface-soft) 64%,
-      var(--lad-surface-soft)
-    );
+    radial-gradient(circle at 88% 5%, color-mix(in srgb, var(--lad-color-reward) 30%, transparent), transparent 27%),
+    linear-gradient(155deg, var(--lad-surface), var(--lad-surface-soft) 64%, var(--lad-surface-soft));
   box-shadow:
     0 9px 0 color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent),
     0 24px 54px color-mix(in srgb, var(--lad-text) 25%, transparent);
@@ -529,8 +677,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   height: 54px;
   padding-inline: 8px;
   --uno: position-relative d-flex align-center justify-space-between;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
   border-radius: 18px;
   background: color-mix(in srgb, var(--lad-surface-raised) 70%, transparent);
 }
@@ -547,8 +694,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   --uno: d-grid place-center;
   z-index: 2;
   border: 3px solid var(--lad-border-on-accent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-accent-warm-ink) 12%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-accent-warm-ink) 12%, transparent);
 }
 .support-coin {
   color: var(--lad-color-reward-strong);
@@ -576,11 +722,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
 }
 .support-submit {
   min-height: 43px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow: 0 4px 0 var(--lad-color-primary-deep);
   font-size: rem(10);
   font-weight: var(--lad-font-weight-heavy);
@@ -671,13 +813,8 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   min-height: 38px;
   padding-inline: 8px;
   --uno: position-relative overflow-visible;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-info-soft)
-  );
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-info-soft));
   box-shadow:
     0 4px 0 color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent),
     0 8px 14px color-mix(in srgb, var(--lad-color-info-strong) 10%, transparent);
@@ -711,33 +848,19 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
 .save-dialog-card {
   --uno: overflow-hidden;
   border: 2px solid color-mix(in srgb, var(--lad-color-info) 20%, transparent);
-  background: linear-gradient(
-    180deg,
-    var(--lad-surface),
-    var(--lad-surface-raised)
-  );
+  background: linear-gradient(180deg, var(--lad-surface), var(--lad-surface-raised));
   box-shadow:
     0 9px 0 color-mix(in srgb, var(--lad-color-info-deep) 15%, transparent),
-    0 25px 55px
-      color-mix(in srgb, var(--lad-color-bonus-info-deep) 25%, transparent);
+    0 25px 55px color-mix(in srgb, var(--lad-color-bonus-info-deep) 25%, transparent);
 }
 .save-dialog-header {
   padding: 16px 14px;
   --uno: d-flex align-center;
   gap: 11px;
-  border-bottom: 2px solid
-    color-mix(in srgb, var(--lad-color-info) 12%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--lad-color-info) 12%, transparent);
   background:
-    radial-gradient(
-      circle at 88% 4%,
-      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
-      transparent 28%
-    ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface-soft),
-      var(--lad-color-reward-soft)
-    );
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--lad-color-reward) 30%, transparent), transparent 28%),
+    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
 }
 .save-dialog-header h2 {
   --uno: ma-0;
@@ -756,13 +879,8 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   --uno: d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 18px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-pale)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-info-strong) 15%, transparent);
   font-size: rem(29);
   transform: rotate(-5deg);
 }
@@ -774,12 +892,10 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   padding: 10px 12px;
   --uno: d-flex align-center;
   gap: 9px;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 18px;
   background: color-mix(in srgb, var(--lad-surface-raised) 75%, transparent);
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .save-balance-coin,
 .save-goal-star {
@@ -787,8 +903,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   height: 38px;
   --uno: d-grid place-center flex-shrink-0;
   border: 3px solid var(--lad-border-on-accent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-reward-strong) 12%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-reward-strong) 12%, transparent);
   font-weight: var(--lad-font-weight-black);
 }
 .save-balance-coin {
@@ -804,11 +919,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
 .save-goal-star {
   color: var(--lad-color-reward-pale);
   border-radius: 13px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
 }
 .save-balance > div {
   min-width: 70px;
@@ -828,11 +939,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   height: 8px;
   --uno: position-relative flex-grow-1;
   border-radius: var(--lad-radius-pill);
-  background: repeating-linear-gradient(
-    90deg,
-    var(--lad-color-info-soft) 0 7px,
-    transparent 7px 12px
-  );
+  background: repeating-linear-gradient(90deg, var(--lad-color-info-soft) 0 7px, transparent 7px 12px);
 }
 .save-journey i {
   width: 7px;
@@ -854,8 +961,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   width: 28px;
   height: 28px;
   border: 3px solid var(--lad-border-on-accent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
 }
 .save-value {
   margin: 12px auto 15px;
@@ -898,18 +1004,12 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   --uno: position-relative d-flex align-center justify-center overflow-hidden cursor-pointer;
   gap: 8px;
   color: var(--lad-text-inverse);
-  border: 3px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
+  border: 3px solid color-mix(in srgb, var(--lad-border-on-accent) 80%, transparent);
   border-radius: 17px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-info-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-info-subtle), var(--lad-color-info-strong));
   box-shadow:
     0 5px 0 var(--lad-color-info-strong),
-    0 10px 17px
-      color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
+    0 10px 17px color-mix(in srgb, var(--lad-color-info-strong) 18%, transparent);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
@@ -918,8 +1018,7 @@ const personalGoalVisibilityLabel = (goal: SavingGoal) => goal.shared
   transform: translateY(-2px);
   box-shadow:
     0 7px 0 var(--lad-color-info-strong),
-    0 13px 20px
-      color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
+    0 13px 20px color-mix(in srgb, var(--lad-color-info-strong) 20%, transparent);
 }
 .save-submit:active:not(:disabled) {
   transform: translateY(3px);

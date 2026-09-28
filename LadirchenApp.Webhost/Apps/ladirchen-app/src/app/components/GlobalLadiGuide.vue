@@ -1,15 +1,23 @@
 <template>
-  <aside class="global-ladi-guide" :class="[`mood-${mood}`, { hidden: isHidden, 'gift-celebration': giftCelebration }]" :aria-label="t('guide.aria')">
+  <aside class="global-ladi-guide" :class="guideClasses" :aria-label="t('guide.aria')">
     <button v-if="isHidden" class="guide-branch" type="button" :aria-label="t('guide.reveal')" @click="revealGuide">
-      <img :src="WORLD_DECORATION_SPRITE_URLS['guide-branch']" alt="">
+      <img :src="WORLD_DECORATION_SPRITE_URLS['guide-branch']" alt="" />
     </button>
     <template v-else>
       <Transition name="guide-speech">
         <div v-if="speech" class="guide-speech" role="status">
-          <button v-if="!moodPromptPending" :aria-label="t('guide.close')" class="guide-close" type="button" @click="closeSpeech">×</button>
+          <button
+            v-if="!moodPromptPending"
+            :aria-label="t('guide.close')"
+            class="guide-close"
+            type="button"
+            @click="closeSpeech"
+          >
+            ×
+          </button>
           <strong>{{ speechHeading }}</strong>
           <span>{{ speech }}</span>
-          <div v-if="speechProgress || speechActionLabel" class="speech-actions">
+          <div v-if="hasSpeechActions" class="speech-actions">
             <span v-if="speechProgress" class="speech-progress">{{ speechProgress }}</span>
             <button v-if="speechActionLabel" class="speech-next" type="button" @click="triggerSpeechAction">
               {{ speechActionLabel }}
@@ -24,7 +32,10 @@
               :class="{ active: mood === option.id }"
               type="button"
               @click="selectMood(option.id)"
-            ><span aria-hidden="true">{{ option.icon }}</span>{{ option.label }}</button>
+            >
+              <span aria-hidden="true">{{ option.icon }}</span>
+              {{ option.label }}
+            </button>
           </div>
         </div>
       </Transition>
@@ -32,14 +43,22 @@
       <button class="guide-hide" type="button" :aria-label="t('guide.hide')" @click="hideGuide">›</button>
       <span v-if="giftCelebration" class="guide-high-five" aria-hidden="true">✋</span>
       <span v-if="giftCelebration" class="guide-flying-gift" aria-hidden="true">🎁</span>
-      <button class="guide-ladi" :class="randomMotion" type="button" :aria-expanded="Boolean(speech)" :aria-label="t('guide.openExplanation')" @click="speakCurrentPageIntro">
-        <LadiMascot :score="ladiScore" :show-score="false" :smart="store.piggyBankOpen || isSmart" :size="80" />
+      <button
+        class="guide-ladi"
+        :class="randomMotion"
+        type="button"
+        :aria-expanded="Boolean(speech)"
+        :aria-label="t('guide.openExplanation')"
+        @click="speakCurrentPageIntro"
+      >
+        <LadiMascot :score="ladiScore" :show-score="false" :smart="mascotIsSmart" :size="80" />
       </button>
     </template>
   </aside>
 </template>
 
 <script lang="ts" setup>
+import { computed } from "vue";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import { WORLD_DECORATION_SPRITE_URLS } from "@/shared/assets/world-sprite-assets";
 import { useGlobalLadiGuide } from "@/app/composables/use-global-ladi-guide";
@@ -48,10 +67,33 @@ import { useI18n } from "vue-i18n";
 const { t } = useI18n();
 
 const {
-  choosingMood, closeSpeech, giftCelebration, hideGuide, isHidden, isSmart, ladiScore, mood, moodOptions,
-  moodPromptPending, randomMotion, revealGuide, selectMood, speakCurrentPageIntro, speech, speechActionLabel,
-  speechHeading, speechProgress, store, triggerSpeechAction,
+  choosingMood,
+  closeSpeech,
+  giftCelebration,
+  hideGuide,
+  isHidden,
+  isSmart,
+  ladiScore,
+  mood,
+  moodOptions,
+  moodPromptPending,
+  randomMotion,
+  revealGuide,
+  selectMood,
+  speakCurrentPageIntro,
+  speech,
+  speechActionLabel,
+  speechHeading,
+  speechProgress,
+  store,
+  triggerSpeechAction,
 } = useGlobalLadiGuide();
+const guideClasses = computed(() => [
+  `mood-${mood.value}`,
+  { hidden: isHidden.value, "gift-celebration": giftCelebration.value },
+]);
+const hasSpeechActions = computed(() => Boolean(speechProgress.value || speechActionLabel.value));
+const mascotIsSmart = computed(() => store.piggyBankOpen || isSmart.value);
 </script>
 
 <style lang="scss" scoped>
@@ -78,10 +120,7 @@ const {
     color-mix(in srgb, var(--lad-palette-white) 30%, transparent) 60%,
     transparent 61%
   );
-  filter: drop-shadow(
-    0 7px 6px
-      color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent)
-  );
+  filter: drop-shadow(0 7px 6px color-mix(in srgb, var(--lad-palette-muted-750-2) 15%, transparent));
   transition: transform 0.18s ease;
 }
 .guide-ladi:hover,
@@ -90,8 +129,7 @@ const {
   transform: translateY(-5px) rotate(-3deg);
 }
 .guide-ladi:focus-visible {
-  box-shadow: 0 0 0 4px
-    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
 }
 .guide-ladi :deep(.ladi-wrap) {
   grid-area: 1 / 1;
@@ -107,8 +145,7 @@ const {
   border: 2px solid var(--lad-palette-white);
   border-radius: 12px 0 0 12px;
   background: var(--lad-palette-background);
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
   font-size: rem(23);
   font-weight: var(--lad-font-weight-heavy);
   line-height: 1;
@@ -119,19 +156,13 @@ const {
   padding: 0;
   --uno: position-relative d-grid place-center pointer-events-auto cursor-pointer overflow-hidden;
   color: var(--lad-palette-teal-700);
-  border: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
   border-right: 0;
   border-radius: 24px 0 0 24px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-white), var(--lad-palette-background));
   box-shadow:
     0 5px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent),
-    0 10px 20px
-      color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
+    0 10px 20px color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   transition:
     width 0.18s ease,
     background 0.18s ease;
@@ -140,11 +171,7 @@ const {
 .guide-branch:focus-visible {
   width: 63px;
   outline: 0;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-teal-150)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-white), var(--lad-palette-teal-150));
 }
 .guide-branch img {
   width: 72px;
@@ -152,9 +179,7 @@ const {
   display: block;
   object-fit: contain;
   transform: translateX(7px);
-  filter: drop-shadow(
-    0 3px 2px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent)
-  );
+  filter: drop-shadow(0 3px 2px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent));
 }
 .guide-speech {
   width: 280px;
@@ -164,18 +189,12 @@ const {
   right: 70px;
   bottom: 64px;
   color: var(--lad-palette-muted-700);
-  border: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 25%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-palette-teal-550) 25%, transparent);
   border-radius: 22px 22px 6px 22px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-white), var(--lad-palette-background));
   box-shadow:
     0 6px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent),
-    0 14px 28px
-      color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
+    0 14px 28px color-mix(in srgb, var(--lad-palette-muted-700) 15%, transparent);
   font-size: rem(13);
   line-height: 1.52;
 }
@@ -187,10 +206,8 @@ const {
   right: -7px;
   bottom: 12px;
   transform: rotate(45deg);
-  border-top: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
-  border-right: 2px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
+  border-top: 2px solid color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
+  border-right: 2px solid color-mix(in srgb, var(--lad-palette-teal-550) 20%, transparent);
   background: var(--lad-palette-background);
 }
 .guide-speech strong,
@@ -222,8 +239,7 @@ const {
   padding-top: 10px;
   --uno: d-flex align-center justify-space-between;
   gap: 10px;
-  border-top: 1px solid
-    color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--lad-palette-mint-strong) 15%, transparent);
 }
 .speech-progress {
   min-width: 42px;
@@ -243,11 +259,7 @@ const {
   color: var(--lad-palette-white);
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-mint),
-    var(--lad-palette-mint-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-mint), var(--lad-palette-mint-strong));
   box-shadow:
     0 3px 0 var(--lad-palette-teal-700),
     0 7px 13px color-mix(in srgb, var(--lad-palette-teal-700) 15%, transparent);
@@ -274,8 +286,7 @@ const {
   --uno: d-flex flex-column align-center cursor-pointer;
   gap: 2px;
   color: var(--lad-palette-muted);
-  border: 1px solid
-    color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lad-palette-teal-550) 15%, transparent);
   border-radius: 11px;
   background: color-mix(in srgb, var(--lad-palette-white) 75%, transparent);
   font-size: 0.5rem;
@@ -286,31 +297,18 @@ const {
 }
 .mood-picker button.active {
   color: var(--lad-palette-teal-700);
-  border-color: color-mix(
-    in srgb,
-    var(--lad-palette-teal-550) 35%,
-    transparent
-  );
+  border-color: color-mix(in srgb, var(--lad-palette-teal-550) 35%, transparent);
   background: var(--lad-palette-background);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-palette-mint-strong) 12%, transparent);
 }
 .mood-happy .guide-speech {
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-surface),
-    var(--lad-palette-amber-150)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-surface), var(--lad-palette-amber-150));
 }
 .mood-happy .guide-speech::after {
   background: var(--lad-palette-amber-100);
 }
 .mood-gentle .guide-speech {
-  background: linear-gradient(
-    145deg,
-    var(--lad-palette-white),
-    var(--lad-palette-background)
-  );
+  background: linear-gradient(145deg, var(--lad-palette-white), var(--lad-palette-background));
 }
 .mood-gentle .guide-speech::after {
   background: var(--lad-palette-background);
@@ -357,9 +355,7 @@ const {
   top: 28px;
   left: 20px;
   font-size: 1.75rem;
-  filter: drop-shadow(
-    0 5px 5px color-mix(in srgb, var(--lad-palette-orange-750) 20%, transparent)
-  );
+  filter: drop-shadow(0 5px 5px color-mix(in srgb, var(--lad-palette-orange-750) 20%, transparent));
   animation: gift-flight 2.3s cubic-bezier(0.18, 0.78, 0.22, 1) both;
 }
 @keyframes guide-wave {

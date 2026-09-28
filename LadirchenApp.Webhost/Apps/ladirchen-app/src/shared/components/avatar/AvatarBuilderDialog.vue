@@ -1,38 +1,84 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="680" scrollable @update:model-value="emit('update:modelValue', $event)">
+  <v-dialog
+    :model-value="modelValue"
+    max-width="680"
+    scrollable
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <v-card class="avatar-builder" rounded="xl">
       <header class="studio-header px-5 pt-4">
-        <div><p class="eyebrow mb-0">{{ t('avatar.builder.eyebrow') }}</p><h2>{{ t('avatar.builder.title', { name: userName }) }}</h2></div>
+        <div>
+          <p class="eyebrow mb-0">{{ t("avatar.builder.eyebrow") }}</p>
+          <h2>{{ t("avatar.builder.title", { name: userName }) }}</h2>
+        </div>
         <v-btn :aria-label="t('avatar.builder.close')" icon="i-mdi:close" size="small" variant="text" @click="close" />
       </header>
 
       <section class="studio-preview mx-5 mt-3" :aria-label="t('avatar.builder.previewAria')">
-        <div class="preview-decoration preview-star-one" /><div class="preview-decoration preview-star-two" />
+        <div class="preview-decoration preview-star-one" />
+        <div class="preview-decoration preview-star-two" />
         <AvatarFigure :appearance="draft" :size="156" />
         <div class="preview-tools">
-          <strong>{{ userName }}</strong><span>{{ t('avatar.builder.previewHint') }}</span>
-          <div class="random-actions"><button type="button" @click="randomLook(false)">{{ t('avatar.builder.random') }}</button><button class="fun-random" type="button" @click="randomLook(true)">{{ t('avatar.builder.funRandom') }}</button></div>
+          <strong>{{ userName }}</strong>
+          <span>{{ t("avatar.builder.previewHint") }}</span>
+          <div class="random-actions">
+            <button type="button" @click="randomLook(false)">{{ t("avatar.builder.random") }}</button>
+            <button class="fun-random" type="button" @click="randomLook(true)">
+              {{ t("avatar.builder.funRandom") }}
+            </button>
+          </div>
         </div>
       </section>
 
       <nav class="category-rail mt-3" :aria-label="t('avatar.builder.partsAria')">
-        <button v-for="category in categories" :key="category.value" :aria-current="categoryAriaCurrent(category.value)" :class="{ active: section === category.value }" type="button" @click="selectSection(category.value)">
-          <AvatarCategoryIcon :name="category.value" /><span>{{ category.label }}</span>
+        <button
+          v-for="category in categories"
+          :key="category.value"
+          :aria-current="categoryAriaCurrent(category.value)"
+          :class="{ active: section === category.value }"
+          type="button"
+          @click="selectSection(category.value)"
+        >
+          <AvatarCategoryIcon :name="category.value" />
+          <span>{{ category.label }}</span>
         </button>
       </nav>
 
       <v-card-text ref="optionsPanel" class="builder-options px-5 pt-4">
-        <div class="section-intro"><div><p>{{ activeCategory.kicker }}</p><h3>{{ activeCategory.title }}</h3></div><span>{{ activeCategory.hint }}</span></div>
+        <div class="section-intro">
+          <div>
+            <p>{{ activeCategory.kicker }}</p>
+            <h3>{{ activeCategory.title }}</h3>
+          </div>
+          <span>{{ activeCategory.hint }}</span>
+        </div>
 
         <div v-if="section === 'base'" class="skin-studio mt-4">
-          <button v-for="tone in skinToneOptions" :key="tone.id" :aria-label="t(tone.id)" :aria-pressed="draft.skinToneId === tone.value" :class="{ active: draft.skinToneId === tone.value }" class="skin-choice" type="button" @click="draft.skinToneId = tone.value">
-            <span :style="{ '--swatch-color': tone.color }" /><strong>{{ t(tone.id) }}</strong>
+          <button
+            v-for="tone in skinToneOptions"
+            :key="tone.id"
+            :aria-label="t(tone.id)"
+            :aria-pressed="draft.skinToneId === tone.value"
+            :class="{ active: draft.skinToneId === tone.value }"
+            class="skin-choice"
+            type="button"
+            @click="draft.skinToneId = tone.value"
+          >
+            <span :style="{ '--swatch-color': tone.color }" />
+            <strong>{{ t(tone.id) }}</strong>
           </button>
         </div>
-        <div v-if="section === 'base' && profileRole === 'guardian'" class="guardian-presets mt-5">
-          <p class="mini-section-label">{{ t('avatar.builder.profileType') }}</p>
+        <div v-if="showGuardianPresets" class="guardian-presets mt-5">
+          <p class="mini-section-label">{{ t("avatar.builder.profileType") }}</p>
           <div class="guardian-preset-grid mt-3">
-            <button v-for="preset in guardianPresets" :key="preset.value" :aria-pressed="activeGuardianPreset === preset.value" :class="{ active: activeGuardianPreset === preset.value }" type="button" @click="selectGuardianPreset(preset.value)">
+            <button
+              v-for="preset in guardianPresets"
+              :key="preset.value"
+              :aria-pressed="activeGuardianPreset === preset.value"
+              :class="{ active: activeGuardianPreset === preset.value }"
+              type="button"
+              @click="selectGuardianPreset(preset.value)"
+            >
               <AvatarFigure :appearance="guardianPresetAppearance(preset.value)" :size="68" />
               <strong>{{ preset.label }}</strong>
               <span>{{ preset.description }}</span>
@@ -41,26 +87,46 @@
         </div>
 
         <template v-else-if="section === 'face'">
-          <p class="mini-section-label mt-4">{{ t('avatar.builder.faceShape') }}</p>
+          <p class="mini-section-label mt-4">{{ t("avatar.builder.faceShape") }}</p>
           <OptionGrid v-model="draft.faceShape" :options="faceShapeOptions" preview-kind="faceShape" />
-          <p class="mini-section-label mt-5">{{ t('avatar.builder.expression') }}</p>
+          <p class="mini-section-label mt-5">{{ t("avatar.builder.expression") }}</p>
           <OptionGrid v-model="draft.face" :options="faceOptions" preview-kind="face" />
         </template>
         <template v-else-if="section === 'hair'">
-          <OptionGrid v-model="draft.hair" :options="visibleHairOptions" preview-kind="hair" /><ColorPicker v-model="draft.hairColorId" :options="visibleHairColorOptions" :label="t('avatar.builder.hairColor')" />
+          <OptionGrid v-model="draft.hair" :options="visibleHairOptions" preview-kind="hair" />
+          <ColorPicker
+            v-model="draft.hairColorId"
+            :options="visibleHairColorOptions"
+            :label="t('avatar.builder.hairColor')"
+          />
         </template>
         <template v-else-if="section === 'outfit'">
-          <OptionGrid v-model="draft.outfit" :options="visibleOutfitOptions" preview-kind="outfit" /><ColorPicker v-model="draft.outfitColorId" :options="outfitColorOptions" :label="t('avatar.builder.outfitColor')" />
+          <OptionGrid v-model="draft.outfit" :options="visibleOutfitOptions" preview-kind="outfit" />
+          <ColorPicker
+            v-model="draft.outfitColorId"
+            :options="outfitColorOptions"
+            :label="t('avatar.builder.outfitColor')"
+          />
         </template>
-        <OptionGrid v-else-if="section === 'extras'" v-model="draft.accessoryId" :options="accessoryOptions" preview-kind="accessory" />
-        <OptionGrid v-else-if="section === 'fun'" v-model="draft.funAccessoryId" :options="funOptions" preview-kind="fun" />
+        <OptionGrid
+          v-else-if="section === 'extras'"
+          v-model="draft.accessoryId"
+          :options="accessoryOptions"
+          preview-kind="accessory"
+        />
+        <OptionGrid
+          v-else-if="section === 'fun'"
+          v-model="draft.funAccessoryId"
+          :options="funOptions"
+          preview-kind="fun"
+        />
         <OptionGrid v-else v-model="draft.seasonalAccessoryId" :options="seasonOptions" preview-kind="season" />
       </v-card-text>
 
       <v-card-actions class="builder-actions px-5 py-3">
         <v-btn class="studio-save-button" color="primary" rounded="lg" variant="flat" @click="save">
           <v-icon class="studio-save-icon" icon="i-mdi:check-circle-outline" />
-          <span>{{ t('avatar.builder.save') }}</span>
+          <span>{{ t("avatar.builder.save") }}</span>
           <v-icon class="studio-save-arrow" icon="i-mdi:arrow-right" />
           <i class="studio-save-shine" aria-hidden="true" />
         </v-btn>
@@ -75,7 +141,21 @@ import { useI18n } from "vue-i18n";
 
 import AvatarCategoryIcon from "./AvatarCategoryIcon.vue";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
-import { accessoryOptions, adultHairColorOptions, adultHairOptions, adultOutfitOptions, faceOptions, faceShapeOptions, funOptions, hairColorOptions, hairOptions, outfitColorOptions, outfitOptions, seasonOptions, skinToneOptions } from "./data/avatar-options";
+import {
+  accessoryOptions,
+  adultHairColorOptions,
+  adultHairOptions,
+  adultOutfitOptions,
+  faceOptions,
+  faceShapeOptions,
+  funOptions,
+  hairColorOptions,
+  hairOptions,
+  outfitColorOptions,
+  outfitOptions,
+  seasonOptions,
+  skinToneOptions,
+} from "./data/avatar-options";
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance, GuardianAvatarPreset } from "@/domain/avatar";
 import type { ViewerRole } from "@/domain/family/types";
@@ -84,36 +164,109 @@ import type { AvatarCatalogItemId, AvatarColorOption } from "./data/avatar-optio
 type Section = "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season";
 type PreviewKind = "face" | "faceShape" | "hair" | "outfit" | "accessory" | "fun" | "season";
 
-const props = withDefaults(defineProps<{ modelValue: boolean; userName: string; initialAppearance?: AvatarAppearance; profileRole?: ViewerRole }>(), { profileRole: "child" });
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    userName: string;
+    initialAppearance?: AvatarAppearance;
+    profileRole?: ViewerRole;
+  }>(),
+  { profileRole: "child" },
+);
 const emit = defineEmits<{ "update:modelValue": [value: boolean]; save: [appearance: AvatarAppearance] }>();
 const { t } = useI18n();
 const section = ref<Section>("base");
+const showGuardianPresets = computed(() => section.value === "base" && props.profileRole === "guardian");
 const optionsPanel = ref<HTMLElement | { $el?: HTMLElement }>();
 const draft = reactive<AvatarAppearance>(createDefaultAvatarAppearance());
-const categories = computed<Array<{ value: Section; label: string; kicker: string; title: string; hint: string }>>(() => [
-  { value: "base", label: t("avatar.builder.categories.base.label"), kicker: t("avatar.builder.categories.base.kicker"), title: t(`avatar.builder.categories.base.${props.profileRole}Title`), hint: t("avatar.builder.categories.base.hint") },
-  { value: "face", label: t("avatar.builder.categories.face.label"), kicker: t("avatar.builder.categories.face.kicker"), title: t("avatar.builder.categories.face.title"), hint: t("avatar.builder.categories.face.hint") },
-  { value: "hair", label: t("avatar.builder.categories.hair.label"), kicker: t("avatar.builder.categories.hair.kicker"), title: t("avatar.builder.categories.hair.title"), hint: t("avatar.builder.categories.hair.hint") },
-  { value: "outfit", label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`), kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`), title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`), hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`) },
-  { value: "extras", label: t("avatar.builder.categories.extras.label"), kicker: t("avatar.builder.categories.extras.kicker"), title: t("avatar.builder.categories.extras.title"), hint: t("avatar.builder.categories.extras.hint") },
-  { value: "fun", label: t("avatar.builder.categories.fun.label"), kicker: t("avatar.builder.categories.fun.kicker"), title: t("avatar.builder.categories.fun.title"), hint: t("avatar.builder.categories.fun.hint") },
-  { value: "season", label: t("avatar.builder.categories.season.label"), kicker: t("avatar.builder.categories.season.kicker"), title: t("avatar.builder.categories.season.title"), hint: t("avatar.builder.categories.season.hint") },
-]);
-const activeCategory = computed(() => categories.value.find(category => category.value === section.value) ?? categories.value[0]!);
-const baseAppearance = () => props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
-const visibleHairOptions = computed(() => props.profileRole === "guardian" ? adultHairOptions : hairOptions);
-const visibleHairColorOptions = computed(() => props.profileRole === "guardian" ? adultHairColorOptions : hairColorOptions);
-const visibleOutfitOptions = computed(() => props.profileRole === "guardian" ? adultOutfitOptions : outfitOptions);
+const categories = computed<Array<{ value: Section; label: string; kicker: string; title: string; hint: string }>>(
+  () => [
+    {
+      value: "base",
+      label: t("avatar.builder.categories.base.label"),
+      kicker: t("avatar.builder.categories.base.kicker"),
+      title: t(`avatar.builder.categories.base.${props.profileRole}Title`),
+      hint: t("avatar.builder.categories.base.hint"),
+    },
+    {
+      value: "face",
+      label: t("avatar.builder.categories.face.label"),
+      kicker: t("avatar.builder.categories.face.kicker"),
+      title: t("avatar.builder.categories.face.title"),
+      hint: t("avatar.builder.categories.face.hint"),
+    },
+    {
+      value: "hair",
+      label: t("avatar.builder.categories.hair.label"),
+      kicker: t("avatar.builder.categories.hair.kicker"),
+      title: t("avatar.builder.categories.hair.title"),
+      hint: t("avatar.builder.categories.hair.hint"),
+    },
+    {
+      value: "outfit",
+      label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`),
+      kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`),
+      title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`),
+      hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`),
+    },
+    {
+      value: "extras",
+      label: t("avatar.builder.categories.extras.label"),
+      kicker: t("avatar.builder.categories.extras.kicker"),
+      title: t("avatar.builder.categories.extras.title"),
+      hint: t("avatar.builder.categories.extras.hint"),
+    },
+    {
+      value: "fun",
+      label: t("avatar.builder.categories.fun.label"),
+      kicker: t("avatar.builder.categories.fun.kicker"),
+      title: t("avatar.builder.categories.fun.title"),
+      hint: t("avatar.builder.categories.fun.hint"),
+    },
+    {
+      value: "season",
+      label: t("avatar.builder.categories.season.label"),
+      kicker: t("avatar.builder.categories.season.kicker"),
+      title: t("avatar.builder.categories.season.title"),
+      hint: t("avatar.builder.categories.season.hint"),
+    },
+  ],
+);
+const activeCategory = computed(
+  () => categories.value.find((category) => category.value === section.value) ?? categories.value[0]!,
+);
+const baseAppearance = () =>
+  props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
+const visibleHairOptions = computed(() => (props.profileRole === "guardian" ? adultHairOptions : hairOptions));
+const visibleHairColorOptions = computed(() =>
+  props.profileRole === "guardian" ? adultHairColorOptions : hairColorOptions,
+);
+const visibleOutfitOptions = computed(() => (props.profileRole === "guardian" ? adultOutfitOptions : outfitOptions));
 const guardianPresets = computed<Array<{ value: GuardianAvatarPreset; label: string; description: string }>>(() => [
-  { value: "adult", label: t("avatar.builder.presets.adult.label"), description: t("avatar.builder.presets.adult.description") },
-  { value: "grandma", label: t("avatar.builder.presets.grandma.label"), description: t("avatar.builder.presets.grandma.description") },
-  { value: "grandpa", label: t("avatar.builder.presets.grandpa.label"), description: t("avatar.builder.presets.grandpa.description") },
+  {
+    value: "adult",
+    label: t("avatar.builder.presets.adult.label"),
+    description: t("avatar.builder.presets.adult.description"),
+  },
+  {
+    value: "grandma",
+    label: t("avatar.builder.presets.grandma.label"),
+    description: t("avatar.builder.presets.grandma.description"),
+  },
+  {
+    value: "grandpa",
+    label: t("avatar.builder.presets.grandpa.label"),
+    description: t("avatar.builder.presets.grandpa.description"),
+  },
 ]);
 const activeGuardianPreset = computed<GuardianAvatarPreset>(() => {
   if (draft.age !== "senior") return "adult";
   return draft.outfit === "cardigan" ? "grandma" : "grandpa";
 });
-const guardianPresetAppearance = (preset: GuardianAvatarPreset) => ({ ...createGuardianAvatarAppearance(preset), skinToneId: draft.skinToneId });
+const guardianPresetAppearance = (preset: GuardianAvatarPreset) => ({
+  ...createGuardianAvatarAppearance(preset),
+  skinToneId: draft.skinToneId,
+});
 const selectGuardianPreset = (preset: GuardianAvatarPreset) => Object.assign(draft, guardianPresetAppearance(preset));
 const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
   accessory: "accessoryId",
@@ -124,57 +277,135 @@ const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
   outfit: "outfit",
   season: "seasonalAccessoryId",
 };
-const previewAppearance = (kind: PreviewKind, value: string): AvatarAppearance => ({ ...baseAppearance(), age: draft.age, skinToneId: draft.skinToneId, hairColorId: draft.hairColorId, outfitColorId: draft.outfitColorId, [previewField[kind]]: value });
+const previewAppearance = (kind: PreviewKind, value: string): AvatarAppearance => ({
+  ...baseAppearance(),
+  age: draft.age,
+  skinToneId: draft.skinToneId,
+  hairColorId: draft.hairColorId,
+  outfitColorId: draft.outfitColorId,
+  [previewField[kind]]: value,
+});
 
 const OptionGrid = defineComponent({
-  props: { modelValue: { type: String, required: true }, options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true }, previewKind: { type: String as () => PreviewKind, required: true } },
+  props: {
+    modelValue: { type: String, required: true },
+    options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true },
+    previewKind: { type: String as () => PreviewKind, required: true },
+  },
   emits: ["update:modelValue"],
-  setup: (gridProps, { emit: gridEmit }) => () => h(
-    "div",
-    { class: "option-grid mt-4" },
-    gridProps.options.map((option) => h(
-      "button",
-      {
-        class: ["option-choice", { active: gridProps.modelValue === option.value }],
-        type: "button",
-        "data-catalog-id": option.id,
-        "data-preview-kind": gridProps.previewKind,
-        "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
-        "aria-pressed": gridProps.modelValue === option.value,
-        onClick: () => gridEmit("update:modelValue", option.value),
-      },
-      {
-        default: () => [
-          h("span", { class: "option-art", "aria-hidden": "true" }, [h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 })]),
-          h("strong", t(option.id)),
-          gridProps.modelValue === option.value ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓") : null,
-        ],
-      },
-    )),
-  ),
+  setup:
+    (gridProps, { emit: gridEmit }) =>
+    () =>
+      h(
+        "div",
+        { class: "option-grid mt-4" },
+        gridProps.options.map((option) =>
+          h(
+            "button",
+            {
+              class: ["option-choice", { active: gridProps.modelValue === option.value }],
+              type: "button",
+              "data-catalog-id": option.id,
+              "data-preview-kind": gridProps.previewKind,
+              "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
+              "aria-pressed": gridProps.modelValue === option.value,
+              onClick: () => gridEmit("update:modelValue", option.value),
+            },
+            {
+              default: () => [
+                h("span", { class: "option-art", "aria-hidden": "true" }, [
+                  h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 }),
+                ]),
+                h("strong", t(option.id)),
+                gridProps.modelValue === option.value
+                  ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓")
+                  : null,
+              ],
+            },
+          ),
+        ),
+      ),
 });
 
 const ColorPicker = defineComponent({
-  props: { modelValue: { type: String, required: true }, options: { type: Array as () => AvatarColorOption<string>[], required: true }, label: { type: String, required: true } }, emits: ["update:modelValue"],
-  setup: (colorProps, { emit: colorEmit }) => () => h("div", { class: "compact-colors" }, [h("strong", colorProps.label), h("div", { class: "color-row" }, colorProps.options.map(option => h("button", { class: ["color-choice", { active: colorProps.modelValue === option.value }], type: "button", "data-catalog-id": option.id, "aria-label": t(option.id), "aria-pressed": colorProps.modelValue === option.value, style: { background: option.color }, onClick: () => colorEmit("update:modelValue", option.value) }))) ]),
+  props: {
+    modelValue: { type: String, required: true },
+    options: { type: Array as () => AvatarColorOption<string>[], required: true },
+    label: { type: String, required: true },
+  },
+  emits: ["update:modelValue"],
+  setup:
+    (colorProps, { emit: colorEmit }) =>
+    () =>
+      h("div", { class: "compact-colors" }, [
+        h("strong", colorProps.label),
+        h(
+          "div",
+          { class: "color-row" },
+          colorProps.options.map((option) =>
+            h("button", {
+              class: ["color-choice", { active: colorProps.modelValue === option.value }],
+              type: "button",
+              "data-catalog-id": option.id,
+              "aria-label": t(option.id),
+              "aria-pressed": colorProps.modelValue === option.value,
+              style: { background: option.color },
+              onClick: () => colorEmit("update:modelValue", option.value),
+            }),
+          ),
+        ),
+      ]),
 });
 
 const randomItem = <T,>(items: T[]): T => {
   const item = items[Math.floor(Math.random() * items.length)];
-  if (item === undefined) {throw new RangeError("Cannot select a random item from an empty list.");}
+  if (item === undefined) {
+    throw new RangeError("Cannot select a random item from an empty list.");
+  }
   return item;
 };
 const resetDraft = () => Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
-const scrollOptionsToTop = () => void nextTick(() => { const panel = optionsPanel.value; const element = panel instanceof HTMLElement ? panel : panel?.$el; element?.scrollTo({ top: 0, behavior: "smooth" }); });
-const selectSection = (value: Section) => { section.value = value; scrollOptionsToTop(); };
-const categoryAriaCurrent = (value: Section): "page" | undefined => section.value === value ? "page" : undefined;
+const scrollOptionsToTop = () =>
+  void nextTick(() => {
+    const panel = optionsPanel.value;
+    const element = panel instanceof HTMLElement ? panel : panel?.$el;
+    element?.scrollTo({ top: 0, behavior: "smooth" });
+  });
+const selectSection = (value: Section) => {
+  section.value = value;
+  scrollOptionsToTop();
+};
+const categoryAriaCurrent = (value: Section): "page" | undefined => (section.value === value ? "page" : undefined);
 const randomLook = (funny: boolean) => {
-  const funnyParts = funOptions.filter(option => option.value !== "none");
-  Object.assign(draft, { skinToneId: randomItem(skinToneOptions).value, faceShape: randomItem(faceShapeOptions).value, face: randomItem(faceOptions).value, hair: randomItem(visibleHairOptions.value).value, hairColorId: randomItem(visibleHairColorOptions.value).value, outfit: randomItem(visibleOutfitOptions.value).value, outfitColorId: randomItem(outfitColorOptions).value, accessoryId: randomItem(accessoryOptions).value, funAccessoryId: funny ? randomItem(funnyParts).value : "none", seasonalAccessoryId: funny && Math.random() > .55 ? randomItem(seasonOptions).value : "none" });
+  const funnyParts = funOptions.filter((option) => option.value !== "none");
+  Object.assign(draft, {
+    skinToneId: randomItem(skinToneOptions).value,
+    faceShape: randomItem(faceShapeOptions).value,
+    face: randomItem(faceOptions).value,
+    hair: randomItem(visibleHairOptions.value).value,
+    hairColorId: randomItem(visibleHairColorOptions.value).value,
+    outfit: randomItem(visibleOutfitOptions.value).value,
+    outfitColorId: randomItem(outfitColorOptions).value,
+    accessoryId: randomItem(accessoryOptions).value,
+    funAccessoryId: funny ? randomItem(funnyParts).value : "none",
+    seasonalAccessoryId: funny && Math.random() > 0.55 ? randomItem(seasonOptions).value : "none",
+  });
 };
 const close = () => emit("update:modelValue", false);
-const save = () => { emit("save", { ...draft }); close(); };
-watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); section.value = "base"; scrollOptionsToTop(); }, { immediate: true });
+const save = () => {
+  emit("save", { ...draft });
+  close();
+};
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (!isOpen) return;
+    resetDraft();
+    section.value = "base";
+    scrollOptionsToTop();
+  },
+  { immediate: true },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -198,8 +429,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   --uno: position-relative d-grid flex-shrink-0 align-center overflow-hidden;
   grid-template-columns: 180px 1fr;
 
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 15%, transparent);
   border-radius: 28px;
   background:
     radial-gradient(
@@ -207,49 +437,28 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
       color-mix(in srgb, var(--lad-surface-raised) 95%, transparent) 0 42px,
       transparent 43px
     ),
-    linear-gradient(
-      145deg,
-      var(--lad-surface-soft),
-      var(--lad-color-reward-soft)
-    );
+    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
   box-shadow:
-    inset 0 -10px 0
-      color-mix(in srgb, var(--lad-color-accent-warm-deep) 5%, transparent),
-    0 5px 0
-      color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
+    inset 0 -10px 0 color-mix(in srgb, var(--lad-color-accent-warm-deep) 5%, transparent),
+    0 5px 0 color-mix(in srgb, var(--lad-color-primary-supporting) 8%, transparent);
 }
 .studio-preview::after {
   content: "";
   height: 38px;
   --uno: position-absolute right-0 bottom-0 left-0;
-  background: color-mix(
-    in srgb,
-    var(--lad-color-accent-warm-soft) 25%,
-    transparent
-  );
-  clip-path: polygon(
-    0 55%,
-    25% 20%,
-    53% 62%,
-    78% 10%,
-    100% 48%,
-    100% 100%,
-    0 100%
-  );
+  background: color-mix(in srgb, var(--lad-color-accent-warm-soft) 25%, transparent);
+  clip-path: polygon(0 55%, 25% 20%, 53% 62%, 78% 10%, 100% 48%, 100% 100%, 0 100%);
 }
 .studio-preview :deep(.avatar-figure) {
   --uno: position-relative justify-self-center;
   z-index: 2;
 
-  filter: drop-shadow(
-    0 9px 7px color-mix(in srgb, var(--lad-text-strong) 15%, transparent)
-  );
+  filter: drop-shadow(0 9px 7px color-mix(in srgb, var(--lad-text-strong) 15%, transparent));
 }
 .preview-tools {
   --uno: position-relative d-flex flex-column align-start;
   z-index: 2;
   padding-right: 18px;
-
 }
 .preview-tools > strong {
   font-size: rem(22);
@@ -272,8 +481,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 1px solid color-mix(in srgb, var(--lad-text-strong) 18%, transparent);
   border-radius: 12px;
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
-  box-shadow: 0 3px 0
-    color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-text-strong) 10%, transparent);
   font: inherit;
   font-size: rem(11);
   --uno: font-weight-black cursor-pointer;
@@ -288,16 +496,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   --uno: position-absolute;
   z-index: 1;
   background: var(--lad-color-reward);
-  clip-path: polygon(
-    50% 0,
-    61% 38%,
-    100% 50%,
-    61% 62%,
-    50% 100%,
-    39% 62%,
-    0 50%,
-    39% 38%
-  );
+  clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%);
   animation: studio-twinkle 4.8s ease-in-out infinite;
 }
 .preview-star-one {
@@ -344,13 +543,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .category-rail button.active {
   color: var(--lad-color-primary-deep);
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
-  box-shadow: inset 0 0 0 2px
-    color-mix(in srgb, var(--lad-color-primary) 20%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--lad-color-primary) 20%, transparent);
 }
 .category-rail button.active::after {
   content: "";
@@ -375,7 +569,6 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 .section-intro {
   --uno: d-flex justify-space-between ga-4;
   align-items: end;
-
 }
 .section-intro p {
   margin: 0 0 1px;
@@ -418,15 +611,10 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: var(--lad-surface);
   box-shadow: 0 3px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
-
 }
 .guardian-preset-grid button.active {
   border: 2px solid var(--lad-mint);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
 }
 .guardian-preset-grid strong {
   font-size: rem(11);
@@ -453,7 +641,6 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   background: linear-gradient(155deg, var(--lad-surface), var(--lad-surface));
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
-
 }
 .skin-choice > span {
   width: 68px;
@@ -480,13 +667,8 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
 }
 .skin-choice.active {
   border: 2px solid var(--lad-mint);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
+  background: linear-gradient(155deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
   transform: translateY(-2px);
 }
 :deep(.option-grid) {
@@ -502,38 +684,20 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   color: var(--lad-text);
   border: 1px solid var(--lad-border);
   border-radius: 21px;
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-raised),
-    var(--lad-surface)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-raised), var(--lad-surface));
   box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-text-strong) 8%, transparent);
   font: inherit;
-
 }
 :deep(.option-choice:nth-child(3n + 2)) {
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-soft),
-    var(--lad-surface)
-  );
+  background: linear-gradient(155deg, var(--lad-surface-soft), var(--lad-surface));
 }
 :deep(.option-choice:nth-child(3n + 3)) {
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface),
-    var(--lad-surface-soft)
-  );
+  background: linear-gradient(155deg, var(--lad-surface), var(--lad-surface-soft));
 }
 :deep(.option-choice.active) {
   border: 2px solid var(--lad-mint);
-  background: linear-gradient(
-    155deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-soft)
-  );
-  box-shadow: 0 5px 0
-    color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
+  background: linear-gradient(155deg, var(--lad-surface-soft), var(--lad-color-reward-soft));
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
 }
 :deep(.option-choice strong) {
   max-width: 100%;
@@ -545,8 +709,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   width: 78px;
   height: 78px;
   --uno: d-grid place-center overflow-hidden;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 85%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 85%, transparent);
   border-radius: 40% 40% 34% 34%;
   background: radial-gradient(
     circle at 50% 37%,
@@ -554,9 +717,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
     var(--lad-surface-soft) 43% 69%,
     var(--lad-color-reward-muted) 70%
   );
-  filter: drop-shadow(
-    0 4px 3px color-mix(in srgb, var(--lad-text) 12%, transparent)
-  );
+  filter: drop-shadow(0 4px 3px color-mix(in srgb, var(--lad-text) 12%, transparent));
 }
 :deep(.option-art .avatar-figure) {
   border: 0;
@@ -594,8 +755,7 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   border: 2px solid var(--lad-border-on-accent);
   border-radius: 50%;
   background: var(--lad-mint);
-  box-shadow: 0 2px 5px
-    color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--lad-color-primary-deep) 20%, transparent);
   font-size: rem(11);
   font-weight: var(--lad-font-weight-black);
 }
@@ -622,7 +782,6 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   box-shadow:
     0 2px 0 color-mix(in srgb, var(--lad-text-warm) 15%, transparent),
     0 0 0 1px var(--lad-border);
-
 }
 :deep(.color-choice::before) {
   content: "";
@@ -654,18 +813,12 @@ watch(() => props.modelValue, (isOpen) => { if (!isOpen) return; resetDraft(); s
   min-height: 50px;
   padding-inline: 18px;
   --uno: position-relative overflow-hidden;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
   border-radius: 17px;
-  background: linear-gradient(
-    135deg,
-    var(--lad-color-info-subtle),
-    var(--lad-color-primary-muted)
-  );
+  background: linear-gradient(135deg, var(--lad-color-info-subtle), var(--lad-color-primary-muted));
   box-shadow:
     0 4px 0 color-mix(in srgb, var(--lad-color-primary-deep) 70%, transparent),
-    0 9px 18px
-      color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
+    0 9px 18px color-mix(in srgb, var(--lad-color-primary-deep) 15%, transparent);
   font-size: rem(14);
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;

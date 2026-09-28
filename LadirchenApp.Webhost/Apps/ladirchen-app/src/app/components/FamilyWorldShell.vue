@@ -6,20 +6,64 @@
 
       <div class="family-world-shell position-relative d-flex flex-column overflow-hidden mx-auto">
         <header class="family-world-header d-flex align-center justify-space-between">
-          <RouterLink :aria-label="t('common.familyWorldAria')" class="family-world-brand d-flex align-end text-decoration-none" to="/">
-            <span class="family-world-logo position-relative flex-shrink-0 overflow-hidden" aria-hidden="true"><img alt="" src="/ladirchen-logo.png"></span>
-            <span class="family-world-wordmark">{{ t('common.appName') }}</span>
+          <RouterLink
+            :aria-label="t('common.familyWorldAria')"
+            class="family-world-brand d-flex align-end text-decoration-none"
+            to="/"
+          >
+            <span class="family-world-logo position-relative flex-shrink-0 overflow-hidden" aria-hidden="true">
+              <img alt="" src="/ladirchen-logo.png" />
+            </span>
+            <span class="family-world-wordmark">{{ t("common.appName") }}</span>
           </RouterLink>
-          <div class="header-stats d-grid align-center" :class="{ 'header-stats--guardian': store.viewerRole === 'guardian' }">
-            <button v-if="store.viewerRole === 'guardian'" class="header-stat header-guardian-week d-flex align-center cursor-pointer" :aria-label="guardianWeekAriaLabel" aria-haspopup="dialog" :data-ladi-heading="t('shell.week.heading')" :data-ladi-tip="guardianWeekTip" type="button" @click="store.piggyBankOpen = true">
+          <div
+            class="header-stats d-grid align-center"
+            :class="{ 'header-stats--guardian': store.viewerRole === 'guardian' }"
+          >
+            <button
+              v-if="store.viewerRole === 'guardian'"
+              class="header-stat header-guardian-week d-flex align-center cursor-pointer"
+              :aria-label="guardianWeekAriaLabel"
+              aria-haspopup="dialog"
+              :data-ladi-heading="t('shell.week.heading')"
+              :data-ladi-tip="guardianWeekTip"
+              type="button"
+              @click="store.piggyBankOpen = true"
+            >
               <span class="header-stat-symbol"><LadirchenCoin animated small /></span>
-              <span class="header-guardian-week-copy"><small>{{ t('shell.week.label') }}</small><strong>{{ t('shell.week.summary', { earned: childrenWeekEarned, completed: childrenWeekCompleted }) }}</strong><i>{{ t('shell.week.assets', { assets: childrenFamilyCurrency, balance: headerBalance }) }}</i></span>
+              <span class="header-guardian-week-copy">
+                <small>{{ t("shell.week.label") }}</small>
+                <strong>
+                  {{ t("shell.week.summary", { earned: childrenWeekEarned, completed: childrenWeekCompleted }) }}
+                </strong>
+                <i>{{ t("shell.week.assets", { assets: childrenFamilyCurrency, balance: headerBalance }) }}</i>
+              </span>
             </button>
             <template v-else>
-              <button class="header-stat header-streak d-flex align-center justify-center cursor-pointer" :aria-label="t('shell.streak.aria', { days: store.currentDailyStreak })" aria-haspopup="dialog" :data-ladi-heading="t('shell.streak.heading')" :data-ladi-tip="t('shell.streak.tip', { days: store.currentDailyStreak })" type="button" @click="streakDialog = true">
-                <span class="header-stat-symbol"><AnimatedStreakFlame :size="30" /></span><strong>{{ store.currentDailyStreak }}</strong><span class="header-stat-label">{{ t('shell.streak.days') }}</span>
+              <button
+                class="header-stat header-streak d-flex align-center justify-center cursor-pointer"
+                :aria-label="t('shell.streak.aria', { days: store.currentDailyStreak })"
+                aria-haspopup="dialog"
+                :data-ladi-heading="t('shell.streak.heading')"
+                :data-ladi-tip="t('shell.streak.tip', { days: store.currentDailyStreak })"
+                type="button"
+                @click="streakDialog = true"
+              >
+                <span class="header-stat-symbol"><AnimatedStreakFlame :size="30" /></span>
+                <strong>{{ store.currentDailyStreak }}</strong>
+                <span class="header-stat-label">{{ t("shell.streak.days") }}</span>
               </button>
-              <button class="header-stat header-balance d-flex align-center justify-center cursor-pointer" :aria-label="t('shell.balance.aria', { name: store.displayNameFor(headerBalanceMemberId), balance: headerBalance })" aria-haspopup="dialog" :data-ladi-heading="t('shell.balance.heading')" :data-ladi-tip="t('shell.balance.tip', { balance: headerBalance })" type="button" @click="store.piggyBankOpen = true">
+              <button
+                class="header-stat header-balance d-flex align-center justify-center cursor-pointer"
+                :aria-label="
+                  t('shell.balance.aria', { name: store.displayNameFor(headerBalanceMemberId), balance: headerBalance })
+                "
+                aria-haspopup="dialog"
+                :data-ladi-heading="t('shell.balance.heading')"
+                :data-ladi-tip="t('shell.balance.tip', { balance: headerBalance })"
+                type="button"
+                @click="store.piggyBankOpen = true"
+              >
                 <span class="header-stat-symbol"><LadirchenCoin animated small /></span>
                 <strong>{{ headerBalance }}</strong>
               </button>
@@ -30,10 +74,7 @@
         <main ref="contentElement" class="family-world-content flex-grow-1 overflow-auto">
           <RouterView v-slot="{ Component, route }">
             <Transition name="family-world-page" mode="out-in">
-              <div
-                :key="route.path"
-                class="family-world-route"
-              >
+              <div :key="route.path" class="family-world-route">
                 <component :is="Component" />
               </div>
             </Transition>
@@ -41,13 +82,20 @@
         </main>
 
         <nav :aria-label="t('common.mainNavigation')" class="family-world-navigation position-absolute d-grid">
-          <RouterLink v-for="item in navigation" :key="item.to" class="d-flex flex-column align-center justify-center text-decoration-none" :class="`navigation-tone--${item.icon}`" :data-ladi-tip="item.tip" :to="item.to">
+          <RouterLink
+            v-for="item in navigation"
+            :key="item.to"
+            class="d-flex flex-column align-center justify-center text-decoration-none"
+            :class="`navigation-tone--${item.icon}`"
+            :data-ladi-tip="item.tip"
+            :to="item.to"
+          >
             <AppNavigationIcon :name="item.icon" />
             <span>{{ item.label }}</span>
           </RouterLink>
         </nav>
 
-        <AsyncGlobalLadiGuide v-if="appHydrated && introFinished && store.viewerRole === 'child'" />
+        <AsyncGlobalLadiGuide v-if="showLadiGuide" />
       </div>
 
       <v-snackbar v-model="store.snackbar.visible" color="secondary" location="bottom" rounded="lg" :timeout="2600">
@@ -56,37 +104,95 @@
 
       <v-dialog :model-value="store.rewardAnimation.visible" max-width="390" persistent>
         <v-card :key="store.rewardAnimation.version" class="contribution-reward-card pa-6 text-center" rounded="xl">
-          <div class="reward-confetti" aria-hidden="true"><span>✦</span><span>★</span><span>●</span><span>◆</span><span>✧</span><span>★</span></div>
-          <div class="reward-hero" :class="{ 'reward-hero--double': store.rewardAnimation.multiplier > 1 }" aria-hidden="true">
+          <div class="reward-confetti" aria-hidden="true">
+            <span>✦</span>
+            <span>★</span>
+            <span>●</span>
+            <span>◆</span>
+            <span>✧</span>
+            <span>★</span>
+          </div>
+          <div
+            class="reward-hero"
+            :class="{ 'reward-hero--double': store.rewardAnimation.multiplier > 1 }"
+            aria-hidden="true"
+          >
             <v-icon v-if="store.rewardAnimation.multiplier > 1" class="reward-rocket" icon="i-mdi:rocket-launch" />
             <LadirchenCoin animated />
             <strong v-if="store.rewardAnimation.multiplier > 1">×{{ store.rewardAnimation.multiplier }}</strong>
           </div>
-          <p class="eyebrow reward-eyebrow mt-4 mb-1">{{ t('shell.reward.confirmed') }}</p>
-          <h2>{{ t('shell.reward.success') }}</h2>
+          <p class="eyebrow reward-eyebrow mt-4 mb-1">{{ t("shell.reward.confirmed") }}</p>
+          <h2>{{ t("shell.reward.success") }}</h2>
           <p class="reward-task-title">{{ store.rewardAnimation.title }}</p>
           <div class="reward-results mt-4">
-            <span class="reward-result reward-result--coins"><small>{{ t('shell.reward.earned') }}</small><strong>{{ t('shell.reward.coins', { value: store.rewardAnimation.value }) }}</strong></span>
-            <span v-if="store.rewardAnimation.energy > 0" class="reward-result reward-result--energy"><small>{{ t('shell.reward.house') }}</small><strong>{{ t('shell.reward.energy', { value: store.rewardAnimation.energy }) }}</strong></span>
+            <span class="reward-result reward-result--coins">
+              <small>{{ t("shell.reward.earned") }}</small>
+              <strong>{{ t("shell.reward.coins", { value: store.rewardAnimation.value }) }}</strong>
+            </span>
+            <span v-if="store.rewardAnimation.energy > 0" class="reward-result reward-result--energy">
+              <small>{{ t("shell.reward.house") }}</small>
+              <strong>{{ t("shell.reward.energy", { value: store.rewardAnimation.energy }) }}</strong>
+            </span>
           </div>
-          <div v-if="store.rewardAnimation.stars > 0" class="reward-stars mt-4" :aria-label="t('shell.reward.stars', { value: store.rewardAnimation.stars })">
-            <v-icon v-for="star in 5" :key="star" :class="{ active: star <= store.rewardAnimation.stars }" icon="i-mdi:star" />
+          <div
+            v-if="store.rewardAnimation.stars > 0"
+            class="reward-stars mt-4"
+            :aria-label="t('shell.reward.stars', { value: store.rewardAnimation.stars })"
+          >
+            <v-icon
+              v-for="star in 5"
+              :key="star"
+              :class="{ active: star <= store.rewardAnimation.stars }"
+              icon="i-mdi:star"
+            />
           </div>
-          <p v-if="store.rewardAnimation.multiplier > 1" class="reward-double-copy mt-3"><v-icon icon="i-mdi:creation" size="16" />{{ t('shell.reward.double') }}</p>
-          <v-btn class="reward-dismiss mt-5" color="primary" rounded="lg" variant="flat" width="100%" @click="store.dismissRewardAnimation">{{ t('shell.reward.dismiss') }}</v-btn>
+          <p v-if="store.rewardAnimation.multiplier > 1" class="reward-double-copy mt-3">
+            <v-icon icon="i-mdi:creation" size="16" />
+            {{ t("shell.reward.double") }}
+          </p>
+          <v-btn
+            class="reward-dismiss mt-5"
+            color="primary"
+            rounded="lg"
+            variant="flat"
+            width="100%"
+            @click="store.dismissRewardAnimation"
+          >
+            {{ t("shell.reward.dismiss") }}
+          </v-btn>
         </v-card>
       </v-dialog>
 
       <v-dialog :model-value="store.guardianGiftAnimation.visible" max-width="390" persistent>
         <v-card :key="store.guardianGiftAnimation.version" class="guardian-gift-card pa-6 text-center" rounded="xl">
-          <div class="gift-confetti" aria-hidden="true"><span>✦</span><span>●</span><span>★</span><span>◆</span><span>✦</span></div>
+          <div class="gift-confetti" aria-hidden="true">
+            <span>✦</span>
+            <span>●</span>
+            <span>★</span>
+            <span>◆</span>
+            <span>✦</span>
+          </div>
           <div class="gift-coin"><LadirchenCoin /></div>
-          <p class="eyebrow mt-4 mb-1">{{ t('shell.gift.eyebrow') }}</p>
-          <h2>{{ t('shell.gift.title', { guardian: store.guardianGiftAnimation.guardianName }) }}</h2>
+          <p class="eyebrow mt-4 mb-1">{{ t("shell.gift.eyebrow") }}</p>
+          <h2>{{ t("shell.gift.title", { guardian: store.guardianGiftAnimation.guardianName }) }}</h2>
           <strong class="gift-amount">+{{ store.guardianGiftAnimation.amount }}</strong>
-          <p v-if="store.guardianGiftAnimation.destination === 'goal'" class="text-body-small text-medium-emphasis mt-2">{{ t('shell.gift.goal', { goal: store.guardianGiftAnimation.goalTitle }) }}</p>
+          <p
+            v-if="store.guardianGiftAnimation.destination === 'goal'"
+            class="text-body-small text-medium-emphasis mt-2"
+          >
+            {{ t("shell.gift.goal", { goal: store.guardianGiftAnimation.goalTitle }) }}
+          </p>
           <p v-else class="text-body-small text-medium-emphasis mt-2">{{ guardianGiftBalanceMessage }}</p>
-          <v-btn class="mt-5" color="primary" rounded="lg" variant="flat" width="100%" @click="store.dismissGuardianGift">{{ t('shell.gift.dismiss') }}</v-btn>
+          <v-btn
+            class="mt-5"
+            color="primary"
+            rounded="lg"
+            variant="flat"
+            width="100%"
+            @click="store.dismissGuardianGift"
+          >
+            {{ t("shell.gift.dismiss") }}
+          </v-btn>
         </v-card>
       </v-dialog>
 
@@ -114,48 +220,88 @@ import { isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
 const AsyncAuthGateway = defineAsyncComponent(() => import("@/features/auth/components/AuthGateway.vue"));
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
 const AsyncGlobalLadiGuide = defineAsyncComponent(() => import("./GlobalLadiGuide.vue"));
-const AsyncSavingsPiggyDialog = defineAsyncComponent(() => import("@/features/savings/components/SavingsPiggyDialog.vue"));
-const AsyncWeeklyStreakDialog = defineAsyncComponent(() => import("@/features/streaks/components/WeeklyStreakDialog.vue"));
+const AsyncSavingsPiggyDialog = defineAsyncComponent(
+  () => import("@/features/savings/components/SavingsPiggyDialog.vue"),
+);
+const AsyncWeeklyStreakDialog = defineAsyncComponent(
+  () => import("@/features/streaks/components/WeeklyStreakDialog.vue"),
+);
 
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
 const appHydrated = ref(false);
 const introFinished = ref(false);
+const showLadiGuide = computed(() => appHydrated.value && introFinished.value && store.viewerRole === "child");
 let clockTimer: ReturnType<typeof window.setInterval> | undefined;
 const contentElement = ref<HTMLElement | null>(null);
-void store.hydrateFamilyAggregates().finally(() => { appHydrated.value = true; });
+void store.hydrateFamilyAggregates().finally(() => {
+  appHydrated.value = true;
+});
 const streakDialog = ref(false);
-const headerBalanceMemberId = computed(() => store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId);
-const headerBalance = computed(() => store.viewerRole === "guardian" ? store.balanceFor(store.signedInMemberId) : store.availableBalance);
-const childMembers = computed(() => store.members.filter(member => member.role === "child"));
-const childrenWeekContributions = computed(() => store.contributions.filter(contribution =>
-  contribution.status === "approved" &&
-  contribution.approvedAt !== undefined &&
-  isInstantInIsoWeek(contribution.approvedAt, new Date(store.currentTimeMilliseconds), store.familyTimeZone) &&
-  childMembers.value.some(child => child.id === contribution.assigneeId),
-));
-const childrenWeekEarned = computed(() => childrenWeekContributions.value.reduce((sum, contribution) =>
-  sum + (contribution.earnedReward ?? contribution.reward) + (contribution.earnedRatingBonus ?? 0), 0));
+const headerBalanceMemberId = computed(() =>
+  store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId,
+);
+const headerBalance = computed(() =>
+  store.viewerRole === "guardian" ? store.balanceFor(store.signedInMemberId) : store.availableBalance,
+);
+const childMembers = computed(() => store.members.filter((member) => member.role === "child"));
+const childrenWeekContributions = computed(() =>
+  store.contributions.filter(
+    (contribution) =>
+      contribution.status === "approved" &&
+      contribution.approvedAt !== undefined &&
+      isInstantInIsoWeek(contribution.approvedAt, new Date(store.currentTimeMilliseconds), store.familyTimeZone) &&
+      childMembers.value.some((child) => child.id === contribution.assigneeId),
+  ),
+);
+const childrenWeekEarned = computed(() =>
+  childrenWeekContributions.value.reduce(
+    (sum, contribution) =>
+      sum + (contribution.earnedReward ?? contribution.reward) + (contribution.earnedRatingBonus ?? 0),
+    0,
+  ),
+);
 const childrenWeekCompleted = computed(() => childrenWeekContributions.value.length);
-const childrenTotalAssets = computed(() => childMembers.value.reduce((sum, child) => sum +
-  store.balanceFor(child.id) +
-  store.goals.filter(goal => goal.ownerId === child.id).reduce((goalSum, goal) => goalSum + goal.saved, 0), 0));
-const childrenFamilyCurrency = computed(() => new Intl.NumberFormat(locale.value, {
-  style: "currency",
-  currency: store.familyCurrencyCode,
-  maximumFractionDigits: 2,
-}).format(store.familyCurrencyValue(childrenTotalAssets.value)));
-const guardianWeekAriaLabel = computed(() => t("shell.week.aria", { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value, assets: childrenFamilyCurrency.value, balance: headerBalance.value }));
-const guardianWeekTip = computed(() => t("shell.week.tip", { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value }));
-const snackbarMessage = computed(() => store.snackbar.messageKey
-  ? t(store.snackbar.messageKey, store.snackbar.params)
-  : "");
-const guardianGiftBalanceMessage = computed(() => store.guardianGiftAnimation.goalTitle
-  ? t("shell.gift.balance", { goal: store.guardianGiftAnimation.goalTitle })
-  : t("shell.gift.balanceDefault"));
+const childrenTotalAssets = computed(() =>
+  childMembers.value.reduce(
+    (sum, child) =>
+      sum +
+      store.balanceFor(child.id) +
+      store.goals.filter((goal) => goal.ownerId === child.id).reduce((goalSum, goal) => goalSum + goal.saved, 0),
+    0,
+  ),
+);
+const childrenFamilyCurrency = computed(() =>
+  new Intl.NumberFormat(locale.value, {
+    style: "currency",
+    currency: store.familyCurrencyCode,
+    maximumFractionDigits: 2,
+  }).format(store.familyCurrencyValue(childrenTotalAssets.value)),
+);
+const guardianWeekAriaLabel = computed(() =>
+  t("shell.week.aria", {
+    earned: childrenWeekEarned.value,
+    completed: childrenWeekCompleted.value,
+    assets: childrenFamilyCurrency.value,
+    balance: headerBalance.value,
+  }),
+);
+const guardianWeekTip = computed(() =>
+  t("shell.week.tip", { earned: childrenWeekEarned.value, completed: childrenWeekCompleted.value }),
+);
+const snackbarMessage = computed(() =>
+  store.snackbar.messageKey ? t(store.snackbar.messageKey, store.snackbar.params) : "",
+);
+const guardianGiftBalanceMessage = computed(() =>
+  store.guardianGiftAnimation.goalTitle
+    ? t("shell.gift.balance", { goal: store.guardianGiftAnimation.goalTitle })
+    : t("shell.gift.balanceDefault"),
+);
 const isLandscape = computed(() => viewportWidth.value > viewportHeight.value);
-const usesFullscreenShell = computed(() => smAndDown.value || (md.value && (isLandscape.value || platform.value.touch)));
+const usesFullscreenShell = computed(
+  () => smAndDown.value || (md.value && (isLandscape.value || platform.value.touch)),
+);
 const shellLayoutClasses = computed(() => ({
   "family-world-background--compact": xs.value,
   "family-world-background--expanded-padding": sm.value || (md.value && platform.value.touch),
@@ -163,19 +309,30 @@ const shellLayoutClasses = computed(() => ({
   "family-world-background--landscape": md.value && isLandscape.value,
 }));
 type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
-interface NavigationItem { to: string; icon: NavigationIcon; label: string; tip: string }
+interface NavigationItem {
+  to: string;
+  icon: NavigationIcon;
+  label: string;
+  tip: string;
+}
 
 const navigationItems = computed<NavigationItem[]>(() => [
   { to: "/", icon: "world", label: t("navigation.world.label"), tip: t("navigation.world.tip") },
-  { to: "/contributions", icon: "contributions", label: t("navigation.contributions.label"), tip: t("navigation.contributions.tip") },
+  {
+    to: "/contributions",
+    icon: "contributions",
+    label: t("navigation.contributions.label"),
+    tip: t("navigation.contributions.tip"),
+  },
   { to: "/wishes", icon: "wishes", label: t("navigation.wishes.label"), tip: t("navigation.wishes.tip") },
   { to: "/shop", icon: "shop", label: t("navigation.shop.label"), tip: t("navigation.shop.tip") },
   { to: "/family", icon: "family", label: t("navigation.family.label"), tip: t("navigation.family.tip") },
   { to: "/profile", icon: "profile", label: t("navigation.profile.label"), tip: t("navigation.profile.tip") },
 ]);
-const navigation = computed(() => store.viewerRole === "guardian" && !store.permissions.canManageContent
-  ? navigationItems.value.filter(item => !["/contributions", "/shop"].includes(item.to))
-  : navigationItems.value,
+const navigation = computed(() =>
+  store.viewerRole === "guardian" && !store.permissions.canManageContent
+    ? navigationItems.value.filter((item) => !["/contributions", "/shop"].includes(item.to))
+    : navigationItems.value,
 );
 const handleIntroFinished = () => {
   introFinished.value = true;
@@ -189,10 +346,11 @@ onMounted(() => {
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
 });
 onBeforeUnmount(() => {
-  if (clockTimer !== undefined) {window.clearInterval(clockTimer);}
+  if (clockTimer !== undefined) {
+    window.clearInterval(clockTimer);
+  }
 });
 watch(isLandscape, resetContentScroll);
-
 </script>
 
 <style src="@/styles/family-world.scss"></style>
@@ -215,20 +373,10 @@ watch(isLandscape, resetContentScroll);
 }
 .contribution-reward-card {
   --uno: position-relative overflow-hidden;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info-muted) 20%, transparent);
   background:
-    radial-gradient(
-      circle at 88% 5%,
-      color-mix(in srgb, var(--lad-color-reward) 30%, transparent),
-      transparent 27%
-    ),
-    linear-gradient(
-      155deg,
-      var(--lad-surface-soft),
-      var(--lad-surface-soft) 58%,
-      var(--lad-color-reward-soft)
-    );
+    radial-gradient(circle at 88% 5%, color-mix(in srgb, var(--lad-color-reward) 30%, transparent), transparent 27%),
+    linear-gradient(155deg, var(--lad-surface-soft), var(--lad-surface-soft) 58%, var(--lad-color-reward-soft));
   box-shadow:
     0 9px 0 color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent),
     0 28px 60px color-mix(in srgb, var(--lad-text) 25%, transparent);
@@ -255,11 +403,7 @@ watch(isLandscape, resetContentScroll);
   --uno: position-relative d-grid place-center;
   border: 4px solid var(--lad-border-on-accent);
   border-radius: 32px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-pale)
-  );
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale));
   box-shadow:
     0 7px 0 color-mix(in srgb, var(--lad-color-info-shadow) 15%, transparent),
     0 15px 28px color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
@@ -271,11 +415,7 @@ watch(isLandscape, resetContentScroll);
 }
 .reward-hero--double {
   background:
-    radial-gradient(
-      circle at 25% 18%,
-      var(--lad-color-reward-soft),
-      transparent 30%
-    ),
+    radial-gradient(circle at 25% 18%, var(--lad-color-reward-soft), transparent 30%),
     linear-gradient(
       145deg,
       var(--lad-color-info-subtle),
@@ -296,11 +436,7 @@ watch(isLandscape, resetContentScroll);
   color: var(--lad-text-inverse);
   border: 3px solid var(--lad-border-on-accent);
   border-radius: 13px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-info-shadow)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-info-shadow));
   box-shadow: 0 3px 0 var(--lad-color-info-deep);
   font-size: rem(19);
   animation: reward-double-pop 0.7s 0.65s cubic-bezier(0.2, 0.9, 0.25, 1) both;
@@ -312,10 +448,7 @@ watch(isLandscape, resetContentScroll);
   z-index: 2;
   color: var(--lad-color-reward-pale);
   font-size: rem(34);
-  filter: drop-shadow(
-    0 3px 1px
-      color-mix(in srgb, var(--lad-color-bonus-info-strong) 30%, transparent)
-  );
+  filter: drop-shadow(0 3px 1px color-mix(in srgb, var(--lad-color-bonus-info-strong) 30%, transparent));
   animation: reward-rocket-flight 1.8s 0.35s ease-in-out infinite;
 }
 .reward-results {
@@ -327,30 +460,15 @@ watch(isLandscape, resetContentScroll);
   min-height: 68px;
   padding: 9px;
   --uno: d-grid place-center;
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-reward-accent) 20%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-reward-accent) 20%, transparent);
   border-radius: 17px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-reward-soft),
-    var(--lad-color-reward-pale)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-reward-deep) 15%, transparent);
+  background: linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-color-reward-pale));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-reward-deep) 15%, transparent);
 }
 .reward-result--energy {
-  border-color: color-mix(
-    in srgb,
-    var(--lad-color-primary-muted) 20%,
-    transparent
-  );
-  background: linear-gradient(
-    145deg,
-    var(--lad-surface-soft),
-    var(--lad-color-reward-pale)
-  );
-  box-shadow: 0 4px 0
-    color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
+  border-color: color-mix(in srgb, var(--lad-color-primary-muted) 20%, transparent);
+  background: linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-reward-pale));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-primary-deep) 12%, transparent);
 }
 .reward-result small,
 .reward-result strong {
@@ -384,9 +502,7 @@ watch(isLandscape, resetContentScroll);
 .reward-stars :deep(.v-icon.active) {
   color: var(--lad-color-reward-border);
   opacity: 1;
-  filter: drop-shadow(
-    0 2px 2px color-mix(in srgb, var(--lad-color-reward-deep) 25%, transparent)
-  );
+  filter: drop-shadow(0 2px 2px color-mix(in srgb, var(--lad-color-reward-deep) 25%, transparent));
   animation: reward-star-pop 1.7s ease-in-out infinite;
 }
 .reward-double-copy {
@@ -398,15 +514,10 @@ watch(isLandscape, resetContentScroll);
 }
 .reward-dismiss {
   min-height: 49px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary-highlight),
-    var(--lad-color-primary-strong)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary-highlight), var(--lad-color-primary-strong));
   box-shadow:
     0 5px 0 var(--lad-color-primary-deep),
-    0 10px 18px
-      color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
+    0 10px 18px color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
   font-weight: var(--lad-font-weight-black);
   text-transform: none;
   letter-spacing: 0;
@@ -453,13 +564,8 @@ watch(isLandscape, resetContentScroll);
 }
 .guardian-gift-card {
   --uno: position-relative overflow-hidden;
-  background: linear-gradient(
-    160deg,
-    var(--lad-surface),
-    var(--lad-color-reward-soft) 72%
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
+  background: linear-gradient(160deg, var(--lad-surface), var(--lad-color-reward-soft) 72%);
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary) 25%, transparent);
 }
 .guardian-gift-card h2 {
   --uno: position-relative ma-0;
@@ -475,8 +581,7 @@ watch(isLandscape, resetContentScroll);
 
   border-radius: 50%;
   background: color-mix(in srgb, var(--lad-surface-raised) 80%, transparent);
-  box-shadow: 0 10px 28px
-    color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--lad-color-reward-shadow) 20%, transparent);
   animation: gift-coin-arrive 850ms var(--lad-easing-pop);
 }
 .gift-coin :deep(.ladirchen-coin) {
