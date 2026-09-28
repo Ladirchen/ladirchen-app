@@ -9,6 +9,7 @@ import { createApp } from "vue";
 
 // Plugins
 import { registerPlugins } from "@/plugins";
+import { initializeI18n } from "@/plugins/i18n";
 
 // Components
 import App from "./App.vue";
@@ -23,4 +24,10 @@ const app = createApp(App);
 
 registerPlugins(app);
 
-app.mount("#app");
+void initializeI18n()
+  .catch((error: unknown) => {
+    console.error("Locale messages could not be loaded.", error);
+  })
+  .finally(() => {
+    app.mount("#app");
+  });

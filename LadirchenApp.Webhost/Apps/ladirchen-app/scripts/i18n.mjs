@@ -1,55 +1,48 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-
-import ts from "typescript";
 
 import { walkFiles } from "./file-system.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceRoot = path.join(projectRoot, "src");
+const violations = [];
 
-const loadLocale = async (locale) => {
-  const filename = path.join(sourceRoot, "locales", `${locale}.ts`);
-  const sources = new Map();
-  const loadSources = async directory => Promise.all((await readdir(directory, { withFileTypes: true })).map(async entry => {
-    const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {await loadSources(entryPath);}
-    else if (entry.name.endsWith(".ts")) {sources.set(entryPath, await readFile(entryPath, "utf8"));}
-  }));
-  await loadSources(path.join(sourceRoot, "locales"));
-  const modules = new Map();
-  const execute = moduleFilename => {
-    const normalizedFilename = moduleFilename.endsWith(".ts") ? moduleFilename : `${moduleFilename}.ts`;
-    if (modules.has(normalizedFilename)) {return modules.get(normalizedFilename).exports;}
-    const source = sources.get(normalizedFilename);
-    if (source === undefined) {throw new Error(`Locale module not found: ${normalizedFilename}`);}
-    const javascript = ts.transpileModule(source, {
-      compilerOptions: { esModuleInterop: true, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText;
-    const module = { exports: {} };
-    modules.set(normalizedFilename, module);
-    const requireLocaleModule = request => execute(path.resolve(path.dirname(normalizedFilename), request));
-    Function("exports", "module", "require", javascript)(module.exports, module, requireLocaleModule);
-    return module.exports;
-  };
-  return execute(filename).default;
-};
-
-const flattenMessages = (value, prefix = "", result = new Map()) => {
-  for (const [name, child] of Object.entries(value)) {
-    const key = prefix ? `${prefix}.${name}` : name;
-    if (child !== null && typeof child === "object") {
-      flattenMessages(child, key, result);
+async function loadLocale(locale) {
+  const relativeFilename = path.join("src", "locales", `${locale}.json`);
+  const messages = JSON.parse(await readFile(path.join(projectRoot, relativeFilename), "utf8"));
+  if (messages === null || typeof messages !== "object" || Array.isArray(messages)) {
+    throw new Error(`${relativeFilename}: Locale must be a JSON object.`);
+  }
+  const keys = Object.keys(messages);
+  const result = new Set();
+  for (const key of keys) {
+    if (typeof messages[key] === "string") {
+      result.add(key);
     } else {
-      result.set(key, typeof child);
+      violations.push(`${relativeFilename}: Locale must be flat with string values: ${key}`);
+    }
+  }
+  const sortedKeys = [...keys].sort();
+  const firstUnsorted = keys.findIndex((key, index) => key !== sortedKeys[index]);
+  if (firstUnsorted >= 0) {
+    violations.push(`${relativeFilename}: Keys must be sorted, first out of order: ${keys[firstUnsorted]}`);
+  }
+  const keySet = new Set(keys);
+  for (const key of keys) {
+    const segments = key.split(".");
+    for (let length = 1; length < segments.length; length += 1) {
+      const prefix = segments.slice(0, length).join(".");
+      if (keySet.has(prefix)) {
+        violations.push(`${relativeFilename}: Key ${prefix} conflicts with nested key ${key}`);
+      }
     }
   }
   return result;
-};
+}
 
-const stripVueTemplateMarkup = (source) => {
+function stripVueTemplateMarkup(source) {
   let result = "";
   let quote = "";
   let inTag = false;
@@ -76,8 +69,10 @@ const stripVueTemplateMarkup = (source) => {
     }
     if (inTag) {
       if (quote) {
-        if (character === quote) {quote = "";}
-      } else if (character === "\"" || character === "'") {
+        if (character === quote) {
+          quote = "";
+        }
+      } else if (character === '"' || character === "'") {
         quote = character;
       } else if (character === ">") {
         inTag = false;
@@ -86,24 +81,25 @@ const stripVueTemplateMarkup = (source) => {
     result += character === "\n" ? "\n" : " ";
   }
   return result;
-};
+}
 
-const de = flattenMessages(await loadLocale("de"));
-const en = flattenMessages(await loadLocale("en"));
-const violations = [];
+const de = await loadLocale("de");
+const en = await loadLocale("en");
 
 for (const key of de.keys()) {
   if (!en.has(key)) {
     violations.push(`Missing English locale key: ${key}`);
-  } else if (en.get(key) !== de.get(key)) {
-    violations.push(`Locale value type differs: ${key}`);
   }
 }
 for (const key of en.keys()) {
-  if (!de.has(key)) {violations.push(`Missing German locale key: ${key}`);}
+  if (!de.has(key)) {
+    violations.push(`Missing German locale key: ${key}`);
+  }
 }
 
-const sourceFiles = (await walkFiles(sourceRoot)).filter(file => /\.(?:ts|vue)$/u.test(file) && !file.includes(`${path.sep}locales${path.sep}`));
+const sourceFiles = (await walkFiles(sourceRoot)).filter(
+  (file) => /\.(?:ts|vue)$/u.test(file) && !file.includes(`${path.sep}locales${path.sep}`),
+);
 const staticTranslationPattern = /\bt\(\s*(['"])([^'"]+)\1/gu;
 const translatableAttributePattern = /(?:^|\s)(aria-label|alt|label|placeholder|title)\s*=\s*(['"])(.*?)\2/gu;
 
@@ -116,24 +112,34 @@ for (const file of sourceFiles) {
     }
   }
 
-  if (!file.endsWith(".vue")) {continue;}
+  if (!file.endsWith(".vue")) {
+    continue;
+  }
   const templateStart = source.indexOf("<template");
   const scriptStart = source.indexOf("<script");
-  if (templateStart < 0 || scriptStart < 0) {continue;}
+  if (templateStart < 0 || scriptStart < 0) {
+    continue;
+  }
   const templateContentStart = source.indexOf(">", templateStart) + 1;
   const templateSource = source.slice(templateContentStart, scriptStart);
   const templateStartLine = source.slice(0, templateContentStart).split("\n").length;
   for (const match of templateSource.matchAll(translatableAttributePattern)) {
     const text = match[3].trim();
-    if (!text || !/[A-Za-zÄÖÜäöüß]/u.test(text)) {continue;}
+    if (!text || !/[A-Za-zÄÖÜäöüß]/u.test(text)) {
+      continue;
+    }
     const line = templateStartLine + templateSource.slice(0, match.index).split("\n").length - 1;
     violations.push(`${path.relative(projectRoot, file)}:${line}: Untranslated ${match[1]} attribute: ${text}`);
   }
   const templateWithoutMarkup = stripVueTemplateMarkup(templateSource);
   templateWithoutMarkup.split("\n").forEach((rawText, index) => {
     const text = rawText.replace(/\s+/gu, " ").trim();
-    if (!text || text === "L" || !/[A-Za-zÄÖÜäöüß]/u.test(text)) {return;}
-    violations.push(`${path.relative(projectRoot, file)}:${templateStartLine + index}: Untranslated template text: ${text}`);
+    if (!text || text === "L" || !/[A-Za-zÄÖÜäöüß]/u.test(text)) {
+      return;
+    }
+    violations.push(
+      `${path.relative(projectRoot, file)}:${templateStartLine + index}: Untranslated template text: ${text}`,
+    );
   });
 }
 
