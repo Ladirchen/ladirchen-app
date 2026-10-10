@@ -179,7 +179,6 @@
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import PageHeader from "@/shared/components/ui/PageHeader.vue";
@@ -188,7 +187,6 @@ import { useFamilyWorldStore } from "@/stores/family-world";
 import { setActiveLocale } from "@/plugins/i18n";
 import type { SupportedLocale } from "@/plugins/i18n";
 import { DEFAULT_LOCALE, isSupportedLocale, localeOptions } from "@/locales";
-
 const AsyncAvatarBuilderDialog = defineAsyncComponent(
   () => import("@/shared/components/avatar/AvatarBuilderDialog.vue"),
 );
@@ -202,32 +200,33 @@ const languageOptions = localeOptions.map((option) => ({
   title: option.label,
   value: option.code,
 }));
-
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
-
 const avatarBuilderOpen = ref(false);
 const profileEditorOpen = ref(false);
 const nicknameDraft = ref(store.activeChild.nickname ?? "");
-
 const activeLocale = computed<SupportedLocale>({
-  get: () => (isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE),
+  get(this: void) {
+
+    return isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE;
+  },
   set: setActiveLocale,
 });
 const activeAppearance = computed(() => resolveFamilyMemberAvatarAppearance(store.signedInMember, store.members));
-const profileDescription = computed(() => {
+const profileDescription = computed(function callback() {
+
   if (store.viewerRole === "child") {
+
     return t("profile.editor.childDescription");
   }
 
   return store.isFamilyAdmin ? t("profile.editor.administratorDescription") : t("profile.editor.guardianDescription");
 });
 const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild.nickname ?? ""));
-
 function saveNickname() {
+
   return store.setOwnNickname(nicknameDraft.value);
 }
-
 watch(
   () => store.activeChildId,
   () => {

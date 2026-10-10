@@ -68,26 +68,22 @@
 import { computed, ref } from "vue";
 import { CHARACTER_REACTION_DURATION_MS } from "@/shared/runtime-timing";
 import { useI18n } from "vue-i18n";
-
 import type { FamilyPet } from "@/domain/family/types";
-
+export interface Props {
+  pet: FamilyPet;
+  size?: number;
+}
+export interface Emits {
+  interact: [];
+}
 let reactionTimer: number | undefined;
-
 const { t } = useI18n();
-const props = withDefaults(
-  defineProps<{
-    pet: FamilyPet;
-    size?: number;
-  }>(),
-  {
-    size: 58,
-  },
-);
-const emit = defineEmits<{ interact: [] }>();
-
+const props = withDefaults(defineProps<Props>(), {
+  size: 58,
+});
+const emit = defineEmits<Emits>();
 const isReacting = ref(false);
-
-const petStyle = computed(() => {
+const petStyle = computed(function callback() {
   const phase = props.pet.id.split("").reduce((sum, character) => sum + (character.codePointAt(0) ?? 0), 0) % 29;
 
   return {
@@ -97,7 +93,6 @@ const petStyle = computed(() => {
     height: `${Math.round(props.size * 1.08)}px`,
   };
 });
-
 function react() {
   emit("interact");
   isReacting.value = false;

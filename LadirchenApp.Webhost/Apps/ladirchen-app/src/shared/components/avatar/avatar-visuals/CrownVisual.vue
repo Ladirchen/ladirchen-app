@@ -1,8 +1,16 @@
 <template>
   <g class="crown">
     <path class="crown-body" d="m49 30 6-25 18 16L82 0l12 20 17-17 2 28Z" />
-    <circle class="crown-tip" cx="55" cy="5" r="4" /><circle class="crown-tip" cx="82" cy="1" r="4" /><circle class="crown-tip" cx="111" cy="3" r="4" />
-    <path class="crown-gems" d="m65 24 5-5 5 5-5 5Zm24 0 5-5 5 5-5 5Z" /><path class="crown-shine" d="m83 7 2 4 4 2-4 2-2 4-2-4-4-2 4-2Z" />
+    <circle class="crown-tip" cx="55" cy="5" r="4" /><circle class="crown-tip" cx="82" cy="1" r="4" /><circle
+      class="crown-tip"
+      cx="111"
+      cy="3"
+      r="4"
+    />
+    <path class="crown-gems" d="m65 24 5-5 5 5-5 5Zm24 0 5-5 5 5-5 5Z" /><path
+      class="crown-shine"
+      d="m83 7 2 4 4 2-4 2-2 4-2-4-4-2 4-2Z"
+    />
   </g>
 </template>
 

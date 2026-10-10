@@ -4,6 +4,27 @@ Ladirchen ist eine gamifizierte Familienplattform, die Kinder und Jugendliche da
 
 ## [Beschreibung & Vision](docs/Ladirchen.md)
 
+## Domain and Tests
+
+The pure C# core economy implements family membership, contributions, wallets,
+saving goals, gifts and shop redemption. It reuses the dependency-free DDD
+primitives without a database or web-framework dependency. See the
+[domain analysis and model](docs/domain/domain-model.md) for business rules,
+aggregate boundaries, deliberate prototype differences and deferred features.
+
+English Gherkin specifications use Reqnroll with the existing TUnit runner.
+Only the .NET 10 SDK is needed for domain tests:
+
+```powershell
+dotnet test --project LadirchenApp.Domain.Tests/LadirchenApp.Domain.Tests.csproj
+```
+
+Run only the Gherkin domain scenarios:
+
+```powershell
+dotnet test --project LadirchenApp.Domain.Tests/LadirchenApp.Domain.Tests.csproj --treenode-filter '/*/LadirchenApp.Domain.Tests.Features/*/*'
+```
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)

@@ -6,16 +6,13 @@ import { createPinia } from "pinia";
  *
  * Automatically included in `./src/main.ts`
  */
-
 // Types
 import type { App } from "vue";
-
 // Plugins
 import vuetify from "./vuetify";
 import { familyWorldDependencies } from "@/app/composition-root";
 import { createFamilyWorldStoreDefinition, FAMILY_WORLD_STORE_DEFINITION } from "@/stores/family-world";
-
-export const registerPlugins = (app: App): void => {
+export function registerPlugins(app: App): void {
   app.use(vuetify);
   const pinia = createPinia();
   pinia.use(() => ({ $familyWorld: familyWorldDependencies }));
@@ -26,4 +23,4 @@ export const registerPlugins = (app: App): void => {
   );
   app.use(i18n);
   app.use(router);
-};
+}

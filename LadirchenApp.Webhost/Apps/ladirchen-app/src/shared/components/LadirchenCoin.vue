@@ -7,10 +7,12 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
 import { getLadirchenCoinUrl } from "@/shared/assets/currency-assets";
-
+export interface Props {
+  small?: boolean;
+  animated?: boolean;
+}
 const coinUrl = ref<string>();
-
-withDefaults(defineProps<{ small?: boolean; animated?: boolean }>(), { small: false, animated: false });
+withDefaults(defineProps<Props>(), { small: false, animated: false });
 onMounted(async () => {
   coinUrl.value = await getLadirchenCoinUrl();
 });

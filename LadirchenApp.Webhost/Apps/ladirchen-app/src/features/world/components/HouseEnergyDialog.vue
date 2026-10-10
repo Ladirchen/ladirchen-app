@@ -107,36 +107,39 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
-
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
-
 import AnimatedEnergyStar from "./AnimatedEnergyStar.vue";
 import AnimatedHouseEnergy from "./AnimatedHouseEnergy.vue";
 import HouseProgressPanel from "./HouseProgressPanel.vue";
-
+export interface Props {
+  modelValue: boolean;
+}
+export interface Emits {
+  "update:modelValue": [value: boolean];
+}
 let guideStartTimer: number | undefined;
 let unregisterGuideAction: (() => void) | undefined;
-
-const props = defineProps<{ modelValue: boolean }>();
-const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 const store = useFamilyWorldStore();
 const { t } = useI18n();
-
 const guideStep = ref(-1);
-
 const children = computed(() => store.members.filter((member) => member.role === "child"));
 // 100 % energy maps to a full 360deg ring.
 const energyOrbStyle = computed(() => ({ "--energy": `${store.familyEnergy * 3.6}deg` }));
-const energyState = computed(() => {
+const energyState = computed(function callback() {
+
   if (store.familyEnergy === 100) {
+
     return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
   }
 
   if (store.familyEnergy >= 60) {
+
     return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
   }
 
@@ -165,14 +168,16 @@ const guideSteps = computed(() => [
     message: t("world.energy.guide.safe.message"),
   },
 ]);
-
 function baseContributions(childId: FamilyMemberId) {
+
   return store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
 }
 function baseCount(childId: FamilyMemberId) {
+
   return baseContributions(childId).length;
 }
 function approvedCount(childId: FamilyMemberId) {
+
   return baseContributions(childId).filter((item) => item.status === "approved").length;
 }
 function startEnergyGuide() {
@@ -180,6 +185,7 @@ function startEnergyGuide() {
   const step = guideSteps.value[guideStep.value];
 
   if (!step) {
+
     return;
   }
 
@@ -193,22 +199,24 @@ function startEnergyGuide() {
   });
 }
 function close() {
+
   return emit("update:modelValue", false);
 }
-
 watch(
   () => props.modelValue,
   (isOpen) => {
+
     if (guideStartTimer !== undefined) {
       window.clearTimeout(guideStartTimer);
     }
 
     if (!isOpen) {
+
       return;
     }
 
     guideStep.value = -1;
-    guideStartTimer = window.setTimeout(() => {
+    guideStartTimer = window.setTimeout(function callback() {
       startEnergyGuide();
       guideStartTimer = undefined;
     }, 280);
@@ -217,7 +225,8 @@ watch(
 onMounted(() => {
   unregisterGuideAction = ladiGuideController.registerAction("house-energy:next", startEnergyGuide);
 });
-onUnmounted(() => {
+onUnmounted(function callback() {
+
   if (guideStartTimer !== undefined) {
     window.clearTimeout(guideStartTimer);
   }

@@ -9,6 +9,7 @@
     <File Path="AGENTS.md" />
     <File Path="Build.GitVersion.props" />
     <File Path="Build.NSwag.props" />
+    <File Path="Directory.Build.props" />
     <File Path="LICENSE" />
     <File Path="README.md" />
     <File Path="Tiltfile" />

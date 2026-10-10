@@ -1,6 +1,11 @@
 import type { Scheduler } from "@/application/ports/scheduler";
-
 export const browserScheduler: Scheduler = {
-  schedule: (callback, delayMilliseconds) => window.setTimeout(callback, delayMilliseconds),
-  cancel: handle => window.clearTimeout(handle),
+  schedule(this: void, callback, delayMilliseconds) {
+
+    return window.setTimeout(callback, delayMilliseconds);
+  },
+  cancel(this: void, handle) {
+
+    return window.clearTimeout(handle);
+  },
 };

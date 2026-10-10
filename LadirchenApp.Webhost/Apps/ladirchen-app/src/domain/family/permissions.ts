@@ -1,7 +1,5 @@
 import type { FamilyMember } from "./types";
-
 /** Capabilities derived from the signed-in family member. */
-
 export interface FamilyPermissions {
   canInviteMembers: boolean;
   canManageContent: boolean;
@@ -11,7 +9,6 @@ export interface FamilyPermissions {
   canViewFamilyGoals: boolean;
   canViewGuardianGoals: boolean;
 }
-
 const noPermissions: FamilyPermissions = {
   canInviteMembers: false,
   canManageContent: false,
@@ -21,13 +18,20 @@ const noPermissions: FamilyPermissions = {
   canViewFamilyGoals: false,
   canViewGuardianGoals: false,
 };
+export function resolveFamilyPermissions(member?: FamilyMember): FamilyPermissions {
 
-export const resolveFamilyPermissions = (member?: FamilyMember): FamilyPermissions => {
-  if (!member) {return noPermissions;}
+  if (!member) {
+
+    return noPermissions;
+  }
+
   if (member.role === "child") {
+
     return { ...noPermissions, canViewFamilyGoals: true };
   }
+
   if (member.guardianAccess === "admin") {
+
     return {
       canInviteMembers: true,
       canManageContent: true,
@@ -38,5 +42,6 @@ export const resolveFamilyPermissions = (member?: FamilyMember): FamilyPermissio
       canViewGuardianGoals: true,
     };
   }
+
   return { ...noPermissions, canSupportChildGoals: true, canViewFamilyGoals: true };
-};
+}

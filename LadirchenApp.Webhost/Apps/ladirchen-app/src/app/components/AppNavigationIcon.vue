@@ -49,9 +49,10 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{
+export interface Props {
   name: "world" | "contributions" | "wishes" | "shop" | "family" | "profile";
-}>();
+}
+defineProps<Props>();
 </script>
 
 <style scoped>

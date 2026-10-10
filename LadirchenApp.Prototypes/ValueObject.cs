@@ -16,6 +16,7 @@ public abstract class ValueObject : IEquatable<ValueObject>
 
   public bool Equals(ValueObject? other)
   {
+
     return ReferenceEquals(this, other)
       || other is not null
         && GetType() == other.GetType()
@@ -24,6 +25,7 @@ public abstract class ValueObject : IEquatable<ValueObject>
 
   public override bool Equals(object? obj)
   {
+
     return obj is ValueObject other && Equals(other);
   }
 
@@ -42,11 +44,13 @@ public abstract class ValueObject : IEquatable<ValueObject>
 
   public static bool operator ==(ValueObject? left, ValueObject? right)
   {
+
     return ReferenceEquals(left, right) || left is not null && left.Equals(right);
   }
 
   public static bool operator !=(ValueObject? left, ValueObject? right)
   {
+
     return !(left == right);
   }
 }

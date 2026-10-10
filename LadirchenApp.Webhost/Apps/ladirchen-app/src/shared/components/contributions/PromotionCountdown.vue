@@ -8,25 +8,26 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { remainingPromotionMilliseconds } from "@/domain/contributions/promotions";
 import { MILLISECONDS_PER_SECOND, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from "@/domain/shared/time";
 import type { IanaTimeZone } from "@/domain/family/time-zone";
-
+export interface Props {
+  deadline: string;
+  timeZone: IanaTimeZone;
+}
 let timer: ReturnType<typeof window.setInterval> | undefined;
-
-const props = defineProps<{ deadline: string; timeZone: IanaTimeZone }>();
+const props = defineProps<Props>();
 const { t } = useI18n();
-
 const now = ref(new Date());
-
 const remainingMilliseconds = computed(() => remainingPromotionMilliseconds(props.deadline, props.timeZone, now.value));
 const countdownClasses = computed(() => ({
   expired: remainingMilliseconds.value <= 0,
   urgent: remainingMilliseconds.value > 0 && remainingMilliseconds.value < SECONDS_PER_HOUR * MILLISECONDS_PER_SECOND,
 }));
-const label = computed(() => {
+const label = computed(function callback() {
+
   if (remainingMilliseconds.value <= 0) {
+
     return t("contributions.countdown.expired");
   }
 
@@ -38,16 +39,17 @@ const label = computed(() => {
 
   return t("contributions.countdown.remaining", { time });
 });
-
 onMounted(() => {
   timer = window.setInterval(() => {
     now.value = new Date();
   }, MILLISECONDS_PER_SECOND);
 });
-onBeforeUnmount(() => {
+onBeforeUnmount(function callback() {
+
   if (timer) {
     window.clearInterval(timer);
   }
+
 });
 </script>
 

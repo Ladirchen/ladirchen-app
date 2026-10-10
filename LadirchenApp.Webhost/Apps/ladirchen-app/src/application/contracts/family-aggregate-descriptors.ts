@@ -36,27 +36,47 @@ export const FAMILY_AGGREGATE_DESCRIPTORS = {
     aggregateType: CONTRIBUTIONS_AGGREGATE_TYPE,
     isState: isContributionsState,
     schemaVersion: CONTRIBUTIONS_SCHEMA_VERSION,
-  } satisfies FamilyAggregateDescriptor<typeof CONTRIBUTIONS_AGGREGATE_TYPE, typeof CONTRIBUTIONS_SCHEMA_VERSION, ContributionsState>,
+  } satisfies FamilyAggregateDescriptor<
+    typeof CONTRIBUTIONS_AGGREGATE_TYPE,
+    typeof CONTRIBUTIONS_SCHEMA_VERSION,
+    ContributionsState
+  >,
   familyProfile: {
     aggregateType: FAMILY_PROFILE_AGGREGATE_TYPE,
     isState: isFamilyProfileState,
     schemaVersion: FAMILY_PROFILE_SCHEMA_VERSION,
-  } satisfies FamilyAggregateDescriptor<typeof FAMILY_PROFILE_AGGREGATE_TYPE, typeof FAMILY_PROFILE_SCHEMA_VERSION, FamilyProfileState>,
+  } satisfies FamilyAggregateDescriptor<
+    typeof FAMILY_PROFILE_AGGREGATE_TYPE,
+    typeof FAMILY_PROFILE_SCHEMA_VERSION,
+    FamilyProfileState
+  >,
   familyProgression: {
     aggregateType: FAMILY_PROGRESSION_AGGREGATE_TYPE,
     isState: isFamilyProgressionState,
     schemaVersion: FAMILY_PROGRESSION_SCHEMA_VERSION,
-  } satisfies FamilyAggregateDescriptor<typeof FAMILY_PROGRESSION_AGGREGATE_TYPE, typeof FAMILY_PROGRESSION_SCHEMA_VERSION, FamilyProgressionState>,
+  } satisfies FamilyAggregateDescriptor<
+    typeof FAMILY_PROGRESSION_AGGREGATE_TYPE,
+    typeof FAMILY_PROGRESSION_SCHEMA_VERSION,
+    FamilyProgressionState
+  >,
   homeCustomization: {
     aggregateType: HOME_CUSTOMIZATION_AGGREGATE_TYPE,
     isState: isHomeCustomizationState,
     schemaVersion: HOME_CUSTOMIZATION_SCHEMA_VERSION,
-  } satisfies FamilyAggregateDescriptor<typeof HOME_CUSTOMIZATION_AGGREGATE_TYPE, typeof HOME_CUSTOMIZATION_SCHEMA_VERSION, HomeCustomizationState>,
+  } satisfies FamilyAggregateDescriptor<
+    typeof HOME_CUSTOMIZATION_AGGREGATE_TYPE,
+    typeof HOME_CUSTOMIZATION_SCHEMA_VERSION,
+    HomeCustomizationState
+  >,
   rewardShop: {
     aggregateType: REWARD_SHOP_AGGREGATE_TYPE,
     isState: isRewardShopState,
     schemaVersion: REWARD_SHOP_SCHEMA_VERSION,
-  } satisfies FamilyAggregateDescriptor<typeof REWARD_SHOP_AGGREGATE_TYPE, typeof REWARD_SHOP_SCHEMA_VERSION, RewardShopState>,
+  } satisfies FamilyAggregateDescriptor<
+    typeof REWARD_SHOP_AGGREGATE_TYPE,
+    typeof REWARD_SHOP_SCHEMA_VERSION,
+    RewardShopState
+  >,
   savings: {
     aggregateType: SAVINGS_AGGREGATE_TYPE,
     isState: isSavingsState,

@@ -559,7 +559,6 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
 import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
 import ContributionFilterPanel from "@/features/contributions/components/ContributionFilterPanel.vue";
@@ -568,7 +567,6 @@ import SectionHeader from "@/shared/components/ui/SectionHeader.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { useContributionsPage } from "@/features/contributions/composables/use-contributions-page";
 import type { Contribution } from "@/domain/contributions/types";
-
 const {
   activePromotions,
   addContribution,
@@ -614,7 +612,6 @@ const {
   teamDialog,
 } = useContributionsPage();
 const { t } = useI18n();
-
 const emptyStateIsOpen = computed(() => statusFilter.value === "open");
 const emptyStateTitle = computed(() =>
   t(emptyStateIsOpen.value ? "contributions.empty.openTitle" : "contributions.empty.completedTitle"),
@@ -639,7 +636,7 @@ const childReviewCards = computed(() =>
   })),
 );
 const guardianOwnCards = computed(() =>
-  guardianOwnContributions.value.map((contribution) => {
+  guardianOwnContributions.value.map(function callback(contribution) {
     const approved = contribution.status === "approved";
 
     return {
@@ -665,12 +662,12 @@ const managedContributionCards = computed(() =>
 );
 const canAddContribution = computed(() => Boolean(newContribution.title.trim()));
 const canStartPromotion = computed(() => Boolean(newPromotion.contributionId && newPromotion.deadline));
-
 function toggleEmptyStateFilter() {
   statusFilter.value = emptyStateIsOpen.value ? "completed" : "open";
   filter.value = "all";
 }
 function managedContributionDescription(contribution: Contribution) {
+
   return contribution.kind === "basic"
     ? t("contributions.manage.energyPoints", { value: contribution.energy })
     : t("contributions.kind.extra");

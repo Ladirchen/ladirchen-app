@@ -1,7 +1,13 @@
 import type { ContributionsState, ContributionsSnapshot } from "@/application/contracts/contributions-contract";
 import type { FamilyProfileState, FamilyProfileSnapshot } from "@/application/contracts/family-profile-contract";
-import type { FamilyProgressionState, FamilyProgressionSnapshot } from "@/application/contracts/family-progression-contract";
-import type { HomeCustomizationState, HomeCustomizationSnapshot } from "@/application/contracts/home-customization-contract";
+import type {
+  FamilyProgressionState,
+  FamilyProgressionSnapshot,
+} from "@/application/contracts/family-progression-contract";
+import type {
+  HomeCustomizationState,
+  HomeCustomizationSnapshot,
+} from "@/application/contracts/home-customization-contract";
 import type { RewardShopState, RewardShopSnapshot } from "@/application/contracts/reward-shop-contract";
 import type { SavingsState, SavingsSnapshot } from "@/application/contracts/savings-contract";
 import type { AggregateDraft } from "@/application/contracts/versioned-aggregate-contract";

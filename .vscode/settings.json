@@ -61,5 +61,7 @@
   },
   "[msbuild]": {
     "editor.defaultFormatter": "csharpier.csharpier-vscode"
-  }
+  },
+  "cucumber.features": ["*.Tests/**/*.feature"],
+  "cucumber.glue": ["*.Tests/StepDefinitions/**/*.cs"]
 }

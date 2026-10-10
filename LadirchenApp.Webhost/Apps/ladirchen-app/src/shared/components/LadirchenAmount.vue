@@ -7,13 +7,13 @@
 
 <script lang="ts" setup>
 import LadirchenCoin from "./LadirchenCoin.vue";
-
-withDefaults(defineProps<{
+export interface Props {
   compact?: boolean;
   prefix?: string;
   suffix?: string;
   value: number | string;
-}>(), {
+}
+withDefaults(defineProps<Props>(), {
   compact: false,
   prefix: "",
   suffix: "",

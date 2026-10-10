@@ -5,19 +5,21 @@ import { createDomainId } from "@/domain/shared/identifiers";
 import type { Contribution } from "./types";
 import { currentWeekDaysFromContributions } from "./weekly-progress";
 
-const approved = (id: string, approvedAt: string): Contribution => ({
-  approvedAt,
-  area: "",
-  description: "",
-  dueLabel: "",
-  energy: 10,
-  icon: "",
-  id: createDomainId.contribution(id),
-  kind: "basic",
-  reward: 10,
-  status: "approved",
-  title: "",
-});
+function approved(id: string, approvedAt: string): Contribution {
+  return {
+    approvedAt,
+    area: "",
+    description: "",
+    dueLabel: "",
+    energy: 10,
+    icon: "",
+    id: createDomainId.contribution(id),
+    kind: "basic",
+    reward: 10,
+    status: "approved",
+    title: "",
+  };
+}
 
 describe("currentWeekDaysFromContributions", () => {
   it("counts distinct approval days in the family time zone", () => {

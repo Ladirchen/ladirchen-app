@@ -16,9 +16,9 @@ import App from "./App.vue";
 
 // Styles
 import "virtual:uno.css";
-import "./theme/color-palette.css";
-import "./styles/fonts.scss";
-import "./styles/main.scss";
+import "@/theme/color-palette.css";
+import "@/styles/fonts.scss";
+import "@/styles/main.scss";
 
 const app = createApp(App);
 

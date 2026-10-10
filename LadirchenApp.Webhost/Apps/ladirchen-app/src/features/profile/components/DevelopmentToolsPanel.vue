@@ -180,15 +180,19 @@ const resultDescription = computed(() =>
 );
 
 function memberRoleLabel(role: ViewerRole) {
+
   return t(role === "guardian" ? "profile.development.session.guardian" : "profile.development.session.child");
 }
 function finishWeek(successful: boolean) {
   lastWeekSuccessful.value = successful;
 
   if (successful) {
+
     if (!store.completeWeekDemo()) {
+
       return;
     }
+
   } else {
     store.failWeekDemo();
   }

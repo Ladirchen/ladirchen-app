@@ -25,17 +25,29 @@ const allowedAccessibilityDeclarations = new Set([
 const findReducedMotionRanges = (contents) => {
   const ranges = [];
   const pattern = /@include\s+reduced-motion\s*\{/gu;
+
   for (const match of contents.matchAll(pattern)) {
     const start = match.index;
     let depth = 1;
     let cursor = start + match[0].length;
+
     while (cursor < contents.length && depth > 0) {
-      if (contents[cursor] === "{") { depth += 1; }
-      if (contents[cursor] === "}") { depth -= 1; }
+      if (contents[cursor] === "{") {
+        depth += 1;
+      }
+
+      if (contents[cursor] === "}") {
+        depth -= 1;
+      }
+
       cursor += 1;
     }
-    if (depth === 0) { ranges.push([start, cursor]); }
+
+    if (depth === 0) {
+      ranges.push([start, cursor]);
+    }
   }
+
   return ranges;
 };
 
@@ -49,8 +61,10 @@ const mergeDuplicateUnoDeclarations = (contents) => {
   lines.forEach((line, lineIndex) => {
     const declaration = line.trimEnd().match(unoDeclarationPattern);
     const currentBlock = blockStack.at(-1);
+
     if (declaration?.groups && currentBlock !== undefined) {
       const firstDeclaration = firstDeclarationByBlock.get(currentBlock);
+
       if (firstDeclaration) {
         firstDeclaration.utilities.push(declaration.groups.utilities.trim());
         lines[firstDeclaration.lineIndex] = `${firstDeclaration.indent}--uno: ${firstDeclaration.utilities.join(" ")};`;
@@ -78,56 +92,81 @@ const mergeDuplicateUnoDeclarations = (contents) => {
   return { contents: lines.join("\n"), duplicateLines };
 };
 
-const files = (await walkFiles(sourceRoot)).filter(file => checkedExtensions.has(path.extname(file)));
+const files = (await walkFiles(sourceRoot)).filter((file) => checkedExtensions.has(path.extname(file)));
 const violations = [];
 
 for (const file of files) {
   let contents = await readFile(file, "utf8");
   const unoDeclarations = mergeDuplicateUnoDeclarations(contents);
+
   if (process.argv.includes("--write") && unoDeclarations.duplicateLines.length > 0) {
     contents = unoDeclarations.contents;
     await writeFile(file, contents, "utf8");
   } else {
-    unoDeclarations.duplicateLines.forEach(line => {
-      violations.push(`${path.relative(projectRoot, file)}:${line} (merge duplicate --uno declarations in the same rule)`);
+    unoDeclarations.duplicateLines.forEach((line) => {
+      violations.push(
+        `${path.relative(projectRoot, file)}:${line} (merge duplicate --uno declarations in the same rule)`,
+      );
     });
   }
-  const styleSections = path.extname(file) === ".vue"
-    ? [...contents.matchAll(embeddedStylePattern)].map(match => ({
-      contents: match[1],
-      startLine: contents.slice(0, match.index + match[0].indexOf(match[1])).split("\n").length - 1,
-    }))
-    : [{ contents, startLine: 0 }];
+
+  const styleSections =
+    path.extname(file) === ".vue"
+      ? [...contents.matchAll(embeddedStylePattern)].map((match) => ({
+          contents: match[1],
+          startLine: contents.slice(0, match.index + match[0].indexOf(match[1])).split("\n").length - 1,
+        }))
+      : [{ contents, startLine: 0 }];
+
   for (const section of styleSections) {
     section.contents.split("\n").forEach((lineContents, lineIndex) => {
-      if (lineContents.length <= maximumStyleLineLength) { return; }
-      violations.push(`${path.relative(projectRoot, file)}:${section.startLine + lineIndex + 1} (style line exceeds ${maximumStyleLineLength} characters)`);
+      if (lineContents.length <= maximumStyleLineLength) {
+        return;
+      }
+
+      violations.push(
+        `${path.relative(projectRoot, file)}:${section.startLine + lineIndex + 1} (style line exceeds ${maximumStyleLineLength} characters)`,
+      );
     });
+
     for (const match of section.contents.matchAll(legacyApplyPattern)) {
       const line = section.startLine + section.contents.slice(0, match.index).split("\n").length;
-      violations.push(`${path.relative(projectRoot, file)}:${line} (use the CSS-compatible --uno custom property instead of @apply)`);
+      violations.push(
+        `${path.relative(projectRoot, file)}:${line} (use the CSS-compatible --uno custom property instead of @apply)`,
+      );
     }
+
     for (const match of section.contents.matchAll(invalidRemNegationPattern)) {
       const line = section.startLine + section.contents.slice(0, match.index).split("\n").length;
-      violations.push(`${path.relative(projectRoot, file)}:${line} (pass the negative value to rem() instead of negating the function)`);
+      violations.push(
+        `${path.relative(projectRoot, file)}:${line} (pass the negative value to rem() instead of negating the function)`,
+      );
     }
   }
+
   const reducedMotionRanges = findReducedMotionRanges(contents);
+
   for (const match of contents.matchAll(importantPattern)) {
-    const declarationStart = Math.max(
-      contents.lastIndexOf(";", match.index),
-      contents.lastIndexOf("{", match.index),
-      contents.lastIndexOf("}", match.index),
-      contents.lastIndexOf("\n", match.index),
-    ) + 1;
+    const declarationStart =
+      Math.max(
+        contents.lastIndexOf(";", match.index),
+        contents.lastIndexOf("{", match.index),
+        contents.lastIndexOf("}", match.index),
+        contents.lastIndexOf("\n", match.index),
+      ) + 1;
     const declarationSource = contents.slice(declarationStart, match.index + match[0].length).trim();
     const colonIndex = declarationSource.indexOf(":");
-    const declaration = colonIndex < 0
-      ? declarationSource
-      : `${declarationSource.slice(0, colonIndex).trim()}: ${declarationSource.slice(colonIndex + 1).trim()}`;
-    const isAccessibilityOverride = allowedAccessibilityDeclarations.has(declaration)
-      && reducedMotionRanges.some(([start, end]) => match.index >= start && match.index < end);
-    if (isAccessibilityOverride) { continue; }
+    const declaration =
+      colonIndex < 0
+        ? declarationSource
+        : `${declarationSource.slice(0, colonIndex).trim()}: ${declarationSource.slice(colonIndex + 1).trim()}`;
+    const isAccessibilityOverride =
+      allowedAccessibilityDeclarations.has(declaration) &&
+      reducedMotionRanges.some(([start, end]) => match.index >= start && match.index < end);
+
+    if (isAccessibilityOverride) {
+      continue;
+    }
 
     const line = contents.slice(0, match.index).split("\n").length;
     violations.push(`${path.relative(projectRoot, file)}:${line} (${declaration})`);

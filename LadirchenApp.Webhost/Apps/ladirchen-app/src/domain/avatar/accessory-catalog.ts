@@ -13,7 +13,7 @@ export const AVATAR_ACCESSORY_CATALOG = [
   // design-generator:avatar-accessory-id
 ] as const;
 
-export type AvatarAccessoryId = typeof AVATAR_ACCESSORY_CATALOG[number]["id"];
+export type AvatarAccessoryId = (typeof AVATAR_ACCESSORY_CATALOG)[number]["id"];
 
 const BUILT_IN_AVATAR_FUN_ACCESSORY_CATALOG = [
   defineAvatarPart("none"),
@@ -34,8 +34,8 @@ export const AVATAR_FUN_ACCESSORY_CATALOG = [
   ...AVATAR_FUN_ACCESSORY_EXTENSION_CATALOG,
 ] as const;
 
-export type AvatarFunAccessoryId = typeof AVATAR_FUN_ACCESSORY_CATALOG[number]["id"];
-export type AvatarFunAccessoryExtensionId = typeof AVATAR_FUN_ACCESSORY_EXTENSION_CATALOG[number]["id"];
+export type AvatarFunAccessoryId = (typeof AVATAR_FUN_ACCESSORY_CATALOG)[number]["id"];
+export type AvatarFunAccessoryExtensionId = (typeof AVATAR_FUN_ACCESSORY_EXTENSION_CATALOG)[number]["id"];
 
 const BUILT_IN_AVATAR_SEASONAL_ACCESSORY_CATALOG = [
   defineAvatarPart("none"),
@@ -57,5 +57,5 @@ export const AVATAR_SEASONAL_ACCESSORY_CATALOG = [
   ...AVATAR_SEASONAL_ACCESSORY_EXTENSION_CATALOG,
 ] as const;
 
-export type AvatarSeasonalAccessoryId = typeof AVATAR_SEASONAL_ACCESSORY_CATALOG[number]["id"];
-export type AvatarSeasonalAccessoryExtensionId = typeof AVATAR_SEASONAL_ACCESSORY_EXTENSION_CATALOG[number]["id"];
+export type AvatarSeasonalAccessoryId = (typeof AVATAR_SEASONAL_ACCESSORY_CATALOG)[number]["id"];
+export type AvatarSeasonalAccessoryExtensionId = (typeof AVATAR_SEASONAL_ACCESSORY_EXTENSION_CATALOG)[number]["id"];

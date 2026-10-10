@@ -8,14 +8,35 @@ namespace Build;
 
 public class BuildContext : FrostingContext
 {
-  public DirectoryPath SolutionDirectory { get; }
-  public DirectoryPath ArtifactsRootDirectory { get; }
-  public DirectoryPath ArtifactsWebhostPublishDirectory { get; }
-  public FilePath ArtifactsWebhostZipFile { get; }
-  public FilePath ArtifactsWebhostDockerImageFile { get; }
-  public string WebhostDockerImageTag { get; }
+  public DirectoryPath SolutionDirectory
+  {
+    get;
+  }
+  public DirectoryPath ArtifactsRootDirectory
+  {
+    get;
+  }
+  public DirectoryPath ArtifactsWebhostPublishDirectory
+  {
+    get;
+  }
+  public FilePath ArtifactsWebhostZipFile
+  {
+    get;
+  }
+  public FilePath ArtifactsWebhostDockerImageFile
+  {
+    get;
+  }
+  public string WebhostDockerImageTag
+  {
+    get;
+  }
 
-  public GitVersion GitVersion { get; }
+  public GitVersion GitVersion
+  {
+    get;
+  }
 
   public BuildContext(ICakeContext context)
     : base(context)

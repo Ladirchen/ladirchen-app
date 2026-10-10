@@ -19,22 +19,18 @@
 
 <script lang="ts" setup>
 import { computed } from "vue";
-
 import HeaderDecoration from "./HeaderDecoration.vue";
-
-const props = withDefaults(
-  defineProps<{
-    description: string;
-    eyebrow: string;
-    icon?: string;
-    title: string;
-    tone?: "mint" | "blue" | "amber" | "coral" | "profile";
-  }>(),
-  {
-    icon: undefined,
-    tone: "mint",
-  },
-);
+export interface Props {
+  description: string;
+  eyebrow: string;
+  icon?: string;
+  title: string;
+  tone?: "mint" | "blue" | "amber" | "coral" | "profile";
+}
+const props = withDefaults(defineProps<Props>(), {
+  icon: undefined,
+  tone: "mint",
+});
 const decorationTone = computed(() => (props.tone === "profile" ? "profile" : "world"));
 </script>
 

@@ -43,7 +43,6 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import type { AvatarAppearance } from "@/domain/avatar";
 import { ENTITY_LAYER_BASE, furnitureVisualDefinitionFor } from "@/domain/house";
 import type { HouseAccessory, HouseLayoutPlacement } from "@/domain/house";
@@ -52,41 +51,48 @@ import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import { ENTITY_VISUAL_CONFIG } from "@/features/world/entity-visual-config";
-
 import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
 import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
-
-const { t } = useI18n();
-
-const props = defineProps<{
+export interface Props {
   accessory?: HouseAccessory;
-  dragOffset?: { readonly x: number; readonly y: number };
+  dragOffset?: {
+    readonly x: number;
+    readonly y: number;
+  };
   editable: boolean;
-  member?: FamilyMember & { resolvedAppearance: AvatarAppearance };
+  member?: FamilyMember & {
+    resolvedAppearance: AvatarAppearance;
+  };
   perched?: boolean;
   pet?: FamilyPet;
   placement: HouseLayoutPlacement;
   score: number;
   speech?: string;
   viewerMemberId?: FamilyMemberId;
-}>();
-const emit = defineEmits<{
+}
+export interface Emits {
   "ladi-interact": [];
   lostpointercapture: [event: PointerEvent];
   pointercancel: [event: PointerEvent];
   pointerdown: [event: PointerEvent, placement: HouseLayoutPlacement];
   pointermove: [event: PointerEvent];
   pointerup: [event: PointerEvent];
-}>();
+}
+const { t } = useI18n();
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 const doorOpen = ref(false);
+const entityName = computed(function callback() {
 
-const entityName = computed(() => {
   if (props.placement.entityType === "furniture") {
+
     return props.accessory?.title ?? t("world.scene.entity.furniture");
   }
 
   if (props.placement.entityType === "member") {
+
     if (!props.member) {
+
       return t("world.scene.entity.member");
     }
 
@@ -96,17 +102,21 @@ const entityName = computed(() => {
   }
 
   if (props.placement.entityType === "pet") {
+
     return props.pet?.name ?? t("world.scene.entity.pet");
   }
 
   return "Ladi";
 });
-const accessibleLabel = computed(() => {
+const accessibleLabel = computed(function callback() {
+
   if (props.editable) {
+
     return t("world.scene.moveEntity", { name: entityName.value });
   }
 
   if (props.accessory?.interaction !== "toggle-door") {
+
     return entityName.value;
   }
 
@@ -126,6 +136,7 @@ const entityStyle = computed(() => ({
     : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
 }));
 function interact() {
+
   if (props.placement.entityType === "ladi") {
     emit("ladi-interact");
   }
@@ -133,20 +144,25 @@ function interact() {
   if (props.accessory?.interaction === "toggle-door") {
     doorOpen.value = !doorOpen.value;
   }
+
 }
 function forwardPointerDown(event: PointerEvent) {
   emit("pointerdown", event, props.placement);
 }
 function forwardLostPointerCapture(event: PointerEvent) {
+
   return emit("lostpointercapture", event);
 }
 function forwardPointerMove(event: PointerEvent) {
+
   return emit("pointermove", event);
 }
 function forwardPointerUp(event: PointerEvent) {
+
   return emit("pointerup", event);
 }
 function forwardPointerCancel(event: PointerEvent) {
+
   return emit("pointercancel", event);
 }
 </script>

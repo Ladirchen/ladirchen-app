@@ -371,7 +371,6 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import AnimatedHouseEnergy from "@/features/world/components/AnimatedHouseEnergy.vue";
 import FamilyWorldScene from "@/features/world/components/FamilyWorldScene.vue";
 import HouseEnergyDialog from "@/features/world/components/HouseEnergyDialog.vue";
@@ -384,16 +383,13 @@ import { isPromotionAvailable } from "@/domain/contributions/promotions";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ROOM_DESIGNS } from "@/domain/house";
-
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
-
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
 const gift = reactive({ childId: store.activeChildId, amount: 20, reason: "" });
-
 const localizedContributions = computed(() => store.contributions.map(localize.contribution));
 const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
 const localizedAccessories = computed(() => store.accessories.map(localize.accessory));
@@ -428,6 +424,7 @@ const emptyTaskTitle = computed(() =>
   ),
 );
 const emptyTaskMessage = computed(() => {
+
   return t(
     completedPersonalContributions.value.length
       ? "world.tasks.empty.completedMessage"
@@ -448,8 +445,10 @@ const activePromotion = computed(() =>
 );
 const showGuardianManagement = computed(() => store.viewerRole === "guardian" && store.permissions.canManageContent);
 const bannerPromotion = computed(() => (store.viewerRole === "child" ? activePromotion.value : undefined));
-const promotionRewardTotal = computed(() => {
+const promotionRewardTotal = computed(function callback() {
+
   if (!activePromotion.value) {
+
     return 0;
   }
 
@@ -464,14 +463,15 @@ const childOptions = computed(() =>
   childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })),
 );
 const canGiveGift = computed(() => gift.amount >= 1 && gift.reason.trim().length >= 3);
-
 function contributionTitle(contributionId: ContributionId) {
+
   return (
     localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
     t("contributions.singular")
   );
 }
 function promotionFor(contributionId: ContributionId) {
+
   return localizedPromotions.value.find(
     (promotion) =>
       promotion.contributionId === contributionId &&

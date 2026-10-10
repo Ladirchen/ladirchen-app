@@ -78,20 +78,18 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import type { ContributionKind } from "@/domain/contributions/types";
 import { UI_ICONS } from "@/shared/ui-icons";
-
+export interface Props {
+  openCount: number;
+}
 type ContributionScope = "all" | "mine" | "open";
 type KindFilter = "all" | ContributionKind;
 type StatusFilter = "open" | "completed";
-
 const scope = defineModel<ContributionScope>("scope", { required: true });
 const kind = defineModel<KindFilter>("kind", { required: true });
 const status = defineModel<StatusFilter>("status", { required: true });
-
 const { t } = useI18n();
-
 const scopeOptions = computed<
   Array<{
     description: string;
@@ -119,12 +117,24 @@ const scopeOptions = computed<
     icon: UI_ICONS.contributionScope.all,
   },
 ]);
-const kindOptions = computed<Array<{ icon: string; title: string; value: KindFilter }>>(() => [
+const kindOptions = computed<
+  Array<{
+    icon: string;
+    title: string;
+    value: KindFilter;
+  }>
+>(() => [
   { value: "all", title: t("contributions.filter.kinds.all"), icon: "✨" },
   { value: "basic", title: t("contributions.filter.kinds.energy"), icon: "⚡" },
   { value: "extra", title: t("contributions.filter.kinds.extra"), icon: "🪙" },
 ]);
-const statusOptions = computed<Array<{ icon: string; title: string; value: StatusFilter }>>(() => [
+const statusOptions = computed<
+  Array<{
+    icon: string;
+    title: string;
+    value: StatusFilter;
+  }>
+>(() => [
   { value: "open", title: t("contributions.filter.statuses.open"), icon: UI_ICONS.contributionStatus.open },
   {
     value: "completed",
@@ -132,16 +142,15 @@ const statusOptions = computed<Array<{ icon: string; title: string; value: Statu
     icon: UI_ICONS.contributionStatus.completed,
   },
 ]);
-
 function selectStatus(value: StatusFilter) {
   status.value = value;
 
   if (value === "completed" && scope.value === "open") {
     scope.value = "mine";
   }
-}
 
-defineProps<{ openCount: number }>();
+}
+defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>

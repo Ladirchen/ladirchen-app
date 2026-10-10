@@ -140,14 +140,11 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { authenticationGateway } from "@/app/composition-root";
 import { createDomainId } from "@/domain/shared/identifiers";
 import { AUTH_INPUT_RULES, DEMO_CREDENTIALS } from "@/features/auth/auth-config";
 import { useFamilyWorldStore } from "@/stores/family-world";
-
 type AuthMode = "login" | "register";
-
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const mode = ref<AuthMode>("login");
@@ -162,15 +159,13 @@ const showLoginPassword = ref(false);
 const showRegisterPassword = ref(false);
 const submitting = ref(false);
 const errorMessage = ref("");
-
-const demoAccessLabel = computed(() => {
+const demoAccessLabel = computed(function callback() {
   const names = store.members
     .slice(0, AUTH_INPUT_RULES.demoMemberCount)
     .map((member) => `„${member.nickname || member.name}“`);
 
   return names.length > 1 ? `${names[0]} / ${names[1]}` : names[0] || t("auth.login.demoFallback");
 });
-
 const registrationIsValid = computed(
   () =>
     familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength &&
@@ -192,18 +187,17 @@ const registerSubmitLabel = computed(() => t(submitting.value ? "auth.register.p
 function toggleLoginPassword() {
   showLoginPassword.value = !showLoginPassword.value;
 }
-
 function toggleRegisterPassword() {
   showRegisterPassword.value = !showRegisterPassword.value;
 }
-
 function setMode(nextMode: AuthMode) {
   mode.value = nextMode;
   errorMessage.value = "";
 }
-
 async function login() {
+
   if (submitting.value) {
+
     return;
   }
 
@@ -231,17 +225,21 @@ async function login() {
     );
 
     if (loginPassword.value === DEMO_CREDENTIALS.password && demoMember && store.signInCurrentFamily(demoMember.id)) {
+
       return;
     }
 
     errorMessage.value = t("auth.login.credentialsError");
+
   } finally {
     submitting.value = false;
   }
-}
 
+}
 async function register() {
+
   if (submitting.value || !registrationIsValid.value) {
+
     return;
   }
 
@@ -265,11 +263,15 @@ async function register() {
       username: registerUsername.value,
     });
     store.createRegisteredFamily(familyId, guardianId, guardianName.value);
+
   } catch {
     errorMessage.value = t("auth.register.createError");
+
   } finally {
+
     submitting.value = false;
   }
+
 }
 </script>
 

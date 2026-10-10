@@ -62,14 +62,20 @@
 
 <script lang="ts" setup>
 import { useI18n } from "vue-i18n";
-
 import type { HouseAccessory } from "@/domain/house";
 import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
-
-const emit = defineEmits<{ place: [accessory: HouseAccessory]; "update:open": [open: boolean] }>();
+export interface Emits {
+  place: [accessory: HouseAccessory];
+  "update:open": [open: boolean];
+}
+export interface Props {
+  accessories: ReadonlyArray<HouseAccessory>;
+  dragging: boolean;
+  open: boolean;
+}
+const emit = defineEmits<Emits>();
 const { t } = useI18n();
-
-defineProps<{ accessories: ReadonlyArray<HouseAccessory>; dragging: boolean; open: boolean }>();
+defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>

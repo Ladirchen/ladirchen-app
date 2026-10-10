@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
+    <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TUnit" Version="1.7*" />
+    <PackageReference Include="Reqnroll.TUnit" Version="3.3.4" />
+    <ProjectReference Include="..\LadirchenApp.Domain\LadirchenApp.Domain.csproj" />
   </ItemGroup>
-
 </Project>

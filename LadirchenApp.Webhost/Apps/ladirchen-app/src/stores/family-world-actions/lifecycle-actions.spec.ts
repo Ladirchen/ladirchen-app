@@ -80,7 +80,7 @@ describe("hydrateHomeCustomization", () => {
     serviceMocks.homeCustomizationLoad.mockReset();
   });
 
-  const createHomeCustomizationContext = () => {
+  function createHomeCustomizationContext() {
     const initialData = createFamilyWorldInitialData();
     const context = Object.assign(createFamilyWorldState(initialData), {
       $familyWorld: {
@@ -89,8 +89,9 @@ describe("hydrateHomeCustomization", () => {
       },
       notify: vi.fn(),
     }) as unknown as FamilyWorldStoreContext;
+
     return { context, initialData };
-  };
+  }
 
   it("restores an unequipped default accessory", async () => {
     const { context, initialData } = createHomeCustomizationContext();

@@ -1,4 +1,7 @@
-import type { FamilyAggregateType, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
+import type {
+  FamilyAggregateType,
+  VersionedAggregateSnapshot,
+} from "@/application/contracts/versioned-aggregate-contract";
 import {
   isFamilyId,
   isFamilyMemberId,
@@ -7,8 +10,7 @@ import {
   isRecord,
   type StateGuard,
 } from "./runtime-validation";
-
-export const isVersionedAggregateSnapshot = <
+export function isVersionedAggregateSnapshot<
   TAggregateType extends FamilyAggregateType,
   TSchemaVersion extends number,
   TState,
@@ -17,12 +19,16 @@ export const isVersionedAggregateSnapshot = <
   aggregateType: TAggregateType,
   schemaVersion: TSchemaVersion,
   isState: StateGuard<TState>,
-): value is VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState> =>
-  isRecord(value) &&
-  value.aggregateType === aggregateType &&
-  value.schemaVersion === schemaVersion &&
-  isFamilyId(value.familyId) &&
-  isNonNegativeInteger(value.revision) &&
-  isIsoDateTime(value.updatedAt) &&
-  isFamilyMemberId(value.updatedBy) &&
-  isState(value.state);
+): value is VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState> {
+
+  return (
+    isRecord(value) &&
+    value.aggregateType === aggregateType &&
+    value.schemaVersion === schemaVersion &&
+    isFamilyId(value.familyId) &&
+    isNonNegativeInteger(value.revision) &&
+    isIsoDateTime(value.updatedAt) &&
+    isFamilyMemberId(value.updatedBy) &&
+    isState(value.state)
+  );
+}

@@ -1,6 +1,9 @@
 <template>
   <g class="cap">
-    <path class="cap-body" d="M42 43c4-31 65-40 78-4-25 10-53 11-78 4Z" /><path class="cap-brim" d="M83 38c22-6 41-1 49 7-20 5-36 3-49-7Z" />
+    <path class="cap-body" d="M42 43c4-31 65-40 78-4-25 10-53 11-78 4Z" /><path
+      class="cap-brim"
+      d="M83 38c22-6 41-1 49 7-20 5-36 3-49-7Z"
+    />
     <path class="cap-seam" d="M80 18v23M54 25q25 11 52-2" /><circle class="cap-button" cx="80" cy="17" r="4" />
   </g>
 </template>

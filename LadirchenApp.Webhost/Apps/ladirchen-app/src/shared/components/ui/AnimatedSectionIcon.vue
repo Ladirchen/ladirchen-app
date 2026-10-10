@@ -1,10 +1,18 @@
 <template>
-  <svg class="animated-section-icon" :class="`animated-section-icon--${variant}`" viewBox="0 0 64 64" aria-hidden="true">
+  <svg
+    class="animated-section-icon"
+    :class="`animated-section-icon--${variant}`"
+    viewBox="0 0 64 64"
+    aria-hidden="true"
+  >
     <g v-if="variant === 'contributions'" class="section-main contribution-hands">
       <path class="icon-fill icon-fill--soft" d="M8 37c5-6 12-6 18 0l6 6-9 10C15 49 10 44 8 37Z" />
       <path class="icon-fill icon-fill--soft" d="M56 37c-5-6-12-6-18 0l-6 6 9 10c8-4 13-9 15-16Z" />
       <path class="icon-stroke" d="M9 37c6-5 11-4 17 1l6 5 6-5c6-5 11-6 17-1M14 43l9 9m27-9-9 9" />
-      <path class="accent-fill contribution-heart" d="M32 38C19 30 18 20 25 17c4-2 7 1 7 5 1-4 4-7 8-5 8 4 5 14-8 21Z" />
+      <path
+        class="accent-fill contribution-heart"
+        d="M32 38C19 30 18 20 25 17c4-2 7 1 7 5 1-4 4-7 8-5 8 4 5 14-8 21Z"
+      />
     </g>
 
     <g v-else-if="variant === 'shop'" class="section-main shop-gift">
@@ -30,9 +38,11 @@
 </template>
 
 <script lang="ts" setup>
+export interface Props {
+  variant: AnimatedSectionIconVariant;
+}
 export type AnimatedSectionIconVariant = "contributions" | "family" | "shop";
-
-defineProps<{ variant: AnimatedSectionIconVariant }>();
+defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>

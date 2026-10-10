@@ -337,17 +337,14 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import PageViewSwitch from "@/shared/components/ui/PageViewSwitch.vue";
 import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
 import ShopRewardCard from "@/features/shop/components/ShopRewardCard.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { useShopPage } from "@/features/shop/composables/use-shop-page";
-
 type EditionAction = "buy" | "childPurchase" | "use" | "selected";
 type FurnitureSetStatus = "owned" | "locked" | "buy" | "childPurchase";
-
 const { t } = useI18n();
 const {
   activeTab,
@@ -382,10 +379,9 @@ const {
   catalogItemsEyebrow,
   catalogItemsTitle,
 } = useShopPage();
-
 const canViewShop = computed(() => store.viewerRole === "child" || store.permissions.canManageContent);
 const editionCards = computed(() =>
-  houseEditions.value.map((edition) => {
+  houseEditions.value.map(function callback(edition) {
     const isActive = edition.id === store.houseThemeId;
 
     return {
@@ -415,29 +411,35 @@ const accessoryCards = computed(() =>
     affordable: canAfford(accessory.price),
   })),
 );
-
 function editionAction(owned: boolean, isActive: boolean): EditionAction {
+
   if (!owned) {
+
     return store.viewerRole === "child" ? "buy" : "childPurchase";
   }
 
   return isActive ? "selected" : "use";
 }
 function furnitureSetStatus(owned: boolean, minimumHouseLevel: number): FurnitureSetStatus {
+
   if (owned) {
+
     return "owned";
   }
 
   if (minimumHouseLevel > store.houseLevel) {
+
     return "locked";
   }
 
   return store.viewerRole === "child" ? "buy" : "childPurchase";
 }
 function onDeleteDialogToggle(open: boolean) {
+
   if (!open) {
     rewardToDelete.value = null;
   }
+
 }
 </script>
 

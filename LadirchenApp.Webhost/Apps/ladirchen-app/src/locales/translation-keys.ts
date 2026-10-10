@@ -32,5 +32,6 @@ export function appendTranslationKey<
   Namespace extends TranslationNamespaceKey,
   Field extends TranslationField<Namespace>,
 >(namespace: Namespace, field: Field): TranslationKey {
+
   return `${namespace}.${field}` as TranslationKey;
 }

@@ -101,16 +101,17 @@ import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import type { ShopRewardPublicationStatus } from "@/features/shop/shop-view-models";
-
-interface ShopRewardCardProps {
+export interface Emits {
+  delete: [reward: ShopReward];
+}
+export interface Props {
   readonly canRequest: boolean;
   readonly publicationStatus: ShopRewardPublicationStatus;
   readonly redemptionOpen: boolean;
   readonly reward: ShopReward;
 }
-
-const props = defineProps<ShopRewardCardProps>();
-const emit = defineEmits<{ delete: [reward: ShopReward] }>();
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const rewardIsHidden = computed(() => props.reward.isVisible === false);

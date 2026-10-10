@@ -1,7 +1,8 @@
 type HexColorValue = `#${string}`;
+function defineHexPalette<TPalette extends Record<string, HexColorValue>>(palette: TPalette): TPalette {
 
-const defineHexPalette = <TPalette extends Record<string, HexColorValue>>(palette: TPalette): TPalette => palette;
-
+  return palette;
+}
 export const visualColorPalette = defineHexPalette({
   "amber-100": "#fff4d4",
   "amber-150": "#fff2ae",
@@ -76,7 +77,6 @@ export const visualColorPalette = defineHexPalette({
   white: "#ffffff",
   yellow: "#ffc95c",
 });
-
 export const applicationColorPalette = {
   background: visualColorPalette.background,
   danger: visualColorPalette["red-500"],
@@ -86,14 +86,12 @@ export const applicationColorPalette = {
   surface: visualColorPalette.surface,
   warning: visualColorPalette["amber-450"],
 } as const;
-
 export const avatarSkinTonePalette = defineHexPalette({
   "skin-deep": "#75452f",
   "skin-light": "#f8d6bd",
   "skin-medium": "#efba91",
   "skin-tan": "#c9865a",
 });
-
 export const avatarHairColorPalette = defineHexPalette({
   "hair-auburn": "#b66b32",
   "hair-black": "#33251f",
@@ -105,7 +103,6 @@ export const avatarHairColorPalette = defineHexPalette({
   "hair-silver": "#aaa69f",
   "hair-white": "#dedbd2",
 });
-
 export const avatarOutfitColorPalette = defineHexPalette({
   "outfit-blue": "#6f8df5",
   "outfit-coral": "#f07e70",
@@ -120,7 +117,6 @@ export const avatarOutfitColorPalette = defineHexPalette({
   "outfit-rose": "#dd7b91",
   "outfit-slate": "#557187",
 });
-
 export const familyMemberColorPalette = defineHexPalette({
   adam: "#e79f45",
   daniel: "#59a8d8",
@@ -132,7 +128,6 @@ export const familyMemberColorPalette = defineHexPalette({
   petAnna: "#efb767",
   petElsa: "#8996ac",
 });
-
 export const houseRoomColorPalette = {
   bathroom: defineHexPalette({ floor: "#b5cec8", wall: "#e8f7f7" }),
   bedroom: defineHexPalette({ floor: "#c89b7c", wall: "#f4eaff" }),
@@ -147,7 +142,6 @@ export const houseRoomColorPalette = {
   playRoom: defineHexPalette({ floor: "#d9b37e", wall: "#fff3e6" }),
   wardrobeRoom: defineHexPalette({ floor: "#b99582", wall: "#f8eef6" }),
 } as const;
-
 export const houseThemeColorPalette = {
   christmasWonderland: defineHexPalette({
     door: "#2f765d",

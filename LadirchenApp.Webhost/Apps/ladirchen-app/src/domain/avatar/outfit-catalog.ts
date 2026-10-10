@@ -25,10 +25,7 @@ export const AVATAR_OUTFIT_EXTENSION_CATALOG = [
   // design-generator:avatar-outfit-id
 ] as const;
 
-export const AVATAR_OUTFIT_CATALOG = [
-  ...BUILT_IN_AVATAR_OUTFIT_CATALOG,
-  ...AVATAR_OUTFIT_EXTENSION_CATALOG,
-] as const;
+export const AVATAR_OUTFIT_CATALOG = [...BUILT_IN_AVATAR_OUTFIT_CATALOG, ...AVATAR_OUTFIT_EXTENSION_CATALOG] as const;
 
-export type AvatarOutfit = typeof AVATAR_OUTFIT_CATALOG[number]["id"];
-export type AvatarOutfitExtensionId = typeof AVATAR_OUTFIT_EXTENSION_CATALOG[number]["id"];
+export type AvatarOutfit = (typeof AVATAR_OUTFIT_CATALOG)[number]["id"];
+export type AvatarOutfitExtensionId = (typeof AVATAR_OUTFIT_EXTENSION_CATALOG)[number]["id"];

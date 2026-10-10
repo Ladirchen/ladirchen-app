@@ -26,18 +26,16 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import { APP_INTRO_DURATION_MS, APP_INTRO_REDUCED_MOTION_DURATION_MS } from "@/shared/runtime-timing";
-
+export interface Emits {
+  finished: [];
+}
 let timer: number | undefined;
-
-const emit = defineEmits<{ finished: [] }>();
+const emit = defineEmits<Emits>();
 const { t } = useI18n();
-
 const visible = ref(true);
-
-onMounted(() => {
+onMounted(function callback() {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   timer = window.setTimeout(
     () => {
@@ -46,10 +44,12 @@ onMounted(() => {
     reduceMotion ? APP_INTRO_REDUCED_MOTION_DURATION_MS : APP_INTRO_DURATION_MS,
   );
 });
-onUnmounted(() => {
+onUnmounted(function callback() {
+
   if (timer !== undefined) {
     window.clearTimeout(timer);
   }
+
 });
 </script>
 

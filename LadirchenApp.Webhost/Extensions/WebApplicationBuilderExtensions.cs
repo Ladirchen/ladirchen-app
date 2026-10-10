@@ -30,10 +30,12 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Services.AddEndpointsApiExplorer();
     webApplicationBuilder.Services.AddOpenApiDocument(options =>
     {
+
       if (apiGroupNames != null && apiGroupNames.Length > 0)
       {
         options.ApiGroupNames = apiGroupNames;
       }
+
     });
   }
 }

@@ -38,6 +38,7 @@ describe("VersionedAggregateService", () => {
       load: vi.fn().mockResolvedValue(loaded),
       save: vi.fn(async (command) => {
         savedCommands.push(command);
+
         return {
           ...command,
           revision: command.expectedRevision + 1,
@@ -110,9 +111,11 @@ describe("VersionedAggregateService", () => {
       load: vi.fn().mockResolvedValueOnce(base).mockResolvedValueOnce(remote),
       save: vi.fn(async (command) => {
         savedCommands.push(command);
+
         if (savedCommands.length === 1) {
           throw new AggregateConflictError("savings");
         }
+
         return {
           ...command,
           revision: command.expectedRevision + 1,

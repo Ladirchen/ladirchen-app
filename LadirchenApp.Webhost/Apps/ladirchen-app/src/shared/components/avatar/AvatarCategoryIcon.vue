@@ -7,7 +7,8 @@
     </g>
     <g v-else-if="name === 'face'">
       <circle class="skin" cx="24" cy="24" r="17" />
-      <circle class="dark" cx="18" cy="21" r="2.5" /><circle class="dark" cx="30" cy="21" r="2.5" />
+      <circle class="dark" cx="18" cy="21" r="2.5" />
+      <circle class="dark" cx="30" cy="21" r="2.5" />
       <path class="line" d="M17 29q7 8 14 0" />
     </g>
     <g v-else-if="name === 'hair'">
@@ -20,24 +21,30 @@
       <path class="line" d="M22 14v9h4v-9M13 26h22" />
     </g>
     <g v-else-if="name === 'extras'">
-      <circle class="glass" cx="16" cy="25" r="9" /><circle class="glass" cx="32" cy="25" r="9" />
+      <circle class="glass" cx="16" cy="25" r="9" />
+      <circle class="glass" cx="32" cy="25" r="9" />
       <path class="line" d="M25 24h-2M7 21l-5-3m39 3 5-3" />
       <path class="gold" d="m36 5 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" />
     </g>
     <g v-else-if="name === 'fun'">
       <path class="mustache" d="M24 27c-5-8-14-6-14 1 0 8 10 9 14 2 4 7 14 6 14-2 0-7-9-9-14-1Z" />
-      <circle class="red" cx="24" cy="17" r="7" /><circle class="shine" cx="22" cy="15" r="2" />
+      <circle class="red" cx="24" cy="17" r="7" />
+      <circle class="shine" cx="22" cy="15" r="2" />
     </g>
     <g v-else>
       <path class="red" d="M8 27C13 9 31 3 40 20l-19 9Z" />
-      <circle class="soft" cx="40" cy="20" r="6" /><path class="soft" d="M7 27q17-7 34-1l-1 7q-16-5-32 1Z" />
+      <circle class="soft" cx="40" cy="20" r="6" />
+      <path class="soft" d="M7 27q17-7 34-1l-1 7q-16-5-32 1Z" />
       <path class="gold" d="m13 5 2 4 4 2-4 2-2 4-2-4-4-2 4-2Z" />
     </g>
   </svg>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ name: "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season" }>();
+export interface Props {
+  name: "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season";
+}
+defineProps<Props>();
 </script>
 
 <style scoped>

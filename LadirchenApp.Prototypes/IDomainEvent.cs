@@ -4,7 +4,13 @@ namespace LadirchenApp.Prototypes;
 
 public interface IDomainEvent
 {
-  Guid EventId { get; }
+  Guid EventId
+  {
+    get;
+  }
 
-  DateTimeOffset OccurredAtUtc { get; }
+  DateTimeOffset OccurredAtUtc
+  {
+    get;
+  }
 }
