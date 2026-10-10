@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "./appearance";
 import { avatarPartsForProfile } from "./catalog";
@@ -9,7 +9,7 @@ import { isAvatarAppearance } from "./validation";
 const idsForProfile = (
   catalog: Parameters<typeof avatarPartsForProfile>[0],
   profile: Parameters<typeof avatarPartsForProfile>[1],
-) => avatarPartsForProfile(catalog, profile).map(part => part.id);
+) => avatarPartsForProfile(catalog, profile).map((part) => part.id);
 
 describe("avatar catalogs", () => {
   it("derives child and guardian hair choices from catalog availability", () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { LADI_STAGES } from "@/domain/ladi";
 import type { LadiSpriteId } from "@/domain/ladi";
 import { getLadiSpriteUrl } from "./ladi-sprite-assets";

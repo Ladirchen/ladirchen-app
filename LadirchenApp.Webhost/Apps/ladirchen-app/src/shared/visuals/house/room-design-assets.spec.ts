@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { ROOM_BACKGROUND_ASSET_IDS } from "@/domain/house/room-designs";
 import { getRoomDesignBackgroundUrl } from "./room-design-assets";
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { FURNITURE_VISUAL_IDS } from "@/domain/house";
 import { getFurnitureSpriteUrls } from "./furniture-sprite-assets";
 

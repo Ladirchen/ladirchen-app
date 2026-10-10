@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { getWorldDecorationSpriteUrl } from "./world-sprite-assets";
 import type { WorldDecorationSpriteId } from "./world-sprite-assets";
 

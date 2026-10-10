@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { ClientStorage } from "@/application/ports/client-storage";
 import { createDomainId } from "@/domain/shared/identifiers";
@@ -7,9 +7,13 @@ import { createLocalAuthenticationGateway } from "./local-auth";
 const createMemoryStorage = (): ClientStorage => {
   const values = new Map<string, string>();
   return {
-    getItem: key => values.get(key) ?? null,
-    removeItem: key => { values.delete(key); },
-    setItem: (key, value) => { values.set(key, value); },
+    getItem: (key) => values.get(key) ?? null,
+    removeItem: (key) => {
+      values.delete(key);
+    },
+    setItem: (key, value) => {
+      values.set(key, value);
+    },
   };
 };
 

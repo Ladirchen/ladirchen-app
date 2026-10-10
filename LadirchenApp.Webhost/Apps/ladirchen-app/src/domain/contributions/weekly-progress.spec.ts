@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createIanaTimeZone } from "@/domain/family/time-zone";
 import { createDomainId } from "@/domain/shared/identifiers";
@@ -27,10 +27,12 @@ describe("currentWeekDaysFromContributions", () => {
       approved("three", "2026-09-08T07:00:00.000Z"),
       approved("previous-week", "2026-09-06T17:00:00.000Z"),
     ];
-    expect(currentWeekDaysFromContributions(
-      contributions,
-      createIanaTimeZone("Europe/Zurich"),
-      new Date("2026-09-10T10:00:00.000Z"),
-    )).toBe(2);
+    expect(
+      currentWeekDaysFromContributions(
+        contributions,
+        createIanaTimeZone("Europe/Zurich"),
+        new Date("2026-09-10T10:00:00.000Z"),
+      ),
+    ).toBe(2);
   });
 });

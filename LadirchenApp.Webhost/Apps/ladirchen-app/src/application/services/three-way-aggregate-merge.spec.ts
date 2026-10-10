@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { mergeSerializableAggregateState } from "./three-way-aggregate-merge";
 
@@ -12,9 +12,25 @@ describe("mergeSerializableAggregateState", () => {
   });
 
   it("merges unrelated changes in ID-based collections", () => {
-    const base = { contributions: [{ id: "one", title: "One", status: "available" }, { id: "two", title: "Two", status: "available" }] };
-    const local = { contributions: [{ id: "one", title: "One", status: "approved" }, { id: "two", title: "Two", status: "available" }] };
-    const remote = { contributions: [{ id: "one", title: "One", status: "available" }, { id: "two", title: "Updated", status: "available" }, { id: "three", title: "Three", status: "available" }] };
+    const base = {
+      contributions: [
+        { id: "one", title: "One", status: "available" },
+        { id: "two", title: "Two", status: "available" },
+      ],
+    };
+    const local = {
+      contributions: [
+        { id: "one", title: "One", status: "approved" },
+        { id: "two", title: "Two", status: "available" },
+      ],
+    };
+    const remote = {
+      contributions: [
+        { id: "one", title: "One", status: "available" },
+        { id: "two", title: "Updated", status: "available" },
+        { id: "three", title: "Three", status: "available" },
+      ],
+    };
 
     expect(mergeSerializableAggregateState(base, local, remote)).toEqual({
       contributions: [
