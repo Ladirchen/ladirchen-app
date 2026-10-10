@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TUnit" Version="1.7*" />
+    <PackageReference Include="TUnit" Version="1.7.*" />
     <PackageReference Include="Reqnroll.TUnit" Version="3.3.4" />
     <ProjectReference Include="..\LadirchenApp.Domain\LadirchenApp.Domain.csproj" />
   </ItemGroup>
