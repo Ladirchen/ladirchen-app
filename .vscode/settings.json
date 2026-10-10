@@ -58,5 +58,8 @@
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit"
+  },
+  "[msbuild]": {
+    "editor.defaultFormatter": "csharpier.csharpier-vscode"
   }
 }

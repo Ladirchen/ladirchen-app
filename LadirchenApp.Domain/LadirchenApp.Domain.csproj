@@ -4,4 +4,5 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <Import Project="..\Build.GitVersion.props" />
 </Project>

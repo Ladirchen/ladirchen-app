@@ -93,5 +93,6 @@
     <File Path="docs/domain/event-storming.md" />
   </Folder>
   <Project Path="LadirchenApp.Domain/LadirchenApp.Domain.csproj" />
+  <Project Path="LadirchenApp.Prototypes/LadirchenApp.Prototypes.csproj" />
   <Project Path="LadirchenApp.Webhost/LadirchenApp.Webhost.csproj" />
 </Solution>
