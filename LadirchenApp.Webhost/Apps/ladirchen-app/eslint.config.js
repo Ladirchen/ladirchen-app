@@ -34,9 +34,10 @@ export default vuetify(
       "@stylistic": stylistic,
     },
     rules: {
-      "@stylistic/quotes": ["error", "double", { allowTemplateLiterals: "avoidEscape" }],
+      "@stylistic/quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: "avoidEscape" }],
       "@stylistic/semi": ["error", "always"],
       "func-style": ["error", "declaration", { allowArrowFunctions: true }],
+      "prefer-arrow-callback": ["error", { allowNamedFunctions: true, allowUnboundThis: true }],
       curly: ["error", "all"],
       "@stylistic/padding-line-between-statements": [
         "error",
@@ -44,27 +45,12 @@ export default vuetify(
         { blankLine: "always", prev: ["if", "for", "while", "try"], next: "*" },
         { blankLine: "always", prev: "*", next: "return" },
       ],
-      "vue/html-closing-bracket-newline": [
-        "error",
-        { singleline: "never", multiline: "always", selfClosingTag: { multiline: "always" } },
-      ],
-      "vue/html-self-closing": [
-        "error",
-        {
-          html: {
-            void: "always",
-            normal: "never",
-            component: "always",
-          },
-          svg: "always",
-          math: "always",
-        },
-      ],
     },
   },
   {
     files: ["src/**/*.{ts,vue}"],
     rules: {
+      "func-style": ["error", "declaration"],
       "no-nested-ternary": "error",
       "no-restricted-imports": [
         "error",
@@ -77,6 +63,18 @@ export default vuetify(
   {
     files: ["**/*.vue"],
     rules: {
+      "vue/html-closing-bracket-newline": [
+        "error",
+        { singleline: "never", multiline: "always", selfClosingTag: { multiline: "always" } },
+      ],
+      "vue/html-self-closing": [
+        "error",
+        {
+          html: { void: "always", normal: "never", component: "always" },
+          svg: "always",
+          math: "always",
+        },
+      ],
       "vue/attributes-order": "off",
       "vue/custom-event-name-casing": ["error", "kebab-case", { ignores: ["/^update:/u"] }],
       "vue/max-attributes-per-line": "off",

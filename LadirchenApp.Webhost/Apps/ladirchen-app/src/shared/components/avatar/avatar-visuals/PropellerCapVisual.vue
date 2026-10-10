@@ -3,7 +3,10 @@
     <path class="propeller-cap-body" d="M42 43c4-30 65-39 78-4-25 10-53 11-78 4Z" />
     <path class="propeller-cap-panel" d="M80 16c-14 0-25 6-31 15m31-15c14 0 25 6 31 15M80 16v25" />
     <path class="propeller-stem" d="M80 16V7" /><circle class="propeller-hub" cx="80" cy="7" r="4" />
-    <path class="propeller-blade blade-left" d="M76 7C57-5 50 4 58 11c6 5 13 2 18-4Z" /><path class="propeller-blade blade-right" d="M84 7c19-12 26-3 18 4-6 5-13 2-18-4Z" />
+    <path class="propeller-blade blade-left" d="M76 7C57-5 50 4 58 11c6 5 13 2 18-4Z" /><path
+      class="propeller-blade blade-right"
+      d="M84 7c19-12 26-3 18 4-6 5-13 2-18-4Z"
+    />
   </g>
 </template>
 

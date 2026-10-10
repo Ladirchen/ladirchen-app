@@ -7,14 +7,12 @@
 </template>
 
 <script lang="ts" setup>
-withDefaults(
-  defineProps<{
-    tone?: "world" | "contributions" | "wishes" | "shop" | "family" | "profile" | "streak" | "balance";
-  }>(),
-  {
-    tone: "world",
-  },
-);
+export interface Props {
+  tone?: "world" | "contributions" | "wishes" | "shop" | "family" | "profile" | "streak" | "balance";
+}
+withDefaults(defineProps<Props>(), {
+  tone: "world",
+});
 </script>
 
 <style lang="scss" scoped>

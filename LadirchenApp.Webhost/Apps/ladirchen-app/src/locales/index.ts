@@ -15,5 +15,6 @@ export const localeOptions: ReadonlyArray<LocaleOption> = [
 ];
 
 export function isSupportedLocale(value: string | null | undefined): value is SupportedLocale {
+
   return (SUPPORTED_LOCALES as ReadonlyArray<string | null | undefined>).includes(value);
 }

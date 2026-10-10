@@ -286,7 +286,6 @@
 
 <script lang="ts" setup>
 import { computed } from "vue";
-
 import SavingGoalDialog from "@/features/savings/components/SavingGoalDialog.vue";
 import SavingsInterestGuideCard from "@/features/savings/components/SavingsInterestGuideCard.vue";
 import { useWishesPage } from "@/features/savings/composables/use-wishes-page";
@@ -298,7 +297,6 @@ import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import { useI18n } from "vue-i18n";
 import type { SavingGoal } from "@/domain/savings/types";
-
 const { t } = useI18n();
 const {
   activeGoal,
@@ -334,7 +332,6 @@ const {
   weeklyInterestForGoal,
   wishViewOptions,
 } = useWishesPage();
-
 const personalSectionDescription = computed(() =>
   t(activeTab.value === "children" ? "wishes.sections.childrenDescription" : "wishes.sections.ownDescription"),
 );
@@ -345,7 +342,7 @@ const saveSubmitLabel = computed(() => t(saveMotion.value ? "wishes.save.sending
 const supportSubmitLabel = computed(() => t(supportSending.value ? "wishes.support.sending" : "wishes.support.submit"));
 const interestRateLabel = computed(() => formatInterestRate(store.savingsInterestRate));
 const personalGoalCards = computed(() =>
-  personalGoals.value.map((goal) => {
+  personalGoals.value.map(function callback(goal) {
     const isOwn = goal.ownerId === store.signedInMemberId;
 
     return {
@@ -377,8 +374,8 @@ const saveSliderMax = computed(() => Math.max(1, maxAssignable.value));
 const supportSliderMax = computed(() => Math.max(1, supportMaximum.value));
 const canSubmitSave = computed(() => saveAmount.value > 0 && !saveMotion.value);
 const canSubmitSupport = computed(() => supportMaximum.value > 0 && supportAmount.value > 0 && !supportSending.value);
-
 function personalGoalVisibilityLabel(goal: SavingGoal) {
+
   return goal.shared ? t("wishes.shared") : visibilityLabel(goal.visibility);
 }
 </script>

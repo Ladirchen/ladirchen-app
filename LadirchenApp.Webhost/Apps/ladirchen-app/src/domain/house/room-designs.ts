@@ -40,20 +40,14 @@ export const ROOM_BACKGROUND_ASSET_IDS = [
   "kitchen-starlight-palace-background",
 ] as const;
 
-export const ROOM_SCENE_OVERLAY_IDS = [
-  "garden-hanging-leaves",
-  "garden-wind-spinner",
-] as const;
+export const ROOM_SCENE_OVERLAY_IDS = ["garden-hanging-leaves", "garden-wind-spinner"] as const;
 
-export const ROOM_SCENE_MOTIONS = [
-  "spin",
-  "sway",
-] as const;
+export const ROOM_SCENE_MOTIONS = ["spin", "sway"] as const;
 
-export type RoomDesignId = typeof ROOM_DESIGN_IDS[number];
-export type RoomBackgroundAssetId = typeof ROOM_BACKGROUND_ASSET_IDS[number];
-export type RoomSceneOverlayId = typeof ROOM_SCENE_OVERLAY_IDS[number];
-export type RoomSceneMotion = typeof ROOM_SCENE_MOTIONS[number];
+export type RoomDesignId = (typeof ROOM_DESIGN_IDS)[number];
+export type RoomBackgroundAssetId = (typeof ROOM_BACKGROUND_ASSET_IDS)[number];
+export type RoomSceneOverlayId = (typeof ROOM_SCENE_OVERLAY_IDS)[number];
+export type RoomSceneMotion = (typeof ROOM_SCENE_MOTIONS)[number];
 export type RoomDesignTranslationKey = `catalog.roomDesigns.${RoomDesignId}.${"description" | "name"}`;
 
 export interface RoomSceneOverlayDefinition {

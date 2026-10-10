@@ -1,7 +1,12 @@
 <template>
   <div class="active-contribution-bonus">
-    <span class="bonus-rocket" aria-hidden="true"><v-icon icon="i-mdi:rocket-launch" size="19" /></span>
-    <span class="bonus-copy"><small>{{ t('contributions.activeBonus.label') }}</small><strong>{{ t('contributions.activeBonus.multiplier', { value: multiplier }) }}</strong></span>
+    <span class="bonus-rocket" aria-hidden="true">
+      <v-icon icon="i-mdi:rocket-launch" size="19" />
+    </span>
+    <span class="bonus-copy">
+      <small>{{ t("contributions.activeBonus.label") }}</small>
+      <strong>{{ t("contributions.activeBonus.multiplier", { value: multiplier }) }}</strong>
+    </span>
     <span class="bonus-factor">×{{ multiplier }}</span>
     <PromotionCountdown class="bonus-countdown" :deadline="deadline" :time-zone="timeZone" />
   </div>
@@ -9,17 +14,15 @@
 
 <script lang="ts" setup>
 import { useI18n } from "vue-i18n";
-
 import PromotionCountdown from "./PromotionCountdown.vue";
 import type { IanaTimeZone } from "@/domain/family/types";
-
-const { t } = useI18n();
-
-defineProps<{
+export interface Props {
   deadline: string;
   multiplier: number;
   timeZone: IanaTimeZone;
-}>();
+}
+const { t } = useI18n();
+defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>
@@ -30,21 +33,11 @@ defineProps<{
   --uno: position-relative d-flex align-center overflow-hidden;
   gap: 7px;
   color: var(--lad-color-primary-deep);
-  border: 2px solid
-    color-mix(in srgb, var(--lad-color-info-muted) 30%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-color-info-muted) 30%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(
-      circle at 88% 10%,
-      color-mix(in srgb, var(--lad-surface-raised) 90%, transparent),
-      transparent 25%
-    ),
-    linear-gradient(
-      125deg,
-      var(--lad-surface-soft),
-      var(--lad-surface-soft) 50%,
-      var(--lad-color-reward-pale)
-    );
+    radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--lad-surface-raised) 90%, transparent), transparent 25%),
+    linear-gradient(125deg, var(--lad-surface-soft), var(--lad-surface-soft) 50%, var(--lad-color-reward-pale));
   box-shadow:
     0 4px 0 color-mix(in srgb, var(--lad-color-info-shadow) 20%, transparent),
     0 9px 18px color-mix(in srgb, var(--lad-color-info-deep) 12%, transparent);
@@ -98,14 +91,9 @@ defineProps<{
   padding: 5px 7px;
   --uno: d-grid place-center flex-shrink-0;
   color: var(--lad-text-inverse);
-  border: 2px solid
-    color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
+  border: 2px solid color-mix(in srgb, var(--lad-border-on-accent) 90%, transparent);
   border-radius: 13px;
-  background: linear-gradient(
-    145deg,
-    var(--lad-color-primary),
-    var(--lad-color-info-shadow)
-  );
+  background: linear-gradient(145deg, var(--lad-color-primary), var(--lad-color-info-shadow));
   box-shadow: 0 3px 0 var(--lad-color-info-deep);
   font-size: rem(18);
   font-weight: var(--lad-font-weight-black);

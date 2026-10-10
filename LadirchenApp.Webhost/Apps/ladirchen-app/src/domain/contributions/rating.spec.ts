@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { normalizeContributionRating, percentageOf } from "./rating";
 
@@ -13,4 +13,3 @@ describe("contribution rating rules", () => {
     expect(percentageOf(80, 5)).toBe(4);
   });
 });
-

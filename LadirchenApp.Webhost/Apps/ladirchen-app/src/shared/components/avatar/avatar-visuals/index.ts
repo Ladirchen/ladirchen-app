@@ -1,6 +1,13 @@
 import type { Component } from "vue";
-
-import type { AvatarAccessoryId, AvatarFaceExtensionId, AvatarFaceShapeExtensionId, AvatarFunAccessoryExtensionId, AvatarHairExtensionId, AvatarOutfitExtensionId, AvatarSeasonalAccessoryExtensionId } from "@/domain/avatar";
+import type {
+  AvatarAccessoryId,
+  AvatarFaceExtensionId,
+  AvatarFaceShapeExtensionId,
+  AvatarFunAccessoryExtensionId,
+  AvatarHairExtensionId,
+  AvatarOutfitExtensionId,
+  AvatarSeasonalAccessoryExtensionId,
+} from "@/domain/avatar";
 import CapVisual from "./CapVisual.vue";
 import CatEarsVisual from "./CatEarsVisual.vue";
 import CrownVisual from "./CrownVisual.vue";
@@ -10,12 +17,10 @@ import HeadphonesVisual from "./HeadphonesVisual.vue";
 import PropellerCapVisual from "./PropellerCapVisual.vue";
 import StarGlassesVisual from "./StarGlassesVisual.vue";
 // design-generator:avatar-visual-import
-
 export interface AvatarAccessoryVisualDefinition {
   readonly component: Component;
   readonly requiresHeadClearance: boolean;
 }
-
 export const avatarAccessoryVisuals = {
   glasses: { component: GlassesVisual, requiresHeadClearance: false },
   headphones: { component: HeadphonesVisual, requiresHeadClearance: true },
@@ -27,7 +32,6 @@ export const avatarAccessoryVisuals = {
   "propeller-cap": { component: PropellerCapVisual, requiresHeadClearance: true },
   // design-generator:avatar-accessory-visual
 } satisfies Record<Exclude<AvatarAccessoryId, "none">, AvatarAccessoryVisualDefinition>;
-
 export interface AvatarExtensionVisualRegistry {
   readonly face: Record<AvatarFaceExtensionId, Component>;
   readonly "face-shape": Record<AvatarFaceShapeExtensionId, Component>;
@@ -36,7 +40,6 @@ export interface AvatarExtensionVisualRegistry {
   readonly outfit: Record<AvatarOutfitExtensionId, Component>;
   readonly "seasonal-accessory": Record<AvatarSeasonalAccessoryExtensionId, Component>;
 }
-
 export const avatarExtensionVisuals: AvatarExtensionVisualRegistry = {
   face: {
     // design-generator:avatar-face-visual
@@ -57,6 +60,10 @@ export const avatarExtensionVisuals: AvatarExtensionVisualRegistry = {
     // design-generator:avatar-seasonal-accessory-visual
   },
 };
+export function avatarExtensionVisualFor(
+  category: keyof AvatarExtensionVisualRegistry,
+  id: string,
+): Component | undefined {
 
-export const avatarExtensionVisualFor = (category: keyof AvatarExtensionVisualRegistry, id: string): Component | undefined =>
-  (avatarExtensionVisuals[category] as Readonly<Record<string, Component>>)[id];
+  return (avatarExtensionVisuals[category] as Readonly<Record<string, Component>>)[id];
+}

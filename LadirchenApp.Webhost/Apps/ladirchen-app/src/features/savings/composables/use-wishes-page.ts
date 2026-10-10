@@ -2,8 +2,7 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-
-import type { PageViewOption } from "@/shared/components/ui/PageViewSwitch.vue";
+import type { PageViewOption } from "@/shared/components/ui/page-view-option";
 import type { GoalVisibility, NewGoal, SavingGoal, SavingGoalOwnerId } from "@/domain/savings/types";
 import { calculateSavingsCredit } from "@/domain/savings/interest";
 import { SAVINGS_RULES } from "@/domain/savings/rules";
@@ -83,6 +82,7 @@ export function useWishesPage() {
   const childrenGoals = computed(() =>
     localizedGoals.value.filter((goal) => {
       const owner = goal.ownerId === "family" ? undefined : store.members.find((member) => member.id === goal.ownerId);
+
       return owner?.role === "child" && goal.visibility !== "private";
     }),
   );
@@ -118,6 +118,7 @@ export function useWishesPage() {
         title: t("wishes.views.own"),
       },
     ];
+
     if (store.viewerRole === "guardian") {
       options.push({
         id: "children",
@@ -126,6 +127,7 @@ export function useWishesPage() {
         title: t("wishes.views.children"),
       });
     }
+
     if (store.permissions.canViewFamilyGoals) {
       options.push({
         id: "family",
@@ -134,6 +136,7 @@ export function useWishesPage() {
         title: t("wishes.views.family"),
       });
     }
+
     return options;
   });
   const supportGoal = computed(() => localizedGoals.value.find((goal) => goal.id === supportGoalId.value));
@@ -141,7 +144,9 @@ export function useWishesPage() {
     if (!supportGoal.value) {
       return 0;
     }
+
     const remaining = remainingGoalAmount(supportGoal.value);
+
     return store.viewerRole === "child" ? Math.min(store.availableBalance, remaining) : remaining;
   });
   const supportExplanation = computed(() =>
@@ -170,6 +175,7 @@ export function useWishesPage() {
     if (saveAmount.value <= 0 || saveMotion.value) {
       return;
     }
+
     saveMotion.value = true;
     saveTimer = window.setTimeout(() => {
       store.saveToGoal(store.activeGoal.id, saveAmount.value);
@@ -209,6 +215,7 @@ export function useWishesPage() {
     if (!supportGoalId.value || supportSending.value) {
       return;
     }
+
     const goalId = supportGoalId.value;
     const amount = supportAmount.value;
     const recipient = supportGoal.value ? ownerName(supportGoal.value.ownerId) : t("wishes.owner.yourFamily");
@@ -224,6 +231,7 @@ export function useWishesPage() {
       } else {
         store.supportGoal(goalId, amount);
       }
+
       supportDialog.value = false;
       supportSending.value = false;
       supportTimer = undefined;
@@ -253,6 +261,7 @@ export function useWishesPage() {
       if (value !== "1" || !store.permissions.canManageGoals) {
         return;
       }
+
       activeTab.value = "family";
       openGoalDialog("family");
     },
@@ -270,6 +279,7 @@ export function useWishesPage() {
     if (tab !== "family" || store.viewerRole !== "child") {
       return;
     }
+
     ladiGuideController.say({
       heading: t("wishes.guide.familyTitle"),
       message: t("wishes.guide.familyMessage"),
@@ -291,12 +301,14 @@ export function useWishesPage() {
     if (store.viewerRole !== "child") {
       return;
     }
+
     startPageIntroGuide();
   });
   onUnmounted(() => {
     if (saveTimer !== undefined) {
       window.clearTimeout(saveTimer);
     }
+
     if (supportTimer !== undefined) {
       window.clearTimeout(supportTimer);
     }

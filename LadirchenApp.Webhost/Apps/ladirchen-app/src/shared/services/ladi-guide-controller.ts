@@ -1,8 +1,4 @@
-export type LadiGuideActionId =
-  | "house-energy:next"
-  | "piggy:next"
-  | "savings-interest:next"
-  | "savings-interest:start";
+export type LadiGuideActionId = "house-energy:next" | "piggy:next" | "savings-interest:next" | "savings-interest:start";
 
 export interface LadiGuideMessage {
   readonly actionId?: LadiGuideActionId;
@@ -26,23 +22,37 @@ class LadiGuideController {
     const handlers = this.actionHandlers.get(actionId) ?? new Set<GuideAction>();
     handlers.add(action);
     this.actionHandlers.set(actionId, handlers);
+
     return () => {
       handlers.delete(action);
-      if (handlers.size === 0) {this.actionHandlers.delete(actionId);}
+
+      if (handlers.size === 0) {
+        this.actionHandlers.delete(actionId);
+      }
+
     };
   }
 
   public say(message: LadiGuideMessage): void {
-    for (const listener of this.messageListeners) {listener(message);}
+
+    for (const listener of this.messageListeners) {
+      listener(message);
+    }
+
   }
 
   public subscribe(listener: GuideMessageListener): () => void {
     this.messageListeners.add(listener);
+
     return () => this.messageListeners.delete(listener);
   }
 
   public trigger(actionId: LadiGuideActionId): void {
-    for (const action of this.actionHandlers.get(actionId) ?? []) {action();}
+
+    for (const action of this.actionHandlers.get(actionId) ?? []) {
+      action();
+    }
+
   }
 }
 

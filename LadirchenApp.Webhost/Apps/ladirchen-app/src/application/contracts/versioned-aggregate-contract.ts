@@ -14,7 +14,10 @@ export interface AggregateDraft<TState> {
   readonly updatedBy: FamilyMemberId;
 }
 
-export interface SaveVersionedAggregateCommand<TAggregateType extends FamilyAggregateType, TState> extends AggregateDraft<TState> {
+export interface SaveVersionedAggregateCommand<
+  TAggregateType extends FamilyAggregateType,
+  TState,
+> extends AggregateDraft<TState> {
   readonly aggregateType: TAggregateType;
   readonly expectedRevision: number;
 }

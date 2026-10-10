@@ -197,14 +197,12 @@
 <script lang="ts" setup>
 import { computed, defineComponent, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { createDefaultAvatarAppearance } from "@/domain/avatar";
 import type { FamilyMember, FamilyPet, FamilyPetKindId } from "@/domain/family/types";
 import { createDomainId } from "@/domain/shared/identifiers";
 import { percentageOfTotal } from "@/domain/shared/numbers";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { familyMemberColorPalette } from "@/theme/color-palette";
-
 const SETUP_STEPS = Object.freeze({ children: 1, guardians: 3, pets: 2 });
 const petKindIds: FamilyPetKindId[] = ["cat", "dog", "rabbit", "bird", "other"] as const;
 const SetupSectionHeader = defineComponent({
@@ -213,31 +211,30 @@ const SetupSectionHeader = defineComponent({
     title: { type: String, required: true },
     copy: { type: String, required: true },
   },
-  setup: (props) => () =>
-    h("div", { class: "d-flex align-start ga-3" }, [
-      h("div", { class: "setup-section-icon" }, props.icon),
-      h("div", [
-        h("h3", { class: "setup-section-title" }, props.title),
-        h("p", { class: "text-caption text-medium-emphasis mt-1" }, props.copy),
-      ]),
-    ]),
-});
+  setup(this: void, props) {
 
+    return () =>
+      h("div", { class: "d-flex align-start ga-3" }, [
+        h("div", { class: "setup-section-icon" }, props.icon),
+        h("div", [
+          h("h3", { class: "setup-section-title" }, props.title),
+          h("p", { class: "text-caption text-medium-emphasis mt-1" }, props.copy),
+        ]),
+      ]);
+  },
+});
 const store = useFamilyWorldStore();
 const { t } = useI18n();
-
 const step = ref(SETUP_STEPS.children);
 const children = ref<FamilyMember[]>([]);
 const guardians = ref<FamilyMember[]>([]);
 const pets = ref<FamilyPet[]>([]);
-
 const petKinds = computed(() =>
   petKindIds.map((value) => ({
     title: t(`familyPets.kinds.${value}`),
     value,
   })),
 );
-
 const stepProgress = computed(() => percentageOfTotal(step.value, SETUP_STEPS.guardians));
 const childrenAreValid = computed(
   () => children.value.length > 0 && children.value.every((child) => child.name.trim()),
@@ -246,12 +243,15 @@ const petsAreValid = computed(() => pets.value.every((pet) => pet.name.trim() &&
 const guardiansAreValid = computed(
   () => guardians.value.length > 0 && guardians.value.every((guardian) => guardian.name.trim()),
 );
-const currentStepIsValid = computed(() => {
+const currentStepIsValid = computed(function callback() {
+
   if (step.value === SETUP_STEPS.children) {
+
     return childrenAreValid.value;
   }
 
   if (step.value === SETUP_STEPS.pets) {
+
     return petsAreValid.value;
   }
 
@@ -261,13 +261,13 @@ const setupIsValid = computed(() => childrenAreValid.value && petsAreValid.value
 const setupEyebrow = computed(() =>
   t(store.onboardingCompleted ? "family.setup.editEyebrow" : "family.setup.welcomeEyebrow"),
 );
-
 // Appends a hex alpha channel (~14 %) to the member color.
 function avatarStyle(color: string) {
+
   return { background: `${color}24` };
 }
-
 function newId(prefix: string, index: number) {
+
   return `${prefix}-${Date.now()}-${index}`;
 }
 function resetDraft() {
@@ -277,6 +277,7 @@ function resetDraft() {
   step.value = SETUP_STEPS.children;
 }
 function addChild() {
+
   return children.value.push({
     id: createDomainId.familyMember(newId("child", children.value.length)),
     name: "",
@@ -289,6 +290,7 @@ function addChild() {
   });
 }
 function addGuardian() {
+
   return guardians.value.push({
     id: createDomainId.familyMember(newId("guardian", guardians.value.length)),
     name: "",
@@ -301,6 +303,7 @@ function addGuardian() {
   });
 }
 function addPet() {
+
   return pets.value.push({
     id: createDomainId.familyPet(newId("pet", pets.value.length)),
     name: "",
@@ -314,16 +317,18 @@ function updatePetAvatar(pet: FamilyPet) {
   pet.avatar = avatars[pet.kind] ?? "🐾";
 }
 function finishSetup() {
+
   return store.completeFamilySetup(
     [...children.value.map((member) => ({ ...member })), ...guardians.value.map((member) => ({ ...member }))],
     pets.value.map((pet) => ({ ...pet })),
   );
 }
-
 watch(
   () => store.familySetupOpen,
-  (isOpen) => {
+  function callback(isOpen) {
+
     if (!isOpen) {
+
       return;
     }
 

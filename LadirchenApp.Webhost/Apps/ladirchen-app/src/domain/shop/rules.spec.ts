@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { catalogNewBadgeIsActive } from "./rules";
 import { createIanaTimeZone } from "@/domain/family/time-zone";

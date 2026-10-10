@@ -174,55 +174,54 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
-
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import type { GoalVisibility, NewGoal } from "@/domain/savings/types";
-
-const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
-
-const props = withDefaults(
-  defineProps<{
-    modelValue: boolean;
-    initialGoal?: NewGoal | null;
-    minimumTarget?: number;
-  }>(),
-  {
-    initialGoal: null,
-    minimumTarget: 10,
-  },
-);
-const emit = defineEmits<{
+export interface Props {
+  modelValue: boolean;
+  initialGoal?: NewGoal | null;
+  minimumTarget?: number;
+}
+export interface Emits {
   "update:modelValue": [value: boolean];
   submit: [goal: NewGoal];
   remove: [];
-}>();
+}
+const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
+const props = withDefaults(defineProps<Props>(), {
+  initialGoal: null,
+  minimumTarget: 10,
+});
+const emit = defineEmits<Emits>();
 const { t } = useI18n();
-
 const goal = reactive<NewGoal>(createInitialGoal());
 const removeConfirmation = ref(false);
-
-const visibilityOptions = computed<{ icon: string; shortTitle: string; subtitle: string; value: GoalVisibility }[]>(
-  () => [
-    {
-      icon: "i-mdi:home-heart",
-      shortTitle: t("savings.goalDialog.visibility.family.title"),
-      subtitle: t("savings.goalDialog.visibility.family.description"),
-      value: "family",
-    },
-    {
-      icon: "i-mdi:lock-outline",
-      shortTitle: t("savings.goalDialog.visibility.private.title"),
-      subtitle: t("savings.goalDialog.visibility.private.description"),
-      value: "private",
-    },
-    {
-      icon: "i-mdi:shield-account-outline",
-      shortTitle: t("savings.goalDialog.visibility.guardians.title"),
-      subtitle: t("savings.goalDialog.visibility.guardians.description"),
-      value: "guardians",
-    },
-  ],
-);
+const visibilityOptions = computed<
+  {
+    icon: string;
+    shortTitle: string;
+    subtitle: string;
+    value: GoalVisibility;
+  }[]
+>(() => [
+  {
+    icon: "i-mdi:home-heart",
+    shortTitle: t("savings.goalDialog.visibility.family.title"),
+    subtitle: t("savings.goalDialog.visibility.family.description"),
+    value: "family",
+  },
+  {
+    icon: "i-mdi:lock-outline",
+    shortTitle: t("savings.goalDialog.visibility.private.title"),
+    subtitle: t("savings.goalDialog.visibility.private.description"),
+    value: "private",
+  },
+  {
+    icon: "i-mdi:shield-account-outline",
+    shortTitle: t("savings.goalDialog.visibility.guardians.title"),
+    subtitle: t("savings.goalDialog.visibility.guardians.description"),
+    value: "guardians",
+  },
+]);
 const isEditing = computed(() => props.initialGoal !== null);
 const showSavedHint = computed(() => isEditing.value && props.minimumTarget > 10);
 const showRemoveButton = computed(() => isEditing.value && !removeConfirmation.value);
@@ -237,18 +236,19 @@ const dialogDescription = computed(() =>
   t(isEditing.value ? "savings.goalDialog.editDescription" : "savings.goalDialog.createDescription"),
 );
 const submitLabel = computed(() => t(isEditing.value ? "common.save" : "savings.goalDialog.start"));
-
 function createInitialGoal(): NewGoal {
+
   return props.initialGoal ? { ...props.initialGoal } : { title: "", icon: "✨", target: 100, visibility: "family" };
 }
-
 function reset() {
+
   return Object.assign(goal, createInitialGoal());
 }
 function adjustTarget(change: number) {
   goal.target = Math.max(props.minimumTarget, validTargetPreview.value + change);
 }
 function close() {
+
   return emit("update:modelValue", false);
 }
 function remove() {
@@ -256,14 +256,15 @@ function remove() {
   close();
 }
 function submit() {
+
   if (!isValid.value) {
+
     return;
   }
 
   emit("submit", { ...goal, title: goal.title.trim(), target: Math.round(goal.target) });
   emit("update:modelValue", false);
 }
-
 const { start: startGuide, stop: stopGuide } = useTimeoutFn(
   () => {
     ladiGuideController.say({
@@ -274,14 +275,13 @@ const { start: startGuide, stop: stopGuide } = useTimeoutFn(
   180,
   { immediate: false },
 );
-
 watch(
   () => props.modelValue,
-  (isOpen) => {
+  function callback(isOpen) {
+
     if (isOpen) {
       reset();
       removeConfirmation.value = false;
-
       startGuide();
 
       return;

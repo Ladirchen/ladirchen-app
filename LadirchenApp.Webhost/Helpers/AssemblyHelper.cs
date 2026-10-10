@@ -44,6 +44,7 @@ public static class AssemblyHelper
 
   private static Assembly GetFallbackAssembly()
   {
+
     return Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
   }
 }

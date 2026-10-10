@@ -403,11 +403,19 @@ import DollhouseInterior from "./DollhouseInterior.vue";
 import FurnitureStoragePanel from "./FurnitureStoragePanel.vue";
 import HouseThemeDecoration from "./HouseThemeDecoration.vue";
 import { useFamilyWorldScene } from "@/features/world/composables/use-family-world-scene";
-import type { FamilyWorldSceneEmit, FamilyWorldSceneProps } from "@/features/world/composables/use-family-world-scene";
+import type {
+  FamilyWorldSceneEmit as Emits,
+  FamilyWorldSceneProps as Props,
+} from "@/features/world/composables/use-family-world-scene";
 import type { FamilyMember } from "@/domain/family/types";
 
-const props = defineProps<FamilyWorldSceneProps>();
-const emit = defineEmits<FamilyWorldSceneEmit>();
+export type {
+  FamilyWorldSceneEmit as Emits,
+  FamilyWorldSceneProps as Props,
+} from "@/features/world/composables/use-family-world-scene";
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 const { t } = useI18n();
 const {
   activeFamilyMember,
@@ -462,9 +470,11 @@ const roofDetailPath = computed(() =>
   houseHasUpperFloor.value ? "M170 82l60-33 61 34M184 89l46-25 47 25" : "M143 145l87-51 88 51M160 151l70-41 71 41",
 );
 function memberRoleClass(member: FamilyMember) {
+
   return member.role === "child" ? "is-child" : "is-guardian";
 }
 function backgroundMemberSize(member: FamilyMember) {
+
   return member.role === "child" ? 42 : 55;
 }
 </script>

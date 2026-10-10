@@ -31,6 +31,52 @@ jobs:
           curl -fsSL https://vite.plus | bash
           echo "$HOME/.local/share/vite-plus/bin" >> "$GITHUB_PATH"
 
+      - name: Install frontend dependencies
+        id: dependencies
+        run: vp install
+
+      - name: Test domain
+        id: domain-tests
+        run: bash build.sh -t test-domain
+
+      - name: Test frontend
+        id: frontend-tests
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: bash build.sh -t test-vitest
+
+      - name: Verify test reports
+        if: ${{ !cancelled() && (steps.domain-tests.outcome == 'success' || steps.frontend-tests.outcome == 'success') }}
+        env:
+          DOMAIN_OUTCOME: ${{ steps.domain-tests.outcome }}
+          FRONTEND_OUTCOME: ${{ steps.frontend-tests.outcome }}
+        run: |
+          if [ "$DOMAIN_OUTCOME" = "success" ]; then
+            test -s .artifacts/TestResults/Domain/domain.trx
+          fi
+          if [ "$FRONTEND_OUTCOME" = "success" ]; then
+            test -s .artifacts/TestResults/Vitest/vitest.xml
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .artifacts/TestResults/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish test summary
+        if: ${{ !cancelled() && hashFiles('.artifacts/TestResults/**/*.trx', '.artifacts/TestResults/**/*.xml') != '' }}
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            .artifacts/TestResults/**/*.trx
+            .artifacts/TestResults/**/*.xml
+          check_run: false
+          comment_mode: off
+          job_summary: true
+
       - name: Run build-all
         run: bash build.sh -t build-all
 

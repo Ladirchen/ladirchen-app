@@ -1,23 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createIanaTimeZone } from "@/domain/family/time-zone";
 import { createDomainId } from "@/domain/shared/identifiers";
 import type { Contribution } from "./types";
 import { currentWeekDaysFromContributions } from "./weekly-progress";
 
-const approved = (id: string, approvedAt: string): Contribution => ({
-  approvedAt,
-  area: "",
-  description: "",
-  dueLabel: "",
-  energy: 10,
-  icon: "",
-  id: createDomainId.contribution(id),
-  kind: "basic",
-  reward: 10,
-  status: "approved",
-  title: "",
-});
+function approved(id: string, approvedAt: string): Contribution {
+  return {
+    approvedAt,
+    area: "",
+    description: "",
+    dueLabel: "",
+    energy: 10,
+    icon: "",
+    id: createDomainId.contribution(id),
+    kind: "basic",
+    reward: 10,
+    status: "approved",
+    title: "",
+  };
+}
 
 describe("currentWeekDaysFromContributions", () => {
   it("counts distinct approval days in the family time zone", () => {
@@ -27,10 +29,12 @@ describe("currentWeekDaysFromContributions", () => {
       approved("three", "2026-09-08T07:00:00.000Z"),
       approved("previous-week", "2026-09-06T17:00:00.000Z"),
     ];
-    expect(currentWeekDaysFromContributions(
-      contributions,
-      createIanaTimeZone("Europe/Zurich"),
-      new Date("2026-09-10T10:00:00.000Z"),
-    )).toBe(2);
+    expect(
+      currentWeekDaysFromContributions(
+        contributions,
+        createIanaTimeZone("Europe/Zurich"),
+        new Date("2026-09-10T10:00:00.000Z"),
+      ),
+    ).toBe(2);
   });
 });

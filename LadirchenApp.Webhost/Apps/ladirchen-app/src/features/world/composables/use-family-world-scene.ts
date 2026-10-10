@@ -1,6 +1,5 @@
 import { computed, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
 import type { WorldEffect } from "@/domain/contributions/types";
@@ -24,12 +23,9 @@ import {
   houseExteriorHouseAssetId,
 } from "@/shared/visuals/house/house-exterior-assets";
 import { useLazyAssetUrl } from "@/shared/composables/use-lazy-asset-url";
-
 type HouseView = "front" | "inside" | "garden";
-
 const MEMBER_LABEL_DURATION_MS = 1900;
 const MINIMUM_SUN_OPACITY = 0.08;
-
 export interface FamilyWorldSceneProps {
   energy: number;
   houseLevel: HouseStageLevel;
@@ -46,15 +42,13 @@ export interface FamilyWorldSceneProps {
   revealVersion: number;
   viewerMemberId: FamilyMemberId;
 }
-
 export interface FamilyWorldSceneEmit {
   (event: "move-entity", placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number): void;
   (event: "place-furniture", accessoryId: HouseAccessoryId, zoneId: HouseZoneId): void;
   (event: "reset-entity", placementId: HouseLayoutPlacementId): void;
   (event: "store-furniture", accessoryId: HouseAccessoryId): void;
 }
-
-export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWorldSceneEmit) => {
+export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWorldSceneEmit) {
   const { t } = useI18n();
   const view = ref<HouseView>("front");
   const selectedRoomView = ref<HouseZoneId | "all">("living-room");
@@ -65,32 +59,44 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
   let memberNameTimer: number | undefined;
   let petNameTimer: number | undefined;
   const viewLabel = computed(() => t(`world.scene.views.${view.value}`));
-  const weather = computed(() => {
+  const weather = computed(function callback() {
+
     if (props.energy >= HOUSE_ENERGY_THRESHOLDS.bright) {
+
       return "sunny";
     }
+
     if (props.energy >= HOUSE_ENERGY_THRESHOLDS.cloudy) {
+
       return "cloudy";
     }
+
     return "rainy";
   });
   const weatherLabel = computed(() => t(`world.scene.weather.${weather.value}`));
-  const houseEnergyClass = computed(() => {
+  const houseEnergyClass = computed(function callback() {
+
     if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
+
       return "energy-critical";
     }
+
     if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
+
       return "energy-low";
     }
+
     if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
+
       return "energy-tired";
     }
+
     return "energy-bright";
   });
   const sunOpacity = computed(() => Math.max(MINIMUM_SUN_OPACITY, props.energy / PERCENTAGE_BASE));
   const familyChildren = computed(() => props.members.filter((member) => member.role === "child"));
   const familyGuardians = computed(() => props.members.filter((member) => member.role === "guardian"));
-  const familyLineup = computed(() => {
+  const familyLineup = computed(function callback() {
     const guardianSplit = Math.ceil(familyGuardians.value.length / 2);
     const lineup = [
       ...familyGuardians.value.slice(0, guardianSplit),
@@ -98,23 +104,29 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
       ...familyGuardians.value.slice(guardianSplit),
     ];
     const activeMember = lineup.find((member) => member.id === props.viewerMemberId);
+
     if (!activeMember) {
+
       return lineup;
     }
+
     const otherMembers = lineup.filter((member) => member.id !== props.viewerMemberId);
     const centerIndex = Math.ceil(otherMembers.length / 2);
+
     return [...otherMembers.slice(0, centerIndex), activeMember, ...otherMembers.slice(centerIndex)];
   });
   const activeFamilyMember = computed(() => familyLineup.value.find((member) => member.id === props.viewerMemberId));
-  const worldMemberName = (member: FamilyMember) => {
+  function worldMemberName(member: FamilyMember) {
     const name = member.nickname?.trim() || member.name;
+
     return member.id === props.viewerMemberId ? t("world.scene.memberYou", { name }) : name;
-  };
+  }
   const backgroundFamilyMembers = computed(() =>
     familyLineup.value.filter((member) => member.id !== props.viewerMemberId),
   );
-  const backgroundMemberGroups = computed(() => {
+  const backgroundMemberGroups = computed(function callback() {
     const split = Math.ceil(backgroundFamilyMembers.value.length / 2);
+
     return [
       { side: "left", members: backgroundFamilyMembers.value.slice(0, split) },
       { side: "right", members: backgroundFamilyMembers.value.slice(split) },
@@ -127,16 +139,20 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
   );
   const activeHouseStage = computed(() => HOUSE_STAGES.find((stage) => stage.level === props.houseLevel));
   const frontExteriorBackgroundId = computed(() => houseExteriorBackgroundAssetId(activeThemeId.value, props.energy));
-  const frontExteriorHouseId = computed(() => {
+  const frontExteriorHouseId = computed(function callback() {
     const stage = activeHouseStage.value;
+
     return stage ? houseExteriorHouseAssetId(stage.id, activeThemeId.value) : undefined;
   });
   const frontExteriorBackgroundUrl = useLazyAssetUrl(frontExteriorBackgroundId, getHouseExteriorAssetUrl);
   const frontExteriorHouseUrl = useLazyAssetUrl(frontExteriorHouseId, getHouseExteriorAssetUrl);
-  const frontExterior = computed(() => {
+  const frontExterior = computed(function callback() {
+
     if (!activeHouseStage.value) {
+
       return undefined;
     }
+
     return {
       backgroundUrl: frontExteriorBackgroundUrl.value,
       houseUrl: frontExteriorHouseUrl.value,
@@ -163,66 +179,92 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
       weather: weatherLabel.value,
     }),
   );
-  const hasEffect = (effect: WorldEffect) => props.effects.includes(effect);
+  function hasEffect(effect: WorldEffect) {
+
+    return props.effects.includes(effect);
+  }
   const storageAccessories = computed(() =>
     props.accessories.filter((accessory) => accessory.owned && !accessory.equipped),
   );
-  const storageTargetZone = computed<HouseZoneId>(() => {
+  const storageTargetZone = computed<HouseZoneId>(function callback() {
+
     if (view.value === "garden") {
+
       return "garden";
     }
+
     if (selectedRoomView.value === "all" || selectedRoomView.value === "garden") {
+
       return "living-room";
     }
+
     return selectedRoomView.value;
   });
-  const storeAccessory = (accessoryId: HouseAccessoryId) => emit("store-furniture", accessoryId);
-  const placeStoredAccessory = (accessory: HouseAccessory) =>
-    emit("place-furniture", accessory.id, storageTargetZone.value);
-  const appearanceFor = (member: FamilyMember, _index: number): AvatarAppearance => {
+  function storeAccessory(accessoryId: HouseAccessoryId) {
+
+    return emit("store-furniture", accessoryId);
+  }
+  function placeStoredAccessory(accessory: HouseAccessory) {
+
+    return emit("place-furniture", accessory.id, storageTargetZone.value);
+  }
+  function appearanceFor(member: FamilyMember, _index: number): AvatarAppearance {
     const members = props.members.length > 0 ? props.members : [member];
+
     return resolveFamilyMemberAvatarAppearance(member, members);
-  };
-  const showMemberName = (memberId: FamilyMemberId) => {
+  }
+  function showMemberName(memberId: FamilyMemberId) {
     speakingMemberId.value = memberId;
+
     if (memberNameTimer !== undefined) {
       window.clearTimeout(memberNameTimer);
     }
+
     memberNameTimer = window.setTimeout(() => {
       speakingMemberId.value = null;
     }, MEMBER_LABEL_DURATION_MS);
-  };
-  const showPetName = (petId: FamilyPetId) => {
+  }
+  function showPetName(petId: FamilyPetId) {
     activePetId.value = petId;
+
     if (petNameTimer !== undefined) {
       window.clearTimeout(petNameTimer);
     }
+
     petNameTimer = window.setTimeout(() => {
       activePetId.value = null;
     }, MEMBER_LABEL_DURATION_MS);
-  };
-  const forwardEntityMove = (placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) =>
-    emit("move-entity", placementId, zoneId, x, y);
-  const forwardEntityReset = (placementId: HouseLayoutPlacementId) => emit("reset-entity", placementId);
-  const enterHouse = () => {
+  }
+  function forwardEntityMove(placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) {
+
+    return emit("move-entity", placementId, zoneId, x, y);
+  }
+  function forwardEntityReset(placementId: HouseLayoutPlacementId) {
+
+    return emit("reset-entity", placementId);
+  }
+  function enterHouse() {
     selectedRoomView.value = "living-room";
     view.value = "inside";
-  };
-  const selectZone = (zoneId: HouseZoneId | "all") => {
+  }
+  function selectZone(zoneId: HouseZoneId | "all") {
     selectedRoomView.value = zoneId;
     view.value = zoneId === "garden" ? "garden" : "inside";
-  };
-  const leaveScene = () => {
+  }
+  function leaveScene() {
     storageOpen.value = false;
     view.value = "front";
-  };
-  onUnmounted(() => {
+  }
+  onUnmounted(function callback() {
+
     if (memberNameTimer !== undefined) {
       window.clearTimeout(memberNameTimer);
     }
+
     if (petNameTimer !== undefined) {
       window.clearTimeout(petNameTimer);
     }
+
   });
 
   return {
@@ -255,4 +297,4 @@ export const useFamilyWorldScene = (props: FamilyWorldSceneProps, emit: FamilyWo
     view,
     worldMemberName,
   };
-};
+}

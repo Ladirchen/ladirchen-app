@@ -10,17 +10,15 @@
 </template>
 
 <script lang="ts" setup>
-withDefaults(
-  defineProps<{
-    description?: string;
-    eyebrow?: string;
-    title: string;
-  }>(),
-  {
-    description: undefined,
-    eyebrow: undefined,
-  },
-);
+export interface Props {
+  description?: string;
+  eyebrow?: string;
+  title: string;
+}
+withDefaults(defineProps<Props>(), {
+  description: undefined,
+  eyebrow: undefined,
+});
 </script>
 
 <style lang="scss" scoped>

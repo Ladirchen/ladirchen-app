@@ -2,8 +2,14 @@
   <span class="animated-streak-flame" :style="flameStyle" aria-hidden="true">
     <svg viewBox="0 0 100 112">
       <ellipse class="flame-shadow" cx="50" cy="101" rx="30" ry="7" />
-      <path class="flame-body" d="M51 96C27 96 15 80 18 61c2-14 12-23 21-33 8-9 11-18 11-27 17 11 27 25 25 41 7-5 10-11 11-17 10 13 10 30 4 44-7 17-20 27-39 27Z" />
-      <path class="flame-heart" d="M51 88c-13 0-21-9-19-21 1-8 8-13 13-19 5-5 7-10 7-16 11 8 17 18 14 29 4-2 7-6 8-10 5 9 4 20-1 27-5 7-12 10-22 10Z" />
+      <path
+        class="flame-body"
+        d="M51 96C27 96 15 80 18 61c2-14 12-23 21-33 8-9 11-18 11-27 17 11 27 25 25 41 7-5 10-11 11-17 10 13 10 30 4 44-7 17-20 27-39 27Z"
+      />
+      <path
+        class="flame-heart"
+        d="M51 88c-13 0-21-9-19-21 1-8 8-13 13-19 5-5 7-10 7-16 11 8 17 18 14 29 4-2 7-6 8-10 5 9 4 20-1 27-5 7-12 10-22 10Z"
+      />
       <g class="flame-face">
         <ellipse cx="42" cy="67" rx="3.5" ry="5" />
         <ellipse cx="61" cy="67" rx="3.5" ry="5" />
@@ -21,8 +27,10 @@
 
 <script lang="ts" setup>
 import { computed } from "vue";
-
-const props = withDefaults(defineProps<{ size?: number }>(), { size: 25 });
+export interface Props {
+  size?: number;
+}
+const props = withDefaults(defineProps<Props>(), { size: 25 });
 const flameStyle = computed(() => ({
   width: `${props.size}px`,
   height: `${Math.round(props.size * 1.12)}px`,
@@ -40,9 +48,7 @@ const flameStyle = computed(() => ({
 }
 svg {
   --uno: w-100 h-100 overflow-visible;
-  filter: drop-shadow(
-    0 3px 2px color-mix(in srgb, var(--lad-palette-amber-700) 20%, transparent)
-  );
+  filter: drop-shadow(0 3px 2px color-mix(in srgb, var(--lad-palette-amber-700) 20%, transparent));
 }
 .flame-shadow {
   fill: color-mix(in srgb, var(--lad-palette-orange-750) 15%, transparent);

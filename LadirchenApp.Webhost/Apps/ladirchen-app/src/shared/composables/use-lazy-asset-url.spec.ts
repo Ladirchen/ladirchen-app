@@ -1,11 +1,13 @@
 import { nextTick, ref } from "vue";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { useLazyAssetUrl } from "./use-lazy-asset-url";
 
 describe("useLazyAssetUrl", () => {
   it("ignores an in-flight result after its source is cleared", async () => {
-    let resolveAsset: (url: string) => void = () => {};
+    function ignoreAsset() {}
+
+    let resolveAsset: (url: string) => void = ignoreAsset;
     const pendingAsset = new Promise<string>((resolve) => {
       resolveAsset = resolve;
     });

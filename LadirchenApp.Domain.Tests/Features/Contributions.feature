@@ -1,0 +1,64 @@
+Feature: Contributions and rewards
+  Scenario Outline: Star ratings determine the reward bonus
+    Given a core economy
+    And a submitted child contribution worth <base> Ladirchen
+    When the administrator approves it with <stars> stars
+    Then the child wallet contains <total> Ladirchen
+    And the reward breakdown is <base> base and <bonus> bonus
+    Examples:
+      | base | stars | total | bonus |
+      | 10   | 1     | 10    | 0     |
+      | 10   | 4     | 10    | 0     |
+      | 10   | 5     | 11    | 1     |
+      | 50   | 5     | 53    | 3     |
+      | 0    | 5     | 1     | 1     |
+
+  Scenario: Approval cannot credit the same contribution twice
+    Given a core economy
+    And a submitted child contribution worth 10 Ladirchen
+    When the administrator approves it with 5 stars
+    And the administrator tries to approve it again
+    Then the economy command fails with "InvalidState"
+    And the child wallet contains 11 Ladirchen
+    And there are 1 ledger entries
+    And the rejected command left the economy unchanged
+
+  Scenario: A child can review a guardian contribution
+    Given a core economy
+    And a submitted guardian contribution worth 20 Ladirchen
+    When the child approves the guardian contribution
+    Then the guardian wallet contains 21 Ladirchen
+
+  Scenario: A supporter cannot review child contributions
+    Given a core economy
+    And a submitted child contribution worth 10 Ladirchen
+    When the supporter tries to approve the child contribution
+    Then the economy command fails with "Forbidden"
+    And the child wallet contains 0 Ladirchen
+    And the rejected command left the economy unchanged
+
+  Scenario: Claiming assigns a task without submitting it
+    Given a core economy
+    And an unassigned contribution
+    When the child claims it
+    Then the contribution status is "Available"
+
+  Scenario: A returned contribution can be submitted again
+    Given a core economy
+    And a submitted child contribution worth 10 Ladirchen
+    When the administrator returns it
+    And the child submits it again
+    Then the contribution status is "Pending"
+
+  Scenario Outline: Promotions stop at the local deadline
+    Given a core economy
+    And a submitted child contribution worth 10 Ladirchen
+    And a double reward promotion with 3 teamwork bonus until 17:00
+    And the local time is "<time>"
+    When the administrator approves it with 5 stars
+    Then the child wallet contains <total> Ladirchen
+    Examples:
+      | time                | total |
+      | 2026-10-10T16:59:00  | 24    |
+      | 2026-10-10T17:00:00  | 11    |
+      | 2026-10-11T16:59:00  | 24    |

@@ -58,21 +58,18 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
 import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
 import type { HouseStageLevel } from "@/domain/house";
-
-const houseStages = HOUSE_STAGES;
-const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
-
-const props = defineProps<{
+export interface Props {
   completedWeeks: number;
   houseLevel: HouseStageLevel;
   showEvolution?: boolean;
-}>();
+}
+const houseStages = HOUSE_STAGES;
+const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
+const props = defineProps<Props>();
 const { t } = useI18n();
-
 const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOUSE_STAGE);
 const progressionStatus = computed(() =>
   t(props.houseLevel < houseStages.length - 1 ? "world.progress.next" : "world.progress.maximum"),

@@ -157,7 +157,6 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { Contribution, Promotion } from "@/domain/contributions/types";
 import type { FamilyMember, IanaTimeZone } from "@/domain/family/types";
@@ -167,27 +166,25 @@ import ActiveContributionBonus from "./ActiveContributionBonus.vue";
 import ContributionMetaIcon from "./ContributionMetaIcon.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
-
-const props = withDefaults(
-  defineProps<{
-    activeChildId: FamilyMemberId;
-    allowInvite?: boolean;
-    contribution: Contribution;
-    familyMembers: ReadonlyArray<FamilyMember>;
-    familyTimeZone: IanaTimeZone;
-    promotion?: Promotion;
-    reward: number;
-    tip: string;
-  }>(),
-  {
-    allowInvite: true,
-  },
-);
-const emit = defineEmits<{
+export interface Props {
+  activeChildId: FamilyMemberId;
+  allowInvite?: boolean;
+  contribution: Contribution;
+  familyMembers: ReadonlyArray<FamilyMember>;
+  familyTimeZone: IanaTimeZone;
+  promotion?: Promotion;
+  reward: number;
+  tip: string;
+}
+export interface Emits {
   claim: [contribution: Contribution];
   invite: [contribution: Contribution];
   submit: [contribution: Contribution];
-}>();
+}
+const props = withDefaults(defineProps<Props>(), {
+  allowInvite: true,
+});
+const emit = defineEmits<Emits>();
 const { t } = useI18n();
 const assignedMember = computed(() =>
   props.familyMembers.find((member) => member.id === props.contribution.assigneeId),
@@ -206,12 +203,15 @@ const assigneeLabelClass = computed(() =>
 const assigneeIcon = computed(() =>
   isAssignedToActiveChild.value ? "i-mdi:account-heart" : "i-mdi:account-multiple-outline",
 );
-const assigneeLabel = computed(() => {
+const assigneeLabel = computed(function callback() {
+
   if (!assignedMember.value) {
+
     return t("contributions.assignment.free");
   }
 
   if (isAssignedToActiveChild.value) {
+
     return t("contributions.assignment.forYou");
   }
 
@@ -231,18 +231,21 @@ const invitedChildNames = computed(() =>
     .map((id) => props.familyMembers.find((member) => member.id === id)?.name)
     .filter((name): name is string => Boolean(name)),
 );
-const approvalMessage = computed(() => {
+const approvalMessage = computed(function callback() {
   const stars = earnedStars.value;
 
   if (stars >= 4) {
+
     return t("contributions.approval.great");
   }
 
   if (stars === 3) {
+
     return t("contributions.approval.good");
   }
 
   if (stars === 2) {
+
     return t("contributions.approval.careful");
   }
 

@@ -1,7 +1,10 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { reactive } from "vue";
 
-import type { SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
+import type {
+  SaveVersionedAggregateCommand,
+  VersionedAggregateSnapshot,
+} from "@/application/contracts/versioned-aggregate-contract";
 import { AggregateConflictError } from "@/application/ports/versioned-aggregate-repository";
 import type { VersionedAggregateRepository } from "@/application/ports/versioned-aggregate-repository";
 import { createDomainId } from "@/domain/shared/identifiers";
@@ -35,6 +38,7 @@ describe("VersionedAggregateService", () => {
       load: vi.fn().mockResolvedValue(loaded),
       save: vi.fn(async (command) => {
         savedCommands.push(command);
+
         return {
           ...command,
           revision: command.expectedRevision + 1,
@@ -59,12 +63,16 @@ describe("VersionedAggregateService", () => {
 
   it("materializes reactive state before it reaches a repository", async () => {
     vi.useFakeTimers();
-    const save = vi.fn(async (command: SaveVersionedAggregateCommand<"savings", TestState>): Promise<VersionedAggregateSnapshot<"savings", 1, TestState>> => ({
-      ...command,
-      revision: command.expectedRevision + 1,
-      schemaVersion: 1,
-      updatedAt: "2026-09-10T08:01:00.000Z",
-    }));
+    const save = vi.fn(
+      async (
+        command: SaveVersionedAggregateCommand<"savings", TestState>,
+      ): Promise<VersionedAggregateSnapshot<"savings", 1, TestState>> => ({
+        ...command,
+        revision: command.expectedRevision + 1,
+        schemaVersion: 1,
+        updatedAt: "2026-09-10T08:01:00.000Z",
+      }),
+    );
     const repository: VersionedAggregateRepository<"savings", 1, TestState> = {
       load: vi.fn().mockResolvedValue(null),
       save,
@@ -84,19 +92,36 @@ describe("VersionedAggregateService", () => {
   it("reloads, merges, and retries automatically after a conflict", async () => {
     vi.useFakeTimers();
     const base: VersionedAggregateSnapshot<"savings", 1, TestState> = {
-      aggregateType: "savings", familyId, revision: 4, schemaVersion: 1,
-      state: { label: "base", value: 1 }, updatedAt: "2026-09-10T08:00:00.000Z", updatedBy: memberId,
+      aggregateType: "savings",
+      familyId,
+      revision: 4,
+      schemaVersion: 1,
+      state: { label: "base", value: 1 },
+      updatedAt: "2026-09-10T08:00:00.000Z",
+      updatedBy: memberId,
     };
     const remote: VersionedAggregateSnapshot<"savings", 1, TestState> = {
-      ...base, revision: 5, state: { label: "remote", value: 1 }, updatedAt: "2026-09-10T08:01:00.000Z",
+      ...base,
+      revision: 5,
+      state: { label: "remote", value: 1 },
+      updatedAt: "2026-09-10T08:01:00.000Z",
     };
     const savedCommands: Array<SaveVersionedAggregateCommand<"savings", TestState>> = [];
     const repository: VersionedAggregateRepository<"savings", 1, TestState> = {
       load: vi.fn().mockResolvedValueOnce(base).mockResolvedValueOnce(remote),
       save: vi.fn(async (command) => {
         savedCommands.push(command);
-        if (savedCommands.length === 1) {throw new AggregateConflictError("savings");}
-        return { ...command, revision: command.expectedRevision + 1, schemaVersion: 1, updatedAt: "2026-09-10T08:02:00.000Z" };
+
+        if (savedCommands.length === 1) {
+          throw new AggregateConflictError("savings");
+        }
+
+        return {
+          ...command,
+          revision: command.expectedRevision + 1,
+          schemaVersion: 1,
+          updatedAt: "2026-09-10T08:02:00.000Z",
+        };
       }),
     };
     const onError = vi.fn();

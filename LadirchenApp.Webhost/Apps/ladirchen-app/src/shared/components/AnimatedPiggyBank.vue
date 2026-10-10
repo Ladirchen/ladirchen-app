@@ -48,36 +48,28 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
-
+export interface Props {
+  receiving?: boolean;
+  size?: number;
+}
 let playTimer: number | undefined;
 let resetTimer: number | undefined;
-
 const { t } = useI18n();
-const props = withDefaults(
-  defineProps<{
-    receiving?: boolean;
-    size?: number;
-  }>(),
-  {
-    receiving: false,
-    size: 52,
-  },
-);
-
+const props = withDefaults(defineProps<Props>(), {
+  receiving: false,
+  size: 52,
+});
 const playMode = ref<"hop" | "wiggle" | null>(null);
-
 const piggyStyle = computed(() => ({
   width: `${props.size}px`,
   height: `${Math.round(props.size * 0.86)}px`,
 }));
-
 function schedulePlay() {
   playTimer = window.setTimeout(
     () => {
       playMode.value = Math.random() > 0.5 ? "hop" : "wiggle";
-      resetTimer = window.setTimeout(() => {
+      resetTimer = window.setTimeout(function callback() {
         playMode.value = null;
         schedulePlay();
       }, 950);
@@ -85,9 +77,9 @@ function schedulePlay() {
     4000 + Math.random() * 7000,
   );
 }
-
 onMounted(schedulePlay);
-onUnmounted(() => {
+onUnmounted(function callback() {
+
   if (playTimer !== undefined) {
     window.clearTimeout(playTimer);
   }
@@ -95,6 +87,7 @@ onUnmounted(() => {
   if (resetTimer !== undefined) {
     window.clearTimeout(resetTimer);
   }
+
 });
 </script>
 

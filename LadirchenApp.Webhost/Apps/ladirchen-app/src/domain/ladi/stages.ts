@@ -1,11 +1,8 @@
 import type { TranslationKey } from "@/locales/translation-keys";
-
 /** Typed progression stages for the Ladi mascot. */
-
 export type LadiTier = "spark" | "garden" | "sun" | "aurora" | "super";
 export type LadiStageId = "idle-ladi" | "starter-ladi" | "garden-ladi" | "sun-ladi" | "aurora-ladi" | "super-ladi";
 export type LadiSpriteId = LadiStageId | "perched-ladi" | "smart-ladi";
-
 export interface LadiStage {
   readonly id: LadiStageId;
   readonly tier: LadiTier;
@@ -13,7 +10,6 @@ export interface LadiStage {
   readonly nameKey: TranslationKey;
   readonly descriptionKey: TranslationKey;
 }
-
 export const LADI_STAGES: readonly LadiStage[] = [
   {
     id: "super-ladi",
@@ -58,6 +54,7 @@ export const LADI_STAGES: readonly LadiStage[] = [
     descriptionKey: "ladi.stages.idle.description",
   },
 ];
+export function getLadiStage(score: number): LadiStage {
 
-export const getLadiStage = (score: number): LadiStage =>
-  LADI_STAGES.find(stage => score >= stage.minimumScore) ?? LADI_STAGES[LADI_STAGES.length - 1]!;
+  return LADI_STAGES.find((stage) => score >= stage.minimumScore) ?? LADI_STAGES[LADI_STAGES.length - 1]!;
+}

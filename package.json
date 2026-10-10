@@ -1,9 +1,15 @@
 {
   "type": "module",
+  "scripts": {
+    "prepare": "vp config"
+  },
+  "devDependencies": {
+    "vite-plus": "catalog:devDependencies"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.24.0",
+      "version": "11.28.5",
       "onFail": "download"
     }
   }

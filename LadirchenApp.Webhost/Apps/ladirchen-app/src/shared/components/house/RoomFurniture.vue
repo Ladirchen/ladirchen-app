@@ -6,16 +6,18 @@
 
 <script lang="ts" setup>
 import { computed } from "vue";
-
 import { useLazyAssetUrl } from "@/shared/composables/use-lazy-asset-url";
 import { getFurnitureSpriteUrls } from "@/shared/visuals/house/furniture-sprite-assets";
 import type { HouseAccessory } from "@/domain/house";
-
-const props = withDefaults(defineProps<{ item: HouseAccessory; open?: boolean }>(), { open: false });
+export interface Props {
+  item: HouseAccessory;
+  open?: boolean;
+}
+const props = withDefaults(defineProps<Props>(), { open: false });
 const spriteSelection = computed(() =>
   props.item.visual ? { visual: props.item.visual, open: props.open } : undefined,
 );
-const spriteUrl = useLazyAssetUrl(spriteSelection, ({ visual, open }) => {
+const spriteUrl = useLazyAssetUrl(spriteSelection, function callback({ visual, open }) {
   const urls = getFurnitureSpriteUrls(visual);
 
   return open ? (urls.openUrl ?? urls.closedUrl) : urls.closedUrl;

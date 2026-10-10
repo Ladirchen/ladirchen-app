@@ -16,3 +16,8 @@ public static class Program
 [IsDependentOn(typeof(BuildWebhostTask))]
 [IsDependentOn(typeof(BuildDockerImageTask))]
 public class BuildAllTask : FrostingTask;
+
+[TaskName("test-all")]
+[IsDependentOn(typeof(TestDomainTask))]
+[IsDependentOn(typeof(TestVitestTask))]
+public class TestAllTask : FrostingTask;

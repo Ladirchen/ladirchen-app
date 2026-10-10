@@ -10,6 +10,10 @@
 </template>
 
 <script lang="ts" setup>
+export interface Props {
+  interactive?: boolean;
+  tone: BrandedCardTone;
+}
 export type BrandedCardTone =
   | "balance"
   | "contributions"
@@ -19,16 +23,9 @@ export type BrandedCardTone =
   | "streak"
   | "wishes"
   | "world";
-
-withDefaults(
-  defineProps<{
-    interactive?: boolean;
-    tone: BrandedCardTone;
-  }>(),
-  {
-    interactive: false,
-  },
-);
+withDefaults(defineProps<Props>(), {
+  interactive: false,
+});
 </script>
 
 <style lang="scss" scoped>
