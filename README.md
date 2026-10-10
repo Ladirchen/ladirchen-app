@@ -25,6 +25,39 @@ Run only the Gherkin domain scenarios:
 dotnet test --project LadirchenApp.Domain.Tests/LadirchenApp.Domain.Tests.csproj --treenode-filter '/*/LadirchenApp.Domain.Tests.Features/*/*'
 ```
 
+## Cake Test Targets
+
+Run both test suites from the repository root:
+
+```powershell
+.\build.ps1 -t test-all
+```
+
+Run either suite independently with `test-domain` or `test-vitest`:
+
+```powershell
+.\build.ps1 -t test-domain
+.\build.ps1 -t test-vitest
+```
+
+On Linux or macOS, use `./build.sh -t test-all` (or either individual target).
+The domain target uses Cake's `DotNetTest` API with the .NET 10 project selector
+and Release configuration. The Vitest target uses Cake's process API to run the
+existing Vite+ workspace test script. Test failures fail the Cake target.
+
+Cake writes fresh reports for each suite under `.artifacts/TestResults/`:
+
+- `Domain/domain.trx`: machine-readable .NET test results.
+- `Domain/domain.html`: human-readable domain test report.
+- `Vitest/vitest.xml`: frontend JUnit test results.
+
+GitHub Actions runs the suites in separate steps so a domain test failure does
+not skip frontend tests. Reports are uploaded as the `test-results` artifact
+even after failures and retained for 14 days. TRX and JUnit results appear in
+the workflow job summary. PR comments and separate check runs are disabled,
+so publishing does not require write permissions on fork pull requests.
+Failed tests still fail the job and prevent build/release publication.
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
