@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PingPong.ActorSystem/PingPong.ActorSystem.csproj" />
+    <Project Path="src/PingPong.Browser.Akka/PingPong.Browser.Akka.csproj" />
+    <Project Path="src/PingPong.Browser/PingPong.Browser.csproj" />
+    <Project Path="src/PingPong.Console.Akka/PingPong.Console.Akka.csproj" />
+    <Project Path="src/PingPong.Console/PingPong.Console.csproj" />
+    <Project Path="src/PingPong.Game.Akka/PingPong.Game.Akka.csproj" />
+    <Project Path="src/PingPong.Game/PingPong.Game.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PingPong.ActorSystem.Tests/PingPong.ActorSystem.Tests.csproj" />
+    <Project Path="tests/PingPong.Browser.E2ETests/PingPong.Browser.E2ETests.csproj" />
+    <Project Path="tests/PingPong.Game.Akka.Tests/PingPong.Game.Akka.Tests.csproj" />
+  </Folder>
+</Solution>
