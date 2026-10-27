@@ -9,7 +9,12 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.28.5",
+      "version": "12.15.0",
+      "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "24.22.1",
       "onFail": "download"
     }
   }
