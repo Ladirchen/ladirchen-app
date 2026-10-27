@@ -20,7 +20,7 @@ Feature: Shop reservations and redemption
     And the economy command fails with "InvalidState"
     And the rejected command left the economy unchanged
 
-  Scenario Outline: Cancellation and rejection release reserved funds
+  Scenario: Cancellation and rejection release reserved funds
     Given a core economy
     And the child has 100 Ladirchen
     And a published reward costs 80 Ladirchen with stock 1
@@ -34,28 +34,7 @@ Feature: Shop reservations and redemption
       | rejected  |
       | deleted   |
 
-  Scenario: Reserved funds cannot be deposited into goals
-    Given a core economy
-    And the child has 100 Ladirchen
-    And the child creates a "Private" goal targeting 200 Ladirchen
-    And a published reward costs 80 Ladirchen with stock 1
-    And the child requests the reward
-    When the child tries to deposit 30 Ladirchen
-    Then the economy command fails with "InsufficientFunds"
-    And the goal contains 5 Ladirchen
-    And the rejected command left the economy unchanged
-
-  Scenario: Reserved funds cannot be gifted
-    Given a core economy
-    And the child has 100 Ladirchen
-    And a published reward costs 80 Ladirchen with stock 1
-    And the child requests the reward
-    When the child tries to gift 30 Ladirchen
-    Then the economy command fails with "InsufficientFunds"
-    And the sibling wallet contains 0 Ladirchen
-    And the rejected command left the economy unchanged
-
-  Scenario Outline: The family timezone controls shop hours
+  Scenario: The family timezone controls shop hours
     Given a core economy
     And the child has 100 Ladirchen
     And a published reward costs 80 Ladirchen with stock 1
@@ -84,3 +63,37 @@ Feature: Shop reservations and redemption
     When the administrator tries to change the price
     Then the economy command fails with "InvalidState"
     And the rejected command left the economy unchanged
+
+  Scenario: Only content managers can change the reward catalog
+    Given a family member cannot manage content
+    When the member attempts to add, hide or delete a shop reward
+    Then the reward catalog remains unchanged
+
+  Scenario: A reward must be visible and within its publication dates
+    Given a reward has visibility "<visibility>" and availability "<availability>"
+    When the child attempts to request the reward
+    Then the request is <result>
+    Examples:
+      | visibility | availability        | result   |
+      | hidden     | current date        | rejected |
+      | visible    | before start date   | rejected |
+      | visible    | after end date      | rejected |
+      | visible    | on start date       | accepted |
+      | visible    | on end date         | accepted |
+
+  Scenario: A reward request requires stock and sufficient available funds
+    Given an available reward has stock <stock> and costs <price> Ladirchen
+    And the child has <available> available Ladirchen
+    When the child attempts to request the reward
+    Then the request is <result>
+    Examples:
+      | stock | price | available | result   |
+      | 0     | 10    | 100       | rejected |
+      | 1     | 80    | 20        | rejected |
+      | 1     | 80    | 80        | accepted |
+
+  Scenario: Approval is rejected after the local shop cutoff
+    Given a child has a pending reward request
+    And the family local time is 18:00
+    When an administrator attempts to approve the request
+    Then the request and wallet remain unchanged

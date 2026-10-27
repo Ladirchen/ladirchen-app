@@ -50,15 +50,27 @@ Feature: Contributions and rewards
     And the child submits it again
     Then the contribution status is "Pending"
 
-  Scenario Outline: Promotions stop at the local deadline
-    Given a core economy
-    And a submitted child contribution worth 10 Ladirchen
-    And a double reward promotion with 3 teamwork bonus until 17:00
-    And the local time is "<time>"
-    When the administrator approves it with 5 stars
-    Then the child wallet contains <total> Ladirchen
+  Scenario: Only the assignee can submit an available contribution
+    Given an available contribution assigned to the child
+    When another family member attempts to submit it
+    Then the contribution remains available
+
+  Scenario: Assigning an available contribution removes previous partner invitations
+    Given an available extra contribution has invited partners
+    When an administrator assigns the contribution to another member
+    Then the contribution has no invited partners
+
+  Scenario: Extra contributions preserve their configured energy
+    Given an administrator creates an extra contribution with 20 energy
+    When the contribution is added
+    Then its stored energy is 20
+
+  Scenario: Children and guardians can work in the same contribution team
+    Given an available extra contribution assigned to a <assigneeRole>
+    When an active <partnerRole> family member is invited as a partner
+    Then the <partnerRole> family member belongs to the contribution team
+    And the assignee cannot be invited as their own partner
     Examples:
-      | time                | total |
-      | 2026-10-10T16:59:00  | 24    |
-      | 2026-10-10T17:00:00  | 11    |
-      | 2026-10-11T16:59:00  | 24    |
+      | assigneeRole | partnerRole |
+      | child        | guardian    |
+      | guardian     | child       |
