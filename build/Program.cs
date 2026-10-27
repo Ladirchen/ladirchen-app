@@ -21,3 +21,8 @@ public class BuildAllTask : FrostingTask;
 [IsDependentOn(typeof(TestDomainTask))]
 [IsDependentOn(typeof(TestVitestTask))]
 public class TestAllTask : FrostingTask;
+
+[TaskName("test-n-build-all")]
+[IsDependentOn(typeof(TestAllTask))]
+[IsDependentOn(typeof(BuildAllTask))]
+public class TestNBuildAllTask : FrostingTask;
