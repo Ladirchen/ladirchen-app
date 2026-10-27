@@ -29,12 +29,7 @@ public class TestDomainTask : FrostingTask<BuildContext>
         WorkingDirectory = context.SolutionDirectory,
         ResultsDirectory = resultsDirectory,
         ArgumentCustomization = arguments =>
-          arguments
-            .Append("--report-trx")
-            .Append("--report-trx-filename")
-            .AppendQuoted("domain.trx")
-            .Append("--report-html-filename")
-            .AppendQuoted(resultsDirectory.CombineWithFilePath("domain.html").FullPath),
+          arguments.Append("--report-trx").Append("--report-trx-filename").AppendQuoted("domain.trx"),
       }
     );
   }
