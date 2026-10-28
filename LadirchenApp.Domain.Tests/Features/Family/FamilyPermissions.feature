@@ -4,16 +4,18 @@ Feature: Family role permissions
   Scenario: Family roles receive their configured capabilities
     Given the signed-in member is a "<role>"
     When family permissions are resolved
-    Then content management is <manageContent>
+    Then member invitation is <inviteMembers>
+    And goal management is <manageGoals>
+    And content management is <manageContent>
     And family management is <manageFamily>
     And child-goal support is <supportGoals>
     And family-goal visibility is <viewFamilyGoals>
     And guardian-goal visibility is <viewGuardianGoals>
     Examples:
-      | role               | manageContent | manageFamily | supportGoals | viewFamilyGoals | viewGuardianGoals |
-      | child              | denied        | denied       | denied       | allowed         | denied            |
-      | guardian supporter | denied        | denied       | allowed      | allowed         | denied            |
-      | guardian admin     | allowed       | allowed      | allowed      | allowed         | allowed           |
+      | role               | inviteMembers | manageGoals | manageContent | manageFamily | supportGoals | viewFamilyGoals | viewGuardianGoals |
+      | child              | denied        | denied      | denied        | denied       | denied       | allowed         | denied            |
+      | guardian supporter | denied        | denied      | denied        | denied       | allowed      | allowed         | denied            |
+      | guardian admin     | allowed       | allowed     | allowed       | allowed      | allowed      | allowed         | allowed           |
 
   Scenario: A missing member receives no permissions
     Given no signed-in family member can be resolved

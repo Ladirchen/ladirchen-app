@@ -1,4 +1,8 @@
-Feature: Shop reservations and redemption
+Feature: Family reward shop
+  Family members with content-management permission create and maintain family rewards.
+  Children may reserve published family rewards before the local shop cutoff.
+  Approval captures the reserved price, while cancellation, rejection or deletion releases the reservation.
+
   Scenario: A request reserves funds without debiting them
     Given a core economy
     And the child has 100 Ladirchen
@@ -20,7 +24,7 @@ Feature: Shop reservations and redemption
     And the economy command fails with "InvalidState"
     And the rejected command left the economy unchanged
 
-  Scenario: Cancellation and rejection release reserved funds
+  Scenario: Cancellation, rejection and deletion release reserved funds
     Given a core economy
     And the child has 100 Ladirchen
     And a published reward costs 80 Ladirchen with stock 1
@@ -97,3 +101,71 @@ Feature: Shop reservations and redemption
     And the family local time is 18:00
     When an administrator attempts to approve the request
     Then the request and wallet remain unchanged
+
+  Scenario: Only children can request family rewards
+    Given a published reward is available and affordable
+    When a guardian attempts to request the reward
+    Then no reward request is created
+    And no funds are reserved
+
+  Scenario: Redeeming the final item exhausts its stock
+    Given a published reward has stock 1
+    And a child has a pending request for that reward
+    When a content manager approves the request before the local cutoff
+    Then the reward has stock 0 and status "Redeemed"
+    And the reward cannot be requested again
+
+  Scenario: Family reward shop access follows the signed-in family role
+    Given the signed-in family member is a "<role>"
+    When the family member opens the family reward shop
+    Then access to the family reward shop is <access>
+    Examples:
+      | role               | access  |
+      | child              | allowed |
+      | guardian admin     | allowed |
+      | guardian supporter | denied  |
+
+  Scenario: Children see only currently published rewards
+    Given the catalog contains visible, hidden, scheduled and expired rewards
+    When a child views the family reward shop
+    Then only currently published rewards are displayed
+
+  Scenario: Content managers see every catalog reward
+    Given the catalog contains visible, hidden, scheduled and expired rewards
+    When a content manager views the family reward shop
+    Then all catalog rewards are displayed with their publication status
+
+  Scenario: Hiding a reward preserves its pending request
+    Given a child has a pending reward request with reserved funds
+    When a content manager hides the reward
+    Then the pending request remains unchanged
+    And the funds remain reserved until approval, rejection, cancellation or deletion
+
+  Scenario: A new reward requires complete valid catalog data
+    Given a content manager enters reward data with "<invalidData>"
+    When the content manager attempts to add the reward
+    Then the reward is not added to the catalog
+    Examples:
+      | invalidData                         |
+      | a blank icon                        |
+      | a blank title                       |
+      | a blank description                 |
+      | blank conditions                    |
+      | a price below 1 Ladirchen           |
+      | a quantity below 1                  |
+      | a scheduled publication without a start date |
+      | a limited publication without an end date    |
+      | a start date after the end date     |
+
+  Scenario: A reward belongs to one supported category
+    Given a content manager creates a valid reward in category "<category>"
+    When the reward is added to the catalog
+    Then its category is "<category>"
+    Examples:
+      | category  |
+      | time      |
+      | activity  |
+      | allowance |
+      | gift      |
+      | privilege |
+      | custom    |

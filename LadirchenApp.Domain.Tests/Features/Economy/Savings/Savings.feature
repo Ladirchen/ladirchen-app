@@ -18,7 +18,7 @@ Feature: Saving goals and gifts
     Then the goal contains 5 Ladirchen
     And the child wallet contains 100 Ladirchen
 
-  Scenario Outline: Cancelling an incomplete personal or family goal forfeits its starter bonus
+  Scenario: Cancelling an incomplete personal or family goal forfeits its starter bonus
     Given an incomplete "<goalType>" savings goal contains <starterBonus> starter-bonus Ladirchen
     And the goal contains 30 contributed Ladirchen in addition to its starter bonus
     When an authorized family member cancels the goal before its target is reached
@@ -30,7 +30,7 @@ Feature: Saving goals and gifts
       | Personal | 5            |
       | Family   | 15           |
 
-  Scenario Outline: Reaching the savings target unlocks the starter bonus
+  Scenario: Reaching the savings target unlocks the starter bonus
     Given a "<goalType>" savings goal contains <starterBonus> starter-bonus Ladirchen
     And contributed savings raise the goal balance to its target
     When the completed savings goal is closed

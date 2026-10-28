@@ -1,7 +1,8 @@
 Feature: Shared family weekly streak
   The completed weekly streak belongs to the family and is separate from each child's personal participation streak.
   Successful weeks extend the continuous family streak across week boundaries.
-  A family week below 60 percent energy does not reset the continuous family streak.
+  A family week from 30 to below 60 percent energy preserves the continuous family streak.
+  A family week below 30 percent energy degrades the continuous family streak by one without resetting it.
 
   Scenario: A successful week extends the shared family streak
     Given the family energy is at least 60 percent
@@ -26,9 +27,9 @@ Feature: Shared family weekly streak
     Then the week completion is rejected
     And the completed family weekly streak remains 3
 
-  Scenario: A family week below 60 percent energy preserves the shared family streak
+  Scenario: A family week from 30 to below 60 percent energy preserves the shared family streak
     Given the completed family weekly streak is 4
-    And the family energy is below 60 percent
+    And the family energy is at least 30 but below 60 percent
     When an authorized user closes the family week as failed
     Then the completed family weekly streak remains 4
     And every family member participating in the weekly goal has a stored weekly streak of 4
@@ -36,7 +37,12 @@ Feature: Shared family weekly streak
   Scenario: A family week below 30 percent energy degrades the shared family streak
     Given the completed family weekly streak is 4
     And the family energy is below 30 percent
-    When an authorized user closes the damily week as failed
-    Then the completed family weekly streak degrades to 3
+    When an authorized user closes the family week as failed
+    Then the completed family weekly streak is 3
     And every family member participating in the weekly goal has a stored weekly streak of 3
 
+  Scenario: A severely failed week cannot degrade the family streak below zero
+    Given the completed family weekly streak is 0
+    And the family energy is below 30 percent
+    When an authorized user closes the family week as failed
+    Then the completed family weekly streak remains 0

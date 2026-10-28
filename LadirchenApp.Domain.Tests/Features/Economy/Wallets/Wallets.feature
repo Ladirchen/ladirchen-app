@@ -31,7 +31,7 @@ Feature: Member wallets and Ladirchen transfers
     And the sibling wallet contains 0 Ladirchen
     And the rejected command left the economy unchanged
 
-  Scenario: Frontend special gifts are rounded and limited to the supported range
+  Scenario: Special gifts are rounded and limited to the supported range
     Given an administrator enters a special gift of <entered> Ladirchen with a reason
     When the special gift amount is normalized
     Then <credited> Ladirchen are credited to the child

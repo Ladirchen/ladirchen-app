@@ -1,6 +1,7 @@
-Feature: House customization and ownership
-  Children can spend available Ladirchen on house content.
-  Ownership, house-level requirements and furniture mobility control how content can be used.
+Feature: House shop
+  Children can spend available Ladirchen on house items from the house catalog.
+  House items include accessories, furniture sets, house themes and room designs.
+  Ownership, house-level requirements and furniture mobility control how purchased house items can be used.
 
   Scenario: Purchasing an accessory stores it as owned and unequipped
     Given a child can afford an unowned house accessory
@@ -125,3 +126,41 @@ Feature: House customization and ownership
     Given the family owns every accessory belonging to a furniture set
     When ownership of the furniture set is determined
     Then the furniture set is owned
+
+  Scenario: The house catalog separates regular and special house items
+    Given a house accessory belongs to the "<category>" category
+    When a family member views the house shop
+    Then the house item is shown in the "<catalogArea>" catalog area
+    Examples:
+      | category  | catalogArea |
+      | furniture | inside      |
+      | garden    | outside     |
+      | special   | special     |
+
+  Scenario: Moved house-item coordinates are rounded and bounded
+    Given an owned movable house item can be arranged in an unlocked area
+    When a family member moves it to x <requestedX> and y <requestedY>
+    Then its stored x coordinate is <storedX>
+    And its stored y coordinate is <storedY>
+    Examples:
+      | requestedX | requestedY | storedX | storedY |
+      | 40.126     | 70.124     | 40.13   | 70.12   |
+      | -10        | 2          | 4       | 8       |
+      | 120        | 110        | 96      | 94      |
+
+  Scenario: The New badge follows its local calendar-date schedule
+    Given a house item has a New-badge schedule from "2026-09-10" through "2026-09-23"
+    And the family local date and time is "<localDateTime>"
+    When the house catalog determines the item's New badge
+    Then the New badge is <visibility>
+    Examples:
+      | localDateTime       | visibility |
+      | 2026-09-09T23:59:59 | hidden     |
+      | 2026-09-10T00:00:00 | visible    |
+      | 2026-09-23T23:59:59 | visible    |
+      | 2026-09-24T00:00:00 | hidden     |
+
+  Scenario: A house item without a New-badge schedule has no New badge
+    Given a house item has no New-badge schedule
+    When the house catalog determines the item's New badge
+    Then the New badge is hidden

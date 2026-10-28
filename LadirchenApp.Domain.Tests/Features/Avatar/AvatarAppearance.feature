@@ -21,3 +21,37 @@ Feature: Family-member avatar appearance
       | profile  |
       | child    |
       | guardian |
+
+  Scenario: A family member can save only their own active avatar appearance
+    Given a family member is signed in and their own profile is active
+    When the member saves a valid avatar appearance
+    Then the appearance is stored for the signed-in member
+    And every other family member's appearance remains unchanged
+
+  Scenario: An inactive or different family profile cannot be changed
+    Given the signed-in member attempts to save an appearance for "<profile>"
+    When the appearance is submitted
+    Then every avatar appearance remains unchanged
+    Examples:
+      | profile                         |
+      | another family member           |
+      | a child who is not active       |
+
+  Scenario: Every saved avatar value must belong to its catalog
+    Given an avatar appearance contains an unknown "<part>" value
+    When the family member attempts to save the appearance
+    Then the appearance is rejected
+    And the previously stored appearance remains unchanged
+    Examples:
+      | part               |
+      | age                |
+      | skin tone          |
+      | face shape         |
+      | face               |
+      | hair               |
+      | hair color         |
+      | outfit             |
+      | outfit color       |
+      | accessory          |
+      | fun accessory      |
+      | seasonal accessory |

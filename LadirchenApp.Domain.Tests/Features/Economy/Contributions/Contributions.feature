@@ -1,5 +1,5 @@
 Feature: Contributions and rewards
-  Scenario Outline: Star ratings determine the reward bonus
+  Scenario: Star ratings determine the reward bonus
     Given a core economy
     And a submitted child contribution worth <base> Ladirchen
     When the administrator approves it with <stars> stars
@@ -74,3 +74,62 @@ Feature: Contributions and rewards
       | assigneeRole | partnerRole |
       | child        | guardian    |
       | guardian     | child       |
+
+  Scenario: A content manager can create a contribution for a family member
+    Given a family member has content-management permission
+    And valid contribution data names an existing family member as assignee
+    When the family member creates the contribution
+    Then the contribution is available to its assignee
+
+  Scenario: A guardian can create a contribution for themselves
+    Given a guardian does not have content-management permission
+    When the guardian creates a valid contribution assigned to themselves
+    Then the contribution is available to that guardian
+
+  Scenario: A family member cannot create an unauthorized contribution
+    Given a family member enters valid contribution data assigned to "<assignee>"
+    And the family member cannot manage content
+    When the family member attempts to create the contribution
+    Then no contribution is created
+    Examples:
+      | assignee              |
+      | another family member |
+      | nobody                |
+
+  Scenario: A contribution requires a non-blank title
+    Given a family member is otherwise allowed to create a contribution
+    When the contribution is submitted with a blank title
+    Then no contribution is created
+
+  Scenario: Only a content manager can assign an available contribution
+    Given an available contribution
+    When a family member without content-management permission attempts to assign it
+    Then the contribution assignment remains unchanged
+
+  Scenario: Invalid contribution assignments are rejected
+    Given a content manager attempts to assign a contribution that is "<state>"
+    When the assignment is submitted
+    Then the contribution assignment remains unchanged
+    Examples:
+      | state                              |
+      | pending                            |
+      | approved                           |
+      | assigned to a missing family member |
+
+  Scenario: Reassigning an available contribution replaces its assignee
+    Given an available contribution is assigned to one family member
+    And a different family member exists
+    When a content manager assigns the contribution to the different family member
+    Then the different family member is the contribution assignee
+    And previous partner invitations are removed
+
+  Scenario: Only a content manager can delete a contribution
+    Given a contribution exists
+    When a family member without content-management permission attempts to delete it
+    Then the contribution remains unchanged
+
+  Scenario: Deleting an approved contribution does not reclaim its credited reward
+    Given an approved contribution has credited its assignee's wallet
+    When a content manager deletes the contribution
+    Then the contribution no longer exists
+    And the previously credited wallet balance remains unchanged

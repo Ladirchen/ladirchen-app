@@ -4,7 +4,7 @@ Feature: Personal participation streak
   Approved contribution days are determined in the family timezone.
   Savings interest consumes the resulting streak-day value without recalculating the streak.
 
-  Scenario Outline: Only the family member's own contribution days extend their streak
+  Scenario: Only the family member's own contribution days extend their streak
     Given a participating <memberRole> has completed 2 weekly streaks
     And the current weekly target is 7 days
     And the family member has approved contributions on 3 distinct days of the current week

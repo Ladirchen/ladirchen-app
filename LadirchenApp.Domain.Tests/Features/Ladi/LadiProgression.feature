@@ -30,7 +30,7 @@ Feature: Personal Ladi progression
     Then the current Ladi preview is recalculated from the updated personal participation
     But no closed weekly Ladi evaluation is changed
 
-  Scenario Outline: Approved extra energy can improve the personal Ladi stage
+  Scenario: Approved extra energy can improve the personal Ladi stage
     Given the family member has no personal streak and no rated basic contribution
     And the family member has 100 assigned basic energy
     And 70 basic energy is approved
@@ -43,7 +43,7 @@ Feature: Personal Ladi progression
       | 0           | 70         | garden-ladi |
       | 20          | 90         | sun-ladi    |
 
-  Scenario Outline: The default weights calculate one personal participation value
+  Scenario: The default weights calculate one personal participation value
     Given the family member has <streakDays> personal streak days
     And the family member's effective completion is <completion> percent
     And the family member's basic contributions have an average rating of <averageRating> stars
@@ -58,7 +58,7 @@ Feature: Personal Ladi progression
       | 7          | 100        | 5             | 10.5          | 8           |
       | 0          | 33.33      | 2.5           | 3.41655       | 3.41655     |
 
-  Scenario Outline: Equal participation bands determine the ordered Ladi stage
+  Scenario: Equal participation bands determine the ordered Ladi stage
     Given the maximum participation value is 8
     And there are 6 ordered Ladi stages
     And the family member's capped participation value is <participationValue>
@@ -73,7 +73,7 @@ Feature: Personal Ladi progression
       | 5.75               | aurora-ladi  | 5           |
       | 8                  | super-ladi   | 6           |
 
-  Scenario Outline: Personal participation determines the Ladi stage
+  Scenario: Personal participation determines the Ladi stage
     Given the default participation configuration
     And the family member has <streakDays> personal streak days
     And the family member's effective completion is <completion> percent
