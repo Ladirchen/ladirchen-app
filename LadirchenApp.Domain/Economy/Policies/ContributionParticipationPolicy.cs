@@ -14,9 +14,28 @@ public static class ContributionParticipationPolicy
     ArgumentNullException.ThrowIfNull(memberId);
     var basic = contributions.Where(item => item.Kind == ContributionKind.Basic && item.AssigneeId == memberId).ToArray();
     var total = basic.Sum(item => item.Energy.Value);
+    var approvedBasic = basic.Where(item => item.Status == ContributionStatus.Approved).Sum(item => item.Energy.Value);
+    var approvedExtra = contributions
+      .Where(item => item.Kind == ContributionKind.Extra && item.AssigneeId == memberId && item.Status == ContributionStatus.Approved)
+      .Sum(item => item.Energy.Value);
 
-    return new(total == 0 ? 60 : Rules.Round(basic.Where(item => item.Status == ContributionStatus.Approved)
-      .Sum(item => item.Energy.Value) / total * 100));
+    return EffectiveCompletion(total, approvedBasic, approvedExtra);
+  }
+
+  public static Percentage EffectiveCompletion(decimal assignedBasic, decimal approvedBasic, decimal approvedExtra)
+  {
+    Rules.Require(
+      assignedBasic >= 0 && approvedBasic >= 0 && approvedExtra >= 0,
+      DomainError.InvalidValue,
+      "Contribution energy cannot be negative."
+    );
+
+    if (assignedBasic == 0)
+    {
+      return new Percentage(60);
+    }
+
+    return new Percentage(Math.Min(100, Rules.Round((approvedBasic + approvedExtra) / assignedBasic * 100)));
   }
 
   public static int ApprovedDays(IEnumerable<Contribution> contributions, FamilyMemberId memberId,

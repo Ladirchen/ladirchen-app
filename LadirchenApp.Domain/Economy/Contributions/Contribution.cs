@@ -16,7 +16,7 @@ public sealed class Contribution : Entity<ContributionId>
     Title = Rules.Text(title);
     Kind = Rules.Defined(kind);
     Reward = reward;
-    Energy = kind == ContributionKind.Basic ? energy : new Percentage(0);
+    Energy = energy;
     AssigneeId = assignee;
   }
 

@@ -37,6 +37,7 @@ public sealed class Family : AggregateRoot<FamilyId>
   }
   public FamilyCurrency Currency { get; private set; } = FamilyCurrency.CHF;
   public ExchangeRate ExchangeRate { get; private set; } = new(1);
+  public FamilyMemberId? ActiveChildId { get; private set; }
 
   public FamilyMember ActiveMember(FamilyMemberId id)
   {
@@ -73,7 +74,83 @@ public sealed class Family : AggregateRoot<FamilyId>
     Rules.Require(_members.All(item => item.Id != id), DomainError.Duplicate, "The member already exists.");
     var member = new FamilyMember(id, name, role, access, invitationPending);
     _members.Add(member);
+
+    if (role == MemberRole.Child && !invitationPending && ActiveChildId is null)
+    {
+      ActiveChildId = id;
+    }
+
     AddDomainEvent(new FamilyMemberChanged(Id, id, invitationPending ? "Invited" : "Added", now));
+  }
+
+  public void InviteGuardian(
+    FamilyMemberId actor,
+    FamilyMemberId id,
+    string name,
+    string emailAddress,
+    GuardianAccess access,
+    DateTimeOffset now
+  )
+  {
+    var normalizedName = Rules.Text(name);
+    Rules.Require(normalizedName.Length >= 2, DomainError.InvalidValue, "A guardian name requires at least two characters.");
+    var normalizedEmail = Rules.Text(emailAddress);
+    Rules.Require(
+      normalizedEmail.Contains('@', StringComparison.Ordinal)
+        && normalizedEmail.IndexOf('@', StringComparison.Ordinal) > 0
+        && normalizedEmail.LastIndexOf('.') > normalizedEmail.IndexOf('@', StringComparison.Ordinal) + 1,
+      DomainError.InvalidValue,
+      "A valid email address is required."
+    );
+    AddMember(actor, id, normalizedName, MemberRole.Guardian, access, true, now);
+    var member = _members.Find(item => item.Id == id) ?? throw new InvalidOperationException();
+    member.SetEmailAddress(normalizedEmail);
+    member.SetWeeklyGoalParticipation(false);
+  }
+
+  public void SaveNickname(FamilyMemberId actor, FamilyMemberId activeChildId, string nickname, DateTimeOffset now)
+  {
+    var member = ActiveMember(actor);
+    Rules.Require(member.Role == MemberRole.Child, DomainError.Forbidden, "Only a child can save a child nickname.");
+    Rules.Require(actor == activeChildId && ActiveChildId == actor, DomainError.Forbidden, "Only the active child can save their nickname.");
+    var normalized = nickname.Trim();
+
+    if (normalized.Length > 18)
+    {
+      normalized = normalized[..18];
+    }
+
+    member.SetNickname(normalized.Length == 0 ? null : normalized);
+    AddDomainEvent(new FamilyMemberChanged(Id, actor, "NicknameChanged", now));
+  }
+
+  public void SetGuardianWeeklyGoalParticipation(
+    FamilyMemberId actor,
+    FamilyMemberId guardianId,
+    bool participates,
+    DateTimeOffset now
+  )
+  {
+    var actorMember = ActiveMember(actor);
+    var guardian = ActiveMember(guardianId);
+    Rules.Require(guardian.Role == MemberRole.Guardian, DomainError.InvalidValue, "Weekly participation can be changed only for guardians.");
+    Rules.Require(
+      actor == guardianId || actorMember.IsAdministrator,
+      DomainError.Forbidden,
+      "Only that guardian or an administrator may change participation."
+    );
+    guardian.SetWeeklyGoalParticipation(participates);
+    AddDomainEvent(new FamilyMemberChanged(Id, guardianId, "WeeklyGoalParticipationChanged", now));
+  }
+
+  public void SelectActiveChild(FamilyMemberId actor, FamilyMemberId childId, DateTimeOffset now)
+  {
+    var actorMember = ActiveMember(actor);
+    var child = ActiveMember(childId);
+    Rules.Require(actorMember.Role == MemberRole.Guardian, DomainError.Forbidden, "Only guardians may select the active child.");
+    Rules.Require(child.Role == MemberRole.Child, DomainError.InvalidValue, "The active profile must be a child.");
+    ActiveChildId = childId;
+    AddDomainEvent(new FamilyMemberChanged(Id, childId, "ActiveChildSelected", now));
   }
 
   public void AcceptInvitation(FamilyMemberId memberId, DateTimeOffset now)

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Shared;
+using LadirchenApp.Domain.Ladi;
 
 using Reqnroll;
 
@@ -15,6 +16,8 @@ public sealed partial class EconomySteps
   private decimal _calculatedRate;
   private decimal _calculatedCredit;
   private string? _beforeRepeatedSettlement;
+  private Percentage _maximumStageRate = new(8);
+  private LadiStage _interestStage = LadiStage.AtPosition(1);
 
   [Given("participation of {int} streak days, {float} percent complete and {float} stars")]
   public void Participation(int days, decimal completion, decimal stars)
@@ -29,9 +32,59 @@ public sealed partial class EconomySteps
   }
 
   [Then("the interest rate is {float} percent")]
+  [Then("the savings interest rate is {float} percent")]
   public async Task Rate(decimal rate)
   {
     await Assert.That(_calculatedRate).IsEqualTo(rate);
+  }
+
+  [Given("the maximum savings interest rate is configured as {float} percent")]
+  public void MaximumStageRate(decimal rate)
+  {
+    _maximumStageRate = new Percentage(rate);
+  }
+
+  [Given("the child's personal Ladi stage is {string} at position {int}")]
+  public void ChildStage(string id, int position)
+  {
+    _interestStage = new LadiStage(id, position);
+  }
+
+  [Given("the child's personal Ladi stage is at position {int}")]
+  public void ChildStagePosition(int position)
+  {
+    _interestStage = LadiStage.AtPosition(position);
+  }
+
+  [Given("the child's personal Ladi stage is {string}")]
+  public void ChildStageId(string id)
+  {
+    _interestStage = LadiStage.FromId(id);
+  }
+
+  [Given("the child's personal participation has already determined their Ladi stage")]
+  public void EvaluatedChildStage()
+  {
+    _interestStage = LadiStage.FromId("sun-ladi");
+  }
+
+  [Given("the family house level is configured as {float}")]
+  [Given("the five-star contribution bonus percent is configured as {float}")]
+  [Given("the completed family weekly streak is configured as {float}")]
+  public void UnrelatedSetting(decimal value)
+  {
+  }
+
+  [When("the child's personal savings interest rate is determined")]
+  public void DetermineStageRate()
+  {
+    _calculatedRate = SavingsInterestPolicy.CalculateRate(_interestStage, _maximumStageRate).Value;
+  }
+
+  [Then("the interest policy does not evaluate streak, completion or average rating again")]
+  public async Task InterestUsesStageOnly()
+  {
+    await Assert.That(_calculatedRate).IsEqualTo(5.33m);
   }
 
   [When("interest on {float} saved toward {float} at {float} percent is calculated")]

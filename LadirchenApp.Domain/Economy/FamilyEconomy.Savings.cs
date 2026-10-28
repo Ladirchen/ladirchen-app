@@ -10,6 +10,15 @@ namespace LadirchenApp.Domain.Economy;
 public sealed partial class FamilyEconomy
 {
   private readonly List<SavingGoal> _goals = new();
+  private readonly List<GuardianGoalGift> _guardianGifts = new();
+
+  public IReadOnlyList<GuardianGoalGift> GuardianGoalGifts
+  {
+    get
+    {
+      return _guardianGifts.AsReadOnly();
+    }
+  }
 
   public IReadOnlyList<SavingGoal> GoalsFor(FamilyMemberId actor)
   {
@@ -50,7 +59,10 @@ public sealed partial class FamilyEconomy
     Rules.Require(_goals.All(item => item.Id != id), DomainError.Duplicate, "This goal identity was already used.");
     RequireNewOperation(operationId);
     Rules.Defined(definition.Visibility);
-    var goal = new SavingGoal(id, owner, definition.Title, definition.Target, definition.Visibility, now);
+    var familyMemberCount = definition.FamilyMemberCount > 0
+      ? definition.FamilyMemberCount
+      : _family.Members.Count(item => !item.InvitationPending);
+    var goal = new SavingGoal(id, owner, definition.Title, definition.Target, definition.Visibility, now, familyMemberCount);
     _goals.Add(goal);
     Record(
       operationId,
@@ -126,6 +138,7 @@ public sealed partial class FamilyEconomy
     var saved = checked(goal.Saved + value);
     wallet.Set(wallet.Balance - value, wallet.Reserved);
     goal.SetSaved(saved);
+
     Record(
       operationId,
       new LedgerEntry(operationId, actor, null, LedgerKind.Debit, value, id, "Saving deposit", now.ToUniversalTime()),
@@ -189,7 +202,12 @@ public sealed partial class FamilyEconomy
   public decimal CancelGoal(FamilyMemberId actor, SavingGoalId id, TransactionId operationId, DateTimeOffset now)
   {
     var goal = GoalFor(actor, id);
-    Rules.Require(goal.Owner.MemberId == actor, DomainError.Forbidden, "Only the owner may cancel a personal goal.");
+    var member = _family.ActiveMember(actor);
+    Rules.Require(
+      goal.Owner.MemberId == actor || goal.Owner.IsFamily && (member.IsAdministrator || member.Role == MemberRole.Child),
+      DomainError.Forbidden,
+      "Only the owner or an authorized family member may cancel a goal."
+    );
     RequireNewOperation(operationId);
     var returned = goal.Withdrawable;
     var forfeited = goal.Saved - returned;
@@ -258,6 +276,12 @@ public sealed partial class FamilyEconomy
     Rules.Require(value > 0, DomainError.InvalidState, "There is no positive support to apply.");
     var saved = checked(goal.Saved + value);
     goal.SetSaved(saved);
+
+    if (!goal.Owner.IsFamily)
+    {
+      _guardianGifts.Add(new GuardianGoalGift(goal.Owner.MemberId!, actor, value));
+    }
+
     Record(
       operationId,
       new LedgerEntry(

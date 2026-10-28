@@ -197,7 +197,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
     foreach (var partner in ids)
     {
-      RequireChild(partner);
+      _family.ActiveMember(partner);
       Rules.Require(
         partner != contribution.AssigneeId,
         DomainError.InvalidValue,
@@ -299,6 +299,11 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   {
     _family.RequireAdministrator(actor);
     FindContribution(contributionId);
+    Rules.Require(
+      multiplier.Value is 2 or 3,
+      DomainError.InvalidValue,
+      "A bonus campaign supports only two-times or three-times rewards."
+    );
     Rules.Require(_promotions.All(item => item.Id != id), DomainError.Duplicate, "The promotion already exists.");
     var promotion = new Promotion(id, contributionId, multiplier, teamworkBonus, deadline);
     _promotions.Add(promotion);

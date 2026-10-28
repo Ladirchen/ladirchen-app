@@ -16,6 +16,7 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
     Role = Rules.Defined(role);
     Access = Rules.Defined(access);
     InvitationPending = pending;
+    ParticipatesInWeeklyGoal = role == MemberRole.Child && !pending;
   }
 
   public string Name
@@ -33,6 +34,16 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
   public bool InvitationPending
   {
     get; private set;
+  }
+  public string? Nickname { get; private set; }
+  public string? EmailAddress { get; private set; }
+  public bool ParticipatesInWeeklyGoal { get; private set; }
+  public string DisplayName
+  {
+    get
+    {
+      return Nickname ?? Name;
+    }
   }
   public bool IsAdministrator
   {
@@ -56,5 +67,20 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
   internal void AcceptInvitation()
   {
     InvitationPending = false;
+  }
+
+  internal void SetNickname(string? nickname)
+  {
+    Nickname = nickname;
+  }
+
+  internal void SetEmailAddress(string emailAddress)
+  {
+    EmailAddress = emailAddress;
+  }
+
+  internal void SetWeeklyGoalParticipation(bool participates)
+  {
+    ParticipatesInWeeklyGoal = participates;
   }
 }

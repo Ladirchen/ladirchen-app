@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using LadirchenApp.Domain.Shared;
+using LadirchenApp.Domain.Ladi;
 
 namespace LadirchenApp.Domain.Economy;
 
@@ -52,6 +53,15 @@ public sealed class SavingsInterestPolicy
       + context.Completion.Value / 100 * CompletionBonus.Value + context.AverageRating / 5 * RatingBonus.Value;
 
     return new(decimal.Round(Math.Min(MaximumRate.Value, rate), 2, MidpointRounding.AwayFromZero));
+  }
+
+  public static Percentage CalculateRate(LadiStage stage, Percentage maximumRate)
+  {
+    ArgumentNullException.ThrowIfNull(stage);
+    ArgumentNullException.ThrowIfNull(maximumRate);
+    var rate = maximumRate.Value * stage.Position / LadiStage.Count;
+
+    return new Percentage(decimal.Round(rate, 2, MidpointRounding.AwayFromZero));
   }
 
   public static decimal CalculateCredit(LadirchenAmount saved, LadirchenAmount target, Percentage rate)

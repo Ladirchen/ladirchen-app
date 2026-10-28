@@ -7,15 +7,22 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed class SavingGoal : Entity<SavingGoalId>
 {
-  internal SavingGoal(SavingGoalId id, GoalOwner owner, string title, LadirchenAmount target, GoalVisibility visibility,
-    DateTimeOffset createdAt) : base(id)
+  internal SavingGoal(
+    SavingGoalId id,
+    GoalOwner owner,
+    string title,
+    LadirchenAmount target,
+    GoalVisibility visibility,
+    DateTimeOffset createdAt,
+    int familyMemberCount
+  ) : base(id)
   {
     ArgumentNullException.ThrowIfNull(owner);
     Owner = owner;
     Title = Rules.Text(title);
     Target = Rules.Positive(target);
     Visibility = owner.IsFamily ? GoalVisibility.Family : Rules.Defined(visibility);
-    StarterBonus = owner.IsFamily ? 0 : Math.Min(5, Target);
+    StarterBonus = owner.IsFamily ? Math.Min(5m * familyMemberCount, Target) : Math.Min(5, Target);
     Saved = StarterBonus;
     CreatedAt = createdAt.ToUniversalTime();
   }
