@@ -1,10 +1,8 @@
 import type { FurnitureVisualId } from "./types";
-
 export interface FurnitureCollisionBounds {
   readonly horizontalRadius: number;
   readonly verticalRadius: number;
 }
-
 export interface FurnitureVisualDefinition {
   readonly collision?: FurnitureCollisionBounds;
   readonly locksScale?: boolean;
@@ -13,16 +11,19 @@ export interface FurnitureVisualDefinition {
   readonly placementY?: number;
   readonly renderInLayout?: boolean;
 }
-
 const DEFAULT_COLLISION: FurnitureCollisionBounds = { horizontalRadius: 8, verticalRadius: 9 };
+function decoration(minimumY?: number): FurnitureVisualDefinition {
 
-const decoration = (minimumY?: number): FurnitureVisualDefinition => ({ minimumY });
-const solid = (
+  return { minimumY };
+}
+function solid(
   horizontalRadius = DEFAULT_COLLISION.horizontalRadius,
   verticalRadius = DEFAULT_COLLISION.verticalRadius,
   options: Omit<FurnitureVisualDefinition, "collision"> = {},
-): FurnitureVisualDefinition => ({ collision: { horizontalRadius, verticalRadius }, ...options });
+): FurnitureVisualDefinition {
 
+  return { collision: { horizontalRadius, verticalRadius }, ...options };
+}
 export const FURNITURE_VISUAL_DEFINITIONS = {
   "art-desk": solid(11, 9),
   "bat-garland": { ...decoration(12), maximumY: 46 },
@@ -59,6 +60,7 @@ export const FURNITURE_VISUAL_DEFINITIONS = {
   "wall-art": { ...decoration(12), maximumY: 46, placementY: 28 },
   wardrobe: solid(8, 13),
 } as const satisfies Record<FurnitureVisualId, FurnitureVisualDefinition>;
+export function furnitureVisualDefinitionFor(visual: FurnitureVisualId): FurnitureVisualDefinition {
 
-export const furnitureVisualDefinitionFor = (visual: FurnitureVisualId): FurnitureVisualDefinition =>
-  FURNITURE_VISUAL_DEFINITIONS[visual];
+  return FURNITURE_VISUAL_DEFINITIONS[visual];
+}

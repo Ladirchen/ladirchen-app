@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { isContributionsState } from "./contributions-validation";
 import { isFamilyPetKindId } from "./family-profile-validation";
@@ -19,34 +19,42 @@ describe("family aggregate runtime validation", () => {
   });
 
   it("rejects a weekly progression without a positive target", () => {
-    expect(isFamilyProgressionState({
-      completedWeeklyStreak: 2,
-      currentWeekTarget: 0,
-      houseLevel: 2,
-    })).toBe(false);
+    expect(
+      isFamilyProgressionState({
+        completedWeeklyStreak: 2,
+        currentWeekTarget: 0,
+        houseLevel: 2,
+      }),
+    ).toBe(false);
   });
 
   it("requires the selected house edition to be owned", () => {
-    expect(isHomeCustomizationState({
-      accessories: [],
-      editions: [{ id: "sunny-dollhouse", owned: false }],
-      placements: [],
-      selectedEditionId: "sunny-dollhouse",
-    })).toBe(false);
+    expect(
+      isHomeCustomizationState({
+        accessories: [],
+        editions: [{ id: "sunny-dollhouse", owned: false }],
+        placements: [],
+        selectedEditionId: "sunny-dollhouse",
+      }),
+    ).toBe(false);
   });
 
   it("rejects promotions that reference a missing contribution", () => {
-    expect(isContributionsState({
-      contributions: [],
-      promotions: [{
-        id: "promotion-1",
-        contributionId: "contribution-1",
-        title: "Double reward",
-        multiplier: 2,
-        deadline: "17:00",
-        teamworkBonus: 10,
-        active: true,
-      }],
-    })).toBe(false);
+    expect(
+      isContributionsState({
+        contributions: [],
+        promotions: [
+          {
+            id: "promotion-1",
+            contributionId: "contribution-1",
+            title: "Double reward",
+            multiplier: 2,
+            deadline: "17:00",
+            teamworkBonus: 10,
+            active: true,
+          },
+        ],
+      }),
+    ).toBe(false);
   });
 });

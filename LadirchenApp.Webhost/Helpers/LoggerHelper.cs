@@ -34,16 +34,20 @@ public static class LoggerHelper
       await aFunc.Invoke(bootstrapLogger);
       bootstrapLogger.Information("*** Ladierchen Host shut down gracefully.");
     }
+
     catch (Exception ex)
     {
-      bootstrapLogger.Fatal(ex, "*** Unhandled exception in Ladierchen Host!");
-      throw;
+      var message = "*** Unhandled exception in Ladierchen Host!";
+      bootstrapLogger.Fatal(ex, message);
+      throw new InvalidOperationException(message, ex);
     }
+
     finally
     {
       bootstrapLogger.Information("*** Ladierchen Host Shut down complete!");
       await Log.CloseAndFlushAsync();
     }
+
   }
 
   private static IConfiguration BuildBootstrapConfiguration()

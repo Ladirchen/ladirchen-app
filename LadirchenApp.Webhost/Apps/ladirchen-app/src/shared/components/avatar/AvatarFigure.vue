@@ -489,23 +489,24 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { avatarHairColors, avatarOutfitColors, avatarSkinToneColors } from "@/domain/avatar";
 import { CHARACTER_REACTION_DURATION_MS } from "@/shared/runtime-timing";
 import type { AvatarAppearance } from "@/domain/avatar";
 import { avatarAccessoryVisuals, avatarExtensionVisualFor } from "./avatar-visuals";
-
+export interface Props {
+  appearance: AvatarAppearance;
+  size?: number;
+  fullBody?: boolean;
+  calm?: boolean;
+}
+export interface Emits {
+  interact: [];
+}
 let reactionTimer: number | undefined;
-
-const props = withDefaults(
-  defineProps<{ appearance: AvatarAppearance; size?: number; fullBody?: boolean; calm?: boolean }>(),
-  { size: 64, fullBody: false, calm: false },
-);
+const props = withDefaults(defineProps<Props>(), { size: 64, fullBody: false, calm: false });
 const { t } = useI18n();
-const emit = defineEmits<{ interact: [] }>();
-
+const emit = defineEmits<Emits>();
 const isReacting = ref(false);
-
 const viewBox = computed(() => (props.fullBody ? "0 0 160 260" : "0 0 160 180"));
 const outfitHasHeadwear = computed(() =>
   ["superhero", "dinosaur", "monster", "shark", "robot", "space"].includes(props.appearance.outfit),
@@ -516,8 +517,10 @@ const allowsHeadAccessory = computed(
     (props.appearance.seasonalAccessoryId === "none" || props.appearance.seasonalAccessoryId === "bat") &&
     !outfitHasHeadwear.value,
 );
-const accessoryVisual = computed(() => {
+const accessoryVisual = computed(function callback() {
+
   if (props.appearance.accessoryId === "none") {
+
     return undefined;
   }
 
@@ -539,7 +542,7 @@ const seasonalAccessoryVisual = computed(() =>
     ? undefined
     : avatarExtensionVisualFor("seasonal-accessory", props.appearance.seasonalAccessoryId),
 );
-const phase = computed(() => {
+const phase = computed(function callback() {
   const fingerprint = `${props.appearance.hair}-${props.appearance.face}-${props.appearance.outfit}`;
 
   return -(fingerprint.split("").reduce((sum, character) => sum + (character.codePointAt(0) ?? 0), 0) % 37) / 10;
@@ -552,7 +555,6 @@ const figureStyle = computed(() => ({
   "--hair": avatarHairColors[props.appearance.hairColorId],
   "--outfit": avatarOutfitColors[props.appearance.outfitColorId],
 }));
-
 function react() {
   emit("interact");
   isReacting.value = false;

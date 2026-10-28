@@ -15,19 +15,23 @@ import type { FamilyCurrency, GuardianGift } from "@/domain/savings/types";
 import type { ContributionId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
-
-export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] => {
+export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
   const guardians = members.filter((member) => member.role === "guardian");
   const hasAdministrator = guardians.some((member) => member.guardianAccess === "admin");
-  return members.map((member) => {
+
+  return members.map(function callback(member) {
+
     if (member.role !== "guardian") {
+
       return {
         ...member,
         participatesInWeeklyGoal: member.participatesInWeeklyGoal ?? true,
         appearance: resolveFamilyMemberAvatarAppearance(member, members),
       };
     }
+
     const isFirstGuardian = member.id === guardians[0]?.id;
+
     return {
       ...member,
       guardianAccess: member.guardianAccess ?? (!hasAdministrator && isFirstGuardian ? "admin" : "supporter"),
@@ -35,20 +39,24 @@ export const normalizeFamilyMembers = (members: FamilyMember[]): FamilyMember[] 
       appearance: resolveFamilyMemberAvatarAppearance(member, members),
     };
   });
-};
+}
+export function normalizeFamilyPets(pets: ReadonlyArray<FamilyPet>): FamilyPet[] {
 
-export const normalizeFamilyPets = (pets: ReadonlyArray<FamilyPet>): FamilyPet[] => pets.map((pet) => ({ ...pet }));
+  return pets.map((pet) => ({ ...pet }));
+}
+function initialStateValue<T>(value: T): T {
 
-const initialStateValue = <T>(value: T): T => value;
-
-const createDefaultSelectedRoomDesignIds = (): Partial<Record<HouseZoneId, RoomDesignId>> => {
+  return value;
+}
+function createDefaultSelectedRoomDesignIds(): Partial<Record<HouseZoneId, RoomDesignId>> {
   const selections: Partial<Record<HouseZoneId, RoomDesignId>> = {};
+
   for (const design of DEFAULT_ROOM_DESIGNS) {
     selections[design.zoneId] = design.id;
   }
-  return selections;
-};
 
+  return selections;
+}
 function savedPlacementYIsValid(
   savedY: number,
   entityType: HouseLayoutPlacement["entityType"],
@@ -56,11 +64,14 @@ function savedPlacementYIsValid(
   maximumY: number | undefined,
   locksScale: boolean,
 ): boolean {
+
   if (minimumY !== undefined) {
+
     return savedY >= minimumY && savedY <= (maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY);
   }
 
   if (entityType === "ladi") {
+
     return (
       (savedY >= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMinimumY &&
         savedY <= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMaximumY) ||
@@ -75,25 +86,30 @@ function savedPlacementYIsValid(
 
   return savedY >= minimumSavedY;
 }
-
-export const mergeHouseLayout = (
+export function mergeHouseLayout(
   stored: ReadonlyArray<HouseLayoutPlacement>,
   initialData: FamilyWorldInitialData,
-): HouseLayoutPlacement[] => {
+): HouseLayoutPlacement[] {
   const defaultPlacements = initialData.houseLayout;
   const accessories = initialData.accessories;
   const storedById = new Map(stored.map((placement) => [placement.id, placement]));
   const fixedAccessoryIds = new Set(
     accessories.filter((accessory) => accessory.mobility === "fixed").map((accessory) => accessory.id),
   );
-  const mergedPlacements = defaultPlacements.map((placement) => {
+  const mergedPlacements = defaultPlacements.map(function callback(placement) {
+
     if (placement.entityType === "furniture" && fixedAccessoryIds.has(placement.entityId)) {
+
       return placement;
     }
+
     const saved = storedById.get(placement.id);
+
     if (!saved) {
+
       return placement;
     }
+
     const isLadi = placement.entityType === "ladi";
     const savedLadiWasPerched = isLadi && saved.y < HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY;
     const accessory =
@@ -119,12 +135,15 @@ export const mergeHouseLayout = (
         : placement.y,
       zoneId: saved.zoneId,
     };
+
     return {
       ...placement,
       ...coordinates,
     };
   });
-  return mergedPlacements.map((placement) => {
+
+  return mergedPlacements.map(function callback(placement) {
+
     if (
       placement.entityType === "furniture" ||
       !characterCollidesWithFurniture(
@@ -136,13 +155,14 @@ export const mergeHouseLayout = (
         accessories,
       )
     ) {
+
       return placement;
     }
+
     return defaultPlacements.find((defaultPlacement) => defaultPlacement.id === placement.id) ?? placement;
   });
-};
-
-export const createFamilyWorldState = (initialData: FamilyWorldInitialData) => {
+}
+export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const viewerRole = initialStateValue<ViewerRole>("child");
   const familyCurrencyCode = initialStateValue<FamilyCurrency>("CHF");
   const simulatedEnergy = initialStateValue<number | null>(null);
@@ -177,11 +197,16 @@ export const createFamilyWorldState = (initialData: FamilyWorldInitialData) => {
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const subscriptionTier = initialStateValue<SubscriptionTier>("pro");
   const snackbarParams: Record<string, number | string> = {};
-  const snackbar: { visible: boolean; messageKey: TranslationKey | ""; params: Record<string, number | string> } = {
+  const snackbar: {
+    visible: boolean;
+    messageKey: TranslationKey | "";
+    params: Record<string, number | string>;
+  } = {
     visible: false,
     messageKey: "",
     params: snackbarParams,
   };
+
   return {
     currentTimeMilliseconds: Date.now(),
     isAuthenticated: true,
@@ -227,6 +252,5 @@ export const createFamilyWorldState = (initialData: FamilyWorldInitialData) => {
     promotions: initialData.promotions,
     shopRewards: initialData.shopRewards,
   };
-};
-
+}
 export type FamilyWorldState = ReturnType<typeof createFamilyWorldState>;

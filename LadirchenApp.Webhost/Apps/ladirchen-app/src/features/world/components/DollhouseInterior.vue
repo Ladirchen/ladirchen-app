@@ -169,7 +169,6 @@
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
 import {
@@ -189,10 +188,33 @@ import type {
 import type { FamilyMember, FamilyPet } from "@/domain/family/types";
 import type { FamilyMemberId, HouseLayoutPlacementId } from "@/domain/shared/identifiers";
 import { getWorldDecorationSpriteUrl } from "@/shared/assets/world-sprite-assets";
-
 import HouseLayoutEntity from "./HouseLayoutEntity.vue";
 import { useDollhouseDrag } from "@/features/world/composables/use-dollhouse-drag";
-
+export interface Props {
+  accessories: HouseAccessory[];
+  compact?: boolean;
+  editable?: boolean;
+  energy?: number;
+  includeGarden?: boolean;
+  contextualNeighbors?: boolean;
+  members: FamilyMember[];
+  pets: FamilyPet[];
+  placements: HouseLayoutPlacement[];
+  roomDesigns: ReadonlyArray<RoomDesignDefinition>;
+  rooms: ReadonlyArray<HouseRoomDefinition>;
+  score: number;
+  selectedZoneId?: HouseZoneId | "all";
+  showRoomLabels?: boolean;
+  storageOpen?: boolean;
+  viewerMemberId?: FamilyMemberId;
+}
+export interface Emits {
+  move: [placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number];
+  reset: [placementId: HouseLayoutPlacementId];
+  "select-zone": [zoneId: HouseZoneId];
+  "drag-state": [entityType: HouseLayoutPlacement["entityType"] | null];
+  store: [accessoryId: HouseAccessory["id"]];
+}
 const PixiRoomScene = defineAsyncComponent(() => import("./PixiRoomScene.vue"));
 const LADI_MOTIVATION_DURATION_MS = 4800;
 const PERCH_MESSAGE_BASE_DELAY_MS = 6500;
@@ -201,96 +223,72 @@ const PERCH_MESSAGE_DURATION_MS = 4200;
 const ROOM_WEAR_MARK_COUNT = 6;
 const ROOM_PREVIEW_COLUMN_WIDTH_PX = 30;
 const perchMessageKeys = ["together", "smallSteps", "whoHelps", "believe"] as const;
-
 let motivationTimer: number | undefined;
 let perchMessageTimer: number | undefined;
 let perchScheduleTimer: number | undefined;
-
 const { t } = useI18n();
-const props = withDefaults(
-  defineProps<{
-    accessories: HouseAccessory[];
-    compact?: boolean;
-    editable?: boolean;
-    energy?: number;
-    includeGarden?: boolean;
-    contextualNeighbors?: boolean;
-    members: FamilyMember[];
-    pets: FamilyPet[];
-    placements: HouseLayoutPlacement[];
-    roomDesigns: ReadonlyArray<RoomDesignDefinition>;
-    rooms: ReadonlyArray<HouseRoomDefinition>;
-    score: number;
-    selectedZoneId?: HouseZoneId | "all";
-    showRoomLabels?: boolean;
-    storageOpen?: boolean;
-    viewerMemberId?: FamilyMemberId;
-  }>(),
-  {
-    compact: false,
-    contextualNeighbors: false,
-    editable: false,
-    energy: 100,
-    includeGarden: false,
-    selectedZoneId: "all",
-    showRoomLabels: true,
-    storageOpen: false,
-  },
-);
-const emit = defineEmits<{
-  move: [placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number];
-  reset: [placementId: HouseLayoutPlacementId];
-  "select-zone": [zoneId: HouseZoneId];
-  "drag-state": [entityType: HouseLayoutPlacement["entityType"] | null];
-  store: [accessoryId: HouseAccessory["id"]];
-}>();
-
+const props = withDefaults(defineProps<Props>(), {
+  compact: false,
+  contextualNeighbors: false,
+  editable: false,
+  energy: 100,
+  includeGarden: false,
+  selectedZoneId: "all",
+  showRoomLabels: true,
+  storageOpen: false,
+});
+const emit = defineEmits<Emits>();
 const ladiMotivation = ref("");
 const perchMessage = ref("");
 const ladiPerchUrl = ref<string>();
-
 const unlockedZones = computed<HouseZoneId[]>(() =>
   props.includeGarden ? [...props.rooms.map((room) => room.id), "garden"] : props.rooms.map((room) => room.id),
 );
-
 const { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag } =
   useDollhouseDrag(props, emit, unlockedZones, accessoryFor);
-
-const orderedZoneIds = computed<HouseZoneId[]>(() => {
+const orderedZoneIds = computed<HouseZoneId[]>(function callback() {
   const roomIds = props.rooms.map((room) => room.id);
 
   if (!props.includeGarden) {
+
     return roomIds;
   }
 
   const kitchenIndex = roomIds.indexOf("kitchen");
 
   if (kitchenIndex < 0) {
+
     return [...roomIds, "garden"];
   }
 
   return [...roomIds.slice(0, kitchenIndex + 1), "garden", ...roomIds.slice(kitchenIndex + 1)];
 });
-const contextualZoneIds = computed<HouseZoneId[]>(() => {
+const contextualZoneIds = computed<HouseZoneId[]>(function callback() {
+
   if (props.selectedZoneId === "all") {
+
     return props.rooms.map((room) => room.id);
   }
 
   if (!props.contextualNeighbors) {
+
     return [props.selectedZoneId];
   }
 
   if (props.selectedZoneId === "garden" && orderedZoneIds.value.includes("kitchen")) {
+
     return ["kitchen", "garden"];
   }
 
   if (props.selectedZoneId === "living-room" && orderedZoneIds.value.includes("kitchen")) {
+
     return ["living-room", "kitchen"];
   }
 
   const selectedIndex = orderedZoneIds.value.indexOf(props.selectedZoneId);
 
   if (selectedIndex < 0) {
+
     return [props.selectedZoneId];
   }
 
@@ -316,14 +314,17 @@ const activeSceneDesign = computed(() =>
     : props.roomDesigns.find((design) => design.zoneId === props.selectedZoneId),
 );
 const pixiSceneKey = computed(() => `${activeSceneDesign.value?.id}-${resolveHouseEnergyVisualLevel(props.energy)}`);
-const contextGridStyle = computed(() => {
+const contextGridStyle = computed(function callback() {
+
   if (!isContextualZone.value) {
+
     return undefined;
   }
 
   const selectedZoneId = props.selectedZoneId;
 
   if (selectedZoneId === "all") {
+
     return undefined;
   }
 
@@ -344,32 +345,39 @@ const isLadiOnPerch = computed(
       HOUSE_LAYOUT_CONSTRAINTS.perch.proximityToleranceY,
 );
 const ladiSpeech = computed(() => ladiMotivation.value || perchMessage.value);
-const energyClass = computed(() => {
+const energyClass = computed(function callback() {
+
   if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
+
     return "energy-critical";
   }
 
   if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
+
     return "energy-low";
   }
 
   if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
+
     return "energy-tired";
   }
 
   return "energy-bright";
 });
 const perchMessages = computed(() => perchMessageKeys.map((key) => t(`world.interior.perch.${key}`)));
-
 function isPreviewZone(zoneId: HouseZoneId) {
+
   return isContextualZone.value && zoneId !== props.selectedZoneId;
 }
 function selectPreviewZone(zoneId: HouseZoneId) {
+
   if (isPreviewZone(zoneId)) {
     emit("select-zone", zoneId);
   }
+
 }
 function visiblePlacements(zoneId: HouseZoneId) {
+
   return props.placements
     .filter((placement) => placement.zoneId === zoneId)
     .filter(() => !isPreviewZone(zoneId))
@@ -378,7 +386,7 @@ function visiblePlacements(zoneId: HouseZoneId) {
         placement.entityType !== "furniture" ||
         Boolean(accessoryFor(placement)?.owned && accessoryFor(placement)?.equipped),
     )
-    .filter((placement) => {
+    .filter(function callback(placement) {
       const visual = accessoryFor(placement)?.visual;
 
       return !visual || furnitureVisualDefinitionFor(visual).renderInLayout !== false;
@@ -386,38 +394,48 @@ function visiblePlacements(zoneId: HouseZoneId) {
     .sort((left, right) => left.y - right.y);
 }
 function accessoryFor(placement: HouseLayoutPlacement) {
+
   return placement.entityType === "furniture"
     ? props.accessories.find((accessory) => accessory.id === placement.entityId)
     : undefined;
 }
 function placementIsEditable(placement: HouseLayoutPlacement) {
+
   return (
     accessoryFor(placement)?.mobility !== "fixed" &&
     (props.editable || (props.storageOpen && placement.entityType === "furniture"))
   );
 }
 function placementSpeech(placement: HouseLayoutPlacement) {
+
   return placement.entityType === "ladi" ? ladiSpeech.value : "";
 }
-function memberFor(
-  placement: HouseLayoutPlacement,
-): (FamilyMember & { resolvedAppearance: AvatarAppearance }) | undefined {
+function memberFor(placement: HouseLayoutPlacement):
+  | (FamilyMember & {
+      resolvedAppearance: AvatarAppearance;
+    })
+  | undefined {
+
   if (placement.entityType !== "member") {
+
     return undefined;
   }
 
   const member = props.members.find((item) => item.id === placement.entityId);
 
   if (!member) {
+
     return undefined;
   }
 
   return { ...member, resolvedAppearance: resolveFamilyMemberAvatarAppearance(member, props.members) };
 }
 function petFor(placement: HouseLayoutPlacement): FamilyPet | undefined {
+
   return placement.entityType === "pet" ? props.pets.find((pet) => pet.id === placement.entityId) : undefined;
 }
 function ladiIsPerched(placement: HouseLayoutPlacement) {
+
   return placement.entityType === "ladi" && isLadiOnPerch.value;
 }
 function motivateLadi() {
@@ -425,10 +443,13 @@ function motivateLadi() {
 
   if (tier === "spark") {
     ladiMotivation.value = t("world.interior.motivation.wakeUp");
+
   } else if (tier === "super") {
     ladiMotivation.value = t("world.interior.motivation.superTeam");
+
   } else if (tier === "aurora") {
     ladiMotivation.value = t("world.interior.motivation.coolTeam");
+
   } else {
     ladiMotivation.value = t("world.interior.motivation.default");
   }
@@ -443,7 +464,8 @@ function motivateLadi() {
 }
 function schedulePerchMessage() {
   perchScheduleTimer = window.setTimeout(
-    () => {
+    function callback() {
+
       if (isLadiOnPerch.value) {
         perchMessage.value =
           perchMessages.value[Math.floor(Math.random() * perchMessages.value.length)] ?? perchMessages.value[0]!;
@@ -462,12 +484,12 @@ function schedulePerchMessage() {
     PERCH_MESSAGE_BASE_DELAY_MS + Math.round(Math.random() * PERCH_MESSAGE_DELAY_VARIANCE_MS),
   );
 }
-
 onMounted(async () => {
   ladiPerchUrl.value = await getWorldDecorationSpriteUrl("ladi-perch");
 });
 onMounted(schedulePerchMessage);
-onUnmounted(() => {
+onUnmounted(function callback() {
+
   if (motivationTimer !== undefined) {
     window.clearTimeout(motivationTimer);
   }
@@ -479,6 +501,7 @@ onUnmounted(() => {
   if (perchScheduleTimer !== undefined) {
     window.clearTimeout(perchScheduleTimer);
   }
+
 });
 </script>
 

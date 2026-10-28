@@ -2,7 +2,10 @@
   <span class="energy-star" :style="starStyle" aria-hidden="true">
     <svg viewBox="0 0 64 64">
       <circle class="star-halo" cx="32" cy="32" r="25" />
-      <path class="star-shape" d="M32 8c2.8 12.6 8.8 18.6 21 21-12.2 2.4-18.2 8.4-21 21-2.8-12.6-8.8-18.6-21-21 12.2-2.4 18.2-8.4 21-21Z" />
+      <path
+        class="star-shape"
+        d="M32 8c2.8 12.6 8.8 18.6 21 21-12.2 2.4-18.2 8.4-21 21-2.8-12.6-8.8-18.6-21-21 12.2-2.4 18.2-8.4 21-21Z"
+      />
       <circle class="star-dot star-dot--left" cx="10" cy="17" r="3" />
       <path class="star-spark" d="M52 10c.8 3.7 2.6 5.5 6 6-3.4.5-5.2 2.3-6 6-.8-3.7-2.6-5.5-6-6 3.4-.5 5.2-2.3 6-6Z" />
     </svg>
@@ -11,8 +14,10 @@
 
 <script lang="ts" setup>
 import { computed } from "vue";
-
-const props = withDefaults(defineProps<{ size?: number }>(), { size: 32 });
+export interface Props {
+  size?: number;
+}
+const props = withDefaults(defineProps<Props>(), { size: 32 });
 const starStyle = computed(() => ({ width: `${props.size}px`, height: `${props.size}px` }));
 </script>
 
@@ -36,9 +41,7 @@ svg {
   stroke: var(--lad-palette-amber-600);
   stroke-linejoin: round;
   stroke-width: 2.5;
-  filter: drop-shadow(
-    0 3px 2px color-mix(in srgb, var(--lad-palette-amber-650) 20%, transparent)
-  );
+  filter: drop-shadow(0 3px 2px color-mix(in srgb, var(--lad-palette-amber-650) 20%, transparent));
   transform-box: fill-box;
   transform-origin: center;
   animation: star-celebrate 2.8s cubic-bezier(0.34, 1.4, 0.64, 1) infinite;

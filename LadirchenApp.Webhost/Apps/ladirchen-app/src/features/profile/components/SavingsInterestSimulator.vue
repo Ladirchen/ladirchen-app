@@ -102,29 +102,23 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
-
 import AnimatedPiggyBank from "@/shared/components/AnimatedPiggyBank.vue";
 import { getLadiStage } from "@/domain/ladi";
 import { calculateSavingsCredit, familyParticipationInterestStrategy } from "@/domain/savings/interest";
 import { PAYOUT_CELEBRATION_DURATION_MS } from "@/shared/runtime-timing";
 import { useFamilyWorldStore } from "@/stores/family-world";
-
 let payoutTimer: number | undefined;
-
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
-
 const simulatedCompletion = ref(0);
 const simulatedRating = ref(0);
 const simulatedStreak = ref(0);
 const payoutVisible = ref(false);
 const payoutVersion = ref(0);
 const lastPayout = ref(0);
-
 const simulatedLadiStage = computed(() => getLadiStage(simulatedRating.value));
 const simulationMatchesCurrentWeek = computed(
   () =>
@@ -152,14 +146,15 @@ const simulatedWeeklyInterest = computed(() =>
     0,
   ),
 );
-
 function formatRate(value: number) {
+
   return value.toLocaleString(locale.value, {
     maximumFractionDigits: 2,
     minimumFractionDigits: 1,
   });
 }
 function interestForRate(saved: number, target: number, rate: number): number {
+
   return calculateSavingsCredit(saved, target, rate);
 }
 function resetSimulation(): void {
@@ -172,6 +167,7 @@ function simulatePayout(): void {
   lastPayout.value = store.creditActiveChildInterestDemo(simulatedInterestRate.value);
 
   if (lastPayout.value <= 0) {
+
     return;
   }
 
@@ -186,12 +182,13 @@ function simulatePayout(): void {
     payoutVisible.value = false;
   }, PAYOUT_CELEBRATION_DURATION_MS);
 }
-
 onMounted(resetSimulation);
-onUnmounted(() => {
+onUnmounted(function callback() {
+
   if (payoutTimer !== undefined) {
     window.clearTimeout(payoutTimer);
   }
+
 });
 </script>
 

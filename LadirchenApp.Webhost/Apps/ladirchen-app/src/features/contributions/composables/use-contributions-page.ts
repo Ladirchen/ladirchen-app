@@ -2,7 +2,6 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-
 import { isPromotionAvailable } from "@/domain/contributions/promotions";
 import type {
   Contribution,
@@ -17,8 +16,7 @@ import { useLocalizedDomainContent } from "@/shared/composables/use-localized-do
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
-
-export const useContributionsPage = () => {
+export function useContributionsPage() {
   const store = useFamilyWorldStore();
   const route = useRoute();
   const { t } = useI18n();
@@ -35,7 +33,11 @@ export const useContributionsPage = () => {
   const contributionToDelete = ref<Contribution>();
   const promotionToDelete = ref<Promotion>();
   const ratings = reactive<Partial<Record<ContributionId, number>>>({});
-  const newContribution = reactive<Omit<NewContribution, "assigneeId"> & { assigneeId: FamilyMemberId | "" }>({
+  const newContribution = reactive<
+    Omit<NewContribution, "assigneeId"> & {
+      assigneeId: FamilyMemberId | "";
+    }
+  >({
     title: "",
     description: "",
     icon: "✨",
@@ -48,8 +50,10 @@ export const useContributionsPage = () => {
     { title: t("contributions.kind.basic"), value: "basic" },
     { title: t("contributions.kind.extraOptional"), value: "extra" },
   ]);
-  const assignmentOptions = computed(() => {
+  const assignmentOptions = computed(function callback() {
+
     if (!store.permissions.canManageContent) {
+
       return [
         {
           title: t("contributions.assignment.own", { name: store.signedInMember.name }),
@@ -57,6 +61,7 @@ export const useContributionsPage = () => {
         },
       ];
     }
+
     return [
       { title: t("contributions.assignment.open"), value: "" },
       ...store.members.map((member) => ({
@@ -99,8 +104,9 @@ export const useContributionsPage = () => {
     localizedContributions.value.filter((contribution) => contribution.assigneeId === store.signedInMemberId),
   );
   const guardianTasksToRate = computed(() =>
-    localizedContributions.value.filter((contribution) => {
+    localizedContributions.value.filter(function callback(contribution) {
       const assignee = store.members.find((member) => member.id === contribution.assigneeId);
+
       return contribution.status === "pending" && assignee?.role === "guardian";
     }),
   );
@@ -127,94 +133,129 @@ export const useContributionsPage = () => {
       .filter((member) => member.role === "child" && member.id !== teamContribution.value?.assigneeId)
       .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
   );
-  const promotionFor = (contributionId: ContributionId) =>
-    localizedPromotions.value.find(
+  function promotionFor(contributionId: ContributionId) {
+
+    return localizedPromotions.value.find(
       (promotion) =>
         promotion.contributionId === contributionId &&
         isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
     );
-  const contributionTitle = (contributionId: ContributionId) =>
-    localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
-    t("contributions.singular");
-  const memberName = (memberId?: FamilyMemberId) =>
-    store.members.find((member) => member.id === memberId)?.name ?? t("contributions.assignment.stillOpen");
-  const guardianContributionStatus = (contribution: Contribution): string => {
+  }
+  function contributionTitle(contributionId: ContributionId) {
+
+    return (
+      localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
+      t("contributions.singular")
+    );
+  }
+  function memberName(memberId?: FamilyMemberId) {
+
+    return store.members.find((member) => member.id === memberId)?.name ?? t("contributions.assignment.stillOpen");
+  }
+  function guardianContributionStatus(contribution: Contribution): string {
+
     if (contribution.status === "pending") {
+
       return t("contributions.guardianOwn.awaitingRating");
     }
+
     if (contribution.status === "approved") {
+
       return t("contributions.starsReceived", { value: contribution.stars ?? 1 });
     }
-    return t("contributions.guardianOwn.ready");
-  };
 
+    return t("contributions.guardianOwn.ready");
+  }
   function approveWithRating(contributionId: ContributionId) {
     store.approveContribution(contributionId, ratings[contributionId] ?? 4);
   }
-
-  const assignContribution = (contributionId: ContributionId, value: unknown) => {
+  function assignContribution(contributionId: ContributionId, value: unknown) {
     const member = store.members.find((item) => item.id === value);
     store.assignContribution(contributionId, member?.id);
-  };
-  const openOwnTaskDialog = () => {
+  }
+  function openOwnTaskDialog() {
     Object.assign(newContribution, { assigneeId: store.signedInMemberId });
     addDialog.value = true;
-  };
-  const requestContributionDelete = (contribution: Contribution) => {
+  }
+  function requestContributionDelete(contribution: Contribution) {
     contributionToDelete.value = contribution;
-  };
-  const confirmContributionDelete = () => {
+  }
+  function confirmContributionDelete() {
+
     if (!contributionToDelete.value) {
+
       return;
     }
+
     store.deleteContribution(contributionToDelete.value.id);
     contributionToDelete.value = undefined;
-  };
-  const confirmPromotionDelete = () => {
+  }
+  function confirmPromotionDelete() {
+
     if (!promotionToDelete.value) {
+
       return;
     }
+
     store.deletePromotion(promotionToDelete.value.id);
     promotionToDelete.value = undefined;
-  };
-  const openTeamInvite = (contribution: Contribution) => {
+  }
+  function openTeamInvite(contribution: Contribution) {
     teamContributionId.value = contribution.id;
     selectedSiblingIds.value = [...(contribution.invitedChildIds ?? [])];
     teamDialog.value = true;
-  };
-  const contributionTip = (contribution: Contribution) => {
+  }
+  function contributionTip(contribution: Contribution) {
     const seedKey = contribution.translationKey?.split(".").at(-1);
+
     if (seedKey === "roomAir") {
+
       return t("contributions.tips.air");
     }
+
     if (seedKey === "setTable" || seedKey === "adamBreakfast") {
+
       return t("contributions.tips.table");
     }
+
     if (seedKey === "dishwasher") {
+
       return t("contributions.tips.dishes");
     }
+
     if (seedKey === "feedPet" || seedKey === "danielCats") {
+
       return t("contributions.tips.pets");
     }
+
     if (seedKey === "waterPlants") {
+
       return t("contributions.tips.plants");
     }
+
     if (seedKey === "danielLaundry") {
+
       return t("contributions.tips.laundry");
     }
+
     if (seedKey === "takeTrash") {
+
       return t("contributions.tips.trash");
     }
+
     return t("contributions.tips.default", { description: contribution.description });
-  };
-  const saveTeamInvite = () => {
+  }
+  function saveTeamInvite() {
+
     if (!teamContributionId.value) {
+
       return;
     }
+
     store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
     teamDialog.value = false;
-  };
-  const addContribution = () => {
+  }
+  function addContribution() {
     store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
     addDialog.value = false;
     Object.assign(newContribution, {
@@ -226,8 +267,8 @@ export const useContributionsPage = () => {
       kind: "basic",
       assigneeId: "",
     });
-  };
-  const addPromotion = () => {
+  }
+  function addPromotion() {
     store.addPromotion({ ...newPromotion });
     promotionDialog.value = false;
     Object.assign(newPromotion, {
@@ -236,8 +277,7 @@ export const useContributionsPage = () => {
       deadline: "17:00",
       teamworkBonus: 10,
     });
-  };
-
+  }
   const { start: startPageIntroGuide } = useTimeoutFn(
     () => {
       ladiGuideController.say({
@@ -249,28 +289,34 @@ export const useContributionsPage = () => {
     PAGE_INTRO_GUIDE_DELAY_MS,
     { immediate: false },
   );
+  onMounted(function callback() {
 
-  onMounted(() => {
     if (store.viewerRole !== "child") {
+
       return;
     }
+
     startPageIntroGuide();
   });
   watch(
     () => route.query.new,
-    (value) => {
+    function callback(value) {
+
       if (value === "1" && store.permissions.canManageContent) {
         addDialog.value = true;
       }
+
     },
     { immediate: true },
   );
   watch(
     () => route.query.promotion,
-    (value) => {
+    function callback(value) {
+
       if (value === "1" && store.permissions.canManageContent) {
         promotionDialog.value = true;
       }
+
     },
     { immediate: true },
   );
@@ -319,4 +365,4 @@ export const useContributionsPage = () => {
     teamContribution,
     teamDialog,
   };
-};
+}

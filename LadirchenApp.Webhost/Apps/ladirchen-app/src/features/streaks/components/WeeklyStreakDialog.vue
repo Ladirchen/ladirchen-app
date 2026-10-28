@@ -99,7 +99,6 @@
 import { DateTime } from "luxon";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import AnimatedStreakFlame from "./AnimatedStreakFlame.vue";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
@@ -108,17 +107,21 @@ import { getLadiStage } from "@/domain/ladi";
 import { approvedContributionDatesInCurrentWeek } from "@/domain/contributions/weekly-progress";
 import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import { useFamilyWorldStore } from "@/stores/family-world";
-
-const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
+export interface Emits {
+  "update:modelValue": [value: boolean];
+}
+export interface Props {
+  modelValue: boolean;
+}
+const emit = defineEmits<Emits>();
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
-
 const labels = computed(() => {
   const monday = DateTime.fromMillis(store.currentTimeMilliseconds, { zone: store.familyTimeZone })
     .startOf("week")
     .setLocale(locale.value);
 
-  return Array.from({ length: 7 }, (_, index) => {
+  return Array.from({ length: 7 }, function callback(_, index) {
     const date = monday.plus({ days: index });
 
     return {
@@ -148,31 +151,34 @@ const weekMessage = computed(() =>
     ? t("streaks.weekly.motivation.complete")
     : t("streaks.weekly.motivation.active"),
 );
-
 function dayStatus(calendarDate: string): DayStatus {
+
   if (completedDates.value.has(calendarDate)) {
+
     return DayStatus.Done;
   }
 
   if (calendarDate === today.value) {
+
     return DayStatus.Today;
   }
 
   return DayStatus.Upcoming;
 }
 function statusLabel(status: DayStatus) {
+
   return t(`streaks.weekly.status.${status}`);
 }
 function close() {
+
   return emit("update:modelValue", false);
 }
-
 enum DayStatus {
   Done = "done",
   Today = "today",
   Upcoming = "upcoming",
 }
-defineProps<{ modelValue: boolean }>();
+defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>

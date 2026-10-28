@@ -1,9 +1,5 @@
 <template>
-  <span
-    class="exchange-icon"
-    role="img"
-    :aria-label="t('savings.piggy.exchangeAria', { currency: currencyCode })"
-  >
+  <span class="exchange-icon" role="img" :aria-label="t('savings.piggy.exchangeAria', { currency: currencyCode })">
     <v-icon aria-hidden="true" class="exchange-arrows" icon="i-mdi:swap-horizontal-bold" />
     <span class="exchange-coin exchange-coin--ladi" aria-hidden="true"><LadirchenCoin small /></span>
     <span class="exchange-coin exchange-coin--family" aria-hidden="true">{{ currencyMark }}</span>
@@ -14,19 +10,18 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-
 import type { FamilyCurrency } from "@/domain/savings/types";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
-
+export interface Props {
+  currencyCode: FamilyCurrency;
+}
 const familyCurrencyMarks = {
   CHF: "Fr",
   EUR: "€",
   HUF: "Ft",
 } as const satisfies Record<FamilyCurrency, string>;
-
-const props = defineProps<{ currencyCode: FamilyCurrency }>();
+const props = defineProps<Props>();
 const { t } = useI18n();
-
 const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
 </script>
 
@@ -71,10 +66,8 @@ const currencyMark = computed(() => familyCurrencyMarks[props.currencyCode]);
   border-radius: 50%;
   background: var(--lad-palette-teal-150);
   box-shadow:
-    inset 0 0 0 rem(1)
-      color-mix(in srgb, var(--lad-palette-white) 60%, transparent),
-    0 rem(2) 0
-      color-mix(in srgb, var(--lad-palette-teal-700) 16%, transparent);
+    inset 0 0 0 rem(1) color-mix(in srgb, var(--lad-palette-white) 60%, transparent),
+    0 rem(2) 0 color-mix(in srgb, var(--lad-palette-teal-700) 16%, transparent);
   font-size: rem(7);
   font-weight: var(--lad-font-weight-black);
   animation: coin-family-bob 2.8s -0.7s ease-in-out infinite;

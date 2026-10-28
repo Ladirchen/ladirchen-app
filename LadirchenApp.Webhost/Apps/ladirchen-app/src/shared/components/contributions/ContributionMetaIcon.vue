@@ -2,7 +2,12 @@
   <span v-if="kind === 'reward'" class="contribution-meta-icon contribution-meta-icon--reward" aria-hidden="true">
     <LadirchenCoin animated small />
   </span>
-  <svg v-else :class="['contribution-meta-icon', `contribution-meta-icon--${kind}`]" viewBox="0 0 32 32" aria-hidden="true">
+  <svg
+    v-else
+    :class="['contribution-meta-icon', `contribution-meta-icon--${kind}`]"
+    viewBox="0 0 32 32"
+    aria-hidden="true"
+  >
     <template v-if="kind === 'time'">
       <circle class="icon-disc" cx="16" cy="16" r="12" />
       <circle class="icon-line" cx="16" cy="16" r="8" />
@@ -20,8 +25,10 @@
 
 <script lang="ts" setup>
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
-
-defineProps<{ kind: "time" | "reward" | "energy" }>();
+export interface Props {
+  kind: "time" | "reward" | "energy";
+}
+defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>

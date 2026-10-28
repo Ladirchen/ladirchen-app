@@ -1,19 +1,33 @@
 import type { IanaTimeZone } from "@/domain/family/time-zone";
 import { calendarDateInTimeZone, isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
 import type { Contribution } from "./types";
-
-export const approvedContributionDatesInCurrentWeek = (
+export function approvedContributionDatesInCurrentWeek(
   contributions: ReadonlyArray<Contribution>,
   timeZone: IanaTimeZone,
   now = new Date(),
-): ReadonlySet<string> => new Set(contributions.flatMap((contribution) => {
-  if (contribution.status !== "approved" || !contribution.approvedAt ||
-    !isInstantInIsoWeek(contribution.approvedAt, now, timeZone)) {return [];}
-  return [calendarDateInTimeZone(new Date(contribution.approvedAt), timeZone)];
-}));
+): ReadonlySet<string> {
 
-export const currentWeekDaysFromContributions = (
+  return new Set(
+    contributions.flatMap(function callback(contribution) {
+
+      if (
+        contribution.status !== "approved" ||
+        !contribution.approvedAt ||
+        !isInstantInIsoWeek(contribution.approvedAt, now, timeZone)
+      ) {
+
+        return [];
+      }
+
+      return [calendarDateInTimeZone(new Date(contribution.approvedAt), timeZone)];
+    }),
+  );
+}
+export function currentWeekDaysFromContributions(
   contributions: ReadonlyArray<Contribution>,
   timeZone: IanaTimeZone,
   now = new Date(),
-): number => approvedContributionDatesInCurrentWeek(contributions, timeZone, now).size;
+): number {
+
+  return approvedContributionDatesInCurrentWeek(contributions, timeZone, now).size;
+}

@@ -24,12 +24,7 @@
   outline-offset: tokens.rem(2);
 }
 
-@mixin heading(
-  $size,
-  $line-height: 1.1,
-  $letter-spacing: -0.035em,
-  $weight: var(--lad-font-weight-black)
-) {
+@mixin heading($size, $line-height: 1.1, $letter-spacing: -0.035em, $weight: var(--lad-font-weight-black)) {
   color: var(--lad-text);
   font-family: var(--lad-font-heading, "Roboto"), sans-serif;
   font-size: $size;
@@ -38,12 +33,7 @@
   letter-spacing: $letter-spacing;
 }
 
-@mixin body-copy(
-  $size: var(--lad-font-size-body),
-  $line-height: 1.4,
-  $color: var(--lad-muted),
-  $weight: 400
-) {
+@mixin body-copy($size: var(--lad-font-size-body), $line-height: 1.4, $color: var(--lad-muted), $weight: 400) {
   color: $color;
   font-family: var(--lad-font-body, "Roboto"), sans-serif;
   font-size: $size;
@@ -51,11 +41,7 @@
   line-height: $line-height;
 }
 
-@mixin overline(
-  $color: var(--lad-mint-dark),
-  $size: var(--lad-font-size-caption),
-  $letter-spacing: 0.1em
-) {
+@mixin overline($color: var(--lad-mint-dark), $size: var(--lad-font-size-caption), $letter-spacing: 0.1em) {
   color: $color;
   font-size: $size;
   font-weight: var(--lad-font-weight-black);
@@ -88,7 +74,9 @@
   border: $border-width solid $border-color;
   border-radius: $radius;
   background: $background;
-  box-shadow: 0 $lift 0 $lift-color, $ambient-shadow;
+  box-shadow:
+    0 $lift 0 $lift-color,
+    $ambient-shadow;
 }
 
 @mixin branded-card(
@@ -143,11 +131,15 @@
   border: tokens.rem(2) solid $border-color;
   border-radius: $radius;
   background: $background;
-  box-shadow: 0 tokens.rem(5) 0 $lift-color, 0 tokens.rem(10) tokens.rem(18) $ambient-color;
+  box-shadow:
+    0 tokens.rem(5) 0 $lift-color,
+    0 tokens.rem(10) tokens.rem(18) $ambient-color;
   font-weight: var(--lad-font-weight-heavy);
   text-transform: none;
   letter-spacing: 0;
-  transition: transform var(--lad-motion-fast) ease, box-shadow var(--lad-motion-fast) ease;
+  transition:
+    transform var(--lad-motion-fast) ease,
+    box-shadow var(--lad-motion-fast) ease;
 
   :deep(.v-btn__content) {
     gap: tokens.rem(7);
@@ -155,7 +147,9 @@
 
   &:hover:not(:disabled) {
     transform: translateY(tokens.rem(-2));
-    box-shadow: 0 tokens.rem(7) 0 $lift-color, 0 tokens.rem(13) 1.25rem $ambient-color;
+    box-shadow:
+      0 tokens.rem(7) 0 $lift-color,
+      0 tokens.rem(13) 1.25rem $ambient-color;
   }
 
   &:active:not(:disabled) {
@@ -232,13 +226,7 @@
   font-weight: var(--lad-font-weight-heavy);
 }
 
-@mixin status-pill(
-  $foreground,
-  $border-color,
-  $background,
-  $lift-color,
-  $min-height: tokens.rem(38)
-) {
+@mixin status-pill($foreground, $border-color, $background, $lift-color, $min-height: tokens.rem(38)) {
   min-height: $min-height;
   padding: tokens.rem(6) tokens.rem(13);
   display: inline-flex;
@@ -273,14 +261,13 @@
   border: $border;
   border-radius: $radius;
   background: $background;
-  box-shadow: 0 $lift 0 $lift-color, $ambient-shadow;
+  box-shadow:
+    0 $lift 0 $lift-color,
+    $ambient-shadow;
   transform: rotate($rotation);
 }
 
-@mixin dialog-frame(
-  $border-color: var(--lad-border-info),
-  $lift-color: var(--lad-shadow-raised-info)
-) {
+@mixin dialog-frame($border-color: var(--lad-border-info), $lift-color: var(--lad-shadow-raised-info)) {
   color: var(--lad-text);
   border: tokens.rem(2) solid $border-color;
   background: var(--lad-surface);
@@ -320,7 +307,9 @@
   background: $background;
   cursor: pointer;
   box-shadow: 0 0.25rem 0 $lift-color;
-  transition: transform var(--lad-motion-fast) ease, box-shadow var(--lad-motion-fast) ease;
+  transition:
+    transform var(--lad-motion-fast) ease,
+    box-shadow var(--lad-motion-fast) ease;
 
   &:hover {
     transform: translateY(tokens.rem(-2)) rotate(4deg);

@@ -207,16 +207,13 @@
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
-
 import LadirchenIntro from "@/features/onboarding/components/LadirchenIntro.vue";
 import AnimatedStreakFlame from "@/features/streaks/components/AnimatedStreakFlame.vue";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
-
 import AppNavigationIcon from "./AppNavigationIcon.vue";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { CURRENT_TIME_REFRESH_INTERVAL_MS } from "@/shared/runtime-timing";
 import { isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
-
 type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
 interface NavigationItem {
   to: string;
@@ -224,7 +221,6 @@ interface NavigationItem {
   label: string;
   tip: string;
 }
-
 const AsyncAuthGateway = defineAsyncComponent(() => import("@/features/auth/components/AuthGateway.vue"));
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
 const AsyncGlobalLadiGuide = defineAsyncComponent(() => import("./GlobalLadiGuide.vue"));
@@ -234,18 +230,14 @@ const AsyncSavingsPiggyDialog = defineAsyncComponent(
 const AsyncWeeklyStreakDialog = defineAsyncComponent(
   () => import("@/features/streaks/components/WeeklyStreakDialog.vue"),
 );
-
 let clockTimer: ReturnType<typeof window.setInterval> | undefined;
-
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
-
 const appHydrated = ref(false);
 const introFinished = ref(false);
 const contentElement = ref<HTMLElement | null>(null);
 const streakDialog = ref(false);
-
 const showLadiGuide = computed(() => appHydrated.value && introFinished.value && store.viewerRole === "child");
 const headerBalanceMemberId = computed(() =>
   store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId,
@@ -334,7 +326,6 @@ const navigation = computed(() =>
     ? navigationItems.value.filter((item) => !["/contributions", "/shop"].includes(item.to))
     : navigationItems.value,
 );
-
 function handleIntroFinished() {
   introFinished.value = true;
   store.revealNextContributionReward();
@@ -342,18 +333,19 @@ function handleIntroFinished() {
 function resetContentScroll() {
   window.requestAnimationFrame(() => contentElement.value?.scrollTo({ top: 0, left: 0 }));
 }
-
 void store.hydrateFamilyAggregates().finally(() => {
   appHydrated.value = true;
 });
-onMounted(() => {
+onMounted(function callback() {
   store.refreshCurrentTime();
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
 });
-onBeforeUnmount(() => {
+onBeforeUnmount(function callback() {
+
   if (clockTimer !== undefined) {
     window.clearInterval(clockTimer);
   }
+
 });
 watch(isLandscape, resetContentScroll);
 </script>

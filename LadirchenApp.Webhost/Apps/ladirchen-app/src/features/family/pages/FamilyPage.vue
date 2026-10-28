@@ -159,7 +159,6 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import HeaderDecoration from "@/shared/components/ui/HeaderDecoration.vue";
 import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
@@ -174,23 +173,27 @@ import { isGuardianAccessLevel } from "@/application/contracts/family-aggregate-
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
-
 let timer: number | undefined;
-
 const FAMILY_HERO_MEMBER_LIMIT = 3;
-
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
-
 const inviteDialog = ref(false);
-const invite = reactive<{ name: string; email: string; guardianAccess: GuardianAccessLevel }>({
+const invite = reactive<{
+  name: string;
+  email: string;
+  guardianAccess: GuardianAccessLevel;
+}>({
   name: "",
   email: "",
   guardianAccess: "supporter",
 });
-
-const guardianAccessOptions = computed<Array<{ title: string; value: GuardianAccessLevel }>>(() => [
+const guardianAccessOptions = computed<
+  Array<{
+    title: string;
+    value: GuardianAccessLevel;
+  }>
+>(() => [
   { title: t("family.permissions.supporter"), value: "supporter" },
   { title: t("family.permissions.admin"), value: "admin" },
 ]);
@@ -200,7 +203,7 @@ const canInvite = computed(
   () => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email),
 );
 const memberCards = computed(() =>
-  store.members.map((member) => {
+  store.members.map(function callback(member) {
     const isGuardian = member.role === "guardian";
     const isSignedIn = member.id === store.signedInMemberId;
     const canManageFamily = store.permissions.canManageFamily;
@@ -225,11 +228,12 @@ const memberCards = computed(() =>
     };
   }),
 );
-
 function appearanceFor(member: FamilyMember): AvatarAppearance {
+
   return resolveFamilyMemberAvatarAppearance(member, store.members);
 }
 function accessLabel(access?: GuardianAccessLevel) {
+
   return t(access === "admin" ? "family.permissions.admin" : "family.permissions.supporter");
 }
 function goalTitle(memberId: FamilyMemberId) {
@@ -238,24 +242,31 @@ function goalTitle(memberId: FamilyMemberId) {
   return goal ? localize.goal(goal).title : t("family.roster.noGoal");
 }
 function memberSubtitle(member: FamilyMember) {
+
   return member.role === "guardian" ? t("family.roles.guardian") : goalTitle(member.id);
 }
 function guardianAccessColor(access?: GuardianAccessLevel): "info" | "primary" {
+
   return access === "admin" ? "info" : "primary";
 }
 function participationLabel(member: FamilyMember) {
+
   return t(member.participatesInWeeklyGoal ? "family.weekly.active" : "family.weekly.inactive");
 }
 function progressLabel(member: FamilyMember) {
+
   return t(member.role === "guardian" ? "family.weekly.familyProgress" : "family.weekly.personalProgress");
 }
 function ratingColorFor(memberId: FamilyMemberId): "primary" | "warning" {
+
   return store.averageTaskRatingFor(memberId) >= CONTRIBUTION_RATING.perfect ? "primary" : "warning";
 }
 function setGuardianAccess(memberId: FamilyMemberId, value: unknown) {
+
   if (isGuardianAccessLevel(value)) {
     store.setGuardianAccess(memberId, value);
   }
+
 }
 function inviteGuardian() {
   store.inviteGuardian(invite.name.trim(), invite.email.trim(), invite.guardianAccess);
@@ -264,9 +275,10 @@ function inviteGuardian() {
   invite.guardianAccess = "supporter";
   inviteDialog.value = false;
 }
+onMounted(function callback() {
 
-onMounted(() => {
   if (store.viewerRole !== "child") {
+
     return;
   }
 
@@ -280,11 +292,12 @@ onMounted(() => {
     PAGE_INTRO_GUIDE_DELAY_MS,
   );
 });
+onUnmounted(function callback() {
 
-onUnmounted(() => {
   if (timer !== undefined) {
     window.clearTimeout(timer);
   }
+
 });
 </script>
 

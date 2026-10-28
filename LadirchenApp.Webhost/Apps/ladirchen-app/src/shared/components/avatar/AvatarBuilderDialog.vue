@@ -138,7 +138,6 @@
 <script lang="ts" setup>
 import { computed, defineComponent, h, nextTick, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-
 import AvatarCategoryIcon from "./AvatarCategoryIcon.vue";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import {
@@ -160,10 +159,18 @@ import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@
 import type { AvatarAppearance, GuardianAvatarPreset } from "@/domain/avatar";
 import type { ViewerRole } from "@/domain/family/types";
 import type { AvatarCatalogItemId, AvatarColorOption } from "@/shared/components/avatar/data/avatar-options";
-
+export interface Props {
+  modelValue: boolean;
+  userName: string;
+  initialAppearance?: AvatarAppearance;
+  profileRole?: ViewerRole;
+}
+export interface Emits {
+  "update:modelValue": [value: boolean];
+  save: [appearance: AvatarAppearance];
+}
 type Section = "base" | "face" | "hair" | "outfit" | "extras" | "fun" | "season";
 type PreviewKind = "face" | "faceShape" | "hair" | "outfit" | "accessory" | "fun" | "season";
-
 const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
   accessory: "accessoryId",
   face: "face",
@@ -180,9 +187,9 @@ const ColorPicker = defineComponent({
     label: { type: String, required: true },
   },
   emits: ["update:modelValue"],
-  setup:
-    (colorProps, { emit: colorEmit }) =>
-    () =>
+  setup(this: void, colorProps, { emit: colorEmit }) {
+
+    return () =>
       h("div", { class: "compact-colors" }, [
         h("strong", colorProps.label),
         h(
@@ -196,22 +203,32 @@ const ColorPicker = defineComponent({
               "aria-label": t(option.id),
               "aria-pressed": colorProps.modelValue === option.value,
               style: { background: option.color },
-              onClick: () => colorEmit("update:modelValue", option.value),
+              onClick(this: void) {
+
+                return colorEmit("update:modelValue", option.value);
+              },
             }),
           ),
         ),
-      ]),
+      ]);
+  },
 });
 const OptionGrid = defineComponent({
   props: {
     modelValue: { type: String, required: true },
-    options: { type: Array as () => Array<{ id: AvatarCatalogItemId; value: string }>, required: true },
+    options: {
+      type: Array as () => Array<{
+        id: AvatarCatalogItemId;
+        value: string;
+      }>,
+      required: true,
+    },
     previewKind: { type: String as () => PreviewKind, required: true },
   },
   emits: ["update:modelValue"],
-  setup:
-    (gridProps, { emit: gridEmit }) =>
-    () =>
+  setup(this: void, gridProps, { emit: gridEmit }) {
+
+    return () =>
       h(
         "div",
         { class: "option-grid mt-4" },
@@ -225,94 +242,101 @@ const OptionGrid = defineComponent({
               "data-preview-kind": gridProps.previewKind,
               "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
               "aria-pressed": gridProps.modelValue === option.value,
-              onClick: () => gridEmit("update:modelValue", option.value),
+              onClick(this: void) {
+
+                return gridEmit("update:modelValue", option.value);
+              },
             },
             {
-              default: () => [
-                h("span", { class: "option-art", "aria-hidden": "true" }, [
-                  h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 }),
-                ]),
-                h("strong", t(option.id)),
-                gridProps.modelValue === option.value
-                  ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓")
-                  : null,
-              ],
+              default(this: void) {
+
+                return [
+                  h("span", { class: "option-art", "aria-hidden": "true" }, [
+                    h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 }),
+                  ]),
+                  h("strong", t(option.id)),
+                  gridProps.modelValue === option.value
+                    ? h("span", { class: "option-check", "aria-hidden": "true" }, "✓")
+                    : null,
+                ];
+              },
             },
           ),
         ),
-      ),
+      );
+  },
 });
-
-const props = withDefaults(
-  defineProps<{
-    modelValue: boolean;
-    userName: string;
-    initialAppearance?: AvatarAppearance;
-    profileRole?: ViewerRole;
-  }>(),
-  { profileRole: "child" },
-);
-const emit = defineEmits<{ "update:modelValue": [value: boolean]; save: [appearance: AvatarAppearance] }>();
+const props = withDefaults(defineProps<Props>(), { profileRole: "child" });
+const emit = defineEmits<Emits>();
 const { t } = useI18n();
-
 const section = ref<Section>("base");
-const optionsPanel = ref<HTMLElement | { $el?: HTMLElement }>();
+const optionsPanel = ref<
+  | HTMLElement
+  | {
+      $el?: HTMLElement;
+    }
+>();
 const draft = reactive<AvatarAppearance>(createDefaultAvatarAppearance());
-
 const showGuardianPresets = computed(() => section.value === "base" && props.profileRole === "guardian");
-const categories = computed<Array<{ value: Section; label: string; kicker: string; title: string; hint: string }>>(
-  () => [
-    {
-      value: "base",
-      label: t("avatar.builder.categories.base.label"),
-      kicker: t("avatar.builder.categories.base.kicker"),
-      title: t(`avatar.builder.categories.base.${props.profileRole}Title`),
-      hint: t("avatar.builder.categories.base.hint"),
-    },
-    {
-      value: "face",
-      label: t("avatar.builder.categories.face.label"),
-      kicker: t("avatar.builder.categories.face.kicker"),
-      title: t("avatar.builder.categories.face.title"),
-      hint: t("avatar.builder.categories.face.hint"),
-    },
-    {
-      value: "hair",
-      label: t("avatar.builder.categories.hair.label"),
-      kicker: t("avatar.builder.categories.hair.kicker"),
-      title: t("avatar.builder.categories.hair.title"),
-      hint: t("avatar.builder.categories.hair.hint"),
-    },
-    {
-      value: "outfit",
-      label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`),
-      kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`),
-      title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`),
-      hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`),
-    },
-    {
-      value: "extras",
-      label: t("avatar.builder.categories.extras.label"),
-      kicker: t("avatar.builder.categories.extras.kicker"),
-      title: t("avatar.builder.categories.extras.title"),
-      hint: t("avatar.builder.categories.extras.hint"),
-    },
-    {
-      value: "fun",
-      label: t("avatar.builder.categories.fun.label"),
-      kicker: t("avatar.builder.categories.fun.kicker"),
-      title: t("avatar.builder.categories.fun.title"),
-      hint: t("avatar.builder.categories.fun.hint"),
-    },
-    {
-      value: "season",
-      label: t("avatar.builder.categories.season.label"),
-      kicker: t("avatar.builder.categories.season.kicker"),
-      title: t("avatar.builder.categories.season.title"),
-      hint: t("avatar.builder.categories.season.hint"),
-    },
-  ],
-);
+const categories = computed<
+  Array<{
+    value: Section;
+    label: string;
+    kicker: string;
+    title: string;
+    hint: string;
+  }>
+>(() => [
+  {
+    value: "base",
+    label: t("avatar.builder.categories.base.label"),
+    kicker: t("avatar.builder.categories.base.kicker"),
+    title: t(`avatar.builder.categories.base.${props.profileRole}Title`),
+    hint: t("avatar.builder.categories.base.hint"),
+  },
+  {
+    value: "face",
+    label: t("avatar.builder.categories.face.label"),
+    kicker: t("avatar.builder.categories.face.kicker"),
+    title: t("avatar.builder.categories.face.title"),
+    hint: t("avatar.builder.categories.face.hint"),
+  },
+  {
+    value: "hair",
+    label: t("avatar.builder.categories.hair.label"),
+    kicker: t("avatar.builder.categories.hair.kicker"),
+    title: t("avatar.builder.categories.hair.title"),
+    hint: t("avatar.builder.categories.hair.hint"),
+  },
+  {
+    value: "outfit",
+    label: t(`avatar.builder.categories.outfit.${props.profileRole}Label`),
+    kicker: t(`avatar.builder.categories.outfit.${props.profileRole}Kicker`),
+    title: t(`avatar.builder.categories.outfit.${props.profileRole}Title`),
+    hint: t(`avatar.builder.categories.outfit.${props.profileRole}Hint`),
+  },
+  {
+    value: "extras",
+    label: t("avatar.builder.categories.extras.label"),
+    kicker: t("avatar.builder.categories.extras.kicker"),
+    title: t("avatar.builder.categories.extras.title"),
+    hint: t("avatar.builder.categories.extras.hint"),
+  },
+  {
+    value: "fun",
+    label: t("avatar.builder.categories.fun.label"),
+    kicker: t("avatar.builder.categories.fun.kicker"),
+    title: t("avatar.builder.categories.fun.title"),
+    hint: t("avatar.builder.categories.fun.hint"),
+  },
+  {
+    value: "season",
+    label: t("avatar.builder.categories.season.label"),
+    kicker: t("avatar.builder.categories.season.kicker"),
+    title: t("avatar.builder.categories.season.title"),
+    hint: t("avatar.builder.categories.season.hint"),
+  },
+]);
 const activeCategory = computed(
   () => categories.value.find((category) => category.value === section.value) ?? categories.value[0]!,
 );
@@ -321,7 +345,13 @@ const visibleHairColorOptions = computed(() =>
   props.profileRole === "guardian" ? adultHairColorOptions : hairColorOptions,
 );
 const visibleOutfitOptions = computed(() => (props.profileRole === "guardian" ? adultOutfitOptions : outfitOptions));
-const guardianPresets = computed<Array<{ value: GuardianAvatarPreset; label: string; description: string }>>(() => [
+const guardianPresets = computed<
+  Array<{
+    value: GuardianAvatarPreset;
+    label: string;
+    description: string;
+  }>
+>(() => [
   {
     value: "adult",
     label: t("avatar.builder.presets.adult.label"),
@@ -338,27 +368,32 @@ const guardianPresets = computed<Array<{ value: GuardianAvatarPreset; label: str
     description: t("avatar.builder.presets.grandpa.description"),
   },
 ]);
-const activeGuardianPreset = computed<GuardianAvatarPreset>(() => {
+const activeGuardianPreset = computed<GuardianAvatarPreset>(function callback() {
+
   if (draft.age !== "senior") {
+
     return "adult";
   }
 
   return draft.outfit === "cardigan" ? "grandma" : "grandpa";
 });
-
 function baseAppearance() {
+
   return props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
 }
 function guardianPresetAppearance(preset: GuardianAvatarPreset) {
+
   return {
     ...createGuardianAvatarAppearance(preset),
     skinToneId: draft.skinToneId,
   };
 }
 function selectGuardianPreset(preset: GuardianAvatarPreset) {
+
   return Object.assign(draft, guardianPresetAppearance(preset));
 }
 function previewAppearance(kind: PreviewKind, value: string): AvatarAppearance {
+
   return {
     ...baseAppearance(),
     age: draft.age,
@@ -378,10 +413,12 @@ function randomItem<T>(items: T[]): T {
   return item;
 }
 function resetDraft() {
+
   return Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
 }
 function scrollOptionsToTop() {
-  return void nextTick(() => {
+
+  return void nextTick(function callback() {
     const panel = optionsPanel.value;
     const element = panel instanceof HTMLElement ? panel : panel?.$el;
     element?.scrollTo({ top: 0, behavior: "smooth" });
@@ -392,6 +429,7 @@ function selectSection(value: Section) {
   scrollOptionsToTop();
 }
 function categoryAriaCurrent(value: Section): "page" | undefined {
+
   return section.value === value ? "page" : undefined;
 }
 function randomLook(funny: boolean) {
@@ -410,17 +448,19 @@ function randomLook(funny: boolean) {
   });
 }
 function close() {
+
   return emit("update:modelValue", false);
 }
 function save() {
   emit("save", { ...draft });
   close();
 }
-
 watch(
   () => props.modelValue,
-  (isOpen) => {
+  function callback(isOpen) {
+
     if (!isOpen) {
+
       return;
     }
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { HOUSE_LAYOUT_CONSTRAINTS } from "@/domain/house";
 import type { HouseLayoutPlacement } from "@/domain/house/entities";

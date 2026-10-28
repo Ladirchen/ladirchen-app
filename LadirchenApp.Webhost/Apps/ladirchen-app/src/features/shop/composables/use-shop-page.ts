@@ -3,7 +3,6 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-
 import { FURNITURE_SETS, HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
 import type { FurnitureSetId, HouseAccessoryId, HouseThemeId } from "@/domain/house";
 import { shopRedemptionIsOpen, shopRewardIsPublished } from "@/domain/shop";
@@ -14,17 +13,15 @@ import {
   houseExteriorBackgroundAssetId,
   houseExteriorHouseAssetId,
 } from "@/shared/visuals/house/house-exterior-assets";
-import type { PageViewOption } from "@/shared/components/ui/PageViewSwitch.vue";
+import type { PageViewOption } from "@/shared/components/ui/page-view-option";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { UI_ICONS } from "@/shared/ui-icons";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
 import type { ShopRewardPublicationStatus } from "@/features/shop/shop-view-models";
-
 type HouseCatalogArea = "inside" | "outside" | "special";
 type PublicationMode = "now" | "scheduled" | "hidden";
-
 interface RewardDraft {
   title: string;
   description: string;
@@ -38,22 +35,22 @@ interface RewardDraft {
   unlimited: boolean;
   availableUntil: string;
 }
-
-const createEmptyReward = (): RewardDraft => ({
-  title: "",
-  description: "",
-  icon: "🎁",
-  price: 100,
-  category: "activity",
-  quantity: 1,
-  conditions: "",
-  publicationMode: "now",
-  availableFrom: "",
-  unlimited: true,
-  availableUntil: "",
-});
-
-export const useShopPage = () => {
+function createEmptyReward(): RewardDraft {
+  return {
+    title: "",
+    description: "",
+    icon: "🎁",
+    price: 100,
+    category: "activity",
+    quantity: 1,
+    conditions: "",
+    publicationMode: "now",
+    availableFrom: "",
+    unlimited: true,
+    availableUntil: "",
+  };
+}
+export function useShopPage() {
   const store = useFamilyWorldStore();
   const route = useRoute();
   const { locale, t } = useI18n();
@@ -107,7 +104,12 @@ export const useShopPage = () => {
   const catalogItemsTitle = computed(() =>
     t(houseArea.value === "special" ? "shop.catalog.items.specialTitle" : "shop.catalog.items.title"),
   );
-  const categoryOptions = computed<Array<{ title: string; value: ShopRewardCategory }>>(() => [
+  const categoryOptions = computed<
+    Array<{
+      title: string;
+      value: ShopRewardCategory;
+    }>
+  >(() => [
     { title: t("shop.categories.time"), value: "time" },
     { title: t("shop.categories.activity"), value: "activity" },
     { title: t("shop.categories.allowance"), value: "allowance" },
@@ -115,7 +117,12 @@ export const useShopPage = () => {
     { title: t("shop.categories.privilege"), value: "privilege" },
     { title: t("shop.categories.custom"), value: "custom" },
   ]);
-  const publicationModeOptions = computed<Array<{ title: string; value: PublicationMode }>>(() => [
+  const publicationModeOptions = computed<
+    Array<{
+      title: string;
+      value: PublicationMode;
+    }>
+  >(() => [
     { title: t("shop.publication.now"), value: "now" },
     { title: t("shop.publication.scheduled"), value: "scheduled" },
     { title: t("shop.publication.hidden"), value: "hidden" },
@@ -148,9 +155,11 @@ export const useShopPage = () => {
       if (houseArea.value === "special") {
         return accessory.category === "special";
       }
+
       if (accessory.category === "special") {
         return false;
       }
+
       return accessory.placement === houseArea.value;
     }),
   );
@@ -165,16 +174,27 @@ export const useShopPage = () => {
   const previewHouseStage = computed(
     () => HOUSE_STAGES.find((stage) => stage.level === store.houseLevel) ?? HOUSE_STAGES[0]!,
   );
-  const houseThemePreviewUrls = reactive<Record<HouseThemeId, { backgroundUrl?: string; houseUrl?: string }>>(
+  const houseThemePreviewUrls = reactive<
+    Record<
+      HouseThemeId,
+      {
+        backgroundUrl?: string;
+        houseUrl?: string;
+      }
+    >
+  >(
     Object.fromEntries(HOUSE_THEMES.map((theme) => [theme.id, {}])) as Record<
       HouseThemeId,
-      { backgroundUrl?: string; houseUrl?: string }
+      {
+        backgroundUrl?: string;
+        houseUrl?: string;
+      }
     >,
   );
   watch(
     previewHouseStage,
     (stage) => {
-      HOUSE_THEMES.forEach(async (theme) => {
+      HOUSE_THEMES.forEach(async function callback(theme) {
         const [backgroundUrl, houseUrl] = await Promise.all([
           getHouseExteriorAssetUrl(houseExteriorBackgroundAssetId(theme.id, 100)),
           getHouseExteriorAssetUrl(houseExteriorHouseAssetId(stage.id, theme.id)),
@@ -184,34 +204,51 @@ export const useShopPage = () => {
     },
     { immediate: true },
   );
-  const editionPreviewBackground = (themeId: HouseThemeId) => houseThemePreviewUrls[themeId]?.backgroundUrl;
-  const editionPreviewHouse = (themeId: HouseThemeId) => houseThemePreviewUrls[themeId]?.houseUrl;
-  const setPreviewAccessories = (accessoryIds: ReadonlyArray<HouseAccessoryId>) =>
-    accessoryIds
+  function editionPreviewBackground(themeId: HouseThemeId) {
+    return houseThemePreviewUrls[themeId]?.backgroundUrl;
+  }
+  function editionPreviewHouse(themeId: HouseThemeId) {
+    return houseThemePreviewUrls[themeId]?.houseUrl;
+  }
+  function setPreviewAccessories(accessoryIds: ReadonlyArray<HouseAccessoryId>) {
+    return accessoryIds
       .slice(0, 3)
       .map((id) => store.accessories.find((accessory) => accessory.id === id))
       .filter((accessory) => accessory !== undefined);
-  const ownsEdition = (id: HouseThemeId) => store.ownedHouseThemeIds.includes(id);
-  const ownsSet = (id: FurnitureSetId) => store.ownedFurnitureSetIds.includes(id);
+  }
+  function ownsEdition(id: HouseThemeId) {
+    return store.ownedHouseThemeIds.includes(id);
+  }
+  function ownsSet(id: FurnitureSetId) {
+    return store.ownedFurnitureSetIds.includes(id);
+  }
   function canAfford(price: number) {
     return price <= store.availableBalance;
   }
   const redemptionOpen = computed(() => shopRedemptionIsOpen(store.familyTimeZone, currentTime.value));
-  const canRequest = (reward: ShopReward) =>
-    redemptionOpen.value &&
-    canAfford(reward.price) &&
-    reward.quantity > 0 &&
-    shopRewardIsPublished(reward, store.familyTimeZone, currentTime.value);
-  const rewardIsScheduled = (reward: ShopReward) =>
-    Boolean(reward.isVisible !== false && reward.availableFrom && reward.availableFrom > minimumAvailableDate.value);
-  const formatCalendarDate = (date: string) =>
-    DateTime.fromISO(date)
+  function canRequest(reward: ShopReward) {
+    return (
+      redemptionOpen.value &&
+      canAfford(reward.price) &&
+      reward.quantity > 0 &&
+      shopRewardIsPublished(reward, store.familyTimeZone, currentTime.value)
+    );
+  }
+  function rewardIsScheduled(reward: ShopReward) {
+    return Boolean(
+      reward.isVisible !== false && reward.availableFrom && reward.availableFrom > minimumAvailableDate.value,
+    );
+  }
+  function formatCalendarDate(date: string) {
+    return DateTime.fromISO(date)
       .setLocale(locale.value === "en" ? "en-GB" : "de-CH")
       .toLocaleString({ day: "2-digit", month: "2-digit", year: "numeric" });
-  const rewardPublicationStatus = (reward: ShopReward): ShopRewardPublicationStatus => {
+  }
+  function rewardPublicationStatus(reward: ShopReward): ShopRewardPublicationStatus {
     if (reward.isVisible === false) {
       return { icon: "i-mdi:eye-off-outline", label: t("shop.publication.hiddenStatus"), tone: "hidden" };
     }
+
     if (rewardIsScheduled(reward)) {
       return {
         icon: "i-mdi:calendar-clock-outline",
@@ -219,12 +256,14 @@ export const useShopPage = () => {
         tone: "scheduled",
       };
     }
+
     if (reward.availableUntil && !calendarDateIsWithin(minimumAvailableDate.value, undefined, reward.availableUntil)) {
       return { icon: "i-mdi:calendar-remove-outline", label: t("shop.publication.expired"), tone: "expired" };
     }
+
     return { icon: "i-mdi:eye-outline", label: t("shop.publication.visible"), tone: "visible" };
-  };
-  const addReward = () => {
+  }
+  function addReward() {
     store.addShopReward({
       title: newReward.title.trim(),
       description: newReward.description.trim(),
@@ -239,17 +278,18 @@ export const useShopPage = () => {
     });
     Object.assign(newReward, createEmptyReward());
     rewardDialog.value = false;
-  };
-  const confirmRewardDeletion = () => {
+  }
+  function confirmRewardDeletion() {
     if (!rewardToDelete.value) {
       return;
     }
+
     store.deleteShopReward(rewardToDelete.value.id);
     rewardToDelete.value = null;
-  };
+  }
   watch(
     () => route.query.new,
-    (value) => {
+    function callback(value) {
       if (value === "1" && store.permissions.canManageContent) {
         activeTab.value = "family";
         rewardDialog.value = true;
@@ -268,8 +308,7 @@ export const useShopPage = () => {
     PAGE_INTRO_GUIDE_DELAY_MS,
     { immediate: false },
   );
-
-  onMounted(() => {
+  onMounted(function callback() {
     if (store.viewerRole === "child") {
       startPageIntroGuide();
     }
@@ -308,4 +347,4 @@ export const useShopPage = () => {
     visibleAccessories,
     visibleFurnitureSets,
   };
-};
+}

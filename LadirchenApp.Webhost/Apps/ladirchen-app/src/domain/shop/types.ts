@@ -2,7 +2,7 @@ import type { ShopRewardTranslationNamespaceKey } from "@/locales/translation-ke
 import type { FamilyMemberId, ShopRewardId } from "@/domain/shared/identifiers";
 
 export const SHOP_REWARD_STATUSES = ["available", "requested", "redeemed"] as const;
-export type ShopRewardStatus = typeof SHOP_REWARD_STATUSES[number];
+export type ShopRewardStatus = (typeof SHOP_REWARD_STATUSES)[number];
 export type ShopRewardCategory = "time" | "activity" | "allowance" | "gift" | "privilege" | "custom";
 
 export interface ShopReward {

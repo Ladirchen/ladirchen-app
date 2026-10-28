@@ -485,3 +485,4 @@ $RECYCLE.BIN/
 .artifacts/
 .tools/
 
+node_modules

@@ -9,50 +9,64 @@ import type { TranslationField, TranslationKey, TranslationNamespaceKey } from "
 
 type TranslatableEntity<Namespace extends TranslationNamespaceKey> = { readonly translationKey?: Namespace };
 
-export const useLocalizedDomainContent = () => {
-  const { t, te } = useI18n();
+export function useLocalizedDomainContent() {
+  const i18n = useI18n();
 
-  const resolveField = <
-    Namespace extends TranslationNamespaceKey,
-    Field extends TranslationField<Namespace>,
-  >(entity: TranslatableEntity<Namespace>, field: Field, fallback: string): string => {
+  function resolveField<Namespace extends TranslationNamespaceKey, Field extends TranslationField<Namespace>>(
+    entity: TranslatableEntity<Namespace>,
+    field: Field,
+    fallback: string,
+  ): string {
     const key = entity.translationKey ? appendTranslationKey(entity.translationKey, field) : undefined;
-    return key && te(key) ? t(key) : fallback;
-  };
 
-  const resolveKey = (key: TranslationKey | undefined, fallback: string, params?: Record<string, number | string>): string =>
-    key && te(key) ? t(key, params ?? {}) : fallback;
+    return key && i18n.te(key) ? i18n.t(key) : fallback;
+  }
 
-  const contribution = (item: Contribution): Contribution => ({
-    ...item,
-    title: resolveField(item, "title", item.title),
-    description: resolveField(item, "description", item.description),
-    area: resolveKey(item.areaKey, resolveField(item, "area", item.area)),
-    dueLabel: resolveKey(item.dueLabelKey, resolveField(item, "dueLabel", item.dueLabel)),
-  });
+  function resolveKey(
+    key: TranslationKey | undefined,
+    fallback: string,
+    params?: Record<string, number | string>,
+  ): string {
+    return key && i18n.te(key) ? i18n.t(key, params ?? {}) : fallback;
+  }
 
-  const goal = (item: SavingGoal): SavingGoal => ({
-    ...item,
-    title: resolveField(item, "title", item.title),
-  });
+  function contribution(item: Contribution): Contribution {
+    return {
+      ...item,
+      title: resolveField(item, "title", item.title),
+      description: resolveField(item, "description", item.description),
+      area: resolveKey(item.areaKey, resolveField(item, "area", item.area)),
+      dueLabel: resolveKey(item.dueLabelKey, resolveField(item, "dueLabel", item.dueLabel)),
+    };
+  }
 
-  const promotion = (item: Promotion): Promotion => ({
-    ...item,
-    title: resolveKey(item.titleKey, resolveField(item, "title", item.title), { multiplier: item.multiplier }),
-  });
+  function goal(item: SavingGoal): SavingGoal {
+    return { ...item, title: resolveField(item, "title", item.title) };
+  }
 
-  const reward = (item: ShopReward): ShopReward => ({
-    ...item,
-    title: resolveField(item, "title", item.title),
-    description: resolveField(item, "description", item.description),
-    conditions: resolveField(item, "conditions", item.conditions),
-  });
+  function promotion(item: Promotion): Promotion {
+    return {
+      ...item,
+      title: resolveKey(item.titleKey, resolveField(item, "title", item.title), { multiplier: item.multiplier }),
+    };
+  }
 
-  const accessory = (item: HouseAccessory): HouseAccessory => ({
-    ...item,
-    title: resolveField(item, "title", item.title),
-    description: resolveField(item, "description", item.description),
-  });
+  function reward(item: ShopReward): ShopReward {
+    return {
+      ...item,
+      title: resolveField(item, "title", item.title),
+      description: resolveField(item, "description", item.description),
+      conditions: resolveField(item, "conditions", item.conditions),
+    };
+  }
+
+  function accessory(item: HouseAccessory): HouseAccessory {
+    return {
+      ...item,
+      title: resolveField(item, "title", item.title),
+      description: resolveField(item, "description", item.description),
+    };
+  }
 
   return { accessory, contribution, goal, promotion, reward };
-};
+}

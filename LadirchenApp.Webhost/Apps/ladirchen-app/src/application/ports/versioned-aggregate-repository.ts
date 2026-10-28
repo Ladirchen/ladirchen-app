@@ -1,4 +1,8 @@
-import type { FamilyAggregateType, SaveVersionedAggregateCommand, VersionedAggregateSnapshot } from "@/application/contracts/versioned-aggregate-contract";
+import type {
+  FamilyAggregateType,
+  SaveVersionedAggregateCommand,
+  VersionedAggregateSnapshot,
+} from "@/application/contracts/versioned-aggregate-contract";
 import type { FamilyId } from "@/domain/shared/identifiers";
 
 export class AggregateConflictError extends Error {
@@ -14,5 +18,7 @@ export interface VersionedAggregateRepository<
   TState,
 > {
   load: (familyId: FamilyId) => Promise<VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState> | null>;
-  save: (command: SaveVersionedAggregateCommand<TAggregateType, TState>) => Promise<VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState>>;
+  save: (
+    command: SaveVersionedAggregateCommand<TAggregateType, TState>,
+  ) => Promise<VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState>>;
 }

@@ -10,7 +10,10 @@
 </template>
 
 <script lang="ts" setup>
-withDefaults(defineProps<{ size?: number }>(), { size: 88 });
+export interface Props {
+  size?: number;
+}
+withDefaults(defineProps<Props>(), { size: 88 });
 </script>
 
 <style lang="scss" scoped>

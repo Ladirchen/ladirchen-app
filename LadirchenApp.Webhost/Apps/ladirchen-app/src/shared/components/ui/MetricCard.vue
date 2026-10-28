@@ -5,18 +5,15 @@
 </template>
 
 <script lang="ts" setup>
+export interface Props {
+  compact?: boolean;
+  tone?: MetricCardTone;
+}
 export type MetricCardTone = "balance" | "bonus" | "energy" | "info" | "neutral" | "reward" | "streak";
-
-withDefaults(
-  defineProps<{
-    compact?: boolean;
-    tone?: MetricCardTone;
-  }>(),
-  {
-    compact: false,
-    tone: "neutral",
-  },
-);
+withDefaults(defineProps<Props>(), {
+  compact: false,
+  tone: "neutral",
+});
 </script>
 
 <style lang="scss" scoped>

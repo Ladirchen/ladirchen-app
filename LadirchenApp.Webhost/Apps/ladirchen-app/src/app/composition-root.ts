@@ -11,19 +11,17 @@ import { browserClientStorage } from "@/infrastructure/storage/browser-client-st
 import { browserScheduler } from "@/infrastructure/scheduling/browser-scheduler";
 import { createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-world-fixtures";
 import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
+function createRepositories(): FamilyAggregateRepositories {
 
-const createRepositories = (): FamilyAggregateRepositories =>
-  frontendRuntimeConfig.dataSource === "api"
+  return frontendRuntimeConfig.dataSource === "api"
     ? createHttpFamilyAggregateRepositories(frontendRuntimeConfig.apiBaseUrl)
     : createLocalStorageFamilyAggregateRepositories();
-
+}
 const repositories = createRepositories();
 const initialDataFactory = { create: createFamilyWorldInitialData };
-
 export const familyContext = localFamilyContext;
 export const authenticationGateway = createLocalAuthenticationGateway(browserClientStorage);
 export const localeMessagesSource = createBundledLocaleMessagesSource();
-
 export const homeCustomizationService = new VersionedAggregateService(
   FAMILY_AGGREGATE_DESCRIPTORS.homeCustomization.aggregateType,
   repositories.homeCustomization,
@@ -48,7 +46,6 @@ export const familyProgressionService = new VersionedAggregateService(
   FAMILY_AGGREGATE_DESCRIPTORS.familyProgression.aggregateType,
   repositories.familyProgression,
 );
-
 export const familyWorldDependencies: FamilyWorldDependencies = {
   clientStorage: browserClientStorage,
   contributionsService,

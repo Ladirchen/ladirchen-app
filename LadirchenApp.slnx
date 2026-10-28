@@ -3,26 +3,28 @@
     <Project Path="build/Build.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
-    <File Path=".dockerignore" />
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
     <File Path="Build.GitVersion.props" />
     <File Path="Build.NSwag.props" />
+    <File Path="Directory.Build.props" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="Tiltfile" />
     <File Path="build.ps1" />
     <File Path="build.sh" />
     <File Path="global.json" />
-    <File Path="LICENSE" />
     <File Path="nuget.config" />
     <File Path="package.json" />
     <File Path="pnpm-lock.yaml" />
     <File Path="pnpm-workspace.yaml" />
-    <File Path="README.md" />
-    <File Path="Tiltfile" />
   </Folder>
   <Folder Name="/Solution Items/.config/">
     <File Path=".config/dotnet-tools.json" />
   </Folder>
+  <Folder Name="/Solution Items/.github/" />
   <Folder Name="/Solution Items/.github/workflows/">
     <File Path=".github/workflows/build.yml" />
   </Folder>
@@ -91,5 +93,8 @@
   <Folder Name="/Solution Items/docs/domain/">
     <File Path="docs/domain/event-storming.md" />
   </Folder>
+  <Project Path="LadirchenApp.Domain.Tests/LadirchenApp.Domain.Tests.csproj" />
+  <Project Path="LadirchenApp.Domain/LadirchenApp.Domain.csproj" />
+  <Project Path="LadirchenApp.Prototypes/LadirchenApp.Prototypes.csproj" />
   <Project Path="LadirchenApp.Webhost/LadirchenApp.Webhost.csproj" />
 </Solution>

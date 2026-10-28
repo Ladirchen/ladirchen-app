@@ -1,6 +1,5 @@
 import { ref, watch } from "vue";
 import type { ComputedRef, Ref } from "vue";
-
 /** Resolves an async asset URL reactively; keeps the previous URL visible while the next one loads. */
 export function useLazyAssetUrl<T>(
   source: Ref<T | undefined> | ComputedRef<T | undefined>,
@@ -10,18 +9,24 @@ export function useLazyAssetUrl<T>(
   let requestId = 0;
   watch(
     source,
-    async (value) => {
+    async function callback(value) {
       const currentRequest = ++requestId;
+
       if (value === undefined) {
         url.value = undefined;
+
         return;
       }
+
       const resolvedUrl = await resolve(value);
+
       if (currentRequest === requestId) {
         url.value = resolvedUrl;
       }
+
     },
     { immediate: true },
   );
+
   return url;
 }

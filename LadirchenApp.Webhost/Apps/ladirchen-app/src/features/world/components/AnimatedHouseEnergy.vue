@@ -33,9 +33,11 @@
 
 <script lang="ts" setup>
 import { computed } from "vue";
-
-const props = withDefaults(defineProps<{ size?: number }>(), { size: 82 });
-const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.round(props.size * .89)}px` }));
+export interface Props {
+  size?: number;
+}
+const props = withDefaults(defineProps<Props>(), { size: 82 });
+const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.round(props.size * 0.89)}px` }));
 </script>
 
 <style lang="scss" scoped>
@@ -43,7 +45,6 @@ const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${Math.ro
 .animated-house-energy {
   --uno: d-inline-grid place-center;
   flex: 0 0 auto;
-
 }
 svg {
   --uno: w-100 h-100 d-block overflow-visible;
@@ -63,9 +64,7 @@ svg {
   animation: shadow-breathe 4.2s ease-in-out infinite;
 }
 .house-illustration {
-  filter: drop-shadow(
-    0 3px 2px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent)
-  );
+  filter: drop-shadow(0 3px 2px color-mix(in srgb, var(--lad-palette-orange-750) 18%, transparent));
 }
 .house-body {
   fill: var(--lad-palette-amber-100);
@@ -181,9 +180,7 @@ svg {
   }
   43% {
     transform: scale(1.24);
-    filter: drop-shadow(
-      0 0 5px color-mix(in srgb, var(--lad-palette-yellow) 90%, transparent)
-    );
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--lad-palette-yellow) 90%, transparent));
   }
   50% {
     transform: scale(1.06);

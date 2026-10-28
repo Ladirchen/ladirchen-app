@@ -20,32 +20,35 @@
 
 ## TypeScript (`.ts` and `.vue` files)
 
-- Use named function declarations for top-level methods and multi-line logic. Use arrow functions only for one-line callbacks passed inline (e.g., array methods, event handlers under 3 lines).
+- Use named function declarations for top-level methods and reusable logic.
+- Use arrow functions for inline callbacks, including multi-line callbacks. Do not use anonymous `function` expressions for callbacks; named functions may be used as callbacks.
 - Always use braces for control-flow bodies, including single-statement bodies.
-- Put a blank line before and after `if`/`else`, `try`/`catch`/`finally`, `for`, and `while` constructs.
-- Put a blank line before `return`, unless it is the only statement in its block.
+- Add a blank line before and after TypeScript control-flow block constructs, including `if`/`else`, `for`, `foreach` (`for...of`/`for...in`), `while`, and `try`/`catch`/`finally`. Do not add a leading blank line when the construct is the sole statement in its enclosing block.
+- Add a blank line before TypeScript `return` statements, except when the `return` is the sole statement in its enclosing block; do not add a leading blank line in that case.
 
 ## Vue Components
 
 - In `<script setup>`, keep imports first, then group declarations in this order: local `const` declarations, native `let`/`var` declarations, Vue composable calls (`use...`), refs, computed values, function declarations, and lifecycle callbacks (`onMounted`, etc.). Preserve required initialization dependencies when they prevent this order. Example:
 
   ```ts
-  import { computed, onMounted, ref } from 'vue'
-  import { useStore } from '@/stores/example'
+  import { computed, onMounted, ref } from "vue";
+  import { useStore } from "@/stores/example";
 
-  const MAX_ITEMS = 10 // local const
-  let cache // native let/var
-  const store = useStore() // composable call
-  const items = ref<Item[]>([]) // ref
-  const visibleItems = computed(() => items.value.slice(0, MAX_ITEMS)) // computed
+  const MAX_ITEMS = 10; // local const
+  let cache; // native let/var
+  const store = useStore(); // composable call
+  const items = ref<Item[]>([]); // ref
+  const visibleItems = computed(() => items.value.slice(0, MAX_ITEMS)); // computed
 
-  function loadItems() { // function declaration
+  function loadItems() {
+    // function declaration
     // ...
   }
 
-  onMounted(() => { // lifecycle callback
-    loadItems()
-  })
+  onMounted(() => {
+    // lifecycle callback
+    loadItems();
+  });
 
   // Override: if `cache` must exist before `store` can be constructed,
   // declare `cache` immediately before the composable call that needs it.

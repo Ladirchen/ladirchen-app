@@ -12,7 +12,6 @@ import type {
 import { createDomainId } from "@/domain/shared/identifiers";
 import type { HouseAccessory, HouseLayoutPlacement } from "./entities";
 import { houseRoomColorPalette, houseThemeColorPalette } from "@/theme/color-palette";
-
 export const HOUSE_STAGES: HouseStageDefinition[] = [
   { id: "starter-home", level: 0, nameKey: "catalog.stages.starter-home", icon: "🏠", rooms: 2 },
   { id: "family-home", level: 1, nameKey: "catalog.stages.family-home", icon: "🏡", rooms: 4 },
@@ -20,9 +19,7 @@ export const HOUSE_STAGES: HouseStageDefinition[] = [
   { id: "tower-home", level: 3, nameKey: "catalog.stages.tower-home", icon: "🏰", rooms: 10 },
   { id: "dream-home", level: 4, nameKey: "catalog.stages.dream-home", icon: "👑", rooms: 12 },
 ];
-
 export const DEFAULT_HOUSE_STAGE = HOUSE_STAGES[0]!;
-
 export const HOUSE_ROOMS: ReadonlyArray<HouseRoomDefinition> = [
   {
     id: "living-room",
@@ -109,7 +106,6 @@ export const HOUSE_ROOMS: ReadonlyArray<HouseRoomDefinition> = [
     ...houseRoomColorPalette.makeupRoom,
   },
 ];
-
 export const FURNITURE_SETS: ReadonlyArray<FurnitureSetDefinition> = [
   {
     id: "cozy-living-set",
@@ -212,20 +208,20 @@ export const FURNITURE_SETS: ReadonlyArray<FurnitureSetDefinition> = [
     accessoryIds: ["candy-cloud-bushes", "candy-striped-fence"],
   },
 ];
-
 type HouseThemeSeed = Omit<HouseThemeDefinition, "descriptionKey" | "kind" | "nameKey" | "ownedByDefault"> & {
   readonly kind?: HouseThemeDefinition["kind"];
   readonly ownedByDefault?: boolean;
 };
+export function defineHouseTheme(seed: HouseThemeSeed): HouseThemeDefinition {
 
-export const defineHouseTheme = (seed: HouseThemeSeed): HouseThemeDefinition => ({
-  ...seed,
-  descriptionKey: `catalog.themes.${seed.id}.description`,
-  kind: seed.kind ?? "standard",
-  nameKey: `catalog.themes.${seed.id}.name`,
-  ownedByDefault: seed.ownedByDefault ?? false,
-});
-
+  return {
+    ...seed,
+    descriptionKey: `catalog.themes.${seed.id}.description`,
+    kind: seed.kind ?? "standard",
+    nameKey: `catalog.themes.${seed.id}.name`,
+    ownedByDefault: seed.ownedByDefault ?? false,
+  };
+}
 export const HOUSE_THEMES: HouseThemeDefinition[] = [
   defineHouseTheme({
     id: "sunny-dollhouse",
@@ -264,11 +260,11 @@ export const HOUSE_THEMES: HouseThemeDefinition[] = [
   }),
   // design-generator:house-theme-definition
 ];
-
 export interface HouseAccessoryDefinition extends HouseAccessory {
-  readonly defaultPlacement: Required<FurniturePlacement> & { readonly zoneId: HouseZoneId };
+  readonly defaultPlacement: Required<FurniturePlacement> & {
+    readonly zoneId: HouseZoneId;
+  };
 }
-
 type HouseAccessorySeed = Omit<
   HouseAccessory,
   | "category"
@@ -291,17 +287,19 @@ type HouseAccessorySeed = Omit<
   readonly owned?: boolean;
   readonly visual: FurnitureVisualId;
 };
-
-type IndoorFurnitureSeed = HouseAccessorySeed & { readonly roomId: HouseRoomId };
-type OutdoorAccessorySeed = HouseAccessorySeed & { readonly category?: Exclude<HouseAccessoryCategory, "furniture"> };
-
-const defineHouseAccessory = (
+type IndoorFurnitureSeed = HouseAccessorySeed & {
+  readonly roomId: HouseRoomId;
+};
+type OutdoorAccessorySeed = HouseAccessorySeed & {
+  readonly category?: Exclude<HouseAccessoryCategory, "furniture">;
+};
+function defineHouseAccessory(
   seed: HouseAccessorySeed,
   placement: HouseAccessory["placement"],
   zoneId: HouseZoneId,
   category: HouseAccessoryCategory,
   roomId?: HouseRoomId,
-): HouseAccessoryDefinition => {
+): HouseAccessoryDefinition {
   const {
     defaultPlacement,
     equipped = false,
@@ -311,6 +309,7 @@ const defineHouseAccessory = (
     owned = false,
     ...accessory
   } = seed;
+
   return {
     ...accessory,
     category,
@@ -326,14 +325,15 @@ const defineHouseAccessory = (
     title: "",
     translationKey: `catalog.accessories.${seed.id}`,
   };
-};
+}
+export function defineIndoorFurniture(seed: IndoorFurnitureSeed): HouseAccessoryDefinition {
 
-export const defineIndoorFurniture = (seed: IndoorFurnitureSeed): HouseAccessoryDefinition =>
-  defineHouseAccessory(seed, "inside", seed.roomId, "furniture", seed.roomId);
+  return defineHouseAccessory(seed, "inside", seed.roomId, "furniture", seed.roomId);
+}
+export function defineOutdoorAccessory(seed: OutdoorAccessorySeed): HouseAccessoryDefinition {
 
-export const defineOutdoorAccessory = (seed: OutdoorAccessorySeed): HouseAccessoryDefinition =>
-  defineHouseAccessory(seed, "outside", "garden", seed.category ?? "garden");
-
+  return defineHouseAccessory(seed, "outside", "garden", seed.category ?? "garden");
+}
 export const HOUSE_ACCESSORY_DEFINITIONS: ReadonlyArray<HouseAccessoryDefinition> = [
   defineOutdoorAccessory({
     id: "flower-boxes",
@@ -659,17 +659,20 @@ export const HOUSE_ACCESSORY_DEFINITIONS: ReadonlyArray<HouseAccessoryDefinition
   }),
   // design-generator:house-accessory-definition
 ];
+export function createHouseAccessories(): HouseAccessory[] {
 
-export const createHouseAccessories = (): HouseAccessory[] =>
-  HOUSE_ACCESSORY_DEFINITIONS.map((definition) => {
+  return HOUSE_ACCESSORY_DEFINITIONS.map(function callback(definition) {
     const { defaultPlacement: _defaultPlacement, ...accessory } = definition;
+
     return { ...accessory };
   });
+}
+export function createHouseAccessoryLayoutPlacements(): HouseLayoutPlacement[] {
 
-export const createHouseAccessoryLayoutPlacements = (): HouseLayoutPlacement[] =>
-  HOUSE_ACCESSORY_DEFINITIONS.map(({ defaultPlacement, id }) => ({
+  return HOUSE_ACCESSORY_DEFINITIONS.map(({ defaultPlacement, id }) => ({
     id: createDomainId.houseLayoutPlacement(`furniture-${id}`),
     entityId: id,
     entityType: "furniture",
     ...defaultPlacement,
   }));
+}

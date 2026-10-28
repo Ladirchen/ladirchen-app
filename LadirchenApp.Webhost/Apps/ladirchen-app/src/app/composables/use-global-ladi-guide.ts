@@ -2,7 +2,6 @@ import { useStorage } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 import type { TranslationKey } from "@/locales/translation-keys";
@@ -19,10 +18,8 @@ import {
   LADI_GUIDE_REDUCED_MOTION_PROMPT_DELAY_MS,
   LADI_GUIDE_STANDARD_PROMPT_DELAY_MS,
 } from "@/shared/runtime-timing";
-
 type GuideMood = "gentle" | "calm" | "happy";
-
-export const useGlobalLadiGuide = () => {
+export function useGlobalLadiGuide() {
   const store = useFamilyWorldStore();
   const route = useRoute();
   const { t } = useI18n();
@@ -34,9 +31,11 @@ export const useGlobalLadiGuide = () => {
   const mood = useStorage<GuideMood>(moodStorageKey, "calm", browserClientStorage, {
     serializer: {
       read(value) {
+
         return value === "gentle" || value === "happy" || value === "calm" ? value : "calm";
       },
       write(value) {
+
         return value;
       },
     },
@@ -45,9 +44,11 @@ export const useGlobalLadiGuide = () => {
   const hiddenPreference = useStorage<boolean | null>(hiddenStorageKey, null, browserClientStorage, {
     serializer: {
       read(value) {
+
         return value === "true" ? true : null;
       },
       write(value) {
+
         return value ? "true" : "false";
       },
     },
@@ -55,8 +56,11 @@ export const useGlobalLadiGuide = () => {
   });
   const randomMotion = ref("");
   const isHidden = computed({
-    get: () => hiddenPreference.value === true,
-    set: (value) => {
+    get(this: void) {
+
+      return hiddenPreference.value === true;
+    },
+    set(this: void, value) {
       hiddenPreference.value = value ? true : null;
     },
   });
@@ -73,13 +77,26 @@ export const useGlobalLadiGuide = () => {
   let initialMoodTimer: number | undefined;
   let celebrationTimer: number | undefined;
   let unsubscribeGuide: (() => void) | undefined;
-
-  const moodOptions = computed<ReadonlyArray<{ id: GuideMood; icon: string; label: string }>>(() => [
+  const moodOptions = computed<
+    ReadonlyArray<{
+      id: GuideMood;
+      icon: string;
+      label: string;
+    }>
+  >(() => [
     { id: "gentle", icon: "😌", label: t("guide.mood.gentle") },
     { id: "calm", icon: "🙂", label: t("guide.mood.calm") },
     { id: "happy", icon: "😄", label: t("guide.mood.happy") },
   ]);
-  const pageMessages = computed<Record<string, { heading: string; message: string }>>(() => ({
+  const pageMessages = computed<
+    Record<
+      string,
+      {
+        heading: string;
+        message: string;
+      }
+    >
+  >(() => ({
     "/": { heading: t("guide.pages.world.heading"), message: t("guide.pages.world.message") },
     "/contributions": {
       heading: t("guide.pages.contributions.heading"),
@@ -90,32 +107,36 @@ export const useGlobalLadiGuide = () => {
     "/family": { heading: t("guide.pages.family.heading"), message: t("guide.pages.family.message") },
     "/profile": { heading: t("guide.pages.profile.heading"), message: t("guide.pages.profile.message") },
   }));
-  const fallbackPageMessage = () => ({ heading: t("guide.defaultHeading"), message: t("guide.defaultMessage") });
+  function fallbackPageMessage() {
 
+    return { heading: t("guide.defaultHeading"), message: t("guide.defaultMessage") };
+  }
   const ladiScores: Record<GuideMood, number> = { calm: 3.7, gentle: 2.8, happy: 4.6 };
   const ladiScore = computed(() => ladiScores[mood.value]);
   const speechHeading = computed(
     () => customHeading.value || (mood.value === "gentle" ? t("guide.gentleHeading") : t("guide.defaultHeading")),
   );
-  const clearSpeechTimer = () => {
+  function clearSpeechTimer() {
+
     if (speechTimer !== undefined) {
       window.clearTimeout(speechTimer);
     }
+
     speechTimer = undefined;
-  };
-  const closeSpeech = () => {
+  }
+  function closeSpeech() {
     speech.value = "";
     isSmart.value = false;
     speechProgress.value = "";
     speechActionLabel.value = "";
     speechActionId.value = undefined;
-  };
-  const showSpeech = (
+  }
+  function showSpeech(
     message: string,
     heading = "",
     smart = false,
     detail?: Pick<LadiGuideMessage, "progress" | "actionLabel" | "actionId" | "celebration">,
-  ) => {
+  ) {
     clearSpeechTimer();
     choosingMood.value = false;
     isSmart.value = smart;
@@ -124,51 +145,73 @@ export const useGlobalLadiGuide = () => {
     speechActionId.value = detail?.actionId;
     customHeading.value = heading;
     speech.value = message;
+
     if (detail?.celebration === "gift") {
       giftCelebration.value = true;
       randomMotion.value = "does-highfive";
+
       if (celebrationTimer !== undefined) {
         window.clearTimeout(celebrationTimer);
       }
-      celebrationTimer = window.setTimeout(() => {
+
+      celebrationTimer = window.setTimeout(function callback() {
         giftCelebration.value = false;
         randomMotion.value = "";
       }, LADI_GUIDE_CELEBRATION_DURATION_MS);
     }
+
     if (!smart) {
       speechTimer = window.setTimeout(closeSpeech, LADI_GUIDE_DEFAULT_SPEECH_DURATION_MS);
     }
-  };
-  const triggerSpeechAction = () => {
+
+  }
+  function triggerSpeechAction() {
+
     if (!speechActionId.value) {
+
       return;
     }
+
     ladiGuideController.trigger(speechActionId.value);
-  };
-  const speakCurrentPageIntro = () => {
+  }
+  function speakCurrentPageIntro() {
+
     if (choosingMood.value) {
+
       return;
     }
+
     if (store.piggyBankOpen) {
       showSpeech(t("guide.balance.message"), t("guide.balance.heading"), true);
+
       return;
     }
+
     const fallback = pageMessages.value[route.path] ?? fallbackPageMessage();
+
     if (route.path === "/wishes") {
       showSpeech(pageIntroMessage.value || fallback.message, pageIntroHeading.value || fallback.heading, true, {
         progress: "1 / 6",
         actionLabel: t("common.next"),
         actionId: "savings-interest:start",
       });
+
       return;
     }
+
     showSpeech(pageIntroMessage.value || fallback.message, pageIntroHeading.value || fallback.heading);
-  };
-  const selectMood = (nextMood: GuideMood) => {
+  }
+  function selectMood(nextMood: GuideMood) {
     mood.value = nextMood;
     choosingMood.value = false;
     moodPromptPending.value = false;
-    const moodCopyKeys: Record<GuideMood, { heading: TranslationKey; message: TranslationKey }> = {
+    const moodCopyKeys: Record<
+      GuideMood,
+      {
+        heading: TranslationKey;
+        message: TranslationKey;
+      }
+    > = {
       calm: { heading: "guide.mood.calmHeading", message: "guide.mood.calmMessage" },
       gentle: { heading: "guide.gentleHeading", message: "guide.mood.gentleMessage" },
       happy: { heading: "guide.mood.happyHeading", message: "guide.mood.happyMessage" },
@@ -178,72 +221,89 @@ export const useGlobalLadiGuide = () => {
     speech.value = t(moodCopy.message);
     clearSpeechTimer();
     speechTimer = window.setTimeout(speakCurrentPageIntro, LADI_GUIDE_MOOD_SELECTION_DELAY_MS);
-  };
-  const handleGuideMessage = (detail: LadiGuideMessage) => {
+  }
+  function handleGuideMessage(detail: LadiGuideMessage) {
+
     if (detail.pageIntro) {
       pageIntroHeading.value = detail.heading || t("guide.defaultHeading");
       pageIntroMessage.value = detail.message;
+
       if (choosingMood.value) {
+
         return;
       }
+
     }
+
     if (moodPromptPending.value) {
+
       return;
     }
+
     showSpeech(detail.message, detail.heading, detail.smart, detail);
-  };
-  const handleGuidedClick = (event: MouseEvent) => {
+  }
+  function handleGuidedClick(event: MouseEvent) {
+
     if (moodPromptPending.value) {
+
       return;
     }
+
     if (event.target instanceof Element && event.target.closest("[data-ladi-ignore]")) {
+
       return;
     }
+
     const target = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-ladi-tip]") : null;
     const message = target?.dataset.ladiTip?.trim();
+
     if (message) {
       showSpeech(message, target?.dataset.ladiHeading);
     }
-  };
-  const hideGuide = () => {
+
+  }
+  function hideGuide() {
     closeSpeech();
     choosingMood.value = false;
     isHidden.value = true;
-  };
-  const revealGuide = () => {
+  }
+  function revealGuide() {
     isHidden.value = false;
     randomMotion.value = "does-emerge";
     customHeading.value = t("guide.welcomeBack.heading");
     speech.value = mood.value === "gentle" ? t("guide.welcomeBack.gentle") : t("guide.welcomeBack.message");
+
     if (motionTimer !== undefined) {
       window.clearTimeout(motionTimer);
     }
-    motionTimer = window.setTimeout(() => {
+
+    motionTimer = window.setTimeout(function callback() {
       randomMotion.value = "";
       scheduleRandomMotion();
     }, LADI_GUIDE_EMERGE_DURATION_MS);
-  };
-  const scheduleRandomMotion = () => {
+  }
+  function scheduleRandomMotion() {
     motionTimer = window.setTimeout(
       () => {
         const motions = ["does-wave", "does-hop", "does-peek"] as const;
         randomMotion.value = motions[Math.floor(Math.random() * motions.length)] ?? "does-wave";
-        motionTimer = window.setTimeout(() => {
+        motionTimer = window.setTimeout(function callback() {
           randomMotion.value = "";
           scheduleRandomMotion();
         }, LADI_GUIDE_MOTION_DURATION_MS);
       },
       LADI_GUIDE_RANDOM_MOTION_BASE_DELAY_MS + Math.round(Math.random() * LADI_GUIDE_RANDOM_MOTION_DELAY_VARIANCE_MS),
     );
-  };
-
+  }
   watch(
     () => route.path,
-    () => {
+    function callback() {
       closeSpeech();
+
       if (!moodPromptPending.value) {
         choosingMood.value = false;
       }
+
       const intro = pageMessages.value[route.path] ?? fallbackPageMessage();
       pageIntroHeading.value = intro.heading;
       pageIntroMessage.value = intro.message;
@@ -251,19 +311,25 @@ export const useGlobalLadiGuide = () => {
   );
   watch(
     () => store.piggyBankOpen,
-    (isOpen) => {
+    function callback(isOpen) {
+
       if (isOpen && moodPromptPending.value) {
+
         if (initialMoodTimer !== undefined) {
           window.clearTimeout(initialMoodTimer);
         }
+
         initialMoodTimer = undefined;
         moodPromptPending.value = false;
       }
+
       closeSpeech();
       choosingMood.value = false;
+
       if (isOpen) {
         showSpeech(t("guide.balance.openMessage"), t("guide.balance.heading"), true);
       }
+
     },
   );
   onMounted(() => {
@@ -273,11 +339,12 @@ export const useGlobalLadiGuide = () => {
     unsubscribeGuide = ladiGuideController.subscribe(handleGuideMessage);
     document.addEventListener("click", handleGuidedClick, true);
     scheduleRandomMotion();
+
     if (!isHidden.value) {
       choosingMood.value = true;
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       initialMoodTimer = window.setTimeout(
-        () => {
+        function callback() {
           clearSpeechTimer();
           customHeading.value = t("guide.mood.promptHeading");
           speech.value = t("guide.mood.promptMessage");
@@ -285,24 +352,31 @@ export const useGlobalLadiGuide = () => {
         },
         reduceMotion ? LADI_GUIDE_REDUCED_MOTION_PROMPT_DELAY_MS : LADI_GUIDE_STANDARD_PROMPT_DELAY_MS,
       );
+
     } else {
       moodPromptPending.value = false;
     }
+
   });
-  onUnmounted(() => {
+  onUnmounted(function callback() {
     clearSpeechTimer();
+
     if (motionTimer !== undefined) {
       window.clearTimeout(motionTimer);
     }
+
     if (initialMoodTimer !== undefined) {
       window.clearTimeout(initialMoodTimer);
     }
+
     if (celebrationTimer !== undefined) {
       window.clearTimeout(celebrationTimer);
     }
+
     unsubscribeGuide?.();
     document.removeEventListener("click", handleGuidedClick, true);
   });
+
   return {
     choosingMood,
     closeSpeech,
@@ -325,4 +399,4 @@ export const useGlobalLadiGuide = () => {
     store,
     triggerSpeechAction,
   };
-};
+}
