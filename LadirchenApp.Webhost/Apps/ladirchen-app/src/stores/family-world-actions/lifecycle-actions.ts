@@ -4,10 +4,9 @@ import type { TranslationKey } from "@/locales/translation-keys";
 import { AUTH_STATE_KEY } from "./family-world-store-utils";
 import { mergeHouseLayout, normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
+import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
 function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) => void): boolean {
-
   if (result.status === "rejected") {
-
     return false;
   }
 
@@ -15,18 +14,13 @@ function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) 
     apply(result.value);
 
     return true;
-
   } catch {
-
     return false;
   }
-
 }
 export const lifecycleActions = {
   async hydrateFamilyAggregates(this: FamilyWorldStoreContext) {
-
     if (this.familyAggregatesHydrated) {
-
       return;
     }
 
@@ -55,7 +49,6 @@ export const lifecycleActions = {
         familyProgressionService.load(familyId),
       ]);
     const profileLoaded = applySettledLoad(profileResult, (profile) => {
-
       if (profile) {
         this.members = normalizeFamilyMembers([...profile.state.members]);
         this.pets = normalizeFamilyPets(profile.state.pets);
@@ -63,18 +56,14 @@ export const lifecycleActions = {
         this.subscriptionTier = profile.state.subscriptionTier;
         this.familyTimeZone = profile.state.timeZone;
       }
-
     });
     const contributionsLoaded = applySettledLoad(contributionsResult, (contributions) => {
-
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
         this.promotions = [...contributions.state.promotions];
         let contributionRewardsMigrated = false;
         this.contributions.forEach((contribution) => {
-
           if (contribution.status !== "approved" || contribution.earnedReward !== undefined) {
-
             return;
           }
 
@@ -90,12 +79,9 @@ export const lifecycleActions = {
         if (contributionRewardsMigrated) {
           this.persistContributions();
         }
-
       }
-
     });
     const savingsLoaded = applySettledLoad(savingsResult, (savings) => {
-
       if (savings) {
         this.balances = { ...savings.state.balances };
         this.familyCurrencyCode = savings.state.familyCurrencyCode;
@@ -103,23 +89,18 @@ export const lifecycleActions = {
         this.ladirchenPerCurrencyUnit = savings.state.ladirchenPerCurrencyUnit;
         this.pendingGuardianGifts = [...savings.state.pendingGuardianGifts];
       }
-
     });
     const rewardShopLoaded = applySettledLoad(rewardShopResult, (rewardShop) => {
-
       if (rewardShop) {
         this.shopRewards = [...rewardShop.state.rewards];
       }
-
     });
     const progressionLoaded = applySettledLoad(progressionResult, (progression) => {
-
       if (progression) {
         this.completedWeeklyStreak = progression.state.completedWeeklyStreak;
         this.currentWeekTarget = progression.state.currentWeekTarget;
         this.houseLevel = progression.state.houseLevel;
       }
-
     });
 
     if (profileLoaded) {
@@ -143,11 +124,98 @@ export const lifecycleActions = {
     }
 
     await this.hydrateHomeCustomization();
+
+    try {
+      await this.$familyWorld.familyAggregateUpdates.connect(familyId, (change) => {
+        if (change.updatedBy !== this.signedInMemberId) {
+          void this.refreshFamilyAggregate(change.aggregateType);
+        }
+      });
+    } catch {
+      this.notify("notifications.load.family");
+    }
+  },
+  async refreshFamilyAggregate(this: FamilyWorldStoreContext, aggregateType: FamilyAggregateType) {
+    const {
+      contributionsService,
+      familyContext,
+      familyProfileService,
+      familyProgressionService,
+      rewardShopService,
+      savingsService,
+    } = this.$familyWorld;
+    const familyId = familyContext.activeFamilyId;
+
+    try {
+      if (aggregateType === "family-profile") {
+        const snapshot = await familyProfileService.load(familyId);
+
+        if (snapshot) {
+          this.members = normalizeFamilyMembers([...snapshot.state.members]);
+          this.pets = normalizeFamilyPets(snapshot.state.pets);
+          this.onboardingCompleted = snapshot.state.onboardingCompleted;
+          this.subscriptionTier = snapshot.state.subscriptionTier;
+          this.familyTimeZone = snapshot.state.timeZone;
+        }
+
+        return;
+      }
+
+      if (aggregateType === "contributions") {
+        const snapshot = await contributionsService.load(familyId);
+
+        if (snapshot) {
+          this.contributions = [...snapshot.state.contributions];
+          this.promotions = [...snapshot.state.promotions];
+        }
+
+        return;
+      }
+
+      if (aggregateType === "savings") {
+        const snapshot = await savingsService.load(familyId);
+
+        if (snapshot) {
+          this.balances = { ...snapshot.state.balances };
+          this.familyCurrencyCode = snapshot.state.familyCurrencyCode;
+          this.goals = [...snapshot.state.goals];
+          this.ladirchenPerCurrencyUnit = snapshot.state.ladirchenPerCurrencyUnit;
+          this.pendingGuardianGifts = [...snapshot.state.pendingGuardianGifts];
+        }
+
+        return;
+      }
+
+      if (aggregateType === "reward-shop") {
+        const snapshot = await rewardShopService.load(familyId);
+
+        if (snapshot) {
+          this.shopRewards = [...snapshot.state.rewards];
+        }
+
+        return;
+      }
+
+      if (aggregateType === "family-progression") {
+        const snapshot = await familyProgressionService.load(familyId);
+
+        if (snapshot) {
+          this.completedWeeklyStreak = snapshot.state.completedWeeklyStreak;
+          this.currentWeekTarget = snapshot.state.currentWeekTarget;
+          this.houseLevel = snapshot.state.houseLevel;
+        }
+
+        return;
+      }
+
+      this.homeCustomizationHydrated = false;
+      await this.hydrateHomeCustomization();
+    } catch {
+      this.notify(aggregateType === "home-customization" ? "notifications.load.home" : "notifications.load.family");
+    }
   },
   async hydrateHomeCustomization(this: FamilyWorldStoreContext) {
-
     if (this.homeCustomizationHydrated) {
-
       return;
     }
 
@@ -184,11 +252,9 @@ export const lifecycleActions = {
         const selectedRoomDesignIds: Partial<Record<HouseZoneId, RoomDesignId>> = {};
 
         for (const design of DEFAULT_ROOM_DESIGNS) {
-
           if (this.ownedRoomDesignIds.includes(design.id)) {
             selectedRoomDesignIds[design.zoneId] = design.id;
           }
-
         }
 
         for (const design of roomDesignsForTheme(this.houseThemeId)) {
@@ -196,23 +262,19 @@ export const lifecycleActions = {
         }
 
         for (const selection of snapshot.state.selectedRoomDesigns) {
-
           if (this.ownedRoomDesignIds.includes(selection.designId)) {
             selectedRoomDesignIds[selection.zoneId] = selection.designId;
           }
-
         }
 
         this.selectedRoomDesignIds = selectedRoomDesignIds;
       }
 
       this.homeCustomizationHydrated = true;
-
     } catch {
       this.homeCustomizationHydrated = false;
       this.notify("notifications.load.home");
     }
-
   },
   persistHomeCustomization(this: FamilyWorldStoreContext) {
     const { familyContext, homeCustomizationService } = this.$familyWorld;

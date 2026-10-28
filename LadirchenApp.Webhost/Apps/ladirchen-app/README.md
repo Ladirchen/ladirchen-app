@@ -104,6 +104,14 @@ PUT /api/families/{familyId}/aggregates/{aggregateType}
 
 Responses use the versioned snapshot contracts from `src/application/contracts/`; writes carry an `expectedRevision`, and the API must return HTTP 409 for concurrent-update conflicts. On a conflict, the application reloads the current snapshot, performs a three-way merge against the locally loaded base, and retries with the new revision. Runtime guards validate every loaded snapshot before it reaches the store. Parallel hydration retains successful aggregates independently and remains retryable when only part of the backend is unavailable.
 
+In API mode the application also connects to:
+
+```text
+/hubs/family-updates
+```
+
+After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. The current server snapshot repository is an in-memory migration adapter; durable persistence and domain-specific command endpoints must replace it before API mode becomes the production default. Whole-aggregate `PUT` is therefore a transition contract, not the final business-command API.
+
 Authentication is exposed through `src/application/ports/authentication-gateway.ts`. The current local adapter is intentionally isolated in `src/features/auth/local-auth.ts`; replace it in `src/app/composition-root.ts` when the server authentication contract is available. Password hashing and authorization remain server responsibilities in API mode.
 
 ## 🎨 Adding Designs

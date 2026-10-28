@@ -7,6 +7,7 @@ import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldState } from "./family-world-state";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
+import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
 
 declare module "pinia" {
   export interface PiniaCustomProperties {
@@ -37,6 +38,7 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   persistHomeCustomization: () => void;
   persistRewardShop: () => void;
   persistSavings: () => void;
+  refreshFamilyAggregate: (aggregateType: FamilyAggregateType) => Promise<void>;
   playRewardAnimation: (contribution: Contribution) => void;
   refreshCurrentTime: () => void;
   revealNextContributionReward: () => void;

@@ -11,13 +11,18 @@ import { browserClientStorage } from "@/infrastructure/storage/browser-client-st
 import { browserScheduler } from "@/infrastructure/scheduling/browser-scheduler";
 import { createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-world-fixtures";
 import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
+import { noopFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/noop-family-aggregate-updates";
+import { SignalRFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/signalr-family-aggregate-updates";
 function createRepositories(): FamilyAggregateRepositories {
-
   return frontendRuntimeConfig.dataSource === "api"
     ? createHttpFamilyAggregateRepositories(frontendRuntimeConfig.apiBaseUrl)
     : createLocalStorageFamilyAggregateRepositories();
 }
 const repositories = createRepositories();
+const familyAggregateUpdates =
+  frontendRuntimeConfig.dataSource === "api"
+    ? new SignalRFamilyAggregateUpdatesGateway(frontendRuntimeConfig.apiBaseUrl)
+    : noopFamilyAggregateUpdatesGateway;
 const initialDataFactory = { create: createFamilyWorldInitialData };
 export const familyContext = localFamilyContext;
 export const authenticationGateway = createLocalAuthenticationGateway(browserClientStorage);
@@ -49,6 +54,7 @@ export const familyProgressionService = new VersionedAggregateService(
 export const familyWorldDependencies: FamilyWorldDependencies = {
   clientStorage: browserClientStorage,
   contributionsService,
+  familyAggregateUpdates,
   familyContext,
   familyProfileService,
   familyProgressionService,

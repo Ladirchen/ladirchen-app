@@ -53,6 +53,133 @@ export class Client {
     }
     return Promise.resolve<AboutInfo>(null as any);
   }
+
+  getFamilyAggregate(
+    familyId: string,
+    aggregateType: string,
+    signal?: AbortSignal,
+  ): Promise<FamilyAggregateSnapshotResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/aggregates/{aggregateType}";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (aggregateType === undefined || aggregateType === null)
+      throw new globalThis.Error("The parameter 'aggregateType' must be defined.");
+    url_ = url_.replace("{aggregateType}", encodeURIComponent("" + aggregateType));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetFamilyAggregate(_response);
+    });
+  }
+
+  protected processGetFamilyAggregate(response: Response): Promise<FamilyAggregateSnapshotResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyAggregateSnapshotResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<FamilyAggregateSnapshotResponse>(null as any);
+  }
+
+  saveFamilyAggregate(
+    familyId: string,
+    aggregateType: string,
+    request: SaveFamilyAggregateRequest,
+    signal?: AbortSignal,
+  ): Promise<FamilyAggregateSnapshotResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/aggregates/{aggregateType}";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (aggregateType === undefined || aggregateType === null)
+      throw new globalThis.Error("The parameter 'aggregateType' must be defined.");
+    url_ = url_.replace("{aggregateType}", encodeURIComponent("" + aggregateType));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processSaveFamilyAggregate(_response);
+    });
+  }
+
+  protected processSaveFamilyAggregate(response: Response): Promise<FamilyAggregateSnapshotResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyAggregateSnapshotResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<FamilyAggregateSnapshotResponse>(null as any);
+  }
 }
 
 export interface AboutInfo {
@@ -70,6 +197,33 @@ export interface Version {
   revision?: number;
   majorRevision?: number;
   minorRevision?: number;
+}
+
+export interface FamilyAggregateSnapshotResponse {
+  familyId?: string;
+  aggregateType?: string;
+  schemaVersion?: number;
+  revision?: number;
+  state?: any;
+  updatedBy?: string;
+  updatedAt?: Date;
+}
+
+export interface ProblemDetails {
+  type?: string | null;
+  title?: string | null;
+  status?: number | null;
+  detail?: string | null;
+  instance?: string | null;
+
+  [key: string]: any;
+}
+
+export interface SaveFamilyAggregateRequest {
+  aggregateType?: string;
+  expectedRevision?: number;
+  state?: any;
+  updatedBy?: string;
 }
 
 export class ApiException extends Error {

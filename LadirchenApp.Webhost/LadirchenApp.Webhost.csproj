@@ -11,6 +11,10 @@
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LadirchenApp.Application\LadirchenApp.Application.csproj" />
+    <ProjectReference Include="..\LadirchenApp.Domain\LadirchenApp.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <SpaRoot Include="Apps/ladirchen-app/">
       <InstallCommand>pnpm install</InstallCommand>
       <BuildCommand>pnpm run build</BuildCommand>

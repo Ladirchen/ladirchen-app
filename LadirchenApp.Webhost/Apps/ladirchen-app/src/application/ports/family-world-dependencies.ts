@@ -16,6 +16,7 @@ import type { ClientStorage } from "./client-storage";
 import type { FamilyContext } from "./family-context";
 import type { Scheduler } from "./scheduler";
 import type { FamilyWorldInitialDataFactory } from "./family-world-initial-data";
+import type { FamilyAggregateUpdatesGateway } from "./family-aggregate-updates";
 
 interface AggregateServicePort<TState, TSnapshot> {
   load: (familyId: FamilyId) => Promise<TSnapshot | null>;
@@ -25,6 +26,7 @@ interface AggregateServicePort<TState, TSnapshot> {
 export interface FamilyWorldDependencies {
   readonly clientStorage: ClientStorage;
   readonly contributionsService: AggregateServicePort<ContributionsState, ContributionsSnapshot>;
+  readonly familyAggregateUpdates: FamilyAggregateUpdatesGateway;
   readonly familyContext: FamilyContext;
   readonly initialDataFactory: FamilyWorldInitialDataFactory;
   readonly familyProfileService: AggregateServicePort<FamilyProfileState, FamilyProfileSnapshot>;
