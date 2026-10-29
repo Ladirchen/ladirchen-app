@@ -4,9 +4,15 @@ namespace LadirchenApp.Application.Aggregates;
 
 public sealed class FamilyAggregateConflictException : Exception
 {
-  public FamilyAggregateConflictException(string aggregateType, long expectedRevision, long actualRevision)
+  public FamilyAggregateConflictException(
+    string aggregateType,
+    long expectedRevision,
+    long actualRevision,
+    Exception? innerException = null
+  )
     : base(
-      $"Aggregate '{aggregateType}' expected revision {expectedRevision}, but the current revision is {actualRevision}."
+      $"Aggregate '{aggregateType}' expected revision {expectedRevision}, but the current revision is {actualRevision}.",
+      innerException
     )
   {
     AggregateType = aggregateType;

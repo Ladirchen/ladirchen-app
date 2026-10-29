@@ -8,6 +8,8 @@ namespace LadirchenApp.Application.Aggregates;
 
 public interface IFamilyAggregateSnapshotRepository
 {
+  Task<IReadOnlyList<FamilyId>> ListFamilyIdsAsync(CancellationToken cancellationToken);
+
   Task<FamilyAggregateSnapshot?> GetAsync(
     FamilyId familyId,
     string aggregateType,

@@ -61,6 +61,8 @@ Failed tests still fail the job and prevent build/release publication.
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- PostgreSQL 18 for local application development
+- Docker for the PostgreSQL integration tests
 - [VitePlus](https://viteplus.dev/)
 - [Tilt](https://tilt.dev/)
 - [GitVersion](https://gitversion.net/)
@@ -72,6 +74,20 @@ Failed tests still fail the job and prevent build/release publication.
   - [Minikube](https://minikube.sigs.k8s.io/docs/)
 
 ## Run
+
+The web host stores authentication accounts and family aggregate snapshots in
+PostgreSQL. For local development, create the `ladirchen` database and user
+configured in `LadirchenApp.Webhost/appsettings.json`, or override the connection:
+
+```bash
+export ConnectionStrings__Ladirchen='Host=localhost;Port=5432;Database=ladirchen;Username=ladirchen;Password=change-me'
+```
+
+For a managed PostgreSQL database, including a provider connected through the
+Vercel Marketplace, set `DATABASE_URL` or `POSTGRES_URL`. Both standard Npgsql
+connection strings and `postgresql://` URLs are accepted. Prefer the provider's
+pooled connection URL for serverless deployments. The web host applies the EF
+Core migrations when it starts.
 
 To run the Ladirchen App locally, follow these steps:
 
