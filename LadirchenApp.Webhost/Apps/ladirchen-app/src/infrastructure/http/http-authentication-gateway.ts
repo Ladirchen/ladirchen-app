@@ -20,7 +20,6 @@ function sessionFromDto(dto: AuthenticationSessionDto): AuthenticationSession {
 }
 
 export class HttpAuthenticationGateway implements AuthenticationGateway {
-  readonly backendDriven = true;
   readonly #baseUrl: string;
 
   constructor(baseUrl: string) {

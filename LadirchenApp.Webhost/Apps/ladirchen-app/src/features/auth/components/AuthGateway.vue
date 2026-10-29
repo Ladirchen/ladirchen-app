@@ -142,7 +142,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authenticationGateway } from "@/app/composition-root";
 import { createDomainId } from "@/domain/shared/identifiers";
-import { AUTH_INPUT_RULES, DEMO_CREDENTIALS } from "@/features/auth/auth-config";
+import { AUTH_INPUT_RULES } from "@/features/auth/auth-config";
 import { useFamilyWorldStore } from "@/stores/family-world";
 type AuthMode = "login" | "register";
 const store = useFamilyWorldStore();
@@ -215,22 +215,6 @@ async function login() {
       return;
     }
 
-    const normalizedUsername = loginUsername.value.trim().toLocaleLowerCase("de");
-    const demoMember = store.members.find(
-      (member) =>
-        member.name.trim().toLocaleLowerCase("de") === normalizedUsername ||
-        member.nickname?.trim().toLocaleLowerCase("de") === normalizedUsername,
-    );
-
-    if (
-      !authenticationGateway.backendDriven &&
-      loginPassword.value === DEMO_CREDENTIALS.password &&
-      demoMember &&
-      store.signInCurrentFamily(demoMember.id)
-    ) {
-      return;
-    }
-
     errorMessage.value = t("auth.login.credentialsError");
   } finally {
     submitting.value = false;
@@ -262,14 +246,10 @@ async function register() {
       username: registerUsername.value,
     });
 
-    if (authenticationGateway.backendDriven) {
-      const signedIn = await store.signInToFamily(familyId, guardianId);
+    const signedIn = await store.signInToFamily(familyId, guardianId);
 
-      if (!signedIn) {
-        throw new Error("The registered family could not be loaded.");
-      }
-    } else {
-      store.createRegisteredFamily(familyId, guardianId, guardianName.value);
+    if (!signedIn) {
+      throw new Error("The registered family could not be loaded.");
     }
   } catch {
     errorMessage.value = t("auth.register.createError");

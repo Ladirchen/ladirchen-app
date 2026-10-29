@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { inject } from "vue";
 import type { InjectionKey } from "vue";
 import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
-import { FURNITURE_SETS, HOUSE_ROOMS } from "@/domain/house/catalog";
+import { HOUSE_ROOMS } from "@/domain/house/catalog";
 import type { FurnitureSetId } from "@/domain/house";
 import { resolveFamilyPermissions } from "@/domain/family/permissions";
 import type { FamilyPermissions } from "@/domain/family/permissions";
@@ -41,12 +41,14 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         return state.subscriptionTier === "pro";
       },
       unlockedHouseRooms(state) {
-        return HOUSE_ROOMS.filter((room) => room.minimumHouseLevel <= state.houseLevel);
+        const availableAreas = new Set(
+          state.houseCatalog?.areas.filter((area) => area.available).map((area) => area.id) ?? [],
+        );
+
+        return HOUSE_ROOMS.filter((room) => availableAreas.has(room.id));
       },
       ownedFurnitureSetIds(state): FurnitureSetId[] {
-        return FURNITURE_SETS.filter((set) =>
-          set.accessoryIds.every((id) => state.accessories.find((accessory) => accessory.id === id)?.owned),
-        ).map((set) => set.id);
+        return state.houseCatalog?.furnitureSets.filter((set) => set.owned).map((set) => set.id) ?? [];
       },
       balanceFor(this: void, state) {
         return (memberId: FamilyMemberId): number => state.balances[memberId] ?? 0;

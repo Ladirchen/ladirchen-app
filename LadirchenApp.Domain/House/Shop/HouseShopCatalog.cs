@@ -4,6 +4,15 @@ namespace LadirchenApp.Domain.House.Shop;
 
 public static class HouseShopCatalog
 {
+  private static readonly HashSet<string> SpecialAccessoryIds =
+  [
+    "halloween-pumpkin-arch",
+    "halloween-bat-garland",
+    "candy-cloud-bushes",
+    "candy-striped-fence",
+    "family-flag",
+  ];
+
   public static readonly IReadOnlyDictionary<string, (decimal Price, int MinimumLevel, bool Movable, string IntendedArea, string AssignedArea, HousePlacement Initial)> Accessories =
     new Dictionary<string, (decimal, int, bool, string, string, HousePlacement)>
     {
@@ -86,6 +95,27 @@ public static class HouseShopCatalog
     ["creative-room"] = 4,
     ["makeup-room"] = 4,
   };
+
+  public static readonly IReadOnlyList<(string Id, int Level, int RoomCount)> HouseStages =
+  [
+    ("starter-home", 0, 2),
+    ("family-home", 1, 4),
+    ("garden-home", 2, 7),
+    ("tower-home", 3, 10),
+    ("dream-home", 4, 12),
+  ];
+
+  public static string CatalogAreaForAccessory(string id)
+  {
+    if (SpecialAccessoryIds.Contains(id))
+    {
+      return "special";
+    }
+
+    return Accessories.TryGetValue(id, out var definition) && definition.IntendedArea == "outside"
+      ? "outside"
+      : "inside";
+  }
 
   private static IReadOnlyDictionary<string, (string, string, decimal, int)> CreateRoomDesigns()
   {

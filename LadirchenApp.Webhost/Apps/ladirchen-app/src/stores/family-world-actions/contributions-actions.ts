@@ -1,408 +1,125 @@
-import { isPromotionAvailable } from "@/domain/contributions/promotions";
-import { CONTRIBUTION_RATING, normalizeContributionRating, percentageOf } from "@/domain/contributions/rating";
 import type { Contribution, NewContribution, NewPromotion } from "@/domain/contributions/types";
 import { createDomainId } from "@/domain/shared/identifiers";
 import type { ContributionId, FamilyMemberId, PromotionId } from "@/domain/shared/identifiers";
-import { createUuid } from "./family-world-store-utils";
-import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { REWARD_REVEAL_DELAY_MS } from "@/shared/runtime-timing";
+import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { executeBackendFamilyCommand } from "./backend-family-command";
+import { createUuid } from "./family-world-store-utils";
 
 export const contributionsActions = {
   async submitContribution(this: FamilyWorldStoreContext, id: ContributionId) {
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.submit",
-        { id },
-        "notifications.save.contributions",
-        () => {
-          this.notify(
-            this.viewerRole === "guardian"
-              ? "notifications.contributions.guardianSubmitted"
-              : "notifications.contributions.childSubmitted",
-          );
-        },
-      )
-    ) {
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === id);
-
-    if (!contribution || contribution.assigneeId !== this.signedInMemberId || contribution.status !== "available") {
-      return;
-    }
-
-    contribution.status = "pending";
-    this.persistContributions();
-    this.notify(
-      this.viewerRole === "guardian"
-        ? "notifications.contributions.guardianSubmitted"
-        : "notifications.contributions.childSubmitted",
+    await executeBackendFamilyCommand(this, "contributions.submit", { id }, "notifications.save.contributions", () =>
+      this.notify(
+        this.viewerRole === "guardian"
+          ? "notifications.contributions.guardianSubmitted"
+          : "notifications.contributions.childSubmitted",
+      ),
     );
   },
   async claimContribution(this: FamilyWorldStoreContext, id: ContributionId) {
-    const claimedTitle = this.contributions.find((item) => item.id === id)?.title ?? "";
-
-    if (
-      await executeBackendFamilyCommand(this, "contributions.claim", { id }, "notifications.save.contributions", () => {
-        this.notify("notifications.contributions.claimed", { title: claimedTitle });
-      })
-    ) {
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === id);
-    const hasValidAssignee = this.members.some(
-      (member) => member.id === contribution?.assigneeId && member.role === "child",
+    const title = this.contributions.find((item) => item.id === id)?.title ?? "";
+    await executeBackendFamilyCommand(this, "contributions.claim", { id }, "notifications.save.contributions", () =>
+      this.notify("notifications.contributions.claimed", { title }),
     );
-
-    if (this.viewerRole !== "child" || !contribution || hasValidAssignee || contribution.status !== "available") {
-      return;
-    }
-
-    contribution.assigneeId = this.activeChildId;
-    this.persistContributions();
-    this.notify("notifications.contributions.claimed", { title: contribution.title });
   },
   async assignContribution(this: FamilyWorldStoreContext, id: ContributionId, memberId?: FamilyMemberId) {
-    const assignedContributionTitle = this.contributions.find((item) => item.id === id)?.title ?? "";
-    const assignedMemberName = memberId ? this.members.find((member) => member.id === memberId)?.name : undefined;
-
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.assign",
-        { id, memberId },
-        "notifications.save.contributions",
-        () => {
-          this.notify(
-            assignedMemberName ? "notifications.contributions.assigned" : "notifications.contributions.opened",
-            assignedMemberName
-              ? { name: assignedMemberName, title: assignedContributionTitle }
-              : { title: assignedContributionTitle },
-          );
-        },
-      )
-    ) {
-      return;
-    }
-
-    if (!this.permissions.canManageContent) {
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === id);
-
-    if (!contribution || contribution.status !== "available") {
-      return;
-    }
-
-    if (memberId && !this.members.some((member) => member.id === memberId)) {
-      return;
-    }
-
-    contribution.assigneeId = memberId || undefined;
-    contribution.invitedChildIds = [];
-    this.persistContributions();
-    const memberName = memberId ? this.members.find((member) => member.id === memberId)?.name : undefined;
-    this.notify(
-      memberName ? "notifications.contributions.assigned" : "notifications.contributions.opened",
-      memberName ? { title: contribution.title, name: memberName } : { title: contribution.title },
+    const title = this.contributions.find((item) => item.id === id)?.title ?? "";
+    const name = memberId ? this.members.find((member) => member.id === memberId)?.name : undefined;
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.assign",
+      { id, memberId },
+      "notifications.save.contributions",
+      () =>
+        this.notify(
+          name ? "notifications.contributions.assigned" : "notifications.contributions.opened",
+          name ? { name, title } : { title },
+        ),
     );
   },
   async approveContribution(this: FamilyWorldStoreContext, id: ContributionId, stars: number) {
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.approve",
-        {
-          id,
-          perfectRatingBonusPercent: this.perfectRatingBonusPercent,
-          stars,
-        },
-        "notifications.save.contributions",
-        () => {
-          const approved = this.contributions.find((item) => item.id === id);
-          const ratingBonus = approved?.earnedRatingBonus ?? 0;
-          const reward = (approved?.earnedReward ?? 0) + ratingBonus;
-          this.notify(
-            ratingBonus > 0 ? "notifications.contributions.rewardWithBonus" : "notifications.contributions.reward",
-            ratingBonus > 0 ? { percent: this.perfectRatingBonusPercent, reward } : { reward },
-          );
-        },
-      )
-    ) {
-      const approved = this.contributions.find((item) => item.id === id);
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.approve",
+      { id, perfectRatingBonusPercent: this.perfectRatingBonusPercent, stars },
+      "notifications.save.contributions",
+      () => {
+        const approved = this.contributions.find((item) => item.id === id);
+        const ratingBonus = approved?.earnedRatingBonus ?? 0;
+        const reward = (approved?.earnedReward ?? 0) + ratingBonus;
+        this.notify(
+          ratingBonus > 0 ? "notifications.contributions.rewardWithBonus" : "notifications.contributions.reward",
+          ratingBonus > 0 ? { percent: this.perfectRatingBonusPercent, reward } : { reward },
+        );
 
-      if (approved?.assigneeId === this.signedInMemberId) {
-        this.playRewardAnimation(approved);
-      }
-
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === id);
-    const assignee = this.members.find((member) => member.id === contribution?.assigneeId);
-    const canRateChild = this.permissions.canManageContent && assignee?.role === "child";
-    const canRateGuardian = this.viewerRole === "child" && assignee?.role === "guardian";
-
-    if ((!canRateChild && !canRateGuardian) || !contribution?.assigneeId || contribution.status !== "pending") {
-      return;
-    }
-
-    const approvalTime = new Date();
-    const promotion = this.promotions.find(
-      (item) => item.contributionId === id && isPromotionAvailable(item, this.familyTimeZone, approvalTime),
-    );
-    const baseReward = contribution.reward * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
-    contribution.status = "approved";
-    contribution.stars = normalizeContributionRating(stars);
-    const ratingBonus =
-      contribution.stars === CONTRIBUTION_RATING.perfect && this.perfectRatingBonusPercent > 0
-        ? Math.max(1, Math.round(percentageOf(baseReward, this.perfectRatingBonusPercent)))
-        : 0;
-    const reward = baseReward + ratingBonus;
-    contribution.earnedReward = baseReward;
-    contribution.earnedRatingBonus = ratingBonus;
-    contribution.earnedPromotionMultiplier = promotion?.multiplier;
-    contribution.approvedAt = approvalTime.toISOString();
-    contribution.rewardCelebrated = false;
-    this.balances[contribution.assigneeId] = this.balanceFor(contribution.assigneeId) + reward;
-    this.persistContributions();
-    this.persistSavings();
-
-    if (contribution.assigneeId === this.signedInMemberId) {
-      this.playRewardAnimation(contribution);
-    }
-
-    this.notify(
-      ratingBonus > 0 ? "notifications.contributions.rewardWithBonus" : "notifications.contributions.reward",
-      ratingBonus > 0 ? { reward, percent: this.perfectRatingBonusPercent } : { reward },
+        if (approved?.assigneeId === this.signedInMemberId) {
+          this.playRewardAnimation(approved);
+        }
+      },
     );
   },
   async returnContribution(this: FamilyWorldStoreContext, id: ContributionId) {
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.return",
-        { id },
-        "notifications.save.contributions",
-        () => {
-          this.notify("notifications.contributions.returned");
-        },
-      )
-    ) {
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === id);
-    const assignee = this.members.find((member) => member.id === contribution?.assigneeId);
-    const canReturnChild = this.permissions.canManageContent && assignee?.role === "child";
-    const canReturnGuardian = this.viewerRole === "child" && assignee?.role === "guardian";
-
-    if ((!canReturnChild && !canReturnGuardian) || !contribution || contribution.status !== "pending") {
-      return;
-    }
-
-    contribution.status = "available";
-    this.persistContributions();
-    this.notify("notifications.contributions.returned");
+    await executeBackendFamilyCommand(this, "contributions.return", { id }, "notifications.save.contributions", () =>
+      this.notify("notifications.contributions.returned"),
+    );
   },
   async addContribution(this: FamilyWorldStoreContext, input: NewContribution) {
     const id = createDomainId.contribution(createUuid());
-
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.add",
-        { id, ...input },
-        "notifications.save.contributions",
-        () => {
-          this.notify("notifications.contributions.added");
-        },
-      )
-    ) {
-      return;
-    }
-
-    const isOwnGuardianTask = this.viewerRole === "guardian" && input.assigneeId === this.signedInMemberId;
-
-    if (!this.permissions.canManageContent && !isOwnGuardianTask) {
-      return;
-    }
-
-    this.contributions.push({
-      id,
-      ...input,
-      area: "",
-      areaKey: "contributions.dynamic.familyArea",
-      status: "available",
-      energy: input.kind === "basic" ? input.energy : 0,
-      assigneeId: input.assigneeId || undefined,
-      dueLabel: "",
-      dueLabelKey: input.kind === "basic" ? "contributions.dynamic.daily" : "contributions.dynamic.optional",
-      worldEffect: input.kind === "basic" ? "sparkle" : undefined,
-    });
-    this.persistContributions();
-    this.notify("notifications.contributions.added");
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.add",
+      { id, ...input },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.added"),
+    );
   },
   async deleteContribution(this: FamilyWorldStoreContext, id: ContributionId) {
-    const deletedContribution = this.contributions.find((item) => item.id === id);
-
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.delete",
-        { id },
-        "notifications.save.contributions",
-        () => {
-          this.notify(
-            deletedContribution?.status === "approved"
-              ? "notifications.contributions.deletedApproved"
-              : "notifications.contributions.deletedOpen",
-            { title: deletedContribution?.title ?? "" },
-          );
-        },
-      )
-    ) {
-      return;
-    }
-
-    if (!this.permissions.canManageContent) {
-      return;
-    }
-
-    const contributionIndex = this.contributions.findIndex((item) => item.id === id);
-    const contribution = this.contributions[contributionIndex];
-
-    if (!contribution) {
-      return;
-    }
-
-    this.contributions.splice(contributionIndex, 1);
-    this.promotions = this.promotions.filter((promotion) => promotion.contributionId !== id);
-    this.persistContributions();
-    this.notify(
-      contribution.status === "approved"
-        ? "notifications.contributions.deletedApproved"
-        : "notifications.contributions.deletedOpen",
-      { title: contribution.title },
+    const contribution = this.contributions.find((item) => item.id === id);
+    await executeBackendFamilyCommand(this, "contributions.delete", { id }, "notifications.save.contributions", () =>
+      this.notify(
+        contribution?.status === "approved"
+          ? "notifications.contributions.deletedApproved"
+          : "notifications.contributions.deletedOpen",
+        { title: contribution?.title ?? "" },
+      ),
     );
   },
   async deletePromotion(this: FamilyWorldStoreContext, id: PromotionId) {
-    const deletedPromotion = this.promotions.find((item) => item.id === id);
-
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.delete-promotion",
-        { id },
-        "notifications.save.contributions",
-        () => {
-          this.notify("notifications.contributions.promotionDeleted", { title: deletedPromotion?.title ?? "" });
-        },
-      )
-    ) {
-      return;
-    }
-
-    if (!this.permissions.canManageContent) {
-      return;
-    }
-
-    const promotion = this.promotions.find((item) => item.id === id);
-
-    if (!promotion) {
-      return;
-    }
-
-    this.promotions = this.promotions.filter((item) => item.id !== id);
-    this.persistContributions();
-    this.notify("notifications.contributions.promotionDeleted", { title: promotion.title });
+    const title = this.promotions.find((item) => item.id === id)?.title ?? "";
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.delete-promotion",
+      { id },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.promotionDeleted", { title }),
+    );
   },
   async setContributionPartners(this: FamilyWorldStoreContext, id: ContributionId, childIds: FamilyMemberId[]) {
-    const partnerNames = this.members.filter((member) => childIds.includes(member.id)).map((member) => member.name);
-
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.set-partners",
-        { id, partnerIds: childIds },
-        "notifications.save.contributions",
-        () => {
-          this.notify(
-            partnerNames.length > 0
-              ? "notifications.contributions.partnersInvited"
-              : "notifications.contributions.partnersRemoved",
-            partnerNames.length > 0 ? { names: partnerNames.join(", ") } : {},
-          );
-        },
-      )
-    ) {
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === id);
-
-    if (!contribution || contribution.kind !== "extra") {
-      return;
-    }
-
-    const allowedIds = new Set(
-      this.members
-        .filter((member) => member.role === "child" && member.id !== contribution.assigneeId)
-        .map((member) => member.id),
-    );
-    contribution.invitedChildIds = childIds.filter((childId) => allowedIds.has(childId));
-    this.persistContributions();
-    const names = this.members
-      .filter((member) => contribution.invitedChildIds?.includes(member.id))
-      .map((member) => member.name);
-    this.notify(
-      names.length > 0 ? "notifications.contributions.partnersInvited" : "notifications.contributions.partnersRemoved",
-      names.length > 0 ? { names: names.join(", ") } : {},
+    const names = this.members.filter((member) => childIds.includes(member.id)).map((member) => member.name);
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.set-partners",
+      { id, partnerIds: childIds },
+      "notifications.save.contributions",
+      () =>
+        this.notify(
+          names.length > 0
+            ? "notifications.contributions.partnersInvited"
+            : "notifications.contributions.partnersRemoved",
+          names.length > 0 ? { names: names.join(", ") } : {},
+        ),
     );
   },
   async addPromotion(this: FamilyWorldStoreContext, input: NewPromotion) {
     const id = createDomainId.promotion(createUuid());
-
-    const promotedContributionTitle = this.contributions.find((item) => item.id === input.contributionId)?.title ?? "";
-
-    if (
-      await executeBackendFamilyCommand(
-        this,
-        "contributions.add-promotion",
-        { id, ...input },
-        "notifications.save.contributions",
-        () => {
-          this.notify("notifications.contributions.promotionAdded", { title: promotedContributionTitle });
-        },
-      )
-    ) {
-      return;
-    }
-
-    if (!this.permissions.canManageContent) {
-      return;
-    }
-
-    const contribution = this.contributions.find((item) => item.id === input.contributionId);
-
-    if (!contribution) {
-      return;
-    }
-
-    this.promotions.push({
-      id,
-      ...input,
-      title: "",
-      titleKey: "contributions.promotions.multiplierTitle",
-      active: true,
-    });
-    this.persistContributions();
-    this.notify("notifications.contributions.promotionAdded", { title: contribution.title });
+    const title = this.contributions.find((item) => item.id === input.contributionId)?.title ?? "";
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.add-promotion",
+      { id, ...input },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.promotionAdded", { title }),
+    );
   },
   revealNextContributionReward(this: FamilyWorldStoreContext) {
     if (this.rewardAnimation.visible) {
@@ -417,11 +134,9 @@ export const contributionsActions = {
         item.rewardCelebrated === false,
     );
 
-    if (!contribution) {
-      return;
+    if (contribution) {
+      this.playRewardAnimation(contribution);
     }
-
-    this.playRewardAnimation(contribution);
   },
   playRewardAnimation(this: FamilyWorldStoreContext, contribution: Contribution) {
     this.rewardAnimation.contributionId = contribution.id;
@@ -437,23 +152,12 @@ export const contributionsActions = {
     const contribution = this.contributions.find((item) => item.id === this.rewardAnimation.contributionId);
 
     if (contribution) {
-      if (
-        await executeBackendFamilyCommand(
-          this,
-          "contributions.acknowledge-reward",
-          { id: contribution.id },
-          "notifications.save.contributions",
-        )
-      ) {
-        this.rewardAnimation.visible = false;
-        this.rewardAnimation.contributionId = undefined;
-        this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), REWARD_REVEAL_DELAY_MS);
-
-        return;
-      }
-
-      contribution.rewardCelebrated = true;
-      this.persistContributions();
+      await executeBackendFamilyCommand(
+        this,
+        "contributions.acknowledge-reward",
+        { id: contribution.id },
+        "notifications.save.contributions",
+      );
     }
 
     this.rewardAnimation.visible = false;

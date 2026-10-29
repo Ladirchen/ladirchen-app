@@ -5,7 +5,6 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { FURNITURE_SETS, HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
 import type { FurnitureSetId, HouseAccessoryId, HouseThemeId } from "@/domain/house";
-import { shopRedemptionIsOpen, shopRewardIsPublished } from "@/domain/shop";
 import type { ShopReward, ShopRewardCategory } from "@/domain/shop";
 import { calendarDateInTimeZone, calendarDateIsWithin } from "@/domain/shared/zoned-calendar";
 import {
@@ -145,9 +144,7 @@ export function useShopPage() {
   const displayedShopRewards = computed(() =>
     store.viewerRole === "guardian"
       ? store.shopRewards.map(localize.reward)
-      : store.shopRewards
-          .filter((reward) => shopRewardIsPublished(reward, store.familyTimeZone, currentTime.value))
-          .map(localize.reward),
+      : store.shopRewards.filter((reward) => reward.published === true).map(localize.reward),
   );
   const localizedAccessories = computed(() => store.accessories.map(localize.accessory));
   const visibleAccessories = computed(() =>
@@ -164,16 +161,46 @@ export function useShopPage() {
     }),
   );
   const houseEditions = computed(() =>
-    HOUSE_THEMES.map((edition) => ({ ...edition, name: t(edition.nameKey), description: t(edition.descriptionKey) })),
+    (store.houseCatalog?.themes ?? [])
+      .map((catalogEntry) => {
+        const edition = HOUSE_THEMES.find((item) => item.id === catalogEntry.id);
+
+        return edition
+          ? {
+              ...edition,
+              available: catalogEntry.available,
+              description: t(edition.descriptionKey),
+              name: t(edition.nameKey),
+              price: catalogEntry.price ?? 0,
+            }
+          : undefined;
+      })
+      .filter((edition) => edition !== undefined),
   );
   const visibleFurnitureSets = computed(() =>
-    FURNITURE_SETS.filter((set) =>
-      houseArea.value === "outside" ? set.zoneId === "garden" : houseArea.value === "inside" && set.zoneId !== "garden",
-    ).map((set) => ({ ...set, name: t(set.nameKey), description: t(set.descriptionKey) })),
+    (store.houseCatalog?.furnitureSets ?? [])
+      .filter((entry) => entry.catalogArea === houseArea.value)
+      .map((catalogEntry) => {
+        const set = FURNITURE_SETS.find((item) => item.id === catalogEntry.id);
+
+        return set
+          ? {
+              ...set,
+              available: catalogEntry.available,
+              description: t(set.descriptionKey),
+              minimumHouseLevel: catalogEntry.minimumHouseLevel ?? 0,
+              name: t(set.nameKey),
+              price: catalogEntry.price ?? 0,
+            }
+          : undefined;
+      })
+      .filter((set) => set !== undefined),
   );
-  const previewHouseStage = computed(
-    () => HOUSE_STAGES.find((stage) => stage.level === store.houseLevel) ?? HOUSE_STAGES[0]!,
-  );
+  const previewHouseStage = computed(() => {
+    const activeStage = store.houseCatalog?.houseStages.find((stage) => stage.active);
+
+    return HOUSE_STAGES.find((stage) => stage.id === activeStage?.id) ?? HOUSE_STAGES[0]!;
+  });
   const houseThemePreviewUrls = reactive<
     Record<
       HouseThemeId,
@@ -225,14 +252,9 @@ export function useShopPage() {
   function canAfford(price: number) {
     return price <= store.availableBalance;
   }
-  const redemptionOpen = computed(() => shopRedemptionIsOpen(store.familyTimeZone, currentTime.value));
+  const redemptionOpen = computed(() => store.rewardShopRedemptionOpen);
   function canRequest(reward: ShopReward) {
-    return (
-      redemptionOpen.value &&
-      canAfford(reward.price) &&
-      reward.quantity > 0 &&
-      shopRewardIsPublished(reward, store.familyTimeZone, currentTime.value)
-    );
+    return redemptionOpen.value && canAfford(reward.price) && reward.quantity > 0 && reward.published === true;
   }
   function rewardIsScheduled(reward: ShopReward) {
     return Boolean(
@@ -264,7 +286,7 @@ export function useShopPage() {
     return { icon: "i-mdi:eye-outline", label: t("shop.publication.visible"), tone: "visible" };
   }
   function addReward() {
-    store.addShopReward({
+    void store.addShopReward({
       title: newReward.title.trim(),
       description: newReward.description.trim(),
       icon: newReward.icon.trim(),
@@ -284,7 +306,7 @@ export function useShopPage() {
       return;
     }
 
-    store.deleteShopReward(rewardToDelete.value.id);
+    void store.deleteShopReward(rewardToDelete.value.id);
     rewardToDelete.value = null;
   }
   watch(

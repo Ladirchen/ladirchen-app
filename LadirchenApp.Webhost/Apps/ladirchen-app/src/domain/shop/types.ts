@@ -20,6 +20,7 @@ export interface ShopReward {
   isVisible?: boolean;
   status: ShopRewardStatus;
   requesterId?: FamilyMemberId;
+  published?: boolean;
 }
 
 export interface NewShopReward {

@@ -156,11 +156,11 @@ export function useContributionsPage() {
     return t("contributions.guardianOwn.ready");
   }
   function approveWithRating(contributionId: ContributionId) {
-    store.approveContribution(contributionId, ratings[contributionId] ?? 4);
+    void store.approveContribution(contributionId, ratings[contributionId] ?? 4);
   }
   function assignContribution(contributionId: ContributionId, value: unknown) {
     const member = store.members.find((item) => item.id === value);
-    store.assignContribution(contributionId, member?.id);
+    void store.assignContribution(contributionId, member?.id);
   }
   function openOwnTaskDialog() {
     Object.assign(newContribution, { assigneeId: store.signedInMemberId });
@@ -174,7 +174,7 @@ export function useContributionsPage() {
       return;
     }
 
-    store.deleteContribution(contributionToDelete.value.id);
+    void store.deleteContribution(contributionToDelete.value.id);
     contributionToDelete.value = undefined;
   }
   function confirmPromotionDelete() {
@@ -182,7 +182,7 @@ export function useContributionsPage() {
       return;
     }
 
-    store.deletePromotion(promotionToDelete.value.id);
+    void store.deletePromotion(promotionToDelete.value.id);
     promotionToDelete.value = undefined;
   }
   function openTeamInvite(contribution: Contribution) {
@@ -228,11 +228,11 @@ export function useContributionsPage() {
       return;
     }
 
-    store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
+    void store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
     teamDialog.value = false;
   }
   function addContribution() {
-    store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
+    void store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
     addDialog.value = false;
     Object.assign(newContribution, {
       title: "",
@@ -245,7 +245,7 @@ export function useContributionsPage() {
     });
   }
   function addPromotion() {
-    store.addPromotion({ ...newPromotion });
+    void store.addPromotion({ ...newPromotion });
     promotionDialog.value = false;
     Object.assign(newPromotion, {
       contributionId: CONTRIBUTION_IDS.dishwasher,

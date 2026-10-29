@@ -12,12 +12,8 @@ export async function executeBackendFamilyCommand(
     | "notifications.save.shop"
     | "notifications.save.home",
   onSuccess?: () => void,
-): Promise<boolean> {
+): Promise<void> {
   const { familyCommands, familyContext } = store.$familyWorld;
-
-  if (!familyCommands.backendDriven) {
-    return false;
-  }
 
   try {
     const changedAggregates = await familyCommands.execute(
@@ -31,6 +27,4 @@ export async function executeBackendFamilyCommand(
   } catch {
     store.notify(failureNotification);
   }
-
-  return true;
 }

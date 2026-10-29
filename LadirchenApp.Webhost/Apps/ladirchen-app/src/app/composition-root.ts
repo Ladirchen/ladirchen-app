@@ -4,39 +4,23 @@ import { VersionedAggregateService } from "@/application/services/versioned-aggr
 import { frontendRuntimeConfig } from "@/config/runtime";
 import { localFamilyContext } from "@/infrastructure/context/local-family-context";
 import { createHttpFamilyAggregateRepositories } from "@/infrastructure/http/http-family-aggregate-repositories";
-import { createLocalStorageFamilyAggregateRepositories } from "@/infrastructure/persistence/local-storage-family-aggregate-repositories";
-import { createLocalAuthenticationGateway } from "@/features/auth/local-auth";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
 import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 import { browserScheduler } from "@/infrastructure/scheduling/browser-scheduler";
 import { createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-world-fixtures";
 import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
-import { noopFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/noop-family-aggregate-updates";
 import { SignalRFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/signalr-family-aggregate-updates";
 import { HttpFamilyCommandGateway } from "@/infrastructure/http/http-family-command-gateway";
-import { localFamilyCommandGateway } from "@/infrastructure/commands/local-family-command-gateway";
 import { HttpAuthenticationGateway } from "@/infrastructure/http/http-authentication-gateway";
 import { HttpSavingsInterestSimulationGateway } from "@/infrastructure/http/http-savings-interest-simulation-gateway";
-function createRepositories(): FamilyAggregateRepositories {
-  return frontendRuntimeConfig.dataSource === "api"
-    ? createHttpFamilyAggregateRepositories(frontendRuntimeConfig.apiBaseUrl)
-    : createLocalStorageFamilyAggregateRepositories();
-}
-const repositories = createRepositories();
-const familyAggregateUpdates =
-  frontendRuntimeConfig.dataSource === "api"
-    ? new SignalRFamilyAggregateUpdatesGateway(frontendRuntimeConfig.apiBaseUrl)
-    : noopFamilyAggregateUpdatesGateway;
-const familyCommands =
-  frontendRuntimeConfig.dataSource === "api"
-    ? new HttpFamilyCommandGateway(frontendRuntimeConfig.apiBaseUrl)
-    : localFamilyCommandGateway;
+const repositories: FamilyAggregateRepositories = createHttpFamilyAggregateRepositories(
+  frontendRuntimeConfig.apiBaseUrl,
+);
+const familyAggregateUpdates = new SignalRFamilyAggregateUpdatesGateway(frontendRuntimeConfig.apiBaseUrl);
+const familyCommands = new HttpFamilyCommandGateway(frontendRuntimeConfig.apiBaseUrl);
 const initialDataFactory = { create: createFamilyWorldInitialData };
 export const familyContext = localFamilyContext;
-export const authenticationGateway =
-  frontendRuntimeConfig.dataSource === "api"
-    ? new HttpAuthenticationGateway(frontendRuntimeConfig.apiBaseUrl)
-    : createLocalAuthenticationGateway(browserClientStorage);
+export const authenticationGateway = new HttpAuthenticationGateway(frontendRuntimeConfig.apiBaseUrl);
 export const savingsInterestSimulationGateway = new HttpSavingsInterestSimulationGateway(
   frontendRuntimeConfig.apiBaseUrl,
 );

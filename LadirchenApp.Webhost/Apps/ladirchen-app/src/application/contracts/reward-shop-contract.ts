@@ -5,6 +5,7 @@ export const REWARD_SHOP_SCHEMA_VERSION = 1;
 export const REWARD_SHOP_AGGREGATE_TYPE = "reward-shop";
 
 export interface RewardShopState {
+  readonly redemptionOpen?: boolean;
   readonly rewards: ReadonlyArray<ShopReward>;
 }
 

@@ -16,6 +16,7 @@ import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 import type { MemberProgression } from "@/application/contracts/family-progression-contract";
+import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
 export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
   const guardians = members.filter((member) => member.role === "guardian");
   const hasAdministrator = guardians.some((member) => member.guardianAccess === "admin");
@@ -185,6 +186,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const pendingGuardianGifts: GuardianGift[] = [];
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
+  const houseCatalog = undefined as HouseCatalogState | undefined;
   const subscriptionTier = initialStateValue<SubscriptionTier>("pro");
   const snackbarParams: Record<string, number | string> = {};
   const snackbar: {
@@ -227,6 +229,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     completedWeeklyStreak: 0,
     currentWeekTarget: 7,
     houseLevel,
+    houseCatalog,
     houseThemeId: HOUSE_THEMES[0]?.id ?? "sunny-dollhouse",
     ownedHouseThemeIds: HOUSE_THEMES.filter((theme) => theme.ownedByDefault).map((theme) => theme.id),
     ownedRoomDesignIds: DEFAULT_ROOM_DESIGNS.map((design) => design.id),
@@ -244,6 +247,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     accessories: initialData.accessories,
     promotions: initialData.promotions,
     shopRewards: initialData.shopRewards,
+    rewardShopRedemptionOpen: false,
   };
 }
 export type FamilyWorldState = ReturnType<typeof createFamilyWorldState>;

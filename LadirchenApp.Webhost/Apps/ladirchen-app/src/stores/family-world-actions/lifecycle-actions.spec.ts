@@ -21,7 +21,7 @@ const dependencies = {
   clientStorage: { getItem: vi.fn(() => null), removeItem: vi.fn(), setItem: vi.fn() },
   contributionsService: { load: serviceMocks.contributionsLoad },
   familyAggregateUpdates: { connect: serviceMocks.updatesConnect, disconnect: vi.fn() },
-  familyCommands: { backendDriven: false, execute: vi.fn() },
+  familyCommands: { execute: vi.fn() },
   familyContext: { activeFamilyId: "c776a9b6-c37d-4a51-91ba-269a67274478", setActiveFamilyId: vi.fn() },
   familyProfileService: { load: serviceMocks.familyProfileLoad },
   familyProgressionService: { load: serviceMocks.familyProgressionLoad },

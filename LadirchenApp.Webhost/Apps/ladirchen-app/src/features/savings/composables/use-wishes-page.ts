@@ -177,7 +177,7 @@ export function useWishesPage() {
 
     saveMotion.value = true;
     saveTimer = window.setTimeout(() => {
-      store.saveToGoal(store.activeGoal.id, saveAmount.value);
+      void store.saveToGoal(store.activeGoal.id, saveAmount.value);
       saveDialog.value = false;
       saveAmount.value = SAVINGS_RULES.defaultTransferAmount;
       saveMotion.value = false;
@@ -226,9 +226,9 @@ export function useWishesPage() {
     });
     supportTimer = window.setTimeout(() => {
       if (store.viewerRole === "child") {
-        store.giftLadirchenToGoal(goalId, amount);
+        void store.giftLadirchenToGoal(goalId, amount);
       } else {
-        store.supportGoal(goalId, amount);
+        void store.supportGoal(goalId, amount);
       }
 
       supportDialog.value = false;
@@ -243,7 +243,7 @@ export function useWishesPage() {
   }
 
   function addGoal(goal: NewGoal) {
-    store.addGoal(goal, newGoalOwnerId.value);
+    void store.addGoal(goal, newGoalOwnerId.value);
   }
   watch(
     () => route.query.new,

@@ -95,7 +95,7 @@ German and English messages live as flat, alphabetically sorted JSON files in `s
 
 ## 🔌 Backend integration boundary
 
-The application defaults to the backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. `VITE_DATA_SOURCE=local-storage` remains an explicit offline UI-development mode. Each aggregate adapter expects:
+The application uses backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. Each aggregate adapter expects:
 
 ```text
 GET /api/families/{familyId}/aggregates/{aggregateType}
@@ -110,7 +110,7 @@ In API mode the application also connects to:
 /hubs/family-updates
 ```
 
-After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. The current server snapshot repository and authentication store are in-memory adapters and must be replaced by durable persistence before production deployment. Whole-aggregate `PUT` remains available only for the explicit local-storage migration/development path; API-mode business actions use commands.
+After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. The current server snapshot repository and authentication store are in-memory adapters and must be replaced by durable persistence before production deployment. Business actions use backend commands; the frontend does not persist aggregate snapshots.
 
 Family profile, avatar, contribution, savings, family reward-shop, progression and house-customization writes in API mode use the backend-owned command endpoint:
 
@@ -120,7 +120,7 @@ POST /api/families/{familyId}/commands
 
 These actions no longer mutate Pinia first. The backend validates each command, applies the C# domain policies, saves all affected snapshots atomically, publishes their revisions through SignalR, and Pinia reloads the snapshots as a reactive read-model cache. The savings-interest simulator also obtains its projection from the backend. Local-storage mode retains the former prototype behavior only for offline UI development.
 
-Authentication is exposed through `src/application/ports/authentication-gateway.ts`. API mode registers and authenticates through the server, where passwords are salted and hashed with PBKDF2 and family registration initializes all aggregate snapshots. The local adapter in `src/features/auth/local-auth.ts` is used only by explicit local-storage mode.
+Authentication is exposed through `src/application/ports/authentication-gateway.ts`. Registration and authentication run through the server, where passwords are salted and hashed with PBKDF2 and family registration initializes all aggregate snapshots.
 
 ## 🎨 Adding Designs
 

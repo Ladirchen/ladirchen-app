@@ -43,6 +43,7 @@ function isShopReward(value: unknown): value is ShopReward {
     (value.availableFrom === undefined || isCalendarDate(value.availableFrom)) &&
     (value.availableUntil === undefined || isCalendarDate(value.availableUntil)) &&
     isOptionalBoolean(value.isVisible) &&
+    isOptionalBoolean(value.published) &&
     isKnownString(value.status, statuses) &&
     hasOptionalDomainId(value.requesterId)
   );
@@ -50,6 +51,7 @@ function isShopReward(value: unknown): value is ShopReward {
 export function isRewardShopState(value: unknown): value is RewardShopState {
   return (
     isRecord(value) &&
+    isOptionalBoolean(value.redemptionOpen) &&
     isArrayOf(value.rewards, isShopReward) &&
     hasUniqueIds(value.rewards) &&
     value.rewards.every(

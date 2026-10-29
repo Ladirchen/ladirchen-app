@@ -11,8 +11,6 @@ interface CommandResponse {
 }
 
 export class HttpFamilyCommandGateway implements FamilyCommandGateway {
-  public readonly backendDriven = true;
-
   public constructor(private readonly apiBaseUrl: string) {}
 
   public async execute(

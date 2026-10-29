@@ -115,7 +115,7 @@ export function useSavingsPiggy() {
   }
   function setCurrency(value: unknown) {
     if (isFamilyCurrency(value)) {
-      store.setFamilyCurrency(value);
+      void store.setFamilyCurrency(value);
     }
   }
   function goalProgress(saved: number, target: number) {
@@ -144,7 +144,7 @@ export function useSavingsPiggy() {
       return;
     }
 
-    store.saveToGoal(selectedGoalId.value, amount.value);
+    void store.saveToGoal(selectedGoalId.value, amount.value);
     playTransfer("deposit");
     amount.value = SAVINGS_RULES.defaultTransferAmount;
   }
@@ -153,7 +153,7 @@ export function useSavingsPiggy() {
       return;
     }
 
-    store.withdrawFromGoal(selectedGoalId.value, amount.value);
+    void store.withdrawFromGoal(selectedGoalId.value, amount.value);
     playTransfer("withdraw");
     amount.value = SAVINGS_RULES.defaultTransferAmount;
   }
@@ -165,7 +165,7 @@ export function useSavingsPiggy() {
     const recipientName =
       memberOptions.value.find((member) => member.value === selectedMemberId.value)?.title ??
       t("savings.piggy.transfer.memberFallback");
-    store.giftLadirchenToFamilyMember(selectedMemberId.value, amount.value);
+    void store.giftLadirchenToFamilyMember(selectedMemberId.value, amount.value);
     playTransfer("gift");
     ladiGuideController.say({
       heading: t("savings.piggy.guide.giftTitle"),

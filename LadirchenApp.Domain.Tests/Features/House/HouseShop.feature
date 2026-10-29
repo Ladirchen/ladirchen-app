@@ -137,6 +137,12 @@ Feature: House shop
       | garden    | outside     |
       | special   | special     |
 
+  Scenario: Catalog entries contain the facts required for a purchase decision
+    Given a family member views the house catalog
+    When a house item is presented
+    Then its identifier, price, catalog area and minimum house level are provided
+    And its ownership and purchase availability are provided for the current family
+
   Scenario: Moved house-item coordinates are rounded and bounded
     Given an owned movable house item can be arranged in an unlocked area
     When a family member moves it to x <requestedX> and y <requestedY>

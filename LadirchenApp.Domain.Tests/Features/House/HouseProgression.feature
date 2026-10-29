@@ -1,7 +1,7 @@
 Feature: House progression and level-based unlocks
   The house level represents the family's shared progression.
   It unlocks house content and visual extensions, but does not directly change savings interest.
-  The frontend stores house levels from 0 to 4 and displays them as levels 1 to 5.
+  House levels are stored from 0 to 4 and displayed as levels 1 to 5.
 
   Scenario: Each house level has a stage and room capacity
     Given the stored house level is <storedLevel>
