@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Commands;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Helpers;
 using LadirchenApp.Webhost.Models;
@@ -35,6 +36,7 @@ public static class WebApplicationExtensions
 
     app.MapAboutInfo(aboutInfoPath);
     app.MapFamilyAggregateApi();
+    app.MapFamilyCommandApi();
     app.MapHub<FamilyUpdatesHub>("/hubs/family-updates");
     app.MapSinglePageApps(appSettings);
   }
@@ -94,6 +96,59 @@ public static class WebApplicationExtensions
       .ProducesProblem(StatusCodes.Status409Conflict);
 
     return app;
+  }
+
+  public static WebApplication MapFamilyCommandApi(this WebApplication app)
+  {
+    app
+      .MapPost("/api/families/{familyId:guid}/commands", ExecuteFamilyCommandAsync)
+      .WithName("ExecuteFamilyCommand")
+      .WithTags("Family commands")
+      .Produces<ExecuteFamilyCommandResponse>()
+      .ProducesProblem(StatusCodes.Status400BadRequest);
+
+    return app;
+  }
+
+  private static async Task<IResult> ExecuteFamilyCommandAsync(
+    Guid familyId,
+    ExecuteFamilyCommandRequest request,
+    ExecuteFamilyCommandHandler handler,
+    CancellationToken cancellationToken
+  )
+  {
+    try
+    {
+      var command = new FamilyCommand(
+        new FamilyId(familyId),
+        new FamilyMemberId(request.ActorId),
+        request.CommandType,
+        request.Payload
+      );
+      var result = await handler.HandleAsync(command, cancellationToken);
+
+      return Results.Ok(ExecuteFamilyCommandResponse.FromResult(result));
+    }
+    catch (FamilyCommandException exception)
+    {
+      return Results.BadRequest(
+        new ProblemDetails
+        {
+          Detail = exception.Message,
+          Title = "Family command rejected",
+        }
+      );
+    }
+    catch (ArgumentException exception)
+    {
+      return Results.BadRequest(
+        new ProblemDetails
+        {
+          Detail = exception.Message,
+          Title = "Invalid family command",
+        }
+      );
+    }
   }
 
   private static async Task<IResult> GetFamilyAggregateAsync(

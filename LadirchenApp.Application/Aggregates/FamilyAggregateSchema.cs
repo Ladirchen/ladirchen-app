@@ -10,7 +10,7 @@ public static class FamilyAggregateSchema
     {
       ["contributions"] = 1,
       ["family-profile"] = 2,
-      ["family-progression"] = 2,
+      ["family-progression"] = 3,
       ["home-customization"] = 3,
       ["reward-shop"] = 1,
       ["savings"] = 1,

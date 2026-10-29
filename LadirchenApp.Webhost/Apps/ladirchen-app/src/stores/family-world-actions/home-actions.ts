@@ -14,24 +14,21 @@ import type { HouseAccessory } from "@/domain/house/entities";
 import type { HouseLayoutPlacementId } from "@/domain/shared/identifiers";
 import { clamp, PERCENTAGE_BASE } from "@/domain/shared/numbers";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
+import { executeBackendFamilyCommand } from "./backend-family-command";
 function applyHouseThemeRoomDesigns(store: FamilyWorldStoreContext, themeId: HouseThemeId) {
-
   for (const design of roomDesignsForTheme(themeId)) {
-
     if (!store.ownedRoomDesignIds.includes(design.id)) {
       store.ownedRoomDesignIds.push(design.id);
     }
 
     store.selectedRoomDesignIds[design.zoneId] = design.id;
   }
-
 }
 export const homeActions = {
   purchaseAccessory(this: FamilyWorldStoreContext, id: HouseAccessory["id"]) {
     const accessory = this.accessories.find((item) => item.id === id);
 
     if (this.viewerRole !== "child" || !accessory || accessory.owned || accessory.price > this.availableBalance) {
-
       return;
     }
 
@@ -52,12 +49,10 @@ export const homeActions = {
       this.ownedFurnitureSetIds.includes(id) ||
       set.price > this.availableBalance
     ) {
-
       return;
     }
 
     for (const accessory of this.accessories) {
-
       if (!set.accessoryIds.includes(accessory.id)) {
         continue;
       }
@@ -75,7 +70,6 @@ export const homeActions = {
     const accessory = this.accessories.find((item) => item.id === id);
 
     if (!accessory?.owned || accessory.mobility === "fixed") {
-
       return;
     }
 
@@ -86,7 +80,6 @@ export const homeActions = {
     const accessory = this.accessories.find((item) => item.id === id);
 
     if (!accessory?.owned || !accessory.equipped || accessory.mobility === "fixed") {
-
       return;
     }
 
@@ -98,7 +91,6 @@ export const homeActions = {
     const placement = this.houseLayout.find((item) => item.entityType === "furniture" && item.entityId === id);
 
     if (!accessory?.owned || !placement || accessory.mobility === "fixed") {
-
       return;
     }
 
@@ -106,7 +98,6 @@ export const homeActions = {
 
     if (accessory.placement === "outside") {
       targetZoneId = "garden";
-
     } else if (requestedZoneId === "garden") {
       targetZoneId = accessory.roomId ?? "living-room";
     }
@@ -114,7 +105,6 @@ export const homeActions = {
     const targetRoom = HOUSE_ROOMS.find((item) => item.id === targetZoneId);
 
     if (targetRoom && targetRoom.minimumHouseLevel > this.houseLevel) {
-
       return;
     }
 
@@ -140,7 +130,6 @@ export const homeActions = {
       this.ownedHouseThemeIds.includes(id) ||
       edition.price > this.availableBalance
     ) {
-
       return;
     }
 
@@ -153,9 +142,7 @@ export const homeActions = {
     this.notify("notifications.home.themePurchased");
   },
   selectHouseTheme(this: FamilyWorldStoreContext, id: HouseThemeId) {
-
     if (!this.ownedHouseThemeIds.includes(id)) {
-
       return;
     }
 
@@ -175,7 +162,6 @@ export const homeActions = {
       this.ownedRoomDesignIds.includes(id) ||
       design.price > this.availableBalance
     ) {
-
       return;
     }
 
@@ -195,7 +181,6 @@ export const homeActions = {
       !this.ownedHouseThemeIds.includes(design.houseThemeId) ||
       !this.ownedRoomDesignIds.includes(id)
     ) {
-
       return;
     }
 
@@ -211,23 +196,19 @@ export const homeActions = {
     x: number,
     y: number,
   ) {
-
     if (!this.canArrangeHouse) {
-
       return;
     }
 
     const room = HOUSE_ROOMS.find((item) => item.id === zoneId);
 
     if (room && room.minimumHouseLevel > this.houseLevel) {
-
       return;
     }
 
     const placement = this.houseLayout.find((item) => item.id === placementId);
 
     if (!placement) {
-
       return;
     }
 
@@ -235,7 +216,6 @@ export const homeActions = {
       placement.entityType === "furniture" &&
       this.accessories.find((accessory) => accessory.id === placement.entityId)?.mobility === "fixed"
     ) {
-
       return;
     }
 
@@ -253,9 +233,7 @@ export const homeActions = {
     this.persistHomeCustomization();
   },
   resetHouseEntityPosition(this: FamilyWorldStoreContext, placementId: HouseLayoutPlacementId) {
-
     if (!this.canArrangeHouse) {
-
       return;
     }
 
@@ -265,7 +243,6 @@ export const homeActions = {
     const placement = this.houseLayout.find((item) => item.id === placementId);
 
     if (!initialPlacement || !placement) {
-
       return;
     }
 
@@ -273,7 +250,6 @@ export const homeActions = {
       placement.entityType === "furniture" &&
       this.accessories.find((accessory) => accessory.id === placement.entityId)?.mobility === "fixed"
     ) {
-
       return;
     }
 
@@ -284,18 +260,26 @@ export const homeActions = {
     this.persistHomeCustomization();
   },
   setSimulatedEnergy(this: FamilyWorldStoreContext, value: number | null) {
-
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {
-
       return;
     }
 
     this.simulatedEnergy = value === null ? null : clamp(Math.round(value), 0, PERCENTAGE_BASE);
   },
-  completeWeekDemo(this: FamilyWorldStoreContext): boolean {
+  async completeWeekDemo(this: FamilyWorldStoreContext): Promise<boolean> {
+    let completed = false;
+
+    if (
+      await executeBackendFamilyCommand(this, "progression.complete-week", {}, "notifications.save.profile", () => {
+        completed = true;
+        this.revealVersion += 1;
+        this.notify("notifications.home.weekCompleted");
+      })
+    ) {
+      return completed;
+    }
 
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {
-
       return false;
     }
 
@@ -319,10 +303,17 @@ export const homeActions = {
 
     return true;
   },
-  failWeekDemo(this: FamilyWorldStoreContext) {
+  async failWeekDemo(this: FamilyWorldStoreContext) {
+    if (
+      await executeBackendFamilyCommand(this, "progression.fail-week", {}, "notifications.save.profile", () => {
+        this.revealVersion += 1;
+        this.notify("notifications.home.weekFailed");
+      })
+    ) {
+      return;
+    }
 
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {
-
       return;
     }
 

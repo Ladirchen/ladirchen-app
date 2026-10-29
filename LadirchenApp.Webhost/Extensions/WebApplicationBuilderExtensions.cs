@@ -1,6 +1,7 @@
 using System;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Commands;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Realtime;
 
@@ -30,6 +31,7 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Services.AddSingleton<IFamilyAggregateChangePublisher, SignalRFamilyAggregateChangePublisher>();
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
     webApplicationBuilder.Services.AddScoped<SaveFamilyAggregateCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
   }
 
   /// <summary>

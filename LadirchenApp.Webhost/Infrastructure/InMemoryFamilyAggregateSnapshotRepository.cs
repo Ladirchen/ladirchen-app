@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,7 +15,7 @@ public sealed class InMemoryFamilyAggregateSnapshotRepository : IFamilyAggregate
 {
   private readonly ConcurrentDictionary<(Guid FamilyId, string AggregateType), FamilyAggregateSnapshot> _snapshots =
     new();
-  private readonly ConcurrentDictionary<(Guid FamilyId, string AggregateType), object> _locks = new();
+  private readonly object _transactionLock = new();
   private readonly TimeProvider _timeProvider;
 
   public InMemoryFamilyAggregateSnapshotRepository(TimeProvider timeProvider)
@@ -28,10 +30,13 @@ public sealed class InMemoryFamilyAggregateSnapshotRepository : IFamilyAggregate
   )
   {
     cancellationToken.ThrowIfCancellationRequested();
-    var key = (familyId.Value, aggregateType);
-    var found = _snapshots.TryGetValue(key, out var snapshot);
+    lock (_transactionLock)
+    {
+      var key = (familyId.Value, aggregateType);
+      var found = _snapshots.TryGetValue(key, out var snapshot);
 
-    return Task.FromResult(found ? Clone(snapshot!) : null);
+      return Task.FromResult(found ? Clone(snapshot!) : null);
+    }
   }
 
   public Task<FamilyAggregateSnapshot> SaveAsync(
@@ -41,36 +46,67 @@ public sealed class InMemoryFamilyAggregateSnapshotRepository : IFamilyAggregate
   )
   {
     cancellationToken.ThrowIfCancellationRequested();
-    var key = (command.FamilyId.Value, command.AggregateType);
-    var aggregateLock = _locks.GetOrAdd(key, _ => new object());
-
-    lock (aggregateLock)
+    lock (_transactionLock)
     {
-      var hasCurrent = _snapshots.TryGetValue(key, out var current);
-      var currentRevision = hasCurrent ? current!.Revision : 0;
+      return Task.FromResult(SaveLocked(command, schemaVersion));
+    }
+  }
 
-      if (currentRevision != command.ExpectedRevision)
+  public Task<IReadOnlyList<FamilyAggregateSnapshot>> SaveBatchAsync(
+    IReadOnlyList<PendingFamilyAggregateSave> saves,
+    CancellationToken cancellationToken
+  )
+  {
+    ArgumentNullException.ThrowIfNull(saves);
+    cancellationToken.ThrowIfCancellationRequested();
+
+    lock (_transactionLock)
+    {
+      foreach (var save in saves)
       {
-        throw new FamilyAggregateConflictException(
-          command.AggregateType,
-          command.ExpectedRevision,
-          currentRevision
-        );
+        ValidateRevision(save.Command);
       }
 
-      var saved = new FamilyAggregateSnapshot(
-        command.FamilyId,
-        command.AggregateType,
-        schemaVersion,
-        checked(currentRevision + 1),
-        command.State.Clone(),
-        command.UpdatedBy,
-        _timeProvider.GetUtcNow()
-      );
-      _snapshots[key] = saved;
+      var results = saves.Select(save => SaveLocked(save.Command, save.SchemaVersion)).ToArray();
 
-      return Task.FromResult(Clone(saved));
+      return Task.FromResult<IReadOnlyList<FamilyAggregateSnapshot>>(results);
     }
+  }
+
+  private FamilyAggregateSnapshot SaveLocked(SaveFamilyAggregateCommand command, int schemaVersion)
+  {
+    var currentRevision = ValidateRevision(command);
+    var key = (command.FamilyId.Value, command.AggregateType);
+    var saved = new FamilyAggregateSnapshot(
+      command.FamilyId,
+      command.AggregateType,
+      schemaVersion,
+      checked(currentRevision + 1),
+      command.State.Clone(),
+      command.UpdatedBy,
+      _timeProvider.GetUtcNow()
+    );
+    _snapshots[key] = saved;
+
+    return Clone(saved);
+  }
+
+  private long ValidateRevision(SaveFamilyAggregateCommand command)
+  {
+    var key = (command.FamilyId.Value, command.AggregateType);
+    var hasCurrent = _snapshots.TryGetValue(key, out var current);
+    var currentRevision = hasCurrent ? current!.Revision : 0;
+
+    if (currentRevision != command.ExpectedRevision)
+    {
+      throw new FamilyAggregateConflictException(
+        command.AggregateType,
+        command.ExpectedRevision,
+        currentRevision
+      );
+    }
+
+    return currentRevision;
   }
 
   private static FamilyAggregateSnapshot Clone(FamilyAggregateSnapshot snapshot)

@@ -6,43 +6,54 @@ import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
 import { createUuid, supportedFamilyCurrencies } from "./family-world-store-utils";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { REWARD_REVEAL_DELAY_MS } from "@/shared/runtime-timing";
+import { executeBackendFamilyCommand } from "./backend-family-command";
 
 export const savingsActions = {
-  setFamilyCurrency(this: FamilyWorldStoreContext, currency: FamilyCurrency) {
+  async setFamilyCurrency(this: FamilyWorldStoreContext, currency: FamilyCurrency) {
+    if (await executeBackendFamilyCommand(this, "savings.set-currency", { currency }, "notifications.save.savings")) {
+      return;
+    }
 
     if (!this.permissions.canManageFamily) {
-
       return;
     }
 
     if (!supportedFamilyCurrencies.includes(currency)) {
-
       return;
     }
 
     this.familyCurrencyCode = currency;
     this.persistSavings();
   },
-  setLadirchenExchangeRate(this: FamilyWorldStoreContext, rate: number) {
+  async setLadirchenExchangeRate(this: FamilyWorldStoreContext, rate: number) {
+    if (await executeBackendFamilyCommand(this, "savings.set-exchange-rate", { rate }, "notifications.save.savings")) {
+      return;
+    }
 
     if (!this.permissions.canManageFamily) {
-
       return;
     }
 
     if (!Number.isFinite(rate) || rate < 1) {
-
       return;
     }
 
     this.ladirchenPerCurrencyUnit = Math.round(rate);
     this.persistSavings();
   },
-  toggleCheer(this: FamilyWorldStoreContext, id: SavingGoalId) {
+  async toggleCheer(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    if (
+      await executeBackendFamilyCommand(this, "savings.toggle-cheer", { id }, "notifications.save.savings", () => {
+        const goal = this.goals.find((item) => item.id === id);
+        this.notify(goal?.cheered ? "notifications.goals.cheered" : "notifications.goals.cheerRemoved");
+      })
+    ) {
+      return;
+    }
+
     const goal = this.goals.find((item) => item.id === id);
 
     if (!goal) {
-
       return;
     }
 
@@ -52,18 +63,33 @@ export const savingsActions = {
         (goal.visibility === "guardians" && this.permissions.canViewGuardianGoals);
 
       if (!this.permissions.canSupportChildGoals || !canViewGoal) {
-
         return;
       }
-
     }
 
     goal.cheered = !goal.cheered;
     this.persistSavings();
     this.notify(goal.cheered ? "notifications.goals.cheered" : "notifications.goals.cheerRemoved");
   },
-  addGoal(this: FamilyWorldStoreContext, input: NewGoal, requestedOwnerId?: SavingGoalOwnerId) {
+  async addGoal(this: FamilyWorldStoreContext, input: NewGoal, requestedOwnerId?: SavingGoalOwnerId) {
     const ownerId = requestedOwnerId ?? (this.viewerRole === "guardian" ? this.signedInMemberId : this.activeChildId);
+    const id = createDomainId.savingGoal(createUuid());
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.add-goal",
+        { id, ownerId, ...input },
+        "notifications.save.savings",
+        () => {
+          this.activeGoalId = id;
+          this.notify(ownerId === "family" ? "notifications.goals.familyAdded" : "notifications.goals.personalAdded");
+        },
+      )
+    ) {
+      return;
+    }
+
     const isFamilyGoal = ownerId === "family";
     const isOwnGoal = ownerId === this.signedInMemberId;
     const isManagedChildGoal =
@@ -71,11 +97,9 @@ export const savingsActions = {
       this.members.some((member) => member.id === ownerId && member.role === "child");
 
     if (!isFamilyGoal && !isOwnGoal && !isManagedChildGoal) {
-
       return;
     }
 
-    const id = createDomainId.savingGoal(createUuid());
     const starterBonus = isFamilyGoal ? 0 : SAVINGS_RULES.goalStarterBonus;
     this.goals.push({
       id,
@@ -91,17 +115,26 @@ export const savingsActions = {
     this.persistSavings();
     this.notify(isFamilyGoal ? "notifications.goals.familyAdded" : "notifications.goals.personalAdded");
   },
-  updateGoal(this: FamilyWorldStoreContext, id: SavingGoalId, input: NewGoal) {
+  async updateGoal(this: FamilyWorldStoreContext, id: SavingGoalId, input: NewGoal) {
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.update-goal",
+        { id, ...input },
+        "notifications.save.savings",
+        () => this.notify("notifications.goals.updated"),
+      )
+    ) {
+      return;
+    }
 
     if (this.viewerRole === "guardian" && !this.permissions.canManageGoals) {
-
       return;
     }
 
     const goal = this.goals.find((item) => item.id === id && item.ownerId === this.activeChildId);
 
     if (!goal) {
-
       return;
     }
 
@@ -112,10 +145,39 @@ export const savingsActions = {
     this.persistSavings();
     this.notify("notifications.goals.updated");
   },
-  supportGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+  async supportGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+    const giftId = createDomainId.guardianGift(createUuid());
+    const goalBeforeSupport = this.goals.find((item) => item.id === id);
+    const senderName = this.signedInMember.name.replace(" (du)", "");
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.support-goal",
+        { amount, giftId, id, senderName },
+        "notifications.save.savings",
+      )
+    ) {
+      const credited = Math.max(
+        0,
+        (this.goals.find((item) => item.id === id)?.saved ?? 0) - (goalBeforeSupport?.saved ?? 0),
+      );
+      this.notify(
+        goalBeforeSupport?.ownerId === "family"
+          ? "notifications.goals.familyGifted"
+          : "notifications.goals.childGifted",
+        goalBeforeSupport?.ownerId === "family"
+          ? { amount: credited }
+          : {
+              amount: credited,
+              name: this.members.find((member) => member.id === goalBeforeSupport?.ownerId)?.name ?? "",
+            },
+      );
+
+      return;
+    }
 
     if (!this.permissions.canSupportChildGoals) {
-
       return;
     }
 
@@ -129,14 +191,12 @@ export const savingsActions = {
     );
 
     if (!goal) {
-
       return;
     }
 
     const safeAmount = Math.max(0, Math.min(Math.round(amount), goal.target - goal.saved));
 
     if (safeAmount === 0) {
-
       return;
     }
 
@@ -162,10 +222,34 @@ export const savingsActions = {
     this.persistSavings();
     this.notify("notifications.goals.childGifted", { amount: safeAmount, name: childName });
   },
-  giftLadirchenToGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+  async giftLadirchenToGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+    const giftId = createDomainId.guardianGift(createUuid());
+    const goalBeforeGift = this.goals.find((item) => item.id === id);
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.gift-to-goal",
+        { amount, giftId, id, senderName: this.signedInMember.name },
+        "notifications.save.savings",
+      )
+    ) {
+      const credited = Math.max(
+        0,
+        (this.goals.find((item) => item.id === id)?.saved ?? 0) - (goalBeforeGift?.saved ?? 0),
+      );
+      const recipientName = this.members.find((member) => member.id === goalBeforeGift?.ownerId)?.name ?? "";
+      this.notify(
+        goalBeforeGift?.ownerId === "family"
+          ? "notifications.goals.ownFamilyGifted"
+          : "notifications.goals.childGifted",
+        goalBeforeGift?.ownerId === "family" ? { amount: credited } : { amount: credited, name: recipientName },
+      );
+
+      return;
+    }
 
     if (this.viewerRole !== "child") {
-
       return;
     }
 
@@ -178,14 +262,12 @@ export const savingsActions = {
         : undefined;
 
     if (!goal || (goal.ownerId !== "family" && !recipient)) {
-
       return;
     }
 
     const safeAmount = Math.max(0, Math.min(Math.round(amount), this.availableBalance, goal.target - goal.saved));
 
     if (safeAmount === 0) {
-
       return;
     }
 
@@ -209,10 +291,23 @@ export const savingsActions = {
       goal.ownerId === "family" ? { amount: safeAmount } : { amount: safeAmount, name: recipient?.name ?? "" },
     );
   },
-  giftLadirchenToFamilyMember(this: FamilyWorldStoreContext, memberId: FamilyMemberId, amount: number) {
+  async giftLadirchenToFamilyMember(this: FamilyWorldStoreContext, memberId: FamilyMemberId, amount: number) {
+    const giftId = createDomainId.guardianGift(createUuid());
+    const recipientName = this.members.find((member) => member.id === memberId)?.name ?? "";
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.gift-to-member",
+        { amount, giftId, recipientId: memberId, senderName: this.signedInMember.name },
+        "notifications.save.savings",
+        () => this.notify("notifications.goals.memberGifted", { amount: Math.round(amount), name: recipientName }),
+      )
+    ) {
+      return;
+    }
 
     if (this.viewerRole !== "child") {
-
       return;
     }
 
@@ -222,7 +317,6 @@ export const savingsActions = {
     const safeAmount = Math.max(0, Math.min(Math.round(amount), this.availableBalance));
 
     if (!recipient || safeAmount === 0) {
-
       return;
     }
 
@@ -239,10 +333,29 @@ export const savingsActions = {
     this.persistSavings();
     this.notify("notifications.goals.memberGifted", { amount: safeAmount, name: recipient.name });
   },
-  giftLadirchenToChild(this: FamilyWorldStoreContext, childId: FamilyMemberId, amount: number, reason: string) {
+  async giftLadirchenToChild(this: FamilyWorldStoreContext, childId: FamilyMemberId, amount: number, reason: string) {
+    const giftId = createDomainId.guardianGift(createUuid());
+    const childName = this.members.find((member) => member.id === childId)?.name ?? "";
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.special-gift",
+        {
+          amount,
+          childId,
+          giftId,
+          reason,
+          senderName: this.signedInMember.name.replace(" (du)", ""),
+        },
+        "notifications.save.savings",
+        () => this.notify("notifications.goals.specialGifted", { amount: Math.round(amount), name: childName }),
+      )
+    ) {
+      return;
+    }
 
     if (!this.permissions.canManageContent) {
-
       return;
     }
 
@@ -251,7 +364,6 @@ export const savingsActions = {
     const safeReason = reason.trim();
 
     if (!child || !safeReason) {
-
       return;
     }
 
@@ -267,26 +379,45 @@ export const savingsActions = {
     this.persistSavings();
     this.notify("notifications.goals.specialGifted", { amount: safeAmount, name: child.name });
   },
-  revealNextGuardianGift(this: FamilyWorldStoreContext) {
-
+  async revealNextGuardianGift(this: FamilyWorldStoreContext) {
     if (this.viewerRole !== "child" || this.guardianGiftAnimation.visible) {
-
       return;
     }
 
     const giftIndex = this.pendingGuardianGifts.findIndex((gift) => gift.childId === this.activeChildId);
 
     if (giftIndex < 0) {
-
       return;
     }
 
-    const [gift] = this.pendingGuardianGifts.splice(giftIndex, 1);
+    const gift = this.pendingGuardianGifts[giftIndex];
 
     if (!gift) {
-
       return;
     }
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.consume-guardian-gift",
+        { id: gift.id },
+        "notifications.save.savings",
+        () => {
+          this.guardianGiftAnimation = {
+            visible: true,
+            guardianName: gift.guardianName,
+            goalTitle: gift.goalTitle,
+            destination: gift.destination ?? "goal",
+            amount: gift.amount,
+            version: this.guardianGiftAnimation.version + 1,
+          };
+        },
+      )
+    ) {
+      return;
+    }
+
+    this.pendingGuardianGifts.splice(giftIndex, 1);
 
     this.guardianGiftAnimation = {
       visible: true,
@@ -302,11 +433,21 @@ export const savingsActions = {
     this.guardianGiftAnimation.visible = false;
     this.$familyWorld.scheduler.schedule(() => this.revealNextGuardianGift(), REWARD_REVEAL_DELAY_MS);
   },
-  saveToGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+  async saveToGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+    const before = this.goals.find((item) => item.id === id)?.saved ?? 0;
+
+    if (
+      await executeBackendFamilyCommand(this, "savings.deposit", { amount, id }, "notifications.save.savings", () => {
+        const credited = Math.max(0, (this.goals.find((item) => item.id === id)?.saved ?? 0) - before);
+        this.notify("notifications.goals.deposited", { amount: credited });
+      })
+    ) {
+      return;
+    }
+
     const goal = this.goals.find((item) => item.id === id);
 
     if (!goal) {
-
       return;
     }
 
@@ -314,7 +455,6 @@ export const savingsActions = {
     const safeAmount = Math.max(0, Math.min(amount, this.availableBalance, remaining));
 
     if (safeAmount === 0) {
-
       return;
     }
 
@@ -323,18 +463,27 @@ export const savingsActions = {
     this.persistSavings();
     this.notify("notifications.goals.deposited", { amount: safeAmount });
   },
-  withdrawFromGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+  async withdrawFromGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
+    const before = this.goals.find((item) => item.id === id)?.saved ?? 0;
+
+    if (
+      await executeBackendFamilyCommand(this, "savings.withdraw", { amount, id }, "notifications.save.savings", () => {
+        const withdrawn = Math.max(0, before - (this.goals.find((item) => item.id === id)?.saved ?? 0));
+        this.notify("notifications.goals.withdrawn", { amount: withdrawn });
+      })
+    ) {
+      return;
+    }
+
     const goal = this.goals.find((item) => item.id === id && item.ownerId === this.activeChildId);
 
     if (!goal) {
-
       return;
     }
 
     const safeAmount = Math.max(0, Math.min(amount, this.withdrawableGoalBalance(goal)));
 
     if (safeAmount === 0) {
-
       return;
     }
 
@@ -343,18 +492,36 @@ export const savingsActions = {
     this.persistSavings();
     this.notify("notifications.goals.withdrawn", { amount: safeAmount });
   },
-  cancelGoal(this: FamilyWorldStoreContext, id: SavingGoalId) {
+  async cancelGoal(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    const goalBeforeCancel = this.goals.find((item) => item.id === id);
+    const balanceBeforeCancel = this.balance;
+
+    if (
+      await executeBackendFamilyCommand(this, "savings.cancel-goal", { id }, "notifications.save.savings", () => {
+        const returned = Math.max(0, this.balance - balanceBeforeCancel);
+        const forfeitedBonus = Math.max(0, (goalBeforeCancel?.saved ?? 0) - returned);
+        this.notify(forfeitedBonus > 0 ? "notifications.goals.cancelledWithBonus" : "notifications.goals.cancelled", {
+          amount: returned,
+        });
+      })
+    ) {
+      if (this.activeGoalId === id) {
+        this.activeGoalId =
+          this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? this.activeGoalId;
+      }
+
+      return;
+    }
+
     const goalIndex = this.goals.findIndex((item) => item.id === id && item.ownerId === this.activeChildId);
 
     if (goalIndex < 0) {
-
       return;
     }
 
     const goal = this.goals[goalIndex];
 
     if (!goal) {
-
       return;
     }
 
@@ -374,11 +541,27 @@ export const savingsActions = {
       amount: returned,
     });
   },
-  creditWeeklyInterestDemo(this: FamilyWorldStoreContext) {
+  async creditWeeklyInterestDemo(this: FamilyWorldStoreContext) {
+    const before = this.goals.reduce((sum, goal) => sum + goal.saved, 0);
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.credit-weekly-interest",
+        {},
+        "notifications.save.savings",
+        () => {
+          const credited = Math.max(0, this.goals.reduce((sum, goal) => sum + goal.saved, 0) - before);
+          this.notify("notifications.goals.weeklyInterest", { amount: credited });
+        },
+      )
+    ) {
+      return;
+    }
+
     let credited = 0;
 
     for (const goal of this.goals) {
-
       if (goal.ownerId === "family" || goal.saved <= 0) {
         continue;
       }
@@ -395,10 +578,36 @@ export const savingsActions = {
 
     this.notify("notifications.goals.weeklyInterest", { amount: credited });
   },
-  creditActiveChildInterestDemo(this: FamilyWorldStoreContext, rate: number): number {
+  async creditActiveChildInterestDemo(this: FamilyWorldStoreContext, rate: number): Promise<number> {
+    const before = this.goals
+      .filter((goal) => goal.ownerId === this.activeChildId)
+      .reduce((sum, goal) => sum + goal.saved, 0);
+    let backendCredit = 0;
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "savings.simulate-interest",
+        { selectedRate: rate },
+        "notifications.save.savings",
+        () => {
+          backendCredit = Math.max(
+            0,
+            this.goals
+              .filter((goal) => goal.ownerId === this.activeChildId)
+              .reduce((sum, goal) => sum + goal.saved, 0) - before,
+          );
+          this.notify(
+            backendCredit > 0 ? "notifications.goals.interestCredited" : "notifications.goals.interestUnavailable",
+            backendCredit > 0 ? { amount: backendCredit } : {},
+          );
+        },
+      )
+    ) {
+      return backendCredit;
+    }
 
     if (this.viewerRole !== "child") {
-
       return 0;
     }
 
@@ -406,7 +615,6 @@ export const savingsActions = {
     let credited = 0;
 
     for (const goal of this.goals) {
-
       if (goal.ownerId !== this.activeChildId || goal.saved <= 0) {
         continue;
       }
@@ -425,7 +633,6 @@ export const savingsActions = {
     if (credited > 0) {
       this.persistSavings();
       this.notify("notifications.goals.interestCredited", { amount: credited });
-
     } else {
       this.notify("notifications.goals.interestUnavailable");
     }

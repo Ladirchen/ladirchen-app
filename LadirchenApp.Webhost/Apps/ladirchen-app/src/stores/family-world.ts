@@ -27,49 +27,38 @@ import { shopActions } from "@/stores/family-world-actions/shop-actions";
 import { createFamilyWorldState } from "@/stores/family-world-state";
 import type { FamilyWorldInitialDataFactory } from "@/application/ports/family-world-initial-data";
 export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorldInitialDataFactory) {
-
   return defineStore("ladirchenFamilyWorld", {
     state(this: void) {
-
       return createFamilyWorldState(initialDataFactory.create());
     },
     getters: {
       activeChild(state): FamilyMember {
-
         return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0]!;
       },
       signedInMember(state): FamilyMember {
-
         return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0]!;
       },
       permissions(): FamilyPermissions {
-
         return resolveFamilyPermissions(this.signedInMember);
       },
       isFamilyAdmin(): boolean {
-
         return this.signedInMember.role === "guardian" && this.signedInMember.guardianAccess === "admin";
       },
       canArrangeHouse(state): boolean {
-
         return state.subscriptionTier === "pro";
       },
       unlockedHouseRooms(state) {
-
         return HOUSE_ROOMS.filter((room) => room.minimumHouseLevel <= state.houseLevel);
       },
       ownedFurnitureSetIds(state): FurnitureSetId[] {
-
         return FURNITURE_SETS.filter((set) =>
           set.accessoryIds.every((id) => state.accessories.find((accessory) => accessory.id === id)?.owned),
         ).map((set) => set.id);
       },
       balanceFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => state.balances[memberId] ?? 0;
       },
       displayNameFor(this: void, state) {
-
         return (memberId: FamilyMemberId): string => {
           const member = state.members.find((item) => item.id === memberId);
 
@@ -77,19 +66,22 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         };
       },
       balance(): number {
-
         return this.balanceFor(this.activeChildId);
       },
       totalVisibleSavedFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number =>
           state.goals
             .filter((goal) => goal.ownerId === memberId && goal.visibility !== "private")
             .reduce((sum, goal) => sum + goal.saved, 0);
       },
       averageTaskRatingFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
+          const evaluated = state.memberProgressions[memberId]?.averageBasicRating;
+
+          if (evaluated !== undefined) {
+            return evaluated;
+          }
+
           const rated = state.contributions.filter(
             (contribution) => contribution.assigneeId === memberId && contribution.stars,
           );
@@ -100,54 +92,53 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         };
       },
       pendingCountFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number =>
           state.contributions.filter(
             (contribution) => contribution.assigneeId === memberId && contribution.status === "pending",
           ).length;
       },
       openCountFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number =>
           state.contributions.filter(
             (contribution) => contribution.assigneeId === memberId && contribution.status === "available",
           ).length;
       },
       dailyBaseContributions(state): Contribution[] {
-
         return state.contributions.filter(
           (contribution) => contribution.kind === "basic" && contribution.assigneeId === state.activeChildId,
         );
       },
       dailyEnergy(state): number {
-
         if (state.simulatedEnergy !== null) {
-
           return state.simulatedEnergy;
         }
 
-        return calculateContributionProgress(state.contributions, state.activeChildId);
+        return (
+          state.memberProgressions[state.activeChildId]?.completionPercent ??
+          calculateContributionProgress(state.contributions, state.activeChildId)
+        );
       },
       approvedBaseCount(): number {
-
         return this.dailyBaseContributions.filter((contribution) => contribution.status === "approved").length;
       },
       pendingContributions(state): Contribution[] {
-
         return state.contributions.filter((contribution) => contribution.status === "pending");
       },
       contributionProgress(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
-
-          return calculateContributionProgress(state.contributions, memberId);
+          return (
+            state.memberProgressions[memberId]?.completionPercent ??
+            calculateContributionProgress(state.contributions, memberId)
+          );
         };
       },
       familyEnergy(): number {
-
         if (this.simulatedEnergy !== null) {
-
           return this.simulatedEnergy;
+        }
+
+        if (Object.keys(this.memberProgressions).length > 0) {
+          return this.familyEnergyReadModel;
         }
 
         const participants = this.members.filter(
@@ -157,10 +148,14 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         return calculateAverageEnergy(participants.map((member) => this.contributionProgress(member.id)));
       },
       houseMeetsMinimumEnergy(): boolean {
-
         return this.familyEnergy >= MINIMUM_HOUSE_ENERGY_PERCENT;
       },
       currentWeekDays(state): number {
+        const evaluated = state.memberProgressions[state.activeChildId]?.streakDays;
+
+        if (evaluated !== undefined) {
+          return Math.max(0, evaluated - state.completedWeeklyStreak * state.currentWeekTarget);
+        }
 
         return currentWeekDaysFromContributions(
           state.contributions,
@@ -169,16 +164,16 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         );
       },
       currentDailyStreak(): number {
-
-        return this.completedWeeklyStreak * this.currentWeekTarget + this.currentWeekDays;
+        return (
+          this.memberProgressions[this.activeChildId]?.streakDays ??
+          this.completedWeeklyStreak * this.currentWeekTarget + this.currentWeekDays
+        );
       },
       rewardForContribution(this: void, state) {
-
         return (contributionId: ContributionId): number => {
           const contribution = state.contributions.find((item) => item.id === contributionId);
 
           if (contribution?.status === "approved" && contribution.earnedReward !== undefined) {
-
             return contribution.earnedReward;
           }
 
@@ -225,15 +220,12 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         );
       },
       totalSaved(): number {
-
         return this.ownSavingGoals.reduce((sum, goal) => sum + goal.saved, 0);
       },
       totalInterestEarned(): number {
-
         return this.ownSavingGoals.reduce((sum, goal) => sum + (goal.interestEarned ?? 0), 0);
       },
       todayEarnedFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
           const today = new Date(state.currentTimeMilliseconds);
 
@@ -253,20 +245,15 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         };
       },
       todayEarned(): number {
-
         return this.todayEarnedFor(this.activeChildId);
       },
       withdrawableGoalBalance(this: void) {
-
         return (goal?: SavingGoal): number => {
-
           if (!goal) {
-
             return 0;
           }
 
           if (goal.saved >= goal.target) {
-
             return goal.saved;
           }
 
@@ -274,26 +261,27 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         };
       },
       reservedBalance(state): number {
-
         return state.shopRewards
           .filter((reward) => reward.status === "requested" && reward.requesterId === state.activeChildId)
           .reduce((sum, reward) => sum + reward.price, 0);
       },
       availableBalance(): number {
-
         return Math.max(0, this.balance - this.reservedBalance);
       },
       familyCurrencyValue(this: void, state) {
-
         return (ladirchen: number): number => Number((ladirchen / state.ladirchenPerCurrencyUnit).toFixed(2));
       },
       averageTaskRating(): number {
-
         return this.averageTaskRatingFor(this.activeChildId);
       },
       savingsInterestRateFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
+          const evaluated = state.memberProgressions[memberId]?.savingsInterestRate;
+
+          if (evaluated !== undefined) {
+            return evaluated;
+          }
+
           const baseContributions = state.contributions.filter(
             (contribution) => contribution.kind === "basic" && contribution.assigneeId === memberId,
           );
@@ -326,11 +314,9 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         };
       },
       savingsInterestRate(): number {
-
         return this.savingsInterestRateFor(this.activeChildId);
       },
       activeWorldEffects(state): WorldEffect[] {
-
         return state.contributions
           .filter(
             (

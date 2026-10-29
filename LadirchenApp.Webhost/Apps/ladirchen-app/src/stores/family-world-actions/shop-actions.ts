@@ -4,17 +4,38 @@ import type { ShopRewardId } from "@/domain/shared/identifiers";
 import type { NewShopReward } from "@/domain/shop/types";
 import { createUuid } from "./family-world-store-utils";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
+import { executeBackendFamilyCommand } from "./backend-family-command";
 
 export const shopActions = {
-  addShopReward(this: FamilyWorldStoreContext, input: NewShopReward) {
+  async addShopReward(this: FamilyWorldStoreContext, input: NewShopReward) {
+    const id = createDomainId.shopReward(createUuid());
+
+    if (
+      await executeBackendFamilyCommand(this, "reward-shop.add", { id, ...input }, "notifications.save.shop", () => {
+        if (input.isVisible === false) {
+          this.notify("notifications.shop.savedHidden", { title: input.title });
+
+          return;
+        }
+
+        if (input.availableFrom) {
+          this.notify("notifications.shop.savedScheduled", { date: input.availableFrom, title: input.title });
+
+          return;
+        }
+
+        this.notify("notifications.shop.savedVisible", { title: input.title });
+      })
+    ) {
+      return;
+    }
 
     if (!this.permissions.canManageContent) {
-
       return;
     }
 
     this.shopRewards.unshift({
-      id: createDomainId.shopReward(createUuid()),
+      id,
       ...input,
       isVisible: input.isVisible ?? true,
       status: "available",
@@ -35,17 +56,28 @@ export const shopActions = {
 
     this.notify("notifications.shop.savedVisible", { title: input.title });
   },
-  setShopRewardVisibility(this: FamilyWorldStoreContext, id: ShopRewardId, isVisible: boolean) {
+  async setShopRewardVisibility(this: FamilyWorldStoreContext, id: ShopRewardId, isVisible: boolean) {
+    const title = this.shopRewards.find((item) => item.id === id)?.title ?? "";
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "reward-shop.set-visibility",
+        { id, isVisible },
+        "notifications.save.shop",
+        () => this.notify(isVisible ? "notifications.shop.visible" : "notifications.shop.hidden", { title }),
+      )
+    ) {
+      return;
+    }
 
     if (!this.permissions.canManageContent) {
-
       return;
     }
 
     const reward = this.shopRewards.find((item) => item.id === id);
 
     if (!reward) {
-
       return;
     }
 
@@ -53,17 +85,24 @@ export const shopActions = {
     this.persistRewardShop();
     this.notify(isVisible ? "notifications.shop.visible" : "notifications.shop.hidden", { title: reward.title });
   },
-  deleteShopReward(this: FamilyWorldStoreContext, id: ShopRewardId) {
+  async deleteShopReward(this: FamilyWorldStoreContext, id: ShopRewardId) {
+    const title = this.shopRewards.find((item) => item.id === id)?.title ?? "";
+
+    if (
+      await executeBackendFamilyCommand(this, "reward-shop.delete", { id }, "notifications.save.shop", () =>
+        this.notify("notifications.shop.deleted", { title }),
+      )
+    ) {
+      return;
+    }
 
     if (!this.permissions.canManageContent) {
-
       return;
     }
 
     const rewardIndex = this.shopRewards.findIndex((item) => item.id === id);
 
     if (rewardIndex < 0) {
-
       return;
     }
 
@@ -71,7 +110,20 @@ export const shopActions = {
     this.persistRewardShop();
     this.notify("notifications.shop.deleted", { title: reward?.title ?? "" });
   },
-  requestShopReward(this: FamilyWorldStoreContext, id: ShopRewardId) {
+  async requestShopReward(this: FamilyWorldStoreContext, id: ShopRewardId) {
+    const rewardBeforeRequest = this.shopRewards.find((item) => item.id === id);
+
+    if (
+      await executeBackendFamilyCommand(this, "reward-shop.request", { id }, "notifications.save.shop", () =>
+        this.notify("notifications.shop.reserved", {
+          price: rewardBeforeRequest?.price ?? 0,
+          title: rewardBeforeRequest?.title ?? "",
+        }),
+      )
+    ) {
+      return;
+    }
+
     const reward = this.shopRewards.find((item) => item.id === id);
 
     if (
@@ -82,7 +134,6 @@ export const shopActions = {
       !shopRewardIsPublished(reward, this.familyTimeZone) ||
       reward.price > this.availableBalance
     ) {
-
       return;
     }
 
@@ -97,11 +148,18 @@ export const shopActions = {
     this.persistRewardShop();
     this.notify("notifications.shop.reserved", { price: reward.price, title: reward.title });
   },
-  cancelShopRewardRequest(this: FamilyWorldStoreContext, id: ShopRewardId) {
+  async cancelShopRewardRequest(this: FamilyWorldStoreContext, id: ShopRewardId) {
+    if (
+      await executeBackendFamilyCommand(this, "reward-shop.cancel", { id }, "notifications.save.shop", () =>
+        this.notify("notifications.shop.reservationCancelled"),
+      )
+    ) {
+      return;
+    }
+
     const reward = this.shopRewards.find((item) => item.id === id && item.requesterId === this.activeChildId);
 
     if (!reward || reward.status !== "requested") {
-
       return;
     }
 
@@ -110,16 +168,24 @@ export const shopActions = {
     this.persistRewardShop();
     this.notify("notifications.shop.reservationCancelled");
   },
-  decideShopReward(this: FamilyWorldStoreContext, id: ShopRewardId, approved: boolean) {
+  async decideShopReward(this: FamilyWorldStoreContext, id: ShopRewardId, approved: boolean) {
+    const title = this.shopRewards.find((item) => item.id === id)?.title ?? "";
+
+    if (
+      await executeBackendFamilyCommand(this, "reward-shop.decide", { approved, id }, "notifications.save.shop", () =>
+        this.notify(approved ? "notifications.shop.approved" : "notifications.shop.rejected", { title }),
+      )
+    ) {
+      return;
+    }
+
     const reward = this.shopRewards.find((item) => item.id === id);
 
     if (!this.permissions.canManageContent || !reward || reward.status !== "requested") {
-
       return;
     }
 
     if (approved) {
-
       if (!shopRedemptionIsOpen(this.familyTimeZone)) {
         this.notify("notifications.shop.approvalClosed");
 
@@ -129,7 +195,6 @@ export const shopActions = {
       const requesterId = reward.requesterId;
 
       if (!requesterId) {
-
         return;
       }
 
@@ -139,7 +204,6 @@ export const shopActions = {
       reward.requesterId = undefined;
       this.persistSavings();
       this.notify("notifications.shop.approved", { title: reward.title });
-
     } else {
       reward.status = "available";
       reward.requesterId = undefined;

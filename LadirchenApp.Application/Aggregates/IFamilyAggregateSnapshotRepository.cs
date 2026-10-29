@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +17,11 @@ public interface IFamilyAggregateSnapshotRepository
   Task<FamilyAggregateSnapshot> SaveAsync(
     SaveFamilyAggregateCommand command,
     int schemaVersion,
+    CancellationToken cancellationToken
+  );
+
+  Task<IReadOnlyList<FamilyAggregateSnapshot>> SaveBatchAsync(
+    IReadOnlyList<PendingFamilyAggregateSave> saves,
     CancellationToken cancellationToken
   );
 }

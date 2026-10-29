@@ -13,6 +13,8 @@ import { createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-w
 import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
 import { noopFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/noop-family-aggregate-updates";
 import { SignalRFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/signalr-family-aggregate-updates";
+import { HttpFamilyCommandGateway } from "@/infrastructure/http/http-family-command-gateway";
+import { localFamilyCommandGateway } from "@/infrastructure/commands/local-family-command-gateway";
 function createRepositories(): FamilyAggregateRepositories {
   return frontendRuntimeConfig.dataSource === "api"
     ? createHttpFamilyAggregateRepositories(frontendRuntimeConfig.apiBaseUrl)
@@ -23,6 +25,10 @@ const familyAggregateUpdates =
   frontendRuntimeConfig.dataSource === "api"
     ? new SignalRFamilyAggregateUpdatesGateway(frontendRuntimeConfig.apiBaseUrl)
     : noopFamilyAggregateUpdatesGateway;
+const familyCommands =
+  frontendRuntimeConfig.dataSource === "api"
+    ? new HttpFamilyCommandGateway(frontendRuntimeConfig.apiBaseUrl)
+    : localFamilyCommandGateway;
 const initialDataFactory = { create: createFamilyWorldInitialData };
 export const familyContext = localFamilyContext;
 export const authenticationGateway = createLocalAuthenticationGateway(browserClientStorage);
@@ -55,6 +61,7 @@ export const familyWorldDependencies: FamilyWorldDependencies = {
   clientStorage: browserClientStorage,
   contributionsService,
   familyAggregateUpdates,
+  familyCommands,
   familyContext,
   familyProfileService,
   familyProgressionService,

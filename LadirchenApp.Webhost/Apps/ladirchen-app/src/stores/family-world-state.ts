@@ -12,17 +12,16 @@ import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from "@/do
 import { DEFAULT_FAMILY_TIME_ZONE } from "@/domain/family/time-zone";
 import type { HouseLayoutPlacement } from "@/domain/house/entities";
 import type { FamilyCurrency, GuardianGift } from "@/domain/savings/types";
-import type { ContributionId } from "@/domain/shared/identifiers";
+import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
+import type { MemberProgression } from "@/application/contracts/family-progression-contract";
 export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
   const guardians = members.filter((member) => member.role === "guardian");
   const hasAdministrator = guardians.some((member) => member.guardianAccess === "admin");
 
   return members.map(function callback(member) {
-
     if (member.role !== "guardian") {
-
       return {
         ...member,
         participatesInWeeklyGoal: member.participatesInWeeklyGoal ?? true,
@@ -41,11 +40,9 @@ export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] 
   });
 }
 export function normalizeFamilyPets(pets: ReadonlyArray<FamilyPet>): FamilyPet[] {
-
   return pets.map((pet) => ({ ...pet }));
 }
 function initialStateValue<T>(value: T): T {
-
   return value;
 }
 function createDefaultSelectedRoomDesignIds(): Partial<Record<HouseZoneId, RoomDesignId>> {
@@ -64,14 +61,11 @@ function savedPlacementYIsValid(
   maximumY: number | undefined,
   locksScale: boolean,
 ): boolean {
-
   if (minimumY !== undefined) {
-
     return savedY >= minimumY && savedY <= (maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY);
   }
 
   if (entityType === "ladi") {
-
     return (
       (savedY >= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMinimumY &&
         savedY <= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMaximumY) ||
@@ -97,16 +91,13 @@ export function mergeHouseLayout(
     accessories.filter((accessory) => accessory.mobility === "fixed").map((accessory) => accessory.id),
   );
   const mergedPlacements = defaultPlacements.map(function callback(placement) {
-
     if (placement.entityType === "furniture" && fixedAccessoryIds.has(placement.entityId)) {
-
       return placement;
     }
 
     const saved = storedById.get(placement.id);
 
     if (!saved) {
-
       return placement;
     }
 
@@ -143,7 +134,6 @@ export function mergeHouseLayout(
   });
 
   return mergedPlacements.map(function callback(placement) {
-
     if (
       placement.entityType === "furniture" ||
       !characterCollidesWithFurniture(
@@ -155,7 +145,6 @@ export function mergeHouseLayout(
         accessories,
       )
     ) {
-
       return placement;
     }
 
@@ -195,6 +184,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   } = { visible: false, guardianName: "", goalTitle: "", destination: "goal", amount: 0, version: 0 };
   const pendingGuardianGifts: GuardianGift[] = [];
   const houseLevel = initialStateValue<HouseStageLevel>(0);
+  const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
   const subscriptionTier = initialStateValue<SubscriptionTier>("pro");
   const snackbarParams: Record<string, number | string> = {};
   const snackbar: {
@@ -226,6 +216,9 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     completionBonusRate: 3.5,
     ratingBonusRate: 2.5,
     maxSavingsRatePercent: 8,
+    memberProgressions,
+    familyEnergyReadModel: 60,
+    houseVisualLevel: 3,
     simulatedEnergy,
     piggyBankOpen: false,
     rewardAnimation,

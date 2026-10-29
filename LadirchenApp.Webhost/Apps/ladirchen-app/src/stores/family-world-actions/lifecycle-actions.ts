@@ -100,6 +100,10 @@ export const lifecycleActions = {
         this.completedWeeklyStreak = progression.state.completedWeeklyStreak;
         this.currentWeekTarget = progression.state.currentWeekTarget;
         this.houseLevel = progression.state.houseLevel;
+        this.memberProgressions = { ...progression.state.memberProgressions };
+        this.familyEnergyReadModel = progression.state.familyEnergy;
+        this.houseVisualLevel = progression.state.houseVisualLevel;
+        this.maxSavingsRatePercent = progression.state.maximumSavingsInterestRate;
       }
     });
 
@@ -118,6 +122,20 @@ export const lifecycleActions = {
     const hydrationSucceeded =
       profileLoaded && contributionsLoaded && savingsLoaded && rewardShopLoaded && progressionLoaded;
     this.familyAggregatesHydrated = hydrationSucceeded;
+
+    if (
+      hydrationSucceeded &&
+      this.$familyWorld.familyCommands.backendDriven &&
+      progressionResult.status === "fulfilled" &&
+      progressionResult.value !== null
+    ) {
+      try {
+        await this.$familyWorld.familyCommands.execute(familyId, this.signedInMemberId, "progression.refresh", {});
+        await this.refreshFamilyAggregate("family-progression");
+      } catch {
+        this.notify("notifications.load.family");
+      }
+    }
 
     if (!hydrationSucceeded) {
       this.notify("notifications.load.family");
@@ -203,6 +221,10 @@ export const lifecycleActions = {
           this.completedWeeklyStreak = snapshot.state.completedWeeklyStreak;
           this.currentWeekTarget = snapshot.state.currentWeekTarget;
           this.houseLevel = snapshot.state.houseLevel;
+          this.memberProgressions = { ...snapshot.state.memberProgressions };
+          this.familyEnergyReadModel = snapshot.state.familyEnergy;
+          this.houseVisualLevel = snapshot.state.houseVisualLevel;
+          this.maxSavingsRatePercent = snapshot.state.maximumSavingsInterestRate;
         }
 
         return;
@@ -371,6 +393,10 @@ export const lifecycleActions = {
           completedWeeklyStreak: this.completedWeeklyStreak,
           currentWeekTarget: this.currentWeekTarget,
           houseLevel: this.houseLevel,
+          familyEnergy: this.familyEnergyReadModel,
+          houseVisualLevel: this.houseVisualLevel,
+          maximumSavingsInterestRate: this.maxSavingsRatePercent,
+          memberProgressions: this.memberProgressions,
         },
         updatedBy: this.signedInMemberId,
       },

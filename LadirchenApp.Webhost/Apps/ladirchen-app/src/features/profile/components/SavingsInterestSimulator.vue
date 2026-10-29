@@ -147,14 +147,12 @@ const simulatedWeeklyInterest = computed(() =>
   ),
 );
 function formatRate(value: number) {
-
   return value.toLocaleString(locale.value, {
     maximumFractionDigits: 2,
     minimumFractionDigits: 1,
   });
 }
 function interestForRate(saved: number, target: number, rate: number): number {
-
   return calculateSavingsCredit(saved, target, rate);
 }
 function resetSimulation(): void {
@@ -163,11 +161,10 @@ function resetSimulation(): void {
   simulatedStreak.value = store.currentDailyStreak;
   payoutVisible.value = false;
 }
-function simulatePayout(): void {
-  lastPayout.value = store.creditActiveChildInterestDemo(simulatedInterestRate.value);
+async function simulatePayout(): Promise<void> {
+  lastPayout.value = await store.creditActiveChildInterestDemo(simulatedInterestRate.value);
 
   if (lastPayout.value <= 0) {
-
     return;
   }
 
@@ -184,11 +181,9 @@ function simulatePayout(): void {
 }
 onMounted(resetSimulation);
 onUnmounted(function callback() {
-
   if (payoutTimer !== undefined) {
     window.clearTimeout(payoutTimer);
   }
-
 });
 </script>
 
