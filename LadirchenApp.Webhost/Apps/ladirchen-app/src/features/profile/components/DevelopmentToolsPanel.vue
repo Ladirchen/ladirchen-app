@@ -13,37 +13,6 @@
       <v-expansion-panel rounded="xl">
         <v-expansion-panel-title>
           <div class="panel-title">
-            <v-icon icon="i-mdi:account-switch-outline" />
-            <span>
-              <strong>{{ t("profile.development.session.title") }}</strong>
-              <small>{{ t("profile.development.session.current", { name: store.signedInMember?.name ?? "" }) }}</small>
-            </span>
-          </div>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <div class="session-grid">
-            <button
-              v-for="member in store.members"
-              :key="member.id"
-              class="session-option"
-              :class="{ active: member.id === store.signedInMemberId }"
-              type="button"
-              @click="store.switchSession(member.id)"
-            >
-              <span>{{ member.avatar }}</span>
-              <span>
-                <strong>{{ member.name }}</strong>
-                <small>{{ memberRoleLabel(member.role) }}</small>
-              </span>
-              <v-icon v-if="member.id === store.signedInMemberId" icon="i-mdi:check-circle" size="19" />
-            </button>
-          </div>
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-
-      <v-expansion-panel rounded="xl">
-        <v-expansion-panel-title>
-          <div class="panel-title">
             <v-icon icon="i-mdi:home-lightning-bolt-outline" />
             <span>
               <strong>{{ t("profile.development.energy.title") }}</strong>
@@ -144,7 +113,6 @@ import { useI18n } from "vue-i18n";
 import SavingsInterestSimulator from "./SavingsInterestSimulator.vue";
 import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
 import { useFamilyWorldStore } from "@/stores/family-world";
-import type { ViewerRole } from "@/domain/family/types";
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
@@ -176,9 +144,6 @@ const resultDescription = computed(() =>
   ),
 );
 
-function memberRoleLabel(role: ViewerRole) {
-  return t(role === "guardian" ? "profile.development.session.guardian" : "profile.development.session.child");
-}
 async function finishWeek(successful: boolean) {
   lastWeekSuccessful.value = successful;
 
@@ -266,45 +231,6 @@ async function finishWeek(successful: boolean) {
   color: var(--lad-muted);
   font-size: rem(9);
 }
-.session-grid {
-  --uno: d-grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-.session-option {
-  min-width: 0;
-  padding: rem(9);
-  --uno: d-flex align-center text-left cursor-pointer;
-  gap: 0.5rem;
-  color: var(--lad-text);
-  border: rem(2) solid color-mix(in srgb, var(--lad-color-primary-supporting) 12%, transparent);
-  border-radius: rem(15);
-  background: var(--lad-surface-raised);
-}
-.session-option.active {
-  border-color: color-mix(in srgb, var(--lad-color-primary) 50%, transparent);
-  background: var(--lad-surface-soft);
-}
-.session-option > span:first-child {
-  font-size: rem(22);
-}
-.session-option > span:nth-child(2) {
-  --uno: flex-grow-1 min-w-0;
-}
-.session-option strong,
-.session-option small {
-  --uno: d-block text-truncate;
-}
-.session-option strong {
-  font-size: rem(11);
-}
-.session-option small {
-  color: var(--lad-muted);
-  font-size: 0.5rem;
-}
-.session-option > .v-icon {
-  color: var(--lad-mint-dark);
-}
 .simulator-footer {
   --uno: d-flex align-center justify-space-between;
   gap: 0.5rem;
@@ -349,11 +275,6 @@ async function finishWeek(successful: boolean) {
   100% {
     opacity: 1;
     transform: none;
-  }
-}
-@include respond-down(narrow) {
-  .session-grid {
-    grid-template-columns: 1fr;
   }
 }
 </style>

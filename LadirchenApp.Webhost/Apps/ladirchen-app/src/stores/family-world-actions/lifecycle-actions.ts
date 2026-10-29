@@ -1,12 +1,21 @@
 import type { HouseZoneId, RoomDesignId } from "@/domain/house";
 import type { TranslationKey } from "@/locales/translation-keys";
-import { AUTH_STATE_KEY } from "./family-world-store-utils";
 import { normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { FAMILY_READ_MODEL_TYPES, type FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import { createHouseAccessories } from "@/domain/house/catalog";
+import type { FamilyMember } from "@/domain/family/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 const emptyMemberId = "00000000-0000-0000-0000-000000000000";
+function activeChildIdFrom(
+  members: ReadonlyArray<FamilyMember>,
+  currentMemberId: FamilyMemberId,
+): FamilyMemberId | undefined {
+  return (
+    members.find((member) => member.id === currentMemberId && member.role === "child" && !member.invitationPending)
+      ?.id ?? members.find((member) => member.role === "child" && !member.invitationPending)?.id
+  );
+}
 function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) => void): boolean {
   if (result.status === "rejected") {
     return false;
@@ -37,12 +46,6 @@ export const lifecycleActions = {
       rewardShopService,
       savingsService,
     } = this.$familyWorld;
-
-    if (this.$familyWorld.clientStorage.getItem(AUTH_STATE_KEY) === "signed-out") {
-      this.isAuthenticated = false;
-
-      return;
-    }
 
     const familyId = familyContext.activeFamilyId;
     const viewerMemberId = readModelViewerId(this);
@@ -110,15 +113,13 @@ export const lifecycleActions = {
     });
 
     if (profileLoaded) {
-      const activeChild =
-        this.members.find((member) => member.id === this.activeChildId && member.role === "child") ??
-        this.members.find((member) => member.role === "child");
+      const activeChildId = activeChildIdFrom(this.members, this.activeChildId);
 
-      if (activeChild) {
-        this.activeChildId = activeChild.id;
+      if (activeChildId) {
+        this.activeChildId = activeChildId;
       }
 
-      this.familySetupOpen = !this.onboardingCompleted;
+      this.familySetupOpen = !this.onboardingCompleted && this.canInviteFamilyMembers;
     }
 
     const hydrationSucceeded =
@@ -175,6 +176,11 @@ export const lifecycleActions = {
           this.subscriptionTier = snapshot.state.subscriptionTier;
           this.familyTimeZone = snapshot.state.timeZone;
           this.avatarCatalog = snapshot.state.avatarCatalog;
+          const activeChildId = activeChildIdFrom(this.members, this.activeChildId);
+
+          if (activeChildId) {
+            this.activeChildId = activeChildId;
+          }
         }
 
         return;

@@ -190,6 +190,92 @@ export class Client {
     return Promise.resolve<SavingsInterestSimulation>(null as any);
   }
 
+  getAuthenticationRegistrationStatus(signal?: AbortSignal): Promise<AuthenticationRegistrationStatusResponse> {
+    let url_ = this.baseUrl + "/api/auth/registration-status";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetAuthenticationRegistrationStatus(_response);
+    });
+  }
+
+  protected processGetAuthenticationRegistrationStatus(
+    response: Response,
+  ): Promise<AuthenticationRegistrationStatusResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as AuthenticationRegistrationStatusResponse);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<AuthenticationRegistrationStatusResponse>(null as any);
+  }
+
+  getCurrentAuthenticationSession(signal?: AbortSignal): Promise<AuthenticationSessionResponse> {
+    let url_ = this.baseUrl + "/api/auth/session";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetCurrentAuthenticationSession(_response);
+    });
+  }
+
+  protected processGetCurrentAuthenticationSession(response: Response): Promise<AuthenticationSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as AuthenticationSessionResponse);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<AuthenticationSessionResponse>(null as any);
+  }
+
   authenticateAccount(
     request: AuthenticateAccountRequest,
     signal?: AbortSignal,
@@ -232,6 +318,73 @@ export class Client {
     } else if (status === 401) {
       return response.text().then((_responseText) => {
         return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status === 429) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<AuthenticationSessionResponse>(null as any);
+  }
+
+  activateMemberAccount(
+    request: ActivateMemberAccountRequest,
+    signal?: AbortSignal,
+  ): Promise<AuthenticationSessionResponse> {
+    let url_ = this.baseUrl + "/api/auth/activate";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processActivateMemberAccount(_response);
+    });
+  }
+
+  protected processActivateMemberAccount(response: Response): Promise<AuthenticationSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as AuthenticationSessionResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
       });
     } else if (status === 429) {
       return response.text().then((_responseText) => {
@@ -303,6 +456,75 @@ export class Client {
       });
     }
     return Promise.resolve<AuthenticationSessionResponse>(null as any);
+  }
+
+  createMemberAccountInvitation(
+    request: CreateMemberInvitationRequest,
+    signal?: AbortSignal,
+  ): Promise<MemberAccountInvitationResponse> {
+    let url_ = this.baseUrl + "/api/auth/member-invitations";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processCreateMemberAccountInvitation(_response);
+    });
+  }
+
+  protected processCreateMemberAccountInvitation(response: Response): Promise<MemberAccountInvitationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as MemberAccountInvitationResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+      });
+    } else if (status === 429) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<MemberAccountInvitationResponse>(null as any);
   }
 
   signOutAccount(signal?: AbortSignal): Promise<void> {
@@ -923,17 +1145,6 @@ export interface FamilySetupPetPayload {
   color: string;
 }
 
-export interface ProfileInviteGuardianCommandRequest extends ExecuteFamilyCommandRequest {
-  payload: InviteGuardianPayload;
-}
-
-export interface InviteGuardianPayload {
-  id: string;
-  name: string;
-  email: string;
-  guardianAccess: string;
-}
-
 export interface ProfileSaveOwnAppearanceCommandRequest extends ExecuteFamilyCommandRequest {
   payload: SaveAvatarAppearancePayload;
 }
@@ -1190,24 +1401,50 @@ export interface SimulateSavingsInterestRequest {
   averageRating?: number;
 }
 
+export interface AuthenticationRegistrationStatusResponse {
+  registrationAvailable: boolean;
+}
+
 export interface AuthenticationSessionResponse {
-  familyId?: string;
-  familyName?: string;
-  memberId?: string;
+  familyId: string;
+  familyName: string;
+  memberId: string;
 }
 
 export interface AuthenticateAccountRequest {
-  password?: string;
-  username?: string;
+  identifier: string;
+  password: string;
+}
+
+export interface ActivateMemberAccountRequest {
+  activationCode: string;
+  email: string;
+  password: string;
+  username: string;
 }
 
 export interface RegisterAccountRequest {
-  familyId?: string;
-  familyName?: string;
-  guardianName?: string;
-  memberId?: string;
-  password?: string;
-  username?: string;
+  familyId: string;
+  email: string;
+  familyName: string;
+  guardianName: string;
+  memberId: string;
+  password: string;
+  username: string;
+}
+
+export interface MemberAccountInvitationResponse {
+  activationCode: string;
+  email: string;
+  expiresAt: Date;
+  memberId: string;
+}
+
+export interface CreateMemberInvitationRequest {
+  email: string;
+  guardianAccess: string | null;
+  name: string;
+  role: string;
 }
 
 export interface ContributionsReadModelResponse {

@@ -11,18 +11,24 @@ export function createFamilyWorldTestDependencies(
   overrides: Partial<FamilyWorldDependencies> = {},
 ): FamilyWorldDependencies {
   let activeFamilyId = createDomainId.family("c776a9b6-c37d-4a51-91ba-269a67274478");
+  const memberId = createDomainId.familyMember("member-1");
+  const session = { familyId: activeFamilyId, familyName: "Test family", memberId };
   const emptyReadModelService = { load: async () => null };
 
   return {
     authentication: {
+      activate: async () => session,
       authenticate: async () => null,
-      register: async () => undefined,
+      getCurrentSession: async () => null,
+      getRegistrationStatus: async () => ({ registrationAvailable: true }),
+      inviteMember: async (command) => ({
+        activationCode: "test-activation-code",
+        email: command.email,
+        expiresAt: "2026-11-05T12:00:00Z",
+        memberId,
+      }),
+      register: async () => session,
       signOut: async () => undefined,
-    },
-    clientStorage: {
-      getItem: () => null,
-      removeItem: () => undefined,
-      setItem: () => undefined,
     },
     contributionsService: emptyReadModelService,
     familyAggregateUpdates: {

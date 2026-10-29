@@ -5,7 +5,6 @@ import type { HomeCustomizationReadModel } from "@/application/contracts/home-cu
 import type { RewardShopReadModel } from "@/application/contracts/reward-shop-contract";
 import type { SavingsReadModel } from "@/application/contracts/savings-contract";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
-import type { ClientStorage } from "./client-storage";
 import type { FamilyContext } from "./family-context";
 import type { Scheduler } from "./scheduler";
 import type { FamilyWorldInitialDataFactory } from "./family-world-initial-data";
@@ -19,7 +18,6 @@ interface ReadModelServicePort<TReadModel> {
 
 export interface FamilyWorldDependencies {
   readonly authentication: AuthenticationGateway;
-  readonly clientStorage: ClientStorage;
   readonly contributionsService: ReadModelServicePort<ContributionsReadModel>;
   readonly familyAggregateUpdates: FamilyAggregateUpdatesGateway;
   readonly familyCommands: FamilyCommandGateway;
