@@ -40,12 +40,17 @@ export const familyActions = {
 
     this.notify("notifications.session.switched", { name: member.name });
   },
-  signOut(this: FamilyWorldStoreContext) {
-    this.isAuthenticated = false;
-    this.familySetupOpen = false;
-    this.piggyBankOpen = false;
-    this.rewardAnimation.visible = false;
-    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "signed-out");
+  async signOut(this: FamilyWorldStoreContext) {
+    try {
+      await this.$familyWorld.authentication.signOut();
+    } finally {
+      await this.$familyWorld.familyAggregateUpdates.disconnect();
+      this.isAuthenticated = false;
+      this.familySetupOpen = false;
+      this.piggyBankOpen = false;
+      this.rewardAnimation.visible = false;
+      this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "signed-out");
+    }
   },
   signInCurrentFamily(this: FamilyWorldStoreContext, memberId: FamilyMemberId): boolean {
     const member = this.members.find((item) => item.id === memberId);

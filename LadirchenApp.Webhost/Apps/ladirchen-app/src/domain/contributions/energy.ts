@@ -1,2 +1,0 @@
-export const DEFAULT_ENERGY_PERCENT = 60;
-export const MINIMUM_HOUSE_ENERGY_PERCENT = 60;

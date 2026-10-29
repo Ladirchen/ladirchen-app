@@ -168,36 +168,10 @@ export const savingsActions = {
       }
     });
   },
-  async creditWeeklyInterestDemo(this: FamilyWorldStoreContext) {
-    const before = this.goals.reduce((sum, goal) => sum + goal.saved, 0);
-    await executeBackendFamilyCommand(this, "savings.credit-weekly-interest", {}, "notifications.save.savings", () => {
-      const credited = Math.max(0, this.goals.reduce((sum, goal) => sum + goal.saved, 0) - before);
-      this.notify("notifications.goals.weeklyInterest", { amount: credited });
-    });
+  async consentToSavingsVoucher(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    await executeBackendFamilyCommand(this, "savings.consent-voucher", { id }, "notifications.save.savings");
   },
-  async creditActiveChildInterestDemo(this: FamilyWorldStoreContext, rate: number): Promise<number> {
-    const before = this.goals
-      .filter((goal) => goal.ownerId === this.activeChildId)
-      .reduce((sum, goal) => sum + goal.saved, 0);
-    let credited = 0;
-    await executeBackendFamilyCommand(
-      this,
-      "savings.simulate-interest",
-      { selectedRate: rate },
-      "notifications.save.savings",
-      () => {
-        credited = Math.max(
-          0,
-          this.goals.filter((goal) => goal.ownerId === this.activeChildId).reduce((sum, goal) => sum + goal.saved, 0) -
-            before,
-        );
-        this.notify(
-          credited > 0 ? "notifications.goals.interestCredited" : "notifications.goals.interestUnavailable",
-          credited > 0 ? { amount: credited } : {},
-        );
-      },
-    );
-
-    return credited;
+  async redeemSavingsVoucher(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    await executeBackendFamilyCommand(this, "savings.redeem-voucher", { id }, "notifications.save.savings");
   },
 } satisfies FamilyWorldActionGroup;

@@ -68,8 +68,14 @@ export function useSavingsPiggy() {
       }),
   );
   const selectedGoal = computed(() => store.ownSavingGoals.find((goal) => goal.id === selectedGoalId.value));
-  const selectedGoalWithdrawable = computed(() => store.withdrawableGoalBalance(selectedGoal.value));
-  const maxDeposit = computed(() => Math.min(store.availableBalance, selectedGoal.value?.remainingAmount ?? 0));
+  const selectedGoalWithdrawable = computed(() =>
+    selectedGoal.value?.commandLimits?.[store.signedInMemberId]?.canWithdraw
+      ? store.withdrawableGoalBalance(selectedGoal.value)
+      : 0,
+  );
+  const maxDeposit = computed(
+    () => selectedGoal.value?.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
+  );
   const transferAmountMaximum = computed(() =>
     transferDestination.value === "member"
       ? store.availableBalance

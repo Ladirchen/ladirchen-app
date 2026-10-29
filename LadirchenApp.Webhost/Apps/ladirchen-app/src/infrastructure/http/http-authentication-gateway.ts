@@ -29,6 +29,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   async authenticate(username: string, password: string): Promise<AuthenticationSession | null> {
     const response = await fetch(`${this.#baseUrl}/api/auth/login`, {
       body: JSON.stringify({ password, username }),
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
@@ -47,6 +48,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   async register(command: RegisterAccountCommand): Promise<void> {
     const response = await fetch(`${this.#baseUrl}/api/auth/register`, {
       body: JSON.stringify(command),
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
@@ -56,14 +58,14 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
     }
   }
 
-  async usernameExists(username: string): Promise<boolean> {
-    const search = new URLSearchParams({ username });
-    const response = await fetch(`${this.#baseUrl}/api/auth/username-exists?${search.toString()}`);
+  async signOut(): Promise<void> {
+    const response = await fetch(`${this.#baseUrl}/api/auth/logout`, {
+      credentials: "include",
+      method: "POST",
+    });
 
-    if (!response.ok) {
-      throw new Error(`Username lookup failed with status ${response.status}.`);
+    if (!response.ok && response.status !== 401) {
+      throw new Error(`Sign-out failed with status ${response.status}.`);
     }
-
-    return (await response.json()) as boolean;
   }
 }

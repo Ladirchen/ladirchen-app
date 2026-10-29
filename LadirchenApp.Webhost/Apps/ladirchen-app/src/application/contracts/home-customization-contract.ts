@@ -35,6 +35,7 @@ export interface HouseCatalogEntryState {
   readonly minimumHouseLevel?: number;
   readonly owned?: boolean;
   readonly price?: number;
+  readonly purchasableByMemberIds: ReadonlyArray<string>;
 }
 
 export interface HouseCatalogState {
@@ -62,7 +63,10 @@ export interface HouseCatalogState {
 }
 
 export interface HomeCustomizationState {
-  readonly catalog?: HouseCatalogState;
+  readonly capabilities: {
+    readonly canArrangeHouse: boolean;
+  };
+  readonly catalog: HouseCatalogState;
   readonly accessories: ReadonlyArray<HouseAccessoryState>;
   readonly editions: ReadonlyArray<HouseEditionState>;
   readonly placements: ReadonlyArray<HouseLayoutPlacement>;

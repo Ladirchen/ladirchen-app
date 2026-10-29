@@ -115,6 +115,42 @@
           </button>
         </div>
 
+        <template v-if="familyGoal">
+          <div class="goal-step mt-5">
+            <span class="goal-step-number">4</span>
+            <div>
+              <strong>{{ t("savings.goalDialog.participants.title") }}</strong>
+              <small>{{ t("savings.goalDialog.participants.description") }}</small>
+            </div>
+          </div>
+          <v-select
+            v-model="goal.participantScope"
+            class="goal-field"
+            density="comfortable"
+            hide-details
+            item-title="title"
+            item-value="value"
+            :items="participantScopeOptions"
+            :label="t('savings.goalDialog.participants.scope')"
+            variant="outlined"
+          />
+          <v-select
+            v-if="goal.participantScope === 'selected'"
+            v-model="goal.participantIds"
+            chips
+            class="goal-field mt-3"
+            closable-chips
+            density="comfortable"
+            hide-details
+            item-title="title"
+            item-value="value"
+            :items="participantOptions"
+            :label="t('savings.goalDialog.participants.selected')"
+            multiple
+            variant="outlined"
+          />
+        </template>
+
         <div v-if="!isEditing" class="starter-bonus mt-4">
           <span class="bonus-gift" aria-hidden="true">🎁</span>
           <p>
@@ -175,11 +211,14 @@ import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
-import type { GoalVisibility, NewGoal } from "@/domain/savings/types";
+import type { FamilyMember } from "@/domain/family/types";
+import type { FamilyGoalParticipantScope, GoalVisibility, NewGoal } from "@/domain/savings/types";
 export interface Props {
   modelValue: boolean;
   initialGoal?: NewGoal | null;
   minimumTarget?: number;
+  familyGoal?: boolean;
+  familyMembers?: ReadonlyArray<FamilyMember>;
 }
 export interface Emits {
   "update:modelValue": [value: boolean];
@@ -190,6 +229,8 @@ const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "�
 const props = withDefaults(defineProps<Props>(), {
   initialGoal: null,
   minimumTarget: 10,
+  familyGoal: false,
+  familyMembers: () => [],
 });
 const emit = defineEmits<Emits>();
 const { t } = useI18n();
@@ -222,11 +263,25 @@ const visibilityOptions = computed<
     value: "guardians",
   },
 ]);
+const participantScopeOptions = computed<Array<{ title: string; value: FamilyGoalParticipantScope }>>(() => [
+  { title: t("savings.goalDialog.participants.family"), value: "family" },
+  { title: t("savings.goalDialog.participants.children"), value: "children" },
+  { title: t("savings.goalDialog.participants.custom"), value: "selected" },
+]);
+const participantOptions = computed(() =>
+  props.familyMembers
+    .filter((member) => !member.invitationPending)
+    .map((member) => ({ title: member.nickname?.trim() || member.name, value: member.id })),
+);
 const isEditing = computed(() => props.initialGoal !== null);
 const showSavedHint = computed(() => isEditing.value && props.minimumTarget > 10);
 const showRemoveButton = computed(() => isEditing.value && !removeConfirmation.value);
 const isValid = computed(
-  () => goal.title.trim().length > 0 && Number.isFinite(goal.target) && goal.target >= props.minimumTarget,
+  () =>
+    goal.title.trim().length > 0 &&
+    Number.isFinite(goal.target) &&
+    goal.target >= props.minimumTarget &&
+    (!props.familyGoal || goal.participantScope !== "selected" || (goal.participantIds?.length ?? 0) > 0),
 );
 const validTargetPreview = computed(() => (Number.isFinite(goal.target) ? Math.max(0, Math.round(goal.target)) : 0));
 const dialogTitle = computed(() =>
@@ -237,18 +292,24 @@ const dialogDescription = computed(() =>
 );
 const submitLabel = computed(() => t(isEditing.value ? "common.save" : "savings.goalDialog.start"));
 function createInitialGoal(): NewGoal {
-
-  return props.initialGoal ? { ...props.initialGoal } : { title: "", icon: "✨", target: 100, visibility: "family" };
+  return props.initialGoal
+    ? { ...props.initialGoal }
+    : {
+        title: "",
+        icon: "✨",
+        target: 100,
+        visibility: "family",
+        participantScope: "family",
+        participantIds: [],
+      };
 }
 function reset() {
-
   return Object.assign(goal, createInitialGoal());
 }
 function adjustTarget(change: number) {
   goal.target = Math.max(props.minimumTarget, validTargetPreview.value + change);
 }
 function close() {
-
   return emit("update:modelValue", false);
 }
 function remove() {
@@ -256,9 +317,7 @@ function remove() {
   close();
 }
 function submit() {
-
   if (!isValid.value) {
-
     return;
   }
 
@@ -278,7 +337,6 @@ const { start: startGuide, stop: stopGuide } = useTimeoutFn(
 watch(
   () => props.modelValue,
   function callback(isOpen) {
-
     if (isOpen) {
       reset();
       removeConfirmation.value = false;

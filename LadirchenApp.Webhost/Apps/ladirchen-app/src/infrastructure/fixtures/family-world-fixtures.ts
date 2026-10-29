@@ -6,7 +6,7 @@ import { createDomainId } from "@/domain/shared/identifiers";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import type { ShopReward } from "@/domain/shop/types";
 import { createGuardianAvatarAppearance } from "@/domain/avatar";
-import { createHouseAccessories, createHouseAccessoryLayoutPlacements } from "@/domain/house/catalog";
+import { createHouseAccessories } from "@/domain/house/catalog";
 import { familyMemberColorPalette } from "@/theme/color-palette";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 export { createHouseAccessories };
@@ -40,7 +40,6 @@ export const SAVING_GOAL_IDS = {
   zoo: createDomainId.savingGoal("zoo"),
 } as const;
 export function createFamilyMembers(): FamilyMember[] {
-
   return [
     {
       id: FAMILY_MEMBER_IDS.laura,
@@ -99,7 +98,6 @@ export function createFamilyMembers(): FamilyMember[] {
   ];
 }
 export function createFamilyBalances(): Record<FamilyMemberId, number> {
-
   return {
     [FAMILY_MEMBER_IDS.laura]: 340,
     [FAMILY_MEMBER_IDS.adam]: 220,
@@ -107,16 +105,13 @@ export function createFamilyBalances(): Record<FamilyMemberId, number> {
   };
 }
 export function createFamilyPets(): FamilyPet[] {
-
   return [
     { id: FAMILY_PET_IDS.anna, name: "Anna", kind: "cat", avatar: "🐈", color: familyMemberColorPalette.petAnna },
     { id: FAMILY_PET_IDS.elsa, name: "Elsa", kind: "cat", avatar: "🐈‍⬛", color: familyMemberColorPalette.petElsa },
   ];
 }
 export function createHouseLayoutPlacements(): HouseLayoutPlacement[] {
-
   return [
-    ...createHouseAccessoryLayoutPlacements(),
     {
       id: createDomainId.houseLayoutPlacement("member-laura"),
       entityType: "member",
@@ -192,7 +187,6 @@ export function createHouseLayoutPlacements(): HouseLayoutPlacement[] {
   ];
 }
 export function createContributions(): Contribution[] {
-
   return [
     {
       id: CONTRIBUTION_IDS.roomAir,
@@ -347,7 +341,6 @@ export function createContributions(): Contribution[] {
   ];
 }
 export function createPromotions(): Promotion[] {
-
   return [
     {
       id: createDomainId.promotion("dishwasher-double"),
@@ -362,7 +355,6 @@ export function createPromotions(): Promotion[] {
   ];
 }
 export function createShopRewards(): ShopReward[] {
-
   return [
     {
       id: createDomainId.shopReward("allowance"),
@@ -427,7 +419,6 @@ export function createShopRewards(): ShopReward[] {
   ];
 }
 export function createSavingGoals(): SavingGoal[] {
-
   return [
     {
       id: SAVING_GOAL_IDS.bike,
@@ -483,7 +474,6 @@ export function createSavingGoals(): SavingGoal[] {
   ];
 }
 export function createFamilyWorldInitialData(): FamilyWorldInitialData {
-
   return {
     activeChildId: FAMILY_MEMBER_IDS.laura,
     activeGoalId: SAVING_GOAL_IDS.bike,

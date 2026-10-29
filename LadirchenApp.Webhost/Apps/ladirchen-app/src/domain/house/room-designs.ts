@@ -1,4 +1,4 @@
-import type { HouseStageLevel, HouseThemeId, HouseZoneId } from "./types";
+import type { HouseThemeId, HouseZoneId } from "./types";
 
 export const ROOM_DESIGN_IDS = [
   "garden-ladi-hills",
@@ -65,9 +65,6 @@ export interface RoomDesignDefinition {
   readonly nameKey: RoomDesignTranslationKey;
   readonly descriptionKey: RoomDesignTranslationKey;
   readonly icon: string;
-  readonly price: number;
-  readonly minimumHouseLevel: HouseStageLevel;
-  readonly ownedByDefault: boolean;
   readonly backgroundAssetId: RoomBackgroundAssetId;
   readonly canvasWidth: number;
   readonly canvasHeight: number;

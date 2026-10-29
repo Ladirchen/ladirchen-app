@@ -20,6 +20,7 @@ export class HttpSavingsInterestSimulationGateway implements SavingsInterestSimu
   ): Promise<SavingsInterestSimulation> {
     const response = await fetch(`${this.#baseUrl}/api/families/${familyId}/projections/savings-interest`, {
       body: JSON.stringify({ averageRating, completionPercent, memberId, streakDays }),
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });

@@ -32,6 +32,7 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   hydrateFamilyAggregates: () => Promise<void>;
   hydrateHomeCustomization: () => Promise<void>;
   notify: (messageKey: TranslationKey, params?: Record<string, number | string>) => void;
+  refreshAllFamilyAggregates: () => Promise<void>;
   refreshFamilyAggregate: (aggregateType: FamilyAggregateType) => Promise<void>;
   playRewardAnimation: (contribution: Contribution) => void;
   refreshCurrentTime: () => void;

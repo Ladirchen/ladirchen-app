@@ -166,8 +166,8 @@ async function refreshSimulation(): Promise<void> {
     }
   }
 }
-async function simulatePayout(): Promise<void> {
-  lastPayout.value = await store.creditActiveChildInterestDemo(simulatedInterestRate.value);
+function simulatePayout(): void {
+  lastPayout.value = simulatedWeeklyInterest.value;
 
   if (lastPayout.value <= 0) {
     return;

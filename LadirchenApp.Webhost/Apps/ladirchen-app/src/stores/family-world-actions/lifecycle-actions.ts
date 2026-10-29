@@ -4,6 +4,15 @@ import { AUTH_STATE_KEY } from "./family-world-store-utils";
 import { normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
+import { createHouseAccessories } from "@/domain/house/catalog";
+const familyAggregateTypes: ReadonlyArray<FamilyAggregateType> = [
+  "family-profile",
+  "contributions",
+  "savings",
+  "reward-shop",
+  "family-progression",
+  "home-customization",
+];
 function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) => void): boolean {
   if (result.status === "rejected") {
     return false;
@@ -54,12 +63,14 @@ export const lifecycleActions = {
         this.onboardingCompleted = profile.state.onboardingCompleted;
         this.subscriptionTier = profile.state.subscriptionTier;
         this.familyTimeZone = profile.state.timeZone;
+        this.avatarCatalog = profile.state.avatarCatalog;
       }
     });
     const contributionsLoaded = applySettledLoad(contributionsResult, (contributions) => {
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
-        this.perfectRatingBonusPercent = contributions.state.perfectRatingBonusPercent ?? 5;
+        this.perfectRatingBonusPercent =
+          contributions.state.perfectRatingBonusPercent ?? this.perfectRatingBonusPercent;
         this.promotions = [...contributions.state.promotions];
         this.todayEarnedByMember = { ...contributions.state.todayEarnedByMember };
       }
@@ -72,6 +83,7 @@ export const lifecycleActions = {
         this.goals = [...savings.state.goals];
         this.ladirchenPerCurrencyUnit = savings.state.ladirchenPerCurrencyUnit;
         this.pendingGuardianGifts = [...savings.state.pendingGuardianGifts];
+        this.savingsVouchers = [...savings.state.vouchers];
         this.sharedSavedBalances = { ...savings.state.sharedSavedBalances };
       }
     });
@@ -88,8 +100,11 @@ export const lifecycleActions = {
         this.houseLevel = progression.state.houseLevel;
         this.memberProgressions = { ...progression.state.memberProgressions };
         this.familyEnergyReadModel = progression.state.familyEnergy;
+        this.houseAtmosphere = progression.state.houseAtmosphere;
         this.houseVisualLevel = progression.state.houseVisualLevel;
         this.maxSavingsRatePercent = progression.state.maximumSavingsInterestRate;
+        this.canCloseWeekSuccessfully = progression.state.canCloseWeekSuccessfully;
+        this.minimumSuccessfulWeekEnergy = progression.state.minimumSuccessfulWeekEnergy;
       }
     });
 
@@ -125,13 +140,24 @@ export const lifecycleActions = {
     await this.hydrateHomeCustomization();
 
     try {
-      await this.$familyWorld.familyAggregateUpdates.connect(familyId, (change) => {
-        if (change.updatedBy !== this.signedInMemberId) {
-          void this.refreshFamilyAggregate(change.aggregateType);
-        }
-      });
+      await this.$familyWorld.familyAggregateUpdates.connect(
+        familyId,
+        (change) => {
+          if (change.updatedBy !== this.signedInMemberId) {
+            void this.refreshFamilyAggregate(change.aggregateType);
+          }
+        },
+        async () => {
+          await this.refreshAllFamilyAggregates();
+        },
+      );
     } catch {
       this.notify("notifications.load.family");
+    }
+  },
+  async refreshAllFamilyAggregates(this: FamilyWorldStoreContext) {
+    for (const aggregateType of familyAggregateTypes) {
+      await this.refreshFamilyAggregate(aggregateType);
     }
   },
   async refreshFamilyAggregate(this: FamilyWorldStoreContext, aggregateType: FamilyAggregateType) {
@@ -155,6 +181,7 @@ export const lifecycleActions = {
           this.onboardingCompleted = snapshot.state.onboardingCompleted;
           this.subscriptionTier = snapshot.state.subscriptionTier;
           this.familyTimeZone = snapshot.state.timeZone;
+          this.avatarCatalog = snapshot.state.avatarCatalog;
         }
 
         return;
@@ -165,7 +192,7 @@ export const lifecycleActions = {
 
         if (snapshot) {
           this.contributions = [...snapshot.state.contributions];
-          this.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent ?? 5;
+          this.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent ?? this.perfectRatingBonusPercent;
           this.promotions = [...snapshot.state.promotions];
           this.todayEarnedByMember = { ...snapshot.state.todayEarnedByMember };
         }
@@ -183,6 +210,7 @@ export const lifecycleActions = {
           this.goals = [...snapshot.state.goals];
           this.ladirchenPerCurrencyUnit = snapshot.state.ladirchenPerCurrencyUnit;
           this.pendingGuardianGifts = [...snapshot.state.pendingGuardianGifts];
+          this.savingsVouchers = [...snapshot.state.vouchers];
           this.sharedSavedBalances = { ...snapshot.state.sharedSavedBalances };
         }
 
@@ -207,6 +235,7 @@ export const lifecycleActions = {
           };
           this.goals = [...savingsSnapshot.state.goals];
           this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
+          this.savingsVouchers = [...savingsSnapshot.state.vouchers];
           this.sharedSavedBalances = { ...savingsSnapshot.state.sharedSavedBalances };
         }
 
@@ -225,8 +254,11 @@ export const lifecycleActions = {
           this.houseLevel = snapshot.state.houseLevel;
           this.memberProgressions = { ...snapshot.state.memberProgressions };
           this.familyEnergyReadModel = snapshot.state.familyEnergy;
+          this.houseAtmosphere = snapshot.state.houseAtmosphere;
           this.houseVisualLevel = snapshot.state.houseVisualLevel;
           this.maxSavingsRatePercent = snapshot.state.maximumSavingsInterestRate;
+          this.canCloseWeekSuccessfully = snapshot.state.canCloseWeekSuccessfully;
+          this.minimumSuccessfulWeekEnergy = snapshot.state.minimumSuccessfulWeekEnergy;
         }
 
         if (savingsSnapshot) {
@@ -236,6 +268,7 @@ export const lifecycleActions = {
           };
           this.goals = [...savingsSnapshot.state.goals];
           this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
+          this.savingsVouchers = [...savingsSnapshot.state.vouchers];
           this.sharedSavedBalances = { ...savingsSnapshot.state.sharedSavedBalances };
         }
 
@@ -263,13 +296,8 @@ export const lifecycleActions = {
 
       if (snapshot) {
         this.houseCatalog = snapshot.state.catalog;
-        const accessoryStateById = new Map(snapshot.state.accessories.map((item) => [item.id, item]));
-        const initialData = this.$familyWorld.initialDataFactory.create();
-        this.accessories = initialData.accessories.map(function callback(accessory) {
-          const saved = accessoryStateById.get(accessory.id);
-
-          return saved ? { ...accessory, owned: saved.owned, equipped: saved.equipped } : accessory;
-        });
+        this.accessories = createHouseAccessories(snapshot.state.accessories, snapshot.state.catalog.accessories);
+        this.canArrangeHouseReadModel = snapshot.state.capabilities.canArrangeHouse;
         this.houseLayout = [...snapshot.state.placements];
         this.ownedHouseThemeIds = snapshot.state.editions
           .filter((edition) => edition.owned)

@@ -10,8 +10,13 @@ export interface FamilyAggregateChanged {
 }
 
 export type FamilyAggregateChangedHandler = (change: FamilyAggregateChanged) => void;
+export type FamilyAggregateReconnectedHandler = () => Promise<void> | void;
 
 export interface FamilyAggregateUpdatesGateway {
-  connect: (familyId: FamilyId, onChanged: FamilyAggregateChangedHandler) => Promise<void>;
+  connect: (
+    familyId: FamilyId,
+    onChanged: FamilyAggregateChangedHandler,
+    onReconnected: FamilyAggregateReconnectedHandler,
+  ) => Promise<void>;
   disconnect: () => Promise<void>;
 }

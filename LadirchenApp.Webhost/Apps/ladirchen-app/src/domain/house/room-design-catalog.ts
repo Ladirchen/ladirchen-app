@@ -6,11 +6,9 @@ type ThemedHouseThemeDefinition = HouseThemeDefinition & {
   readonly id: ThemedHouseThemeId;
 };
 function isThemedHouseTheme(theme: HouseThemeDefinition): theme is ThemedHouseThemeDefinition {
-
   return theme.id !== "sunny-dollhouse";
 }
 function createThemedRoomDesigns(houseThemeId: ThemedHouseThemeId, icon: string): ReadonlyArray<RoomDesignDefinition> {
-
   return [
     {
       id: `garden-${houseThemeId}`,
@@ -19,9 +17,6 @@ function createThemedRoomDesigns(houseThemeId: ThemedHouseThemeId, icon: string)
       nameKey: `catalog.roomDesigns.garden-${houseThemeId}.name`,
       descriptionKey: `catalog.roomDesigns.garden-${houseThemeId}.description`,
       icon,
-      price: 0,
-      minimumHouseLevel: 0,
-      ownedByDefault: false,
       backgroundAssetId: `garden-${houseThemeId}-background`,
       canvasWidth: 1672,
       canvasHeight: 992,
@@ -34,9 +29,6 @@ function createThemedRoomDesigns(houseThemeId: ThemedHouseThemeId, icon: string)
       nameKey: `catalog.roomDesigns.living-${houseThemeId}.name`,
       descriptionKey: `catalog.roomDesigns.living-${houseThemeId}.description`,
       icon,
-      price: 0,
-      minimumHouseLevel: 0,
-      ownedByDefault: false,
       backgroundAssetId: `living-${houseThemeId}-background`,
       canvasWidth: 1672,
       canvasHeight: 941,
@@ -49,9 +41,6 @@ function createThemedRoomDesigns(houseThemeId: ThemedHouseThemeId, icon: string)
       nameKey: `catalog.roomDesigns.kitchen-${houseThemeId}.name`,
       descriptionKey: `catalog.roomDesigns.kitchen-${houseThemeId}.description`,
       icon,
-      price: 0,
-      minimumHouseLevel: 0,
-      ownedByDefault: false,
       backgroundAssetId: `kitchen-${houseThemeId}-background`,
       canvasWidth: 1672,
       canvasHeight: 941,
@@ -67,9 +56,6 @@ export const ROOM_DESIGNS = [
     nameKey: "catalog.roomDesigns.garden-ladi-hills.name",
     descriptionKey: "catalog.roomDesigns.garden-ladi-hills.description",
     icon: "🌿",
-    price: 0,
-    minimumHouseLevel: 0,
-    ownedByDefault: true,
     backgroundAssetId: "garden-ladi-hills-background",
     canvasWidth: 1586,
     canvasHeight: 992,
@@ -85,9 +71,6 @@ export const ROOM_DESIGNS = [
     nameKey: "catalog.roomDesigns.living-ladi-classic.name",
     descriptionKey: "catalog.roomDesigns.living-ladi-classic.description",
     icon: "🛋️",
-    price: 0,
-    minimumHouseLevel: 0,
-    ownedByDefault: true,
     backgroundAssetId: "living-ladi-classic-background",
     canvasWidth: 1672,
     canvasHeight: 941,
@@ -100,9 +83,6 @@ export const ROOM_DESIGNS = [
     nameKey: "catalog.roomDesigns.kitchen-ladi-classic.name",
     descriptionKey: "catalog.roomDesigns.kitchen-ladi-classic.description",
     icon: "🍳",
-    price: 0,
-    minimumHouseLevel: 0,
-    ownedByDefault: true,
     backgroundAssetId: "kitchen-ladi-classic-background",
     canvasWidth: 1672,
     canvasHeight: 941,
@@ -110,8 +90,6 @@ export const ROOM_DESIGNS = [
   },
   ...HOUSE_THEMES.filter(isThemedHouseTheme).flatMap((theme) => createThemedRoomDesigns(theme.id, theme.icon)),
 ] as const satisfies ReadonlyArray<RoomDesignDefinition>;
-export const DEFAULT_ROOM_DESIGNS = ROOM_DESIGNS.filter((design) => design.ownedByDefault);
 export function roomDesignsForTheme(themeId: HouseThemeId): ReadonlyArray<RoomDesignDefinition> {
-
   return ROOM_DESIGNS.filter((design) => design.houseThemeId === themeId);
 }

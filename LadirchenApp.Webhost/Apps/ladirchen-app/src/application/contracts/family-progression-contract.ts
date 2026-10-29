@@ -1,9 +1,9 @@
 import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
-import type { HouseStageLevel } from "@/domain/house";
+import type { HouseAtmosphere, HouseEnergyVisualLevel, HouseStageLevel } from "@/domain/house";
 import type { LadiStageId } from "@/domain/ladi";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 
-export const FAMILY_PROGRESSION_SCHEMA_VERSION = 3;
+export const FAMILY_PROGRESSION_SCHEMA_VERSION = 4;
 export const FAMILY_PROGRESSION_AGGREGATE_TYPE = "family-progression";
 
 export interface MemberProgression {
@@ -19,12 +19,15 @@ export interface MemberProgression {
 }
 
 export interface FamilyProgressionState {
+  readonly canCloseWeekSuccessfully: boolean;
   readonly completedWeeklyStreak: number;
   readonly currentWeekTarget: number;
   readonly familyEnergy: number;
+  readonly houseAtmosphere: HouseAtmosphere;
   readonly houseLevel: HouseStageLevel;
-  readonly houseVisualLevel: number;
+  readonly houseVisualLevel: HouseEnergyVisualLevel;
   readonly maximumSavingsInterestRate: number;
+  readonly minimumSuccessfulWeekEnergy: number;
   readonly memberProgressions: Readonly<Partial<Record<FamilyMemberId, MemberProgression>>>;
 }
 

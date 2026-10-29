@@ -141,25 +141,27 @@ import { useI18n } from "vue-i18n";
 import AvatarCategoryIcon from "./AvatarCategoryIcon.vue";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import {
-  accessoryOptions,
-  adultHairColorOptions,
-  adultHairOptions,
-  adultOutfitOptions,
-  faceOptions,
-  faceShapeOptions,
-  funOptions,
-  hairColorOptions,
-  hairOptions,
-  outfitColorOptions,
-  outfitOptions,
-  seasonOptions,
-  skinToneOptions,
+  accessoryOptions as allAccessoryOptions,
+  adultHairColorOptions as allAdultHairColorOptions,
+  adultHairOptions as allAdultHairOptions,
+  adultOutfitOptions as allAdultOutfitOptions,
+  faceOptions as allFaceOptions,
+  faceShapeOptions as allFaceShapeOptions,
+  funOptions as allFunOptions,
+  hairColorOptions as allHairColorOptions,
+  hairOptions as allHairOptions,
+  outfitColorOptions as allOutfitColorOptions,
+  outfitOptions as allOutfitOptions,
+  seasonOptions as allSeasonOptions,
+  skinToneOptions as allSkinToneOptions,
 } from "@/shared/components/avatar/data/avatar-options";
 import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance, GuardianAvatarPreset } from "@/domain/avatar";
 import type { ViewerRole } from "@/domain/family/types";
+import type { AvatarProfileCatalog } from "@/application/contracts/family-profile-contract";
 import type { AvatarCatalogItemId, AvatarColorOption } from "@/shared/components/avatar/data/avatar-options";
 export interface Props {
+  allowedOptions?: AvatarProfileCatalog;
   modelValue: boolean;
   userName: string;
   initialAppearance?: AvatarAppearance;
@@ -180,6 +182,12 @@ const previewField: Record<PreviewKind, keyof AvatarAppearance> = {
   outfit: "outfit",
   season: "seasonalAccessoryId",
 };
+function filterAvatarOptions<TOption extends { readonly value: string }>(
+  options: ReadonlyArray<TOption>,
+  allowedIds: ReadonlyArray<string> | undefined,
+): TOption[] {
+  return allowedIds ? options.filter((option) => allowedIds.includes(option.value)) : [...options];
+}
 const ColorPicker = defineComponent({
   props: {
     modelValue: { type: String, required: true },
@@ -188,7 +196,6 @@ const ColorPicker = defineComponent({
   },
   emits: ["update:modelValue"],
   setup(this: void, colorProps, { emit: colorEmit }) {
-
     return () =>
       h("div", { class: "compact-colors" }, [
         h("strong", colorProps.label),
@@ -204,7 +211,6 @@ const ColorPicker = defineComponent({
               "aria-pressed": colorProps.modelValue === option.value,
               style: { background: option.color },
               onClick(this: void) {
-
                 return colorEmit("update:modelValue", option.value);
               },
             }),
@@ -227,7 +233,6 @@ const OptionGrid = defineComponent({
   },
   emits: ["update:modelValue"],
   setup(this: void, gridProps, { emit: gridEmit }) {
-
     return () =>
       h(
         "div",
@@ -243,13 +248,11 @@ const OptionGrid = defineComponent({
               "aria-label": t("avatar.builder.selectAria", { label: t(option.id) }),
               "aria-pressed": gridProps.modelValue === option.value,
               onClick(this: void) {
-
                 return gridEmit("update:modelValue", option.value);
               },
             },
             {
               default(this: void) {
-
                 return [
                   h("span", { class: "option-art", "aria-hidden": "true" }, [
                     h(AvatarFigure, { appearance: previewAppearance(gridProps.previewKind, option.value), size: 72 }),
@@ -267,6 +270,19 @@ const OptionGrid = defineComponent({
   },
 });
 const props = withDefaults(defineProps<Props>(), { profileRole: "child" });
+const accessoryOptions = filterAvatarOptions(allAccessoryOptions, props.allowedOptions?.accessoryIds);
+const adultHairColorOptions = filterAvatarOptions(allAdultHairColorOptions, props.allowedOptions?.hairColorIds);
+const adultHairOptions = filterAvatarOptions(allAdultHairOptions, props.allowedOptions?.hairIds);
+const adultOutfitOptions = filterAvatarOptions(allAdultOutfitOptions, props.allowedOptions?.outfitIds);
+const faceOptions = filterAvatarOptions(allFaceOptions, props.allowedOptions?.faceIds);
+const faceShapeOptions = filterAvatarOptions(allFaceShapeOptions, props.allowedOptions?.faceShapeIds);
+const funOptions = filterAvatarOptions(allFunOptions, props.allowedOptions?.funAccessoryIds);
+const hairColorOptions = filterAvatarOptions(allHairColorOptions, props.allowedOptions?.hairColorIds);
+const hairOptions = filterAvatarOptions(allHairOptions, props.allowedOptions?.hairIds);
+const outfitColorOptions = filterAvatarOptions(allOutfitColorOptions, props.allowedOptions?.outfitColorIds);
+const outfitOptions = filterAvatarOptions(allOutfitOptions, props.allowedOptions?.outfitIds);
+const seasonOptions = filterAvatarOptions(allSeasonOptions, props.allowedOptions?.seasonalAccessoryIds);
+const skinToneOptions = filterAvatarOptions(allSkinToneOptions, props.allowedOptions?.skinToneIds);
 const emit = defineEmits<Emits>();
 const { t } = useI18n();
 const section = ref<Section>("base");
@@ -369,31 +385,25 @@ const guardianPresets = computed<
   },
 ]);
 const activeGuardianPreset = computed<GuardianAvatarPreset>(function callback() {
-
   if (draft.age !== "senior") {
-
     return "adult";
   }
 
   return draft.outfit === "cardigan" ? "grandma" : "grandpa";
 });
 function baseAppearance() {
-
   return props.profileRole === "guardian" ? createGuardianAvatarAppearance() : createDefaultAvatarAppearance();
 }
 function guardianPresetAppearance(preset: GuardianAvatarPreset) {
-
   return {
     ...createGuardianAvatarAppearance(preset),
     skinToneId: draft.skinToneId,
   };
 }
 function selectGuardianPreset(preset: GuardianAvatarPreset) {
-
   return Object.assign(draft, guardianPresetAppearance(preset));
 }
 function previewAppearance(kind: PreviewKind, value: string): AvatarAppearance {
-
   return {
     ...baseAppearance(),
     age: draft.age,
@@ -413,11 +423,9 @@ function randomItem<T>(items: T[]): T {
   return item;
 }
 function resetDraft() {
-
   return Object.assign(draft, baseAppearance(), props.initialAppearance ?? {});
 }
 function scrollOptionsToTop() {
-
   return void nextTick(function callback() {
     const panel = optionsPanel.value;
     const element = panel instanceof HTMLElement ? panel : panel?.$el;
@@ -429,7 +437,6 @@ function selectSection(value: Section) {
   scrollOptionsToTop();
 }
 function categoryAriaCurrent(value: Section): "page" | undefined {
-
   return section.value === value ? "page" : undefined;
 }
 function randomLook(funny: boolean) {
@@ -448,7 +455,6 @@ function randomLook(funny: boolean) {
   });
 }
 function close() {
-
   return emit("update:modelValue", false);
 }
 function save() {
@@ -458,9 +464,7 @@ function save() {
 watch(
   () => props.modelValue,
   function callback(isOpen) {
-
     if (!isOpen) {
-
       return;
     }
 

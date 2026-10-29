@@ -27,6 +27,9 @@ const categories = exhaustiveValues<ShopRewardCategory>({
   privilege: true,
   time: true,
 });
+function isOptionalUniqueDomainIdArray(value: unknown): boolean {
+  return value === undefined || (isArrayOf(value, isDomainId) && new Set(value).size === value.length);
+}
 function isShopReward(value: unknown): value is ShopReward {
   return (
     isRecord(value) &&
@@ -44,6 +47,15 @@ function isShopReward(value: unknown): value is ShopReward {
     (value.availableUntil === undefined || isCalendarDate(value.availableUntil)) &&
     isOptionalBoolean(value.isVisible) &&
     isOptionalBoolean(value.published) &&
+    (value.publicationStatus === undefined ||
+      value.publicationStatus === "expired" ||
+      value.publicationStatus === "hidden" ||
+      value.publicationStatus === "scheduled" ||
+      value.publicationStatus === "visible") &&
+    isOptionalString(value.nextStatusChangeAt) &&
+    isOptionalUniqueDomainIdArray(value.requestableByMemberIds) &&
+    isOptionalUniqueDomainIdArray(value.cancellableByMemberIds) &&
+    isOptionalUniqueDomainIdArray(value.approvableByMemberIds) &&
     isKnownString(value.status, statuses) &&
     hasOptionalDomainId(value.requesterId)
   );

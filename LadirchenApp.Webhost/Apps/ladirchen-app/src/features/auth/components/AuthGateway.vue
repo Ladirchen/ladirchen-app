@@ -63,13 +63,6 @@
           <span>{{ loginSubmitLabel }}</span>
           <i aria-hidden="true">→</i>
         </button>
-        <div class="demo-login">
-          <v-icon icon="i-mdi:flask-outline" />
-          <span>
-            <strong>{{ t("auth.login.demoTitle") }}</strong>
-            <small>{{ t("auth.login.demoHint", { users: demoAccessLabel }) }}</small>
-          </span>
-        </div>
       </form>
 
       <form v-else class="auth-form mt-5" @submit.prevent="register">
@@ -159,13 +152,6 @@ const showLoginPassword = ref(false);
 const showRegisterPassword = ref(false);
 const submitting = ref(false);
 const errorMessage = ref("");
-const demoAccessLabel = computed(function callback() {
-  const names = store.members
-    .slice(0, AUTH_INPUT_RULES.demoMemberCount)
-    .map((member) => `„${member.nickname || member.name}“`);
-
-  return names.length > 1 ? `${names[0]} / ${names[1]}` : names[0] || t("auth.login.demoFallback");
-});
 const registrationIsValid = computed(
   () =>
     familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength &&
@@ -222,12 +208,6 @@ async function login() {
 }
 async function register() {
   if (submitting.value || !registrationIsValid.value) {
-    return;
-  }
-
-  if (await authenticationGateway.usernameExists(registerUsername.value)) {
-    errorMessage.value = t("auth.register.usernameExists");
-
     return;
   }
 
@@ -435,31 +415,6 @@ async function register() {
   box-shadow:
     0 rem(5) 0 var(--lad-color-primary-deep),
     0 rem(10) rem(18) color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
-}
-.demo-login {
-  margin-top: rem(14);
-  padding: rem(10) rem(11);
-  --uno: d-flex align-center;
-  gap: rem(9);
-  color: var(--lad-color-accent-warm-deep);
-  border: rem(1) solid color-mix(in srgb, var(--lad-color-reward-accent) 18%, transparent);
-  border-radius: rem(14);
-  background: var(--lad-color-reward-soft);
-}
-.demo-login > :deep(.v-icon) {
-  color: var(--lad-color-reward-shadow);
-}
-.demo-login strong,
-.demo-login small {
-  --uno: d-block;
-}
-.demo-login strong {
-  font-size: rem(9);
-}
-.demo-login small {
-  margin-top: rem(1);
-  font-size: 0.5rem;
-  line-height: 1.35;
 }
 @include respond-down(phone) {
   .auth-card {

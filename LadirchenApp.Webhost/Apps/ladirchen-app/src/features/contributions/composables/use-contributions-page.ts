@@ -10,7 +10,6 @@ import type {
   Promotion,
 } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
-import { CONTRIBUTION_IDS } from "@/infrastructure/fixtures/family-world-fixtures";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
@@ -67,8 +66,8 @@ export function useContributionsPage() {
       })),
     ];
   });
-  const newPromotion = reactive<NewPromotion>({
-    contributionId: CONTRIBUTION_IDS.dishwasher,
+  const newPromotion = reactive<Omit<NewPromotion, "contributionId"> & { contributionId: ContributionId | "" }>({
+    contributionId: "",
     multiplier: 2,
     deadline: "17:00",
     teamworkBonus: 10,
@@ -245,10 +244,16 @@ export function useContributionsPage() {
     });
   }
   function addPromotion() {
-    void store.addPromotion({ ...newPromotion });
+    const contributionId = newPromotion.contributionId;
+
+    if (!contributionId) {
+      return;
+    }
+
+    void store.addPromotion({ ...newPromotion, contributionId });
     promotionDialog.value = false;
     Object.assign(newPromotion, {
-      contributionId: CONTRIBUTION_IDS.dishwasher,
+      contributionId: "",
       multiplier: 2,
       deadline: "17:00",
       teamworkBonus: 10,

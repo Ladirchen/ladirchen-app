@@ -21,6 +21,7 @@
       class="pixi-scene-background"
       :design="activeSceneDesign"
       :energy="energy"
+      :house-visual-level="houseVisualLevel"
     />
     <section
       v-for="room in displayedRooms"
@@ -53,7 +54,7 @@
       <div class="room-baseboard" aria-hidden="true"></div>
       <div class="room-floor" aria-hidden="true"></div>
       <div class="room-partition" aria-hidden="true"></div>
-      <div v-if="energy < HOUSE_ENERGY_THRESHOLDS.bright" class="room-wear" aria-hidden="true">
+      <div v-if="houseAtmosphere !== 'sunny'" class="room-wear" aria-hidden="true">
         <i v-for="mark in ROOM_WEAR_MARK_COUNT" :key="mark"></i>
       </div>
       <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true"></div>
@@ -171,16 +172,13 @@ import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
-import {
-  furnitureVisualDefinitionFor,
-  HOUSE_ENERGY_THRESHOLDS,
-  HOUSE_LAYOUT_CONSTRAINTS,
-  resolveHouseEnergyVisualLevel,
-} from "@/domain/house";
+import { furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS } from "@/domain/house";
 import { ladiStageById } from "@/domain/ladi";
 import type { LadiStageId } from "@/domain/ladi";
 import type {
   HouseAccessory,
+  HouseAtmosphere,
+  HouseEnergyVisualLevel,
   HouseLayoutPlacement,
   HouseRoomDefinition,
   HouseZoneId,
@@ -196,6 +194,8 @@ export interface Props {
   compact?: boolean;
   editable?: boolean;
   energy?: number;
+  houseAtmosphere: HouseAtmosphere;
+  houseVisualLevel: HouseEnergyVisualLevel;
   includeGarden?: boolean;
   contextualNeighbors?: boolean;
   members: FamilyMember[];
@@ -306,7 +306,7 @@ const activeSceneDesign = computed(() =>
     ? undefined
     : props.roomDesigns.find((design) => design.zoneId === props.selectedZoneId),
 );
-const pixiSceneKey = computed(() => `${activeSceneDesign.value?.id}-${resolveHouseEnergyVisualLevel(props.energy)}`);
+const pixiSceneKey = computed(() => `${activeSceneDesign.value?.id}-${props.houseVisualLevel}`);
 const contextGridStyle = computed(function callback() {
   if (!isContextualZone.value) {
     return undefined;
@@ -336,15 +336,15 @@ const isLadiOnPerch = computed(
 );
 const ladiSpeech = computed(() => ladiMotivation.value || perchMessage.value);
 const energyClass = computed(function callback() {
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
+  if (props.houseVisualLevel === 1) {
     return "energy-critical";
   }
 
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
+  if (props.houseVisualLevel === 2) {
     return "energy-low";
   }
 
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
+  if (props.houseVisualLevel === 3) {
     return "energy-tired";
   }
 

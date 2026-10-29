@@ -33,7 +33,6 @@
             :key="reward.id"
             :can-request="canRequest(reward)"
             :publication-status="rewardPublicationStatus(reward)"
-            :redemption-open="redemptionOpen"
             :reward="reward"
             @delete="rewardToDelete = $event"
           />
@@ -350,7 +349,6 @@ const {
   activeTab,
   addReward,
   canAddReward,
-  canAfford,
   canRequest,
   categoryOptions,
   confirmRewardDeletion,
@@ -367,7 +365,6 @@ const {
   ownsSet,
   furnitureSetAreaLabel,
   publicationModeOptions,
-  redemptionOpen,
   rewardDialog,
   rewardPublicationStatus,
   rewardToDelete,
@@ -388,7 +385,7 @@ const editionCards = computed(() =>
       edition,
       isActive,
       action: editionAction(ownsEdition(edition.id), isActive),
-      affordable: canAfford(edition.price),
+      affordable: edition.purchasableByMemberIds.includes(store.signedInMemberId),
       previewStyle: { backgroundImage: `url(${editionPreviewBackground(edition.id)})` },
       previewHouse: editionPreviewHouse(edition.id),
     };
@@ -397,8 +394,8 @@ const editionCards = computed(() =>
 const furnitureSetCards = computed(() =>
   visibleFurnitureSets.value.map((set) => ({
     set,
-    status: furnitureSetStatus(ownsSet(set.id), set.minimumHouseLevel),
-    affordable: canAfford(set.price),
+    status: furnitureSetStatus(ownsSet(set.id), set.available),
+    affordable: set.purchasableByMemberIds.includes(store.signedInMemberId),
     metaLabel: t("shop.catalog.sets.meta", { count: set.accessoryIds.length, level: set.minimumHouseLevel + 1 }),
     previewAccessories: setPreviewAccessories(set.accessoryIds),
   })),
@@ -408,38 +405,31 @@ const accessoryCards = computed(() =>
     accessory,
     classes: { owned: accessory.owned, special: accessory.category === "special" },
     isAnimated: Boolean(accessory.motion && accessory.motion !== "none"),
-    affordable: canAfford(accessory.price),
+    affordable: accessory.purchasableByMemberIds.includes(store.signedInMemberId),
   })),
 );
 function editionAction(owned: boolean, isActive: boolean): EditionAction {
-
   if (!owned) {
-
     return store.viewerRole === "child" ? "buy" : "childPurchase";
   }
 
   return isActive ? "selected" : "use";
 }
-function furnitureSetStatus(owned: boolean, minimumHouseLevel: number): FurnitureSetStatus {
-
+function furnitureSetStatus(owned: boolean, available: boolean): FurnitureSetStatus {
   if (owned) {
-
     return "owned";
   }
 
-  if (minimumHouseLevel > store.houseLevel) {
-
+  if (!available) {
     return "locked";
   }
 
   return store.viewerRole === "child" ? "buy" : "childPurchase";
 }
 function onDeleteDialogToggle(open: boolean) {
-
   if (!open) {
     rewardToDelete.value = null;
   }
-
 }
 </script>
 

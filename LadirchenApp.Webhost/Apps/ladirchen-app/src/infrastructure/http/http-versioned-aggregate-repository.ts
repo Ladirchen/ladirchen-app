@@ -2,10 +2,8 @@ import { isVersionedAggregateSnapshot } from "@/application/contracts/family-agg
 import type { FamilyAggregateDescriptor } from "@/application/contracts/family-aggregate-descriptors";
 import type {
   FamilyAggregateType,
-  SaveVersionedAggregateCommand,
   VersionedAggregateSnapshot,
 } from "@/application/contracts/versioned-aggregate-contract";
-import { AggregateConflictError } from "@/application/ports/versioned-aggregate-repository";
 import type { VersionedAggregateRepository } from "@/application/ports/versioned-aggregate-repository";
 import type { FamilyId } from "@/domain/shared/identifiers";
 export class AggregateApiError extends Error {
@@ -25,16 +23,13 @@ type HttpAggregateRepositoryOptions<
   readonly apiBaseUrl: string;
 };
 async function parseJson(response: Response): Promise<unknown> {
-
   try {
     const parsed: unknown = await response.json();
 
     return parsed;
-
   } catch {
     throw new AggregateApiError("The aggregate API returned invalid JSON.", response.status);
   }
-
 }
 export class HttpVersionedAggregateRepository<
   TAggregateType extends FamilyAggregateType,
@@ -55,7 +50,6 @@ export class HttpVersionedAggregateRepository<
     });
 
     if (response.status === 404) {
-
       return null;
     }
 
@@ -65,36 +59,7 @@ export class HttpVersionedAggregateRepository<
 
     return this.readSnapshot(await parseJson(response), familyId, response.status);
   }
-  public async save(
-    command: SaveVersionedAggregateCommand<TAggregateType, TState>,
-  ): Promise<VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState>> {
-
-    if (!this.options.isState(command.state)) {
-      throw new TypeError(`The ${this.options.aggregateType} aggregate contains invalid state.`);
-    }
-
-    const response = await this.fetchRequest(this.endpoint(command.familyId), {
-      body: JSON.stringify(command),
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      method: "PUT",
-    });
-
-    if (response.status === 409) {
-      throw new AggregateConflictError(this.options.aggregateType);
-    }
-
-    if (!response.ok) {
-      throw new AggregateApiError("The aggregate could not be saved.", response.status);
-    }
-
-    return this.readSnapshot(await parseJson(response), command.familyId, response.status);
-  }
   private endpoint(familyId: FamilyId): string {
-
     return `${this.options.apiBaseUrl}/api/families/${encodeURIComponent(familyId)}/aggregates/${this.options.aggregateType}`;
   }
   private readSnapshot(
@@ -102,7 +67,6 @@ export class HttpVersionedAggregateRepository<
     familyId: FamilyId,
     status: number,
   ): VersionedAggregateSnapshot<TAggregateType, TSchemaVersion, TState> {
-
     if (
       !isVersionedAggregateSnapshot(
         value,

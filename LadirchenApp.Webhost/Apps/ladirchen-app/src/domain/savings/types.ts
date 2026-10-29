@@ -4,6 +4,8 @@ import type { FamilyMemberId, GuardianGiftId, SavingGoalId } from "@/domain/shar
 export type FamilyCurrency = "CHF" | "EUR" | "HUF";
 export type GoalVisibility = "family" | "guardians" | "private";
 export type SavingGoalOwnerId = FamilyMemberId | "family";
+export type FamilyGoalParticipantScope = "family" | "children" | "selected";
+export type SavingsVoucherStatus = "pending" | "redeemable" | "redeemed";
 
 export interface GuardianGift {
   id: GuardianGiftId;
@@ -23,11 +25,27 @@ export interface SavingGoal {
   target: number;
   saved: number;
   starterBonus?: number;
+  createdAt?: string;
   interestEarned?: number;
   projectedInterestCredit?: number;
   remainingAmount?: number;
   withdrawableBalance?: number;
   visibleToMemberIds?: ReadonlyArray<FamilyMemberId>;
+  participantIds?: ReadonlyArray<FamilyMemberId>;
+  voucherId?: SavingGoalId;
+  commandLimits?: Readonly<
+    Partial<
+      Record<
+        string,
+        {
+          canCancel: boolean;
+          canWithdraw: boolean;
+          maximumDepositAmount: number;
+          maximumSupportAmount: number;
+        }
+      >
+    >
+  >;
   visibility: GoalVisibility;
   shared: boolean;
   cheered: boolean;
@@ -38,4 +56,20 @@ export interface NewGoal {
   icon: string;
   target: number;
   visibility: GoalVisibility;
+  participantScope?: FamilyGoalParticipantScope;
+  participantIds?: ReadonlyArray<FamilyMemberId>;
+}
+
+export interface SavingsVoucher {
+  id: SavingGoalId;
+  goalId: SavingGoalId;
+  amount: number;
+  ownerId?: FamilyMemberId | null;
+  participantIds: ReadonlyArray<FamilyMemberId>;
+  consentedMemberIds: ReadonlyArray<FamilyMemberId>;
+  status: SavingsVoucherStatus;
+  redeemedAt?: string;
+  visibleToMemberIds: ReadonlyArray<FamilyMemberId>;
+  consentableByMemberIds: ReadonlyArray<FamilyMemberId>;
+  redeemableByMemberIds: ReadonlyArray<FamilyMemberId>;
 }

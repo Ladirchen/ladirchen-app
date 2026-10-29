@@ -29,14 +29,19 @@ function isMemberProgression(value: unknown): boolean {
 export function isFamilyProgressionState(value: unknown): value is FamilyProgressionState {
   return (
     isRecord(value) &&
+    typeof value.canCloseWeekSuccessfully === "boolean" &&
     isNonNegativeInteger(value.completedWeeklyStreak) &&
     isInteger(value.currentWeekTarget) &&
     value.currentWeekTarget > 0 &&
     isInteger(value.houseLevel) &&
     stageLevels.has(value.houseLevel) &&
     isFiniteNumber(value.familyEnergy) &&
+    (value.houseAtmosphere === "cloudy" || value.houseAtmosphere === "rainy" || value.houseAtmosphere === "sunny") &&
     isInteger(value.houseVisualLevel) &&
+    value.houseVisualLevel >= 1 &&
+    value.houseVisualLevel <= 5 &&
     isFiniteNumber(value.maximumSavingsInterestRate) &&
+    isFiniteNumber(value.minimumSuccessfulWeekEnergy) &&
     isRecord(value.memberProgressions) &&
     Object.values(value.memberProgressions).every(isMemberProgression)
   );

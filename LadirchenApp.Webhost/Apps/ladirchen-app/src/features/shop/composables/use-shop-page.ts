@@ -6,7 +6,7 @@ import { useI18n } from "vue-i18n";
 import { FURNITURE_SETS, HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
 import type { FurnitureSetId, HouseAccessoryId, HouseThemeId } from "@/domain/house";
 import type { ShopReward, ShopRewardCategory } from "@/domain/shop";
-import { calendarDateInTimeZone, calendarDateIsWithin } from "@/domain/shared/zoned-calendar";
+import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import {
   getHouseExteriorAssetUrl,
   houseExteriorBackgroundAssetId,
@@ -172,6 +172,7 @@ export function useShopPage() {
               description: t(edition.descriptionKey),
               name: t(edition.nameKey),
               price: catalogEntry.price ?? 0,
+              purchasableByMemberIds: catalogEntry.purchasableByMemberIds,
             }
           : undefined;
       })
@@ -186,11 +187,13 @@ export function useShopPage() {
         return set
           ? {
               ...set,
+              accessoryIds: catalogEntry.accessoryIds,
               available: catalogEntry.available,
               description: t(set.descriptionKey),
               minimumHouseLevel: catalogEntry.minimumHouseLevel ?? 0,
               name: t(set.nameKey),
               price: catalogEntry.price ?? 0,
+              purchasableByMemberIds: catalogEntry.purchasableByMemberIds,
             }
           : undefined;
       })
@@ -223,7 +226,7 @@ export function useShopPage() {
     (stage) => {
       HOUSE_THEMES.forEach(async function callback(theme) {
         const [backgroundUrl, houseUrl] = await Promise.all([
-          getHouseExteriorAssetUrl(houseExteriorBackgroundAssetId(theme.id, 100)),
+          getHouseExteriorAssetUrl(houseExteriorBackgroundAssetId(theme.id, 5)),
           getHouseExteriorAssetUrl(houseExteriorHouseAssetId(stage.id, theme.id)),
         ]);
         houseThemePreviewUrls[theme.id] = { backgroundUrl, houseUrl };
@@ -249,17 +252,9 @@ export function useShopPage() {
   function ownsSet(id: FurnitureSetId) {
     return store.ownedFurnitureSetIds.includes(id);
   }
-  function canAfford(price: number) {
-    return price <= store.availableBalance;
-  }
   const redemptionOpen = computed(() => store.rewardShopRedemptionOpen);
   function canRequest(reward: ShopReward) {
-    return redemptionOpen.value && canAfford(reward.price) && reward.quantity > 0 && reward.published === true;
-  }
-  function rewardIsScheduled(reward: ShopReward) {
-    return Boolean(
-      reward.isVisible !== false && reward.availableFrom && reward.availableFrom > minimumAvailableDate.value,
-    );
+    return reward.requestableByMemberIds?.includes(store.activeChildId) ?? false;
   }
   function formatCalendarDate(date: string) {
     return DateTime.fromISO(date)
@@ -267,11 +262,11 @@ export function useShopPage() {
       .toLocaleString({ day: "2-digit", month: "2-digit", year: "numeric" });
   }
   function rewardPublicationStatus(reward: ShopReward): ShopRewardPublicationStatus {
-    if (reward.isVisible === false) {
+    if (reward.publicationStatus === "hidden") {
       return { icon: "i-mdi:eye-off-outline", label: t("shop.publication.hiddenStatus"), tone: "hidden" };
     }
 
-    if (rewardIsScheduled(reward)) {
+    if (reward.publicationStatus === "scheduled") {
       return {
         icon: "i-mdi:calendar-clock-outline",
         label: t("shop.publication.from", { date: formatCalendarDate(reward.availableFrom!) }),
@@ -279,7 +274,7 @@ export function useShopPage() {
       };
     }
 
-    if (reward.availableUntil && !calendarDateIsWithin(minimumAvailableDate.value, undefined, reward.availableUntil)) {
+    if (reward.publicationStatus === "expired") {
       return { icon: "i-mdi:calendar-remove-outline", label: t("shop.publication.expired"), tone: "expired" };
     }
 
@@ -340,7 +335,6 @@ export function useShopPage() {
     activeTab,
     addReward,
     canAddReward,
-    canAfford,
     canRequest,
     catalogItemsEyebrow,
     catalogItemsTitle,
@@ -359,7 +353,6 @@ export function useShopPage() {
     ownsSet,
     furnitureSetAreaLabel,
     publicationModeOptions,
-    redemptionOpen,
     rewardDialog,
     rewardPublicationStatus,
     rewardToDelete,

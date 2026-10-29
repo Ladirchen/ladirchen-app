@@ -3,7 +3,6 @@ import type { FamilyMemberId, FamilyPetId, HouseLayoutPlacementId } from "@/doma
 import type {
   CatalogNewBadgeSchedule,
   FurniturePlacement,
-  FurnitureSetId,
   FurnitureVisualId,
   HouseAccessoryCategory,
   HouseAccessoryId,
@@ -25,9 +24,9 @@ export interface HouseAccessory {
   description: string;
   icon: string;
   price: number;
+  purchasableByMemberIds: ReadonlyArray<string>;
   placement: HouseAccessoryPlacement;
   roomId?: HouseRoomId;
-  setIds?: ReadonlyArray<FurnitureSetId>;
   minimumHouseLevel?: HouseStageLevel;
   newBadge?: CatalogNewBadgeSchedule;
   motion?: HouseAccessoryMotion;

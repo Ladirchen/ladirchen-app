@@ -5,11 +5,13 @@ import type { AvatarAppearance } from "@/domain/avatar";
 import type { WorldEffect } from "@/domain/contributions/types";
 import type { FamilyMember, FamilyPet } from "@/domain/family/types";
 import type { LadiStageId } from "@/domain/ladi";
-import { HOUSE_ENERGY_THRESHOLDS, HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
+import { HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
 import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
 import type {
   HouseAccessory,
   HouseAccessoryId,
+  HouseAtmosphere,
+  HouseEnergyVisualLevel,
   HouseLayoutPlacement,
   HouseRoomDefinition,
   HouseStageLevel,
@@ -29,7 +31,9 @@ const MEMBER_LABEL_DURATION_MS = 1900;
 const MINIMUM_SUN_OPACITY = 0.08;
 export interface FamilyWorldSceneProps {
   energy: number;
+  houseAtmosphere: HouseAtmosphere;
   houseLevel: HouseStageLevel;
+  houseVisualLevel: HouseEnergyVisualLevel;
   houseThemeId?: HouseThemeId;
   houseLayout: HouseLayoutPlacement[];
   rooms: ReadonlyArray<HouseRoomDefinition>;
@@ -60,28 +64,18 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
   let memberNameTimer: number | undefined;
   let petNameTimer: number | undefined;
   const viewLabel = computed(() => t(`world.scene.views.${view.value}`));
-  const weather = computed(function callback() {
-    if (props.energy >= HOUSE_ENERGY_THRESHOLDS.bright) {
-      return "sunny";
-    }
-
-    if (props.energy >= HOUSE_ENERGY_THRESHOLDS.cloudy) {
-      return "cloudy";
-    }
-
-    return "rainy";
-  });
+  const weather = computed(() => props.houseAtmosphere);
   const weatherLabel = computed(() => t(`world.scene.weather.${weather.value}`));
   const houseEnergyClass = computed(function callback() {
-    if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
+    if (props.houseVisualLevel === 1) {
       return "energy-critical";
     }
 
-    if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
+    if (props.houseVisualLevel === 2) {
       return "energy-low";
     }
 
-    if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
+    if (props.houseVisualLevel === 3) {
       return "energy-tired";
     }
 
@@ -131,7 +125,9 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     t("world.scene.editionAria", { name: activeTheme.value ? t(activeTheme.value.nameKey) : "" }),
   );
   const activeHouseStage = computed(() => HOUSE_STAGES.find((stage) => stage.level === props.houseLevel));
-  const frontExteriorBackgroundId = computed(() => houseExteriorBackgroundAssetId(activeThemeId.value, props.energy));
+  const frontExteriorBackgroundId = computed(() =>
+    houseExteriorBackgroundAssetId(activeThemeId.value, props.houseVisualLevel),
+  );
   const frontExteriorHouseId = computed(function callback() {
     const stage = activeHouseStage.value;
 

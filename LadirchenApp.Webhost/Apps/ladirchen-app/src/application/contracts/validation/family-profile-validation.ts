@@ -1,4 +1,4 @@
-import type { FamilyProfileState } from "@/application/contracts/family-profile-contract";
+import type { AvatarProfileCatalog, FamilyProfileState } from "@/application/contracts/family-profile-contract";
 import {
   exhaustiveValues,
   hasUniqueIds,
@@ -13,7 +13,8 @@ import {
   isOptionalString,
   isRecord,
 } from "./runtime-validation";
-import { isAvatarAppearance } from "@/domain/avatar";
+import { isAvatarAppearanceStructure } from "@/domain/avatar";
+import type { AvatarAppearance } from "@/domain/avatar";
 import type { FamilyPermissions } from "@/domain/family/permissions";
 import type {
   FamilyMember,
@@ -58,7 +59,41 @@ function isFamilyPermissions(value: unknown): value is FamilyPermissions {
     typeof value.canViewGuardianGoals === "boolean"
   );
 }
-function isFamilyMember(value: unknown): value is FamilyMember {
+function isAvatarProfileCatalog(value: unknown): value is AvatarProfileCatalog {
+  return (
+    isRecord(value) &&
+    isArrayOf(value.accessoryIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.ages, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.faceIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.faceShapeIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.funAccessoryIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.hairColorIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.hairIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.outfitColorIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.outfitIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.seasonalAccessoryIds, (item): item is string => typeof item === "string") &&
+    isArrayOf(value.skinToneIds, (item): item is string => typeof item === "string")
+  );
+}
+function appearanceBelongsToCatalog(appearance: AvatarAppearance, catalog: AvatarProfileCatalog): boolean {
+  return (
+    catalog.ages.includes(appearance.age) &&
+    catalog.skinToneIds.includes(appearance.skinToneId) &&
+    catalog.faceShapeIds.includes(appearance.faceShape) &&
+    catalog.faceIds.includes(appearance.face) &&
+    catalog.hairIds.includes(appearance.hair) &&
+    catalog.hairColorIds.includes(appearance.hairColorId) &&
+    catalog.outfitIds.includes(appearance.outfit) &&
+    catalog.outfitColorIds.includes(appearance.outfitColorId) &&
+    catalog.accessoryIds.includes(appearance.accessoryId) &&
+    catalog.funAccessoryIds.includes(appearance.funAccessoryId) &&
+    catalog.seasonalAccessoryIds.includes(appearance.seasonalAccessoryId)
+  );
+}
+function isFamilyMember(
+  value: unknown,
+  avatarCatalog: Readonly<Record<ViewerRole, AvatarProfileCatalog>>,
+): value is FamilyMember {
   return (
     isRecord(value) &&
     isFamilyMemberId(value.id) &&
@@ -72,7 +107,9 @@ function isFamilyMember(value: unknown): value is FamilyMember {
     isNonNegativeInteger(value.weeklyStreak) &&
     isOptionalString(value.email) &&
     isOptionalBoolean(value.invitationPending) &&
-    (value.appearance === undefined || isAvatarAppearance(value.appearance)) &&
+    (value.appearance === undefined ||
+      (isAvatarAppearanceStructure(value.appearance) &&
+        appearanceBelongsToCatalog(value.appearance, avatarCatalog[value.role]))) &&
     (value.permissions === undefined || isFamilyPermissions(value.permissions))
   );
 }
@@ -87,9 +124,19 @@ function isFamilyPet(value: unknown): value is FamilyPet {
   );
 }
 export function isFamilyProfileState(value: unknown): value is FamilyProfileState {
+  if (
+    !isRecord(value) ||
+    !isRecord(value.avatarCatalog) ||
+    !isAvatarProfileCatalog(value.avatarCatalog.child) ||
+    !isAvatarProfileCatalog(value.avatarCatalog.guardian)
+  ) {
+    return false;
+  }
+
+  const avatarCatalog = value.avatarCatalog as Readonly<Record<ViewerRole, AvatarProfileCatalog>>;
+
   return (
-    isRecord(value) &&
-    isArrayOf(value.members, isFamilyMember) &&
+    isArrayOf(value.members, (member): member is FamilyMember => isFamilyMember(member, avatarCatalog)) &&
     hasUniqueIds(value.members) &&
     typeof value.onboardingCompleted === "boolean" &&
     isArrayOf(value.pets, isFamilyPet) &&

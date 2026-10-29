@@ -66,12 +66,14 @@ describe("hydrateFamilyAggregates", () => {
 
   it("marks hydration complete only when every aggregate load succeeds", async () => {
     const refreshFamilyAggregate = vi.fn().mockResolvedValue(undefined);
+    const refreshAllFamilyAggregates = vi.fn().mockResolvedValue(undefined);
     const context = Object.assign(createFamilyWorldState(createFamilyWorldInitialData()), {
       $familyWorld: dependencies,
       hydrateHomeCustomization: vi.fn().mockResolvedValue(undefined),
       notify: vi.fn(),
       persistContributions: vi.fn(),
       refreshFamilyAggregate,
+      refreshAllFamilyAggregates,
     }) as unknown as FamilyWorldStoreContext;
 
     await lifecycleActions.hydrateFamilyAggregates.call(context);
@@ -82,6 +84,10 @@ describe("hydrateFamilyAggregates", () => {
       | ((change: FamilyAggregateChanged) => void)
       | undefined;
     expect(onChanged).toBeDefined();
+    const onReconnected = serviceMocks.updatesConnect.mock.calls[0]?.[2] as (() => Promise<void>) | undefined;
+    expect(onReconnected).toBeDefined();
+    await onReconnected?.();
+    expect(refreshAllFamilyAggregates).toHaveBeenCalledOnce();
     onChanged?.({
       aggregateType: "savings",
       familyId: dependencies.familyContext.activeFamilyId,
@@ -128,19 +134,37 @@ describe("hydrateHomeCustomization", () => {
       revision: 1,
       schemaVersion: 3,
       state: {
+        capabilities: { canArrangeHouse: true },
+        catalog: {
+          accessories: initialData.accessories.map((accessory) => ({
+            available: true,
+            id: accessory.id,
+            purchasableByMemberIds: [],
+          })),
+          areas: [],
+          furnitureSets: [],
+          houseStages: [],
+          roomDesigns: [],
+          themes: [],
+        },
         accessories: initialData.accessories.map((accessory) => ({
           id: accessory.id,
           equipped: accessory.id === "round-rug" ? false : accessory.equipped,
           owned: accessory.owned,
         })),
-        editions: HOUSE_THEMES.map((edition) => ({ id: edition.id, owned: edition.ownedByDefault })),
+        editions: HOUSE_THEMES.map((edition) => ({ id: edition.id, owned: edition.id === "sunny-dollhouse" })),
         placements: initialData.houseLayout,
-        roomDesigns: ROOM_DESIGNS.map((design) => ({ id: design.id, owned: design.ownedByDefault })),
-        selectedEditionId: "sunny-dollhouse",
-        selectedRoomDesigns: ROOM_DESIGNS.filter((design) => design.ownedByDefault).map((design) => ({
-          designId: design.id,
-          zoneId: design.zoneId,
+        roomDesigns: ROOM_DESIGNS.map((design) => ({
+          id: design.id,
+          owned: design.houseThemeId === "sunny-dollhouse",
         })),
+        selectedEditionId: "sunny-dollhouse",
+        selectedRoomDesigns: ROOM_DESIGNS.filter((design) => design.houseThemeId === "sunny-dollhouse").map(
+          (design) => ({
+            designId: design.id,
+            zoneId: design.zoneId,
+          }),
+        ),
       },
       updatedAt: "2026-09-10T08:00:00.000Z",
       updatedBy: "member-1",
@@ -160,6 +184,19 @@ describe("hydrateHomeCustomization", () => {
       revision: 1,
       schemaVersion: 3,
       state: {
+        capabilities: { canArrangeHouse: true },
+        catalog: {
+          accessories: initialData.accessories.map((accessory) => ({
+            available: true,
+            id: accessory.id,
+            purchasableByMemberIds: [],
+          })),
+          areas: [],
+          furnitureSets: [],
+          houseStages: [],
+          roomDesigns: [],
+          themes: [],
+        },
         accessories: initialData.accessories.map((accessory) => ({
           id: accessory.id,
           equipped: accessory.equipped,

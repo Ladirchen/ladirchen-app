@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { inject } from "vue";
 import type { InjectionKey } from "vue";
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
 import { HOUSE_ROOMS } from "@/domain/house/catalog";
 import type { FurnitureSetId } from "@/domain/house";
 import { NO_FAMILY_PERMISSIONS } from "@/domain/family/permissions";
@@ -37,7 +36,7 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         return this.permissions.canManageFamily;
       },
       canArrangeHouse(state): boolean {
-        return state.subscriptionTier === "pro";
+        return state.canArrangeHouseReadModel;
       },
       unlockedHouseRooms(state) {
         const availableAreas = new Set(
@@ -99,7 +98,9 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         return this.familyEnergyReadModel;
       },
       houseMeetsMinimumEnergy(): boolean {
-        return this.familyEnergy >= MINIMUM_HOUSE_ENERGY_PERCENT;
+        return this.simulatedEnergy === null
+          ? this.canCloseWeekSuccessfully
+          : this.familyEnergy >= this.minimumSuccessfulWeekEnergy;
       },
       currentWeekDays(state): number {
         return state.memberProgressions[state.activeChildId]?.approvedDates.length ?? 0;

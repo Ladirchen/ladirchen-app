@@ -21,10 +21,6 @@ function goalBalanceLabel(goal: SavingGoal) {
   return `${goal.saved} / ${goal.target}`;
 }
 
-function remainingGoalAmount(goal: Pick<SavingGoal, "remainingAmount" | "saved" | "target">) {
-  return goal.remainingAmount ?? Math.max(0, goal.target - goal.saved);
-}
-
 function progress(saved: number, target: number) {
   return percentageOfTotal(saved, target);
 }
@@ -52,9 +48,13 @@ export function useWishesPage() {
   let supportTimer: number | undefined;
 
   const localizedGoals = computed(() => store.goals.map(localize.goal));
+  const visibleSavingsVouchers = computed(() =>
+    store.savingsVouchers.filter((voucher) => voucher.visibleToMemberIds.includes(store.signedInMemberId)),
+  );
   const activeGoal = computed(() => localize.goal(store.activeGoal));
-  const activeGoalRemaining = computed(() => remainingGoalAmount(activeGoal.value));
-  const maxAssignable = computed(() => Math.min(store.availableBalance, activeGoalRemaining.value));
+  const maxAssignable = computed(
+    () => activeGoal.value.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
+  );
   const personalGoalOwnerId = computed<FamilyMemberId>(() => store.signedInMemberId);
   const childrenGoals = computed(() =>
     localizedGoals.value.filter((goal) => {
@@ -111,9 +111,7 @@ export function useWishesPage() {
       return 0;
     }
 
-    const remaining = remainingGoalAmount(supportGoal.value);
-
-    return store.viewerRole === "child" ? Math.min(store.availableBalance, remaining) : remaining;
+    return supportGoal.value.commandLimits?.[store.signedInMemberId]?.maximumSupportAmount ?? 0;
   });
   const supportExplanation = computed(() =>
     store.viewerRole === "child" ? t("wishes.support.childExplanation") : t("wishes.support.guardianExplanation"),
@@ -137,6 +135,18 @@ export function useWishesPage() {
     return t(`wishes.visibility.${visibility}`);
   }
 
+  function voucherGoalTitle(goalId: SavingGoalId) {
+    return localizedGoals.value.find((goal) => goal.id === goalId)?.title ?? t("wishes.voucher.goalFallback");
+  }
+
+  function consentToVoucher(id: SavingGoalId) {
+    void store.consentToSavingsVoucher(id);
+  }
+
+  function redeemVoucher(id: SavingGoalId) {
+    void store.redeemSavingsVoucher(id);
+  }
+
   function saveToGoal() {
     if (saveAmount.value <= 0 || saveMotion.value) {
       return;
@@ -154,18 +164,18 @@ export function useWishesPage() {
 
   function openSave(goalId: SavingGoalId) {
     store.activeGoalId = goalId;
-    saveAmount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance, remainingGoalAmount(store.activeGoal));
+    saveAmount.value = Math.min(
+      DEFAULT_TRANSFER_AMOUNT,
+      store.activeGoal.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
+    );
     saveDialog.value = true;
   }
 
   function openSupport(goalId: SavingGoalId) {
     supportGoalId.value = goalId;
     const goal = store.goals.find((item) => item.id === goalId);
-    const remaining = goal ? remainingGoalAmount(goal) : 0;
-    supportAmount.value = Math.max(
-      0,
-      Math.min(DEFAULT_TRANSFER_AMOUNT, store.viewerRole === "child" ? store.availableBalance : remaining, remaining),
-    );
+    const maximum = goal?.commandLimits?.[store.signedInMemberId]?.maximumSupportAmount ?? 0;
+    supportAmount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, maximum);
     supportDialog.value = true;
   }
 
@@ -277,12 +287,14 @@ export function useWishesPage() {
     activeTab,
     addGoal,
     canCreatePersonalGoal,
+    consentToVoucher,
     depositedAmount,
     formatInterestRate,
     giveSupport,
     goalBalanceLabel,
     goalDialog,
     maxAssignable,
+    newGoalOwnerId,
     openGoalDialog,
     openSave,
     openSupport,
@@ -290,6 +302,7 @@ export function useWishesPage() {
     personalGoalOwnerId,
     personalGoals,
     progress,
+    redeemVoucher,
     saveAmount,
     saveDialog,
     saveMotion,
@@ -302,6 +315,8 @@ export function useWishesPage() {
     supportMaximum,
     supportSending,
     visibilityLabel,
+    visibleSavingsVouchers,
+    voucherGoalTitle,
     visibleFamilyGoals,
     weeklyInterestForGoal,
     wishViewOptions,

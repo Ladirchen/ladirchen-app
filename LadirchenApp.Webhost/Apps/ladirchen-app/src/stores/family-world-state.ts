@@ -1,14 +1,21 @@
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
-import { DEFAULT_ROOM_DESIGNS, HOUSE_THEMES } from "@/domain/house";
-import type { HouseStageLevel, HouseZoneId, RoomDesignId } from "@/domain/house";
+import type {
+  HouseAtmosphere,
+  HouseEnergyVisualLevel,
+  HouseStageLevel,
+  HouseThemeId,
+  HouseZoneId,
+  RoomDesignId,
+} from "@/domain/house";
 import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from "@/domain/family/types";
 import { DEFAULT_FAMILY_TIME_ZONE } from "@/domain/family/time-zone";
-import type { FamilyCurrency, GuardianGift } from "@/domain/savings/types";
+import type { FamilyCurrency, GuardianGift, SavingsVoucher } from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 import type { MemberProgression } from "@/application/contracts/family-progression-contract";
 import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
+import type { AvatarProfileCatalog } from "@/application/contracts/family-profile-contract";
 export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
   return members.map((member) => ({
     ...member,
@@ -20,15 +27,6 @@ export function normalizeFamilyPets(pets: ReadonlyArray<FamilyPet>): FamilyPet[]
 }
 function initialStateValue<T>(value: T): T {
   return value;
-}
-function createDefaultSelectedRoomDesignIds(): Partial<Record<HouseZoneId, RoomDesignId>> {
-  const selections: Partial<Record<HouseZoneId, RoomDesignId>> = {};
-
-  for (const design of DEFAULT_ROOM_DESIGNS) {
-    selections[design.zoneId] = design.id;
-  }
-
-  return selections;
 }
 export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const viewerRole = initialStateValue<ViewerRole>("child");
@@ -65,7 +63,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
   const houseCatalog = undefined as HouseCatalogState | undefined;
-  const subscriptionTier = initialStateValue<SubscriptionTier>("pro");
+  const subscriptionTier = initialStateValue<SubscriptionTier>("free");
   const snackbarParams: Record<string, number | string> = {};
   const snackbar: {
     visible: boolean;
@@ -79,7 +77,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
 
   return {
     currentTimeMilliseconds: Date.now(),
-    isAuthenticated: true,
+    isAuthenticated: false,
     signedInMemberId: initialData.signedInMemberId,
     viewerRole,
     activeChildId: initialData.activeChildId,
@@ -92,25 +90,31 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     todayEarnedByMember: {} as Partial<Record<FamilyMemberId, number>>,
     familyCurrencyCode,
     familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
-    ladirchenPerCurrencyUnit: 10,
-    perfectRatingBonusPercent: 5,
-    maxSavingsRatePercent: 8,
+    ladirchenPerCurrencyUnit: 1,
+    perfectRatingBonusPercent: 0,
+    maxSavingsRatePercent: 0,
+    avatarCatalog: undefined as Readonly<Record<ViewerRole, AvatarProfileCatalog>> | undefined,
     memberProgressions,
-    familyEnergyReadModel: 60,
-    houseVisualLevel: 3,
+    familyEnergyReadModel: 0,
+    canCloseWeekSuccessfully: false,
+    minimumSuccessfulWeekEnergy: 0,
+    houseAtmosphere: "cloudy" as HouseAtmosphere,
+    houseVisualLevel: 1 as HouseEnergyVisualLevel,
     simulatedEnergy,
     piggyBankOpen: false,
     rewardAnimation,
     guardianGiftAnimation,
     pendingGuardianGifts,
+    savingsVouchers: [] as SavingsVoucher[],
     completedWeeklyStreak: 0,
-    currentWeekTarget: 7,
+    currentWeekTarget: 0,
     houseLevel,
     houseCatalog,
-    houseThemeId: HOUSE_THEMES[0]?.id ?? "sunny-dollhouse",
-    ownedHouseThemeIds: HOUSE_THEMES.filter((theme) => theme.ownedByDefault).map((theme) => theme.id),
-    ownedRoomDesignIds: DEFAULT_ROOM_DESIGNS.map((design) => design.id),
-    selectedRoomDesignIds: createDefaultSelectedRoomDesignIds(),
+    houseThemeId: "sunny-dollhouse" as HouseThemeId,
+    ownedHouseThemeIds: [] as HouseThemeId[],
+    ownedRoomDesignIds: [] as RoomDesignId[],
+    selectedRoomDesignIds: {} as Partial<Record<HouseZoneId, RoomDesignId>>,
+    canArrangeHouseReadModel: false,
     subscriptionTier,
     houseLayout: initialData.houseLayout,
     homeCustomizationHydrated: false,

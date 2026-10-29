@@ -3,6 +3,7 @@ import type { HubConnection } from "@microsoft/signalr";
 import type {
   FamilyAggregateChanged,
   FamilyAggregateChangedHandler,
+  FamilyAggregateReconnectedHandler,
   FamilyAggregateUpdatesGateway,
 } from "@/application/ports/family-aggregate-updates";
 import { isDomainIdValue, isUuidValue } from "@/domain/shared/identifiers";
@@ -53,10 +54,11 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
   private readonly connection: HubConnection;
   private activeFamilyId: FamilyId | null = null;
   private onChanged: FamilyAggregateChangedHandler | null = null;
+  private onReconnected: FamilyAggregateReconnectedHandler | null = null;
 
   public constructor(apiBaseUrl: string) {
     this.connection = new HubConnectionBuilder()
-      .withUrl(`${apiBaseUrl}/hubs/family-updates`)
+      .withUrl(`${apiBaseUrl}/hubs/family-updates`, { withCredentials: true })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();
@@ -67,13 +69,20 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
         this.onChanged?.(change);
       }
     });
-    this.connection.onreconnected(() => this.subscribeToActiveFamily());
+    this.connection.onreconnected(() => {
+      void this.resubscribeAndRefresh().catch(() => undefined);
+    });
   }
 
-  public async connect(familyId: FamilyId, onChanged: FamilyAggregateChangedHandler): Promise<void> {
+  public async connect(
+    familyId: FamilyId,
+    onChanged: FamilyAggregateChangedHandler,
+    onReconnected: FamilyAggregateReconnectedHandler,
+  ): Promise<void> {
     const previousFamilyId = this.activeFamilyId;
     this.activeFamilyId = familyId;
     this.onChanged = onChanged;
+    this.onReconnected = onReconnected;
 
     if (this.connection.state === HubConnectionState.Disconnected) {
       await this.connection.start();
@@ -89,6 +98,7 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
   public async disconnect(): Promise<void> {
     this.activeFamilyId = null;
     this.onChanged = null;
+    this.onReconnected = null;
 
     if (this.connection.state !== HubConnectionState.Disconnected) {
       await this.connection.stop();
@@ -101,5 +111,10 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
     if (familyId && this.connection.state === HubConnectionState.Connected) {
       await this.connection.invoke("SubscribeToFamily", familyId);
     }
+  }
+
+  private async resubscribeAndRefresh(): Promise<void> {
+    await this.subscribeToActiveFamily();
+    await this.onReconnected?.();
   }
 }

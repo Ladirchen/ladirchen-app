@@ -3,6 +3,7 @@ import type { FamilyMemberId, ShopRewardId } from "@/domain/shared/identifiers";
 
 export const SHOP_REWARD_STATUSES = ["available", "requested", "redeemed"] as const;
 export type ShopRewardStatus = (typeof SHOP_REWARD_STATUSES)[number];
+export type ShopRewardPublicationStatus = "expired" | "hidden" | "scheduled" | "visible";
 export type ShopRewardCategory = "time" | "activity" | "allowance" | "gift" | "privilege" | "custom";
 
 export interface ShopReward {
@@ -21,6 +22,11 @@ export interface ShopReward {
   status: ShopRewardStatus;
   requesterId?: FamilyMemberId;
   published?: boolean;
+  publicationStatus?: ShopRewardPublicationStatus;
+  nextStatusChangeAt?: string;
+  requestableByMemberIds?: ReadonlyArray<FamilyMemberId>;
+  cancellableByMemberIds?: ReadonlyArray<FamilyMemberId>;
+  approvableByMemberIds?: ReadonlyArray<FamilyMemberId>;
 }
 
 export interface NewShopReward {
