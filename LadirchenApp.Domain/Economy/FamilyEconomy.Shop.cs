@@ -269,7 +269,7 @@ public sealed partial class FamilyEconomy
     Rules.Require(
       ShopAvailabilityPolicy.RedemptionIsOpen(now, _family.TimeZone),
       DomainError.Closed,
-      "Shop requests and approvals close at 18:00 local time."
+      $"Shop requests and approvals close at {ShopAvailabilityPolicy.ClosingHour:00}:00 local time."
     );
   }
 }

@@ -13,6 +13,7 @@ public sealed class HouseShopSteps
 {
   private readonly FamilyHouseShop _shop = new();
   private readonly HouseShopPolicy _policy = new();
+  private readonly HouseLayoutPolicy _layoutPolicy = new();
   private HouseItem _item = null!;
   private FurnitureSet _set = null!;
   private HouseTheme _theme = null!;
@@ -28,6 +29,9 @@ public sealed class HouseShopSteps
   private bool _newBadge;
   private string _catalogArea = string.Empty;
   private bool _catalogFactsProvided;
+  private HouseLayoutEntity _layoutEntity = null!;
+  private HousePlacement _normalizedPlacement = null!;
+  private bool _layoutPlacementRejected;
 
   [Given("a child can afford an unowned house accessory")]
   public void AffordableAccessory()
@@ -577,6 +581,82 @@ public sealed class HouseShopSteps
     await Assert.That(_item.Placement.Y).IsEqualTo(y);
   }
 
+  [Given("a family member is moved to x {float} and y {float}")]
+  public void MoveFamilyMember(decimal x, decimal y)
+  {
+    _layoutEntity = new HouseLayoutEntity(
+      "member-placement",
+      "member",
+      "child",
+      new HousePlacement("living-room", x, y, 1m),
+      true
+    );
+  }
+
+  [Given("the Ladi is moved inside the living-room perch area")]
+  public void MoveLadiToPerch()
+  {
+    _layoutEntity = new HouseLayoutEntity(
+      "ladi-placement",
+      "ladi",
+      "family-ladi",
+      new HousePlacement("living-room", 20m, 35m, 1m),
+      true
+    );
+  }
+
+  [When("the authoritative house layout is calculated")]
+  public void CalculateHouseLayout()
+  {
+    var placement = _layoutEntity.Placement;
+    _normalizedPlacement = _layoutPolicy.Normalize(
+      _layoutEntity.EntityType,
+      _layoutEntity.EntityId,
+      placement.Area,
+      placement.X,
+      placement.Y,
+      placement.Scale
+    );
+  }
+
+  [Then("the normalized house position is x {float} and y {float}")]
+  public async Task NormalizedHousePosition(decimal x, decimal y)
+  {
+    await Assert.That(_normalizedPlacement.X).IsEqualTo(x);
+    await Assert.That(_normalizedPlacement.Y).IsEqualTo(y);
+  }
+
+  [Given("an equipped sofa occupies the requested family-member position")]
+  public void OccupiedFamilyMemberPosition()
+  {
+    _layoutEntity = new HouseLayoutEntity(
+      "member-placement",
+      "member",
+      "child",
+      new HousePlacement("living-room", 50m, 70m, 1m),
+      true
+    );
+  }
+
+  [When("the authoritative house layout is validated")]
+  public void ValidateHouseLayout()
+  {
+    var sofa = new HouseLayoutEntity(
+      "sofa-placement",
+      "furniture",
+      "cozy-sofa",
+      new HousePlacement("living-room", 50m, 70m, 1m),
+      true
+    );
+    _layoutPlacementRejected = _layoutPolicy.CollidesWithFurniture(_layoutEntity, [sofa]);
+  }
+
+  [Then("the house placement is rejected")]
+  public async Task HousePlacementRejected()
+  {
+    await Assert.That(_layoutPlacementRejected).IsTrue();
+  }
+
   [Given("a house item has a New-badge schedule from {string} through {string}")]
   public void NewBadgeSchedule(string start, string end)
   {
@@ -617,7 +697,7 @@ public sealed class HouseShopSteps
 
   private static HouseItem NewItem(HouseItemMobility mobility)
   {
-    return new HouseItem("item", 20, HouseItemCategory.Furniture, mobility, "inside", new HousePlacement("living room", 40, 40, 1));
+    return new HouseItem("item", 20, HouseItemCategory.Furniture, mobility, "inside", new HousePlacement("living room", 40, 52, 1));
   }
 
   private void CreateSet()

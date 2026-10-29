@@ -4,6 +4,8 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed class PersonalStreakPolicy
 {
+  public const int DefaultWeeklyTargetDays = 7;
+
   public int Calculate(int completedWeeklyStreaks, int weeklyTargetDays, int approvedCurrentWeekDays)
   {
     Rules.Require(

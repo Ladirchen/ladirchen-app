@@ -30,6 +30,13 @@ public sealed record IsoWeekPeriod
       return DateOnly.FromDateTime(ISOWeek.ToDateTime(Year, Week, DayOfWeek.Monday));
     }
   }
+  public string Key
+  {
+    get
+    {
+      return $"{Year:D4}-W{Week:D2}";
+    }
+  }
 
   public bool Contains(DateOnly date)
   {
@@ -43,5 +50,30 @@ public sealed record IsoWeekPeriod
 
     return new(
       ISOWeek.GetYear(date.ToDateTime(TimeOnly.MinValue)), ISOWeek.GetWeekOfYear(date.ToDateTime(TimeOnly.MinValue)));
+  }
+
+  public static bool TryParse(string? value, out IsoWeekPeriod? period)
+  {
+    period = null;
+
+    if (
+      string.IsNullOrWhiteSpace(value)
+      || value.Length != 8
+      || value[4] != '-'
+      || value[5] != 'W'
+      || !int.TryParse(value.AsSpan(0, 4), NumberStyles.None, CultureInfo.InvariantCulture, out var year)
+      || !int.TryParse(value.AsSpan(6, 2), NumberStyles.None, CultureInfo.InvariantCulture, out var week)
+      || year < 1
+      || year > 9999
+      || week < 1
+      || week > ISOWeek.GetWeeksInYear(year)
+    )
+    {
+      return false;
+    }
+
+    period = new IsoWeekPeriod(year, week);
+
+    return true;
   }
 }

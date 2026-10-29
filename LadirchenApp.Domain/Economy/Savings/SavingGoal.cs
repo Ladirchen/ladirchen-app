@@ -7,6 +7,8 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed class SavingGoal : Entity<SavingGoalId>
 {
+  public const decimal StarterBonusPerMember = 5;
+
   internal SavingGoal(
     SavingGoalId id,
     GoalOwner owner,
@@ -22,7 +24,9 @@ public sealed class SavingGoal : Entity<SavingGoalId>
     Title = Rules.Text(title);
     Target = Rules.Positive(target);
     Visibility = owner.IsFamily ? GoalVisibility.Family : Rules.Defined(visibility);
-    StarterBonus = owner.IsFamily ? Math.Min(5m * familyMemberCount, Target) : Math.Min(5, Target);
+    StarterBonus = owner.IsFamily
+      ? Math.Min(StarterBonusPerMember * familyMemberCount, Target)
+      : Math.Min(StarterBonusPerMember, Target);
     Saved = StarterBonus;
     CreatedAt = createdAt.ToUniversalTime();
   }

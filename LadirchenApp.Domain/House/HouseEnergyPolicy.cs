@@ -9,6 +9,8 @@ namespace LadirchenApp.Domain.House;
 public sealed class HouseEnergyPolicy
 {
   public const int DefaultEnergy = 60;
+  public const int MinimumSuccessfulWeekEnergy = 60;
+  public const int SevereFailureEnergyThreshold = 30;
 
   public int ContributionFor(LadiStage stage)
   {

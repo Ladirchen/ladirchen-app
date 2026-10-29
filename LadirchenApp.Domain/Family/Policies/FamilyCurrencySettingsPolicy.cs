@@ -4,6 +4,8 @@ namespace LadirchenApp.Domain.Family;
 
 public sealed class FamilyCurrencySettingsPolicy
 {
+  public const int DefaultLadirchenPerCurrencyUnit = 10;
+
   public bool TryNormalize(string currency, decimal enteredRate, out FamilyCurrency normalizedCurrency, out ExchangeRate? rate)
   {
     rate = null;

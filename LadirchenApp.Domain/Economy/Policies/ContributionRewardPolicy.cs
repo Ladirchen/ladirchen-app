@@ -8,6 +8,8 @@ namespace LadirchenApp.Domain.Economy;
 
 public static class ContributionRewardPolicy
 {
+  public static Percentage DefaultPerfectRatingBonus { get; } = new(5);
+
   public static ContributionRewardBreakdown Calculate(LadirchenAmount reward, StarRating rating,
     Percentage perfectRatingBonus, RewardMultiplier? multiplier = null, LadirchenAmount? teamworkBonus = null)
   {

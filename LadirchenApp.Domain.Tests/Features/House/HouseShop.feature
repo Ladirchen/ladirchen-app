@@ -151,8 +151,23 @@ Feature: House shop
     Examples:
       | requestedX | requestedY | storedX | storedY |
       | 40.126     | 70.124     | 40.13   | 70.12   |
-      | -10        | 2          | 4       | 8       |
-      | 120        | 110        | 96      | 94      |
+      | -10        | 2          | 3       | 52      |
+      | 120        | 110        | 97      | 94      |
+
+  Scenario: Family members and pets remain on the house floor
+    Given a family member is moved to x -10 and y 2
+    When the authoritative house layout is calculated
+    Then the normalized house position is x 7 and y 62
+
+  Scenario: The Ladi snaps to its living-room perch
+    Given the Ladi is moved inside the living-room perch area
+    When the authoritative house layout is calculated
+    Then the normalized house position is x 18 and y 30
+
+  Scenario: Family members and pets cannot overlap equipped furniture
+    Given an equipped sofa occupies the requested family-member position
+    When the authoritative house layout is validated
+    Then the house placement is rejected
 
   Scenario: The New badge follows its local calendar-date schedule
     Given a house item has a New-badge schedule from "2026-09-10" through "2026-09-23"

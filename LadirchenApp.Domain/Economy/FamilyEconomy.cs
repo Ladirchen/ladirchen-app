@@ -90,9 +90,9 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     RequireChild(childId);
     var value = Rules.Positive(amount);
     Rules.Require(
-      value >= 1 && value <= 10000,
+      value >= SpecialGiftPolicy.MinimumAmount && value <= SpecialGiftPolicy.MaximumAmount,
       DomainError.InvalidValue,
-      "A special gift must be between 1 and 10000."
+      $"A special gift must be between {SpecialGiftPolicy.MinimumAmount} and {SpecialGiftPolicy.MaximumAmount}."
     );
     var text = Rules.Text(reason);
     RequireNewOperation(operationId);
@@ -249,7 +249,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     var reward = ContributionRewardPolicy.Calculate(
       contribution.Reward,
       rating,
-      perfectRatingBonus ?? new Percentage(5),
+      perfectRatingBonus ?? ContributionRewardPolicy.DefaultPerfectRatingBonus,
       promotion?.Multiplier,
       promotion?.TeamworkBonus
     );

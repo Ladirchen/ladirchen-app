@@ -21,7 +21,7 @@ public sealed partial class FamilyEconomy
     ArgumentNullException.ThrowIfNull(period);
     ArgumentOutOfRangeException.ThrowIfNegative(completedWeeklyStreak);
     ArgumentOutOfRangeException.ThrowIfLessThan(weeklyTarget, 1);
-    ArgumentOutOfRangeException.ThrowIfGreaterThan(weeklyTarget, 7);
+    ArgumentOutOfRangeException.ThrowIfGreaterThan(weeklyTarget, PersonalStreakPolicy.DefaultWeeklyTargetDays);
     var days = ContributionParticipationPolicy.ApprovedDays(_contributions, memberId, period, _family.TimeZone);
 
     return new(

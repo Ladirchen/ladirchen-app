@@ -9,6 +9,8 @@ namespace LadirchenApp.Domain.Family;
 
 public sealed class Family : AggregateRoot<FamilyId>
 {
+  public const int MaximumNicknameLength = 18;
+
   private readonly List<FamilyMember> _members = new();
 
   public Family(FamilyId id, FamilyMemberId administratorId, string administratorName, IanaTimeZone timeZone)
@@ -115,9 +117,9 @@ public sealed class Family : AggregateRoot<FamilyId>
     Rules.Require(actor == activeChildId && ActiveChildId == actor, DomainError.Forbidden, "Only the active child can save their nickname.");
     var normalized = nickname.Trim();
 
-    if (normalized.Length > 18)
+    if (normalized.Length > MaximumNicknameLength)
     {
-      normalized = normalized[..18];
+      normalized = normalized[..MaximumNicknameLength];
     }
 
     member.SetNickname(normalized.Length == 0 ? null : normalized);

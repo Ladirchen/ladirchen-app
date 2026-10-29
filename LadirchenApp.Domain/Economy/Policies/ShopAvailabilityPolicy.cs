@@ -7,9 +7,11 @@ namespace LadirchenApp.Domain.Economy;
 
 public static class ShopAvailabilityPolicy
 {
+  public const int ClosingHour = 18;
+
   public static bool RedemptionIsOpen(DateTimeOffset now, IanaTimeZone zone)
   {
 
-    return zone.LocalTime(now).Hour < 18;
+    return zone.LocalTime(now).Hour < ClosingHour;
   }
 }

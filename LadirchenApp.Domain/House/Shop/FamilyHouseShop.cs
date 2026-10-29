@@ -9,6 +9,7 @@ namespace LadirchenApp.Domain.House.Shop;
 public sealed class FamilyHouseShop
 {
   private readonly HouseShopPolicy _policy = new();
+  private readonly HouseLayoutPolicy _layoutPolicy = new();
   private readonly HashSet<string> _unlockedAreas = new(StringComparer.OrdinalIgnoreCase);
 
   public decimal Balance { get; private set; }
@@ -134,7 +135,7 @@ public sealed class FamilyHouseShop
     }
 
     var compatibleArea = _policy.CompatibleArea(item.IntendedArea, area);
-    item.SetPlacement(_policy.NormalizePlacement(compatibleArea, x, y), true);
+    item.SetPlacement(_layoutPolicy.Normalize("furniture", item.Id, compatibleArea, x, y, item.Placement.Scale), true);
 
     return true;
   }
@@ -174,7 +175,17 @@ public sealed class FamilyHouseShop
       return false;
     }
 
-    item.SetPlacement(item.InitialPlacement, true);
+    item.SetPlacement(
+      _layoutPolicy.Normalize(
+        "furniture",
+        item.Id,
+        item.InitialPlacement.Area,
+        item.InitialPlacement.X,
+        item.InitialPlacement.Y,
+        item.InitialPlacement.Scale
+      ),
+      true
+    );
 
     return true;
   }

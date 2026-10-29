@@ -39,7 +39,7 @@ public sealed class FamilyHouse
 
   public bool CloseSuccessfulWeek(int energy)
   {
-    if (energy < 60)
+    if (energy < HouseEnergyPolicy.MinimumSuccessfulWeekEnergy)
     {
       return false;
     }
@@ -53,10 +53,14 @@ public sealed class FamilyHouse
 
   public void CloseFailedWeek(int energy)
   {
-    Rules.Require(energy < 60, DomainError.InvalidState, "A successful week cannot be closed as failed.");
+    Rules.Require(
+      energy < HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+      DomainError.InvalidState,
+      "A successful week cannot be closed as failed."
+    );
     StoredLevel = Math.Max(0, StoredLevel - 1);
 
-    if (energy < 30)
+    if (energy < HouseEnergyPolicy.SevereFailureEnergyThreshold)
     {
       CompletedWeeklyStreak = Math.Max(0, CompletedWeeklyStreak - 1);
     }
