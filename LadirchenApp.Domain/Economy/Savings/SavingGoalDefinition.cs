@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Prototypes;
@@ -10,5 +11,5 @@ public sealed record SavingGoalDefinition(
   string Title,
   LadirchenAmount Target,
   GoalVisibility Visibility,
-  int FamilyMemberCount = 0
+  IReadOnlyCollection<FamilyMemberId>? ParticipantIds = null
 );

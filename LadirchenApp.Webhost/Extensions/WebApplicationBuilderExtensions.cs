@@ -88,12 +88,17 @@ public static class WebApplicationBuilderExtensions
     });
     webApplicationBuilder.Services.AddSingleton(TimeProvider.System);
     webApplicationBuilder.Services.AddScoped<IFamilyAggregateSnapshotRepository, DatabaseFamilyAggregateSnapshotRepository>();
+    webApplicationBuilder.Services.AddScoped<
+      IFamilyCommandExecutionCoordinator,
+      PostgreSqlFamilyCommandExecutionCoordinator
+    >();
     webApplicationBuilder.Services.AddSingleton<IFamilyAggregateChangePublisher, SignalRFamilyAggregateChangePublisher>();
     webApplicationBuilder.Services.AddScoped<AuthenticationService>();
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
-    webApplicationBuilder.Services.AddScoped<AuthorizeFamilyActorQueryHandler>();
+    webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();
     webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
     webApplicationBuilder.Services.AddScoped<SimulateSavingsInterestQueryHandler>();
+    webApplicationBuilder.Services.AddHostedService<FamilyAggregateOutboxDispatcher>();
     webApplicationBuilder.Services.AddHostedService<WeeklyInterestSettlementService>();
   }
 

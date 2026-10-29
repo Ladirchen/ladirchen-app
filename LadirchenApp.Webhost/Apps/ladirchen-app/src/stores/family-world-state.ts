@@ -88,6 +88,8 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     availableBalances: { ...initialData.balances },
     sharedSavedBalances: {} as Partial<Record<FamilyMemberId, number>>,
     todayEarnedByMember: {} as Partial<Record<FamilyMemberId, number>>,
+    currentWeekEarnedByMember: {} as Partial<Record<FamilyMemberId, number>>,
+    currentWeekApprovedContributionCountByMember: {} as Partial<Record<FamilyMemberId, number>>,
     familyCurrencyCode,
     familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
     ladirchenPerCurrencyUnit: 1,

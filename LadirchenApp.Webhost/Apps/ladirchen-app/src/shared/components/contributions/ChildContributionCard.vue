@@ -74,9 +74,9 @@
           :multiplier="activePromotion.multiplier"
           :time-zone="familyTimeZone"
         />
-        <div v-if="invitedChildNames.length" class="invited-team mt-3">
+        <div v-if="invitedPartnerNames.length" class="invited-team mt-3">
           <span>{{ t("contributions.togetherWith") }}</span>
-          <v-chip v-for="name in invitedChildNames" :key="name" color="info" size="x-small" variant="tonal">
+          <v-chip v-for="name in invitedPartnerNames" :key="name" color="info" size="x-small" variant="tonal">
             {{ name }}
           </v-chip>
         </div>
@@ -104,7 +104,7 @@
           variant="tonal"
           @click="emit('invite', contribution)"
         >
-          {{ t("contributions.inviteSiblings") }}
+          {{ t("contributions.invitePartners") }}
         </v-btn>
         <div
           v-if="contribution.status === 'approved'"
@@ -204,14 +204,11 @@ const assigneeIcon = computed(() =>
   isAssignedToActiveChild.value ? "i-mdi:account-heart" : "i-mdi:account-multiple-outline",
 );
 const assigneeLabel = computed(function callback() {
-
   if (!assignedMember.value) {
-
     return t("contributions.assignment.free");
   }
 
   if (isAssignedToActiveChild.value) {
-
     return t("contributions.assignment.forYou");
   }
 
@@ -226,7 +223,7 @@ const canInvite = computed(() => props.allowInvite && props.contribution.kind ==
 const activePromotion = computed(() => (props.contribution.status === "approved" ? undefined : props.promotion));
 const earnedStars = computed(() => props.contribution.stars ?? 1);
 const earnedReward = computed(() => props.contribution.earnedReward ?? props.reward);
-const invitedChildNames = computed(() =>
+const invitedPartnerNames = computed(() =>
   (props.contribution.invitedChildIds ?? [])
     .map((id) => props.familyMembers.find((member) => member.id === id)?.name)
     .filter((name): name is string => Boolean(name)),
@@ -235,17 +232,14 @@ const approvalMessage = computed(function callback() {
   const stars = earnedStars.value;
 
   if (stars >= 4) {
-
     return t("contributions.approval.great");
   }
 
   if (stars === 3) {
-
     return t("contributions.approval.good");
   }
 
   if (stars === 2) {
-
     return t("contributions.approval.careful");
   }
 

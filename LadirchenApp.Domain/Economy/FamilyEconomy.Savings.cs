@@ -59,10 +59,42 @@ public sealed partial class FamilyEconomy
     Rules.Require(_goals.All(item => item.Id != id), DomainError.Duplicate, "This goal identity was already used.");
     RequireNewOperation(operationId);
     Rules.Defined(definition.Visibility);
-    var familyMemberCount = definition.FamilyMemberCount > 0
-      ? definition.FamilyMemberCount
-      : _family.Members.Count(item => !item.InvitationPending);
-    var goal = new SavingGoal(id, owner, definition.Title, definition.Target, definition.Visibility, now, familyMemberCount);
+    var participants = definition.ParticipantIds?.Distinct().ToArray() ?? Array.Empty<FamilyMemberId>();
+
+    if (owner.IsFamily && participants.Length == 0)
+    {
+      var eligible = _family.Members
+        .Where(item => !item.InvitationPending)
+        .Where(item => item.Role is MemberRole.Child or MemberRole.Guardian)
+        .Select(item => item.Id);
+      participants = eligible.ToArray();
+    }
+
+    Rules.Require(
+      !owner.IsFamily || participants.Length > 0,
+      DomainError.InvalidValue,
+      "A family savings goal requires at least one participant."
+    );
+    Rules.Require(
+      owner.IsFamily || participants.Length == 0,
+      DomainError.InvalidValue,
+      "A personal savings goal cannot define family participants."
+    );
+
+    foreach (var participant in participants)
+    {
+      _family.ActiveMember(participant);
+    }
+
+    var goal = new SavingGoal(
+      id,
+      owner,
+      definition.Title,
+      definition.Target,
+      definition.Visibility,
+      now,
+      participants
+    );
     _goals.Add(goal);
     Record(
       operationId,
@@ -82,6 +114,7 @@ public sealed partial class FamilyEconomy
 
     if (goal.Completed)
     {
+      IssueVoucherIfCompleted(goal);
       AddDomainEvent(new GoalCompleted(Id, id, now));
     }
   }
@@ -96,6 +129,11 @@ public sealed partial class FamilyEconomy
   )
   {
     var goal = GoalFor(actor, id);
+    Rules.Require(
+      _savingsVouchers.All(item => item.Id != id),
+      DomainError.InvalidState,
+      "A completed goal with a voucher cannot be edited."
+    );
     var member = _family.ActiveMember(actor);
     Rules.Require(
       goal.Owner.MemberId == actor || member.IsAdministrator,
@@ -112,6 +150,7 @@ public sealed partial class FamilyEconomy
 
     if (!wasCompleted && goal.Completed)
     {
+      IssueVoucherIfCompleted(goal);
       AddDomainEvent(new GoalCompleted(Id, id, now));
     }
   }
@@ -130,7 +169,7 @@ public sealed partial class FamilyEconomy
       DomainError.Forbidden,
       "Use the gift workflow for another owner's goal."
     );
-    var value = Math.Min(Rules.Positive(amount), goal.Target - goal.Saved);
+    var value = Math.Min(Rules.Round(Rules.Positive(amount)), goal.Target - goal.Saved);
     RequireNewOperation(operationId);
     Rules.Require(value > 0, DomainError.InvalidState, "The goal is already complete.");
     var wallet = WalletFor(actor);
@@ -148,6 +187,7 @@ public sealed partial class FamilyEconomy
 
     if (goal.Completed)
     {
+      IssueVoucherIfCompleted(goal);
       AddDomainEvent(new GoalCompleted(Id, id, now));
     }
 
@@ -163,6 +203,11 @@ public sealed partial class FamilyEconomy
   )
   {
     var goal = GoalFor(actor, id);
+    Rules.Require(
+      _savingsVouchers.All(item => item.Id != id),
+      DomainError.InvalidState,
+      "A completed goal voucher must be redeemed instead."
+    );
     Rules.Require(goal.Owner.MemberId == actor, DomainError.Forbidden, "Only the owner may withdraw savings.");
     var value = Math.Min(Rules.Positive(amount), goal.Withdrawable);
     RequireNewOperation(operationId);
@@ -202,6 +247,11 @@ public sealed partial class FamilyEconomy
   public decimal CancelGoal(FamilyMemberId actor, SavingGoalId id, TransactionId operationId, DateTimeOffset now)
   {
     var goal = GoalFor(actor, id);
+    Rules.Require(
+      _savingsVouchers.All(item => item.Id != id),
+      DomainError.InvalidState,
+      "A completed goal voucher must be redeemed instead."
+    );
     var member = _family.ActiveMember(actor);
     Rules.Require(
       goal.Owner.MemberId == actor || goal.Owner.IsFamily && (member.IsAdministrator || member.Role == MemberRole.Child),
@@ -259,7 +309,8 @@ public sealed partial class FamilyEconomy
     SavingGoalId id,
     LadirchenAmount amount,
     TransactionId operationId,
-    DateTimeOffset now
+    DateTimeOffset now,
+    GuardianGiftId? giftId = null
   )
   {
     var member = _family.ActiveMember(actor);
@@ -269,6 +320,7 @@ public sealed partial class FamilyEconomy
     if (!goal.Owner.IsFamily)
     {
       RequireChild(goal.Owner.MemberId!);
+      RequireNewPendingGiftId(giftId);
     }
 
     var value = Math.Min(Rules.Round(Rules.Positive(amount)), goal.Target - goal.Saved);
@@ -279,7 +331,9 @@ public sealed partial class FamilyEconomy
 
     if (!goal.Owner.IsFamily)
     {
-      _guardianGifts.Add(new GuardianGoalGift(goal.Owner.MemberId!, actor, value));
+      AddPendingGift(
+        new GuardianGoalGift(giftId, goal.Owner.MemberId!, actor, value, goal.Id, GiftDestination.Goal)
+      );
     }
 
     Record(
@@ -300,6 +354,7 @@ public sealed partial class FamilyEconomy
 
     if (goal.Completed)
     {
+      IssueVoucherIfCompleted(goal);
       AddDomainEvent(new GoalCompleted(Id, id, now));
     }
 
@@ -311,7 +366,8 @@ public sealed partial class FamilyEconomy
     SavingGoalId id,
     LadirchenAmount amount,
     TransactionId operationId,
-    DateTimeOffset now
+    DateTimeOffset now,
+    GuardianGiftId? giftId = null
   )
   {
     RequireChild(actor);
@@ -325,6 +381,7 @@ public sealed partial class FamilyEconomy
     if (!goal.Owner.IsFamily)
     {
       RequireChild(goal.Owner.MemberId!);
+      RequireNewPendingGiftId(giftId);
     }
 
     var value = Math.Min(Rules.Round(Rules.Positive(amount)), goal.Target - goal.Saved);
@@ -352,8 +409,16 @@ public sealed partial class FamilyEconomy
     );
     AddDomainEvent(new LadirchenTransferred(Id, actor, goal.Owner.MemberId, id, value, operationId, now));
 
+    if (!goal.Owner.IsFamily && giftId is not null)
+    {
+      AddPendingGift(
+        new GuardianGoalGift(giftId, goal.Owner.MemberId!, actor, value, goal.Id, GiftDestination.Goal)
+      );
+    }
+
     if (goal.Completed)
     {
+      IssueVoucherIfCompleted(goal);
       AddDomainEvent(new GoalCompleted(Id, id, now));
     }
 
@@ -365,12 +430,14 @@ public sealed partial class FamilyEconomy
     FamilyMemberId recipientId,
     LadirchenAmount amount,
     TransactionId operationId,
-    DateTimeOffset now
+    DateTimeOffset now,
+    GuardianGiftId? giftId = null
   )
   {
     RequireChild(actor);
     RequireChild(recipientId);
     Rules.Require(actor != recipientId, DomainError.InvalidValue, "A gift requires another child.");
+    RequireNewPendingGiftId(giftId);
     var value = Rules.Round(Rules.Positive(amount));
     Rules.Require(value > 0, DomainError.InvalidValue, "The rounded gift must be positive.");
     RequireNewOperation(operationId);
@@ -405,6 +472,13 @@ public sealed partial class FamilyEconomy
       )
     );
     AddDomainEvent(new LadirchenTransferred(Id, actor, recipientId, null, value, operationId, now));
+
+    if (giftId is not null)
+    {
+      AddPendingGift(
+        new GuardianGoalGift(giftId, recipientId, actor, value, null, GiftDestination.Balance)
+      );
+    }
   }
 
   public void ToggleGoalCheer(FamilyMemberId actor, SavingGoalId id, DateTimeOffset now)

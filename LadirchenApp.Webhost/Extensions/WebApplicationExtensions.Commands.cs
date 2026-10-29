@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
-using LadirchenApp.Application.Queries;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Helpers;
 using LadirchenApp.Webhost.Infrastructure;
@@ -33,7 +32,10 @@ public static partial class WebApplicationExtensions
       .WithTags("Family commands")
       .RequireAuthorization()
       .Produces<ExecuteFamilyCommandResponse>()
-      .ProducesProblem(StatusCodes.Status400BadRequest);
+      .ProducesProblem(StatusCodes.Status400BadRequest)
+      .ProducesProblem(StatusCodes.Status403Forbidden)
+      .ProducesProblem(StatusCodes.Status404NotFound)
+      .ProducesProblem(StatusCodes.Status409Conflict);
 
     return app;
   }
@@ -41,7 +43,6 @@ public static partial class WebApplicationExtensions
     Guid familyId,
     ExecuteFamilyCommandRequest request,
     ExecuteFamilyCommandHandler handler,
-    AuthorizeFamilyActorQueryHandler authorization,
     HttpContext context,
     CancellationToken cancellationToken
   )
@@ -53,15 +54,7 @@ public static partial class WebApplicationExtensions
 
     var actorId = new FamilyMemberId(request.ActorId);
 
-    if (
-      !FamilySessionIdentity.TryGetMemberId(context.User, out var authenticatedMemberId)
-      || !await authorization.HandleAsync(
-        new FamilyId(familyId),
-        authenticatedMemberId!,
-        actorId,
-        cancellationToken
-      )
-    )
+    if (!FamilySessionIdentity.TryGetMemberId(context.User, out var authenticatedMemberId))
     {
       return Results.Forbid();
     }
@@ -69,10 +62,12 @@ public static partial class WebApplicationExtensions
     try
     {
       var command = new FamilyCommand(
+        request.CommandId,
         new FamilyId(familyId),
         actorId,
         request.CommandType,
-        request.Payload
+        request.Payload,
+        authenticatedMemberId
       );
       var result = await handler.HandleAsync(command, cancellationToken);
 
@@ -84,7 +79,7 @@ public static partial class WebApplicationExtensions
         new ProblemDetails
         {
           Detail = exception.Message,
-          Title = "Family command revision conflict",
+          Title = "Family command conflict",
         }
       );
     }
@@ -96,6 +91,22 @@ public static partial class WebApplicationExtensions
           Detail = exception.Message,
           Title = "Family command rejected",
         }
+      );
+    }
+    catch (DomainRuleException exception)
+    {
+      var statusCode = exception.Code switch
+      {
+        DomainError.Forbidden => StatusCodes.Status403Forbidden,
+        DomainError.NotFound => StatusCodes.Status404NotFound,
+        DomainError.InvalidValue => StatusCodes.Status400BadRequest,
+        _ => StatusCodes.Status409Conflict,
+      };
+
+      return Results.Problem(
+        detail: exception.Message,
+        statusCode: statusCode,
+        title: "Family command rejected"
       );
     }
     catch (ArgumentException exception)

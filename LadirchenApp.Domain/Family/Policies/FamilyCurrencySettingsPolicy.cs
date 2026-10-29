@@ -10,12 +10,23 @@ public sealed class FamilyCurrencySettingsPolicy
   {
     rate = null;
 
-    if (!Enum.TryParse(currency, out normalizedCurrency) || enteredRate <= 0)
+    if (
+      !Enum.TryParse(currency, out normalizedCurrency)
+      || !Enum.IsDefined(normalizedCurrency)
+      || enteredRate <= 0
+    )
     {
       return false;
     }
 
-    rate = new ExchangeRate((int)decimal.Round(enteredRate, 0, MidpointRounding.AwayFromZero));
+    var rounded = decimal.Round(enteredRate, 0, MidpointRounding.AwayFromZero);
+
+    if (rounded < 1 || rounded > int.MaxValue)
+    {
+      return false;
+    }
+
+    rate = new ExchangeRate(decimal.ToInt32(rounded));
 
     return true;
   }

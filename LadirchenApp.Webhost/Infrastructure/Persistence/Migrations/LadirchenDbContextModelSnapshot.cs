@@ -17,7 +17,7 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -65,6 +65,62 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.ToTable("AuthenticationAccounts", (string)null);
                 });
 
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyAggregateOutboxMessageEntity", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AggregateType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("CommandId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PublishAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("CommandId");
+
+                    b.HasIndex("PublishedAt", "NextAttemptAt");
+
+                    b.HasIndex("FamilyId", "AggregateType", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("FamilyAggregateOutboxMessages", (string)null);
+                });
+
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyAggregateSnapshotEntity", b =>
                 {
                     b.Property<Guid>("FamilyId")
@@ -96,6 +152,55 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.HasKey("FamilyId", "AggregateType");
 
                     b.ToTable("FamilyAggregateSnapshots", (string)null);
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyCommandReceiptEntity", b =>
+                {
+                    b.Property<Guid>("CommandId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CommandType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("text");
+
+                    b.HasKey("CommandId");
+
+                    b.HasIndex("FamilyId");
+
+                    b.ToTable("FamilyCommandReceipts", (string)null);
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyAggregateOutboxMessageEntity", b =>
+                {
+                    b.HasOne("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyCommandReceiptEntity", null)
+                        .WithMany()
+                        .HasForeignKey("CommandId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

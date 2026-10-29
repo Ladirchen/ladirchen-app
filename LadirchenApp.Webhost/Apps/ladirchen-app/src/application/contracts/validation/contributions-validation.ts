@@ -70,7 +70,10 @@ function hasValidParticipants(value: Record<string, unknown>): boolean {
     hasOptionalDomainId(value.assigneeId) &&
     (value.invitedChildIds === undefined ||
       (isArrayOf(value.invitedChildIds, isFamilyMemberId) &&
-        new Set(value.invitedChildIds).size === value.invitedChildIds.length))
+        new Set(value.invitedChildIds).size === value.invitedChildIds.length)) &&
+    (value.partnerableMemberIds === undefined ||
+      (isArrayOf(value.partnerableMemberIds, isFamilyMemberId) &&
+        new Set(value.partnerableMemberIds).size === value.partnerableMemberIds.length))
   );
 }
 function isContribution(value: unknown): value is Contribution {
@@ -106,22 +109,34 @@ function isPromotion(value: unknown): value is Promotion {
     isOptionalBoolean(value.available)
   );
 }
+function isNonNegativeAmountMap(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(
+      ([memberId, amount]) => isFamilyMemberId(memberId) && isFiniteNumber(amount) && amount >= 0,
+    )
+  );
+}
+function isNonNegativeIntegerMap(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(([memberId, count]) => isFamilyMemberId(memberId) && isInteger(count) && count >= 0)
+  );
+}
 export function isContributionsState(value: unknown): value is ContributionsState {
   if (
     !isRecord(value) ||
     !isArrayOf(value.contributions, isContribution) ||
     !hasUniqueIds(value.contributions) ||
+    !isNonNegativeIntegerMap(value.currentWeekApprovedContributionCountByMember) ||
+    !isNonNegativeAmountMap(value.currentWeekEarnedByMember) ||
     (value.perfectRatingBonusPercent !== undefined &&
       (!isFiniteNumber(value.perfectRatingBonusPercent) ||
         value.perfectRatingBonusPercent < 0 ||
         value.perfectRatingBonusPercent > 100)) ||
     !isArrayOf(value.promotions, isPromotion) ||
     !hasUniqueIds(value.promotions) ||
-    (value.todayEarnedByMember !== undefined &&
-      (!isRecord(value.todayEarnedByMember) ||
-        !Object.entries(value.todayEarnedByMember).every(
-          ([memberId, amount]) => isFamilyMemberId(memberId) && isFiniteNumber(amount) && amount >= 0,
-        )))
+    (value.todayEarnedByMember !== undefined && !isNonNegativeAmountMap(value.todayEarnedByMember))
   ) {
     return false;
   }

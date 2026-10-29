@@ -93,9 +93,6 @@
                 :model-value="store.contributionProgress(child.id)"
                 rounded
               />
-              <p class="child-energy-description">
-                {{ t("world.energy.approved", { approved: approvedCount(child.id), total: baseCount(child.id) }) }}
-              </p>
             </div>
           </div>
         </div>
@@ -110,7 +107,6 @@ import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
-import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
 import AnimatedEnergyStar from "./AnimatedEnergyStar.vue";
@@ -166,15 +162,6 @@ const guideSteps = computed(() => [
     message: t("world.energy.guide.safe.message"),
   },
 ]);
-function baseContributions(childId: FamilyMemberId) {
-  return store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
-}
-function baseCount(childId: FamilyMemberId) {
-  return baseContributions(childId).length;
-}
-function approvedCount(childId: FamilyMemberId) {
-  return baseContributions(childId).filter((item) => item.status === "approved").length;
-}
 function startEnergyGuide() {
   guideStep.value = guideStep.value >= guideSteps.value.length - 1 ? 0 : guideStep.value + 1;
   const step = guideSteps.value[guideStep.value];
@@ -464,18 +451,6 @@ onUnmounted(function callback() {
   border-radius: var(--lad-radius-pill);
   background: var(--lad-surface-soft);
   font-size: rem(11);
-}
-.child-energy-description {
-  --uno: ma-0 mt-2;
-  color: var(--lad-color-primary-supporting);
-  font-size: rem(10);
-  font-weight: 650;
-  line-height: 1.35;
-}
-.child-energy-description span {
-  --uno: d-inline;
-  color: var(--lad-color-primary-strong);
-  font-weight: var(--lad-font-weight-heavy);
 }
 @keyframes energy-orb-breathe {
   0%,

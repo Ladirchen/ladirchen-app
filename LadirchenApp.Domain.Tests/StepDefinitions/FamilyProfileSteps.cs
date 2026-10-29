@@ -132,6 +132,13 @@ public sealed class FamilyProfileSteps
     await Assert.That(_family.Members.Single(item => item.Id == _guardian).InvitationPending).IsTrue();
   }
 
+  [Then("the guardian does not participate in the weekly family goal")]
+  public async Task InvitedGuardianDoesNotParticipate()
+  {
+    await Assert.That(_family.Members.Single(item => item.Id == _guardian).ParticipatesInWeeklyGoal)
+      .IsFalse();
+  }
+
   [Given("a family member attempts a guardian invitation with {string}")]
   public void InvalidInvitation(string invalidInput)
   {

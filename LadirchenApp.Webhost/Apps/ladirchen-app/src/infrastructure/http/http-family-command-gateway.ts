@@ -35,13 +35,20 @@ export class HttpFamilyCommandGateway implements FamilyCommandGateway {
     payload: FamilyCommandPayload,
   ): Promise<ReadonlyArray<FamilyAggregateType>> {
     const url = `${this.apiBaseUrl}/api/families/${encodeURIComponent(familyId)}/commands`;
+    const commandId = crypto.randomUUID();
     const request = {
-      body: JSON.stringify({ actorId, commandType, payload }),
+      body: JSON.stringify({ commandId, actorId, commandType, payload }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
     } satisfies RequestInit;
-    let response = await fetch(url, request);
+    let response: Response;
+
+    try {
+      response = await fetch(url, request);
+    } catch {
+      response = await fetch(url, request);
+    }
 
     if (response.status === 409) {
       response = await fetch(url, request);

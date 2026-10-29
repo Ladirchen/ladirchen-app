@@ -1,19 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
 
+using LadirchenApp.Application.Commands;
 using LadirchenApp.Domain.Avatar;
-using LadirchenApp.Domain.Economy;
-using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Family.Permissions;
-using LadirchenApp.Domain.House;
-using LadirchenApp.Domain.House.Shop;
-using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
@@ -25,12 +18,20 @@ public sealed partial class GetFamilyAggregateQueryHandler
       ?? throw new InvalidOperationException("The family profile state must be an object.");
     var members = state["members"] as JsonArray
       ?? throw new InvalidOperationException("The family member collection is required.");
+    var family = FamilyProfileSnapshotMapper.Rehydrate(profile.FamilyId, state);
+    var presentations = members
+      .OfType<JsonObject>()
+      .ToDictionary(
+        member => member["id"]?.GetValue<string>()
+          ?? throw new InvalidOperationException("A family member identity is required."),
+        StringComparer.Ordinal
+      );
     var permissionPolicy = new FamilyPermissionPolicy();
 
-    foreach (var member in members.OfType<JsonObject>())
+    foreach (var member in family.Members)
     {
-      var permissions = FamilyMemberPermissionResolver.Resolve(member, permissionPolicy);
-      member["permissions"] = new JsonObject
+      var permissions = permissionPolicy.Resolve(member);
+      presentations[member.Id.Value]["permissions"] = new JsonObject
       {
         ["canInviteMembers"] = permissions.InviteMembers,
         ["canManageContent"] = permissions.ManageContent,

@@ -1,19 +1,14 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Economy;
-using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House.Shop;
-using LadirchenApp.Domain.Ladi;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
@@ -22,422 +17,264 @@ public sealed partial class ExecuteFamilyCommandHandler
 {
   private async Task<FamilyCommandResult> ExecuteHomeAsync(
     FamilyCommand command,
+    FamilyAggregateSnapshot profileSnapshot,
     JsonObject profile,
-    JsonObject actor,
     JsonObject payload,
     CancellationToken cancellationToken
   )
   {
+    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profile);
     var home = await RequireSnapshotAsync(command.FamilyId, "home-customization", cancellationToken);
     var homeState = RequireObject(home.State);
-    HomePlacementReadModel.Ensure(homeState, profile);
     var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
-    var houseLevel = RequiredInt(RequireObject(progression.State), "houseLevel");
+    var houseLevel = FamilyProgressionSnapshotMapper.ReadHouseLevel(RequireObject(progression.State));
+    var isPurchase = IsHomePurchase(command.CommandType);
     FamilyAggregateSnapshot? savings = null;
+    FamilyAggregateSnapshot? rewardShop = null;
     JsonObject? savingsState = null;
-    JsonArray? rewardItems = null;
+    FamilyEconomy? economy = null;
+    var availableBalance = 0m;
 
-    if (command.CommandType.StartsWith("home.purchase-", StringComparison.Ordinal))
+    if (isPurchase)
     {
       savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
       savingsState = RequireObject(savings.State);
-      var rewardShop = await RequireSnapshotAsync(command.FamilyId, "reward-shop", cancellationToken);
-      rewardItems = RequireArray(RequireObject(rewardShop.State), "rewards");
+      rewardShop = await RequireSnapshotAsync(command.FamilyId, "reward-shop", cancellationToken);
+      var rewardShopState = RequireObject(rewardShop.State);
+      economy = FamilyEconomySnapshotMapper.RehydrateRewardShop(
+        family,
+        rewardShopState,
+        savingsState
+      );
+      availableBalance = economy.WalletFor(command.ActorId).Available;
     }
 
-    switch (command.CommandType)
+    var state = HomeCustomizationSnapshotMapper.Rehydrate(
+      homeState,
+      profile,
+      availableBalance,
+      houseLevel
+    );
+    var balanceBefore = state.Shop.Balance;
+    ExecuteHomeCommand(state, family, command, payload);
+
+    if (isPurchase)
     {
-      case "home.purchase-accessory":
-        PurchaseAccessory(homeState, savingsState!, rewardItems!, actor, payload);
-        break;
-      case "home.purchase-furniture-set":
-        PurchaseFurnitureSet(homeState, savingsState!, rewardItems!, actor, payload, houseLevel);
-        break;
-      case "home.toggle-accessory":
-        ToggleAccessory(homeState, payload);
-        break;
-      case "home.store-accessory":
-        StoreAccessory(homeState, payload);
-        break;
-      case "home.place-accessory":
-        PlaceAccessory(homeState, payload, houseLevel);
-        break;
-      case "home.purchase-theme":
-        PurchaseTheme(homeState, savingsState!, rewardItems!, actor, payload);
-        break;
-      case "home.select-theme":
-        SelectTheme(homeState, payload);
-        break;
-      case "home.purchase-room-design":
-        PurchaseRoomDesign(homeState, savingsState!, rewardItems!, actor, payload, houseLevel);
-        break;
-      case "home.select-room-design":
-        SelectRoomDesign(homeState, payload, houseLevel);
-        break;
-      case "home.move-entity":
-        MoveHouseEntity(profile, homeState, payload, houseLevel);
-        break;
-      case "home.reset-entity":
-        ResetHouseEntity(profile, homeState, payload, houseLevel);
-        break;
-      default:
-        throw new FamilyCommandException("The home-customization command is not supported.");
+      var price = balanceBefore - state.Shop.Balance;
+      economy!.PurchaseHouseContent(
+        command.ActorId,
+        new LadirchenAmount(price),
+        new HouseContentId($"{command.CommandType}:{RequiredString(payload, "id")}"),
+        new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture)),
+        _timeProvider.GetUtcNow()
+      );
     }
 
-    var saves = new List<PendingFamilyAggregateSave> { CreateSave(home, homeState, command.ActorId) };
+    var updatedHomeState = HomeCustomizationSnapshotMapper.Write(state);
+    var saves = new List<PendingFamilyAggregateSave>
+    {
+      CreateSave(home, updatedHomeState, command.ActorId),
+    };
 
     if (savings is not null && savingsState is not null)
     {
-      saves.Add(CreateSave(savings, savingsState, command.ActorId));
+      saves.Add(
+        CreateSave(
+          savings,
+          FamilyEconomySnapshotMapper.WriteWalletBalances(savingsState, economy!),
+          command.ActorId
+        )
+      );
     }
 
-    var changed = await _repository.SaveBatchAsync(saves, cancellationToken);
-
-    foreach (var snapshot in changed)
+    var revisionGuards = new List<FamilyAggregateRevisionGuard>
     {
-      await _publisher.PublishAsync(snapshot, cancellationToken);
+      FamilyAggregateRevisionGuard.FromSnapshot(profileSnapshot),
+      FamilyAggregateRevisionGuard.FromSnapshot(progression),
+    };
+
+    if (rewardShop is not null)
+    {
+      revisionGuards.Add(FamilyAggregateRevisionGuard.FromSnapshot(rewardShop));
     }
+
+    var changed = await _repository.SaveBatchAsync(saves, revisionGuards, cancellationToken);
 
     return new FamilyCommandResult(changed);
   }
 
-  private static void PurchaseAccessory(
-    JsonObject home,
-    JsonObject savings,
-    JsonArray rewards,
-    JsonObject actor,
+  private static void ExecuteHomeCommand(
+    HomeCustomizationState state,
+    Family family,
+    FamilyCommand command,
     JsonObject payload
   )
   {
-    Require(StringValue(actor, "role") == "child", "Only children may purchase house items.");
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
-    var accessory = RequireCatalogItem(home, "accessories", id);
-    Require(!RequiredBool(accessory, "owned"), "The house accessory is already owned.");
-    DebitAvailableBalance(savings, rewards, RequiredString(actor, "id"), definition.Price);
-    accessory["owned"] = true;
-    accessory["equipped"] = false;
-  }
+    var actorIsChild = family.ActiveMember(command.ActorId).Role == MemberRole.Child;
 
-  private static void PurchaseFurnitureSet(
-    JsonObject home,
-    JsonObject savings,
-    JsonArray rewards,
-    JsonObject actor,
-    JsonObject payload,
-    int houseLevel
-  )
-  {
-    Require(StringValue(actor, "role") == "child", "Only children may purchase furniture sets.");
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.FurnitureSets.TryGetValue(id, out var definition), "The furniture set is unknown.");
-    Require(houseLevel >= definition.MinimumLevel, "The house level is too low for this furniture set.");
-    var items = definition.AccessoryIds.Select(itemId => RequireCatalogItem(home, "accessories", itemId)).ToArray();
-    Require(items.Any(item => !RequiredBool(item, "owned")), "The furniture set is already owned.");
-    DebitAvailableBalance(savings, rewards, RequiredString(actor, "id"), definition.Price);
-
-    foreach (var item in items)
+    switch (command.CommandType)
     {
-      item["owned"] = true;
-      item["equipped"] = false;
+      case "home.purchase-accessory":
+        RequireHomeAction(
+          state.Shop.PurchaseAccessory(state.Accessory(RequiredString(payload, "id")), actorIsChild),
+          "The house accessory cannot be purchased."
+        );
+        break;
+      case "home.purchase-furniture-set":
+        RequireHomeAction(
+          state.Shop.PurchaseSet(state.FurnitureSet(RequiredString(payload, "id")), actorIsChild),
+          "The furniture set cannot be purchased."
+        );
+        break;
+      case "home.toggle-accessory":
+        ToggleAccessory(state, payload);
+        break;
+      case "home.store-accessory":
+        StoreAccessory(state, payload);
+        break;
+      case "home.place-accessory":
+        PlaceAccessory(state, payload);
+        break;
+      case "home.purchase-theme":
+        PurchaseTheme(state, payload, actorIsChild);
+        break;
+      case "home.select-theme":
+        SelectTheme(state, payload);
+        break;
+      case "home.purchase-room-design":
+        PurchaseRoomDesign(state, payload, actorIsChild);
+        break;
+      case "home.select-room-design":
+        SelectRoomDesign(state, payload);
+        break;
+      case "home.move-entity":
+        MoveHouseEntity(state, payload);
+        break;
+      case "home.reset-entity":
+        ResetHouseEntity(state, payload);
+        break;
+      default:
+        throw new FamilyCommandException("The home-customization command is not supported.");
     }
   }
 
-  private static void ToggleAccessory(JsonObject home, JsonObject payload)
+  private static void ToggleAccessory(HomeCustomizationState state, JsonObject payload)
   {
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
-    var accessory = RequireCatalogItem(home, "accessories", id);
-    Require(RequiredBool(accessory, "owned"), "The house accessory is not owned.");
-    Require(definition.Movable, "A fixed house accessory cannot be toggled.");
-    accessory["equipped"] = !RequiredBool(accessory, "equipped");
+    var item = state.Accessory(RequiredString(payload, "id"));
+    RequireHomeAction(state.Shop.Toggle(item), "The house accessory cannot be toggled.");
+    state.UpdateFurniturePlacement(item);
   }
 
-  private static void StoreAccessory(JsonObject home, JsonObject payload)
+  private static void StoreAccessory(HomeCustomizationState state, JsonObject payload)
   {
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
-    var accessory = RequireCatalogItem(home, "accessories", id);
-    Require(RequiredBool(accessory, "owned"), "The house accessory is not owned.");
-    Require(RequiredBool(accessory, "equipped"), "The house accessory is already stored.");
-    Require(definition.Movable, "A fixed house accessory cannot be stored.");
-    accessory["equipped"] = false;
+    var item = state.Accessory(RequiredString(payload, "id"));
+    RequireHomeAction(state.Shop.Store(item), "The house accessory cannot be stored.");
+    state.UpdateFurniturePlacement(item);
   }
 
-  private static void PlaceAccessory(JsonObject home, JsonObject payload, int houseLevel)
+  private static void PlaceAccessory(HomeCustomizationState state, JsonObject payload)
   {
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
-    var accessory = RequireCatalogItem(home, "accessories", id);
-    Require(RequiredBool(accessory, "owned"), "The house accessory is not owned.");
-    Require(definition.Movable, "A fixed house accessory cannot be placed.");
-    var requestedArea = RequiredString(payload, "zoneId");
-    var targetArea = definition.IntendedArea == "outside"
-      ? "garden"
-      : requestedArea == "garden"
-        ? definition.AssignedArea
-        : requestedArea;
-    RequireAreaAvailable(targetArea, houseLevel);
-    var placement = RequireFurniturePlacement(home, id);
-
-    if (StringValue(placement, "zoneId") != targetArea)
-    {
-      placement["zoneId"] = targetArea;
-      placement["x"] = 50;
-      placement["y"] = targetArea == "garden" ? 68 : 66;
-    }
-
-    accessory["equipped"] = true;
+    var item = state.Accessory(RequiredString(payload, "id"));
+    RequireHomeAction(
+      state.Shop.Place(item, RequiredString(payload, "zoneId")),
+      "The house accessory cannot be placed."
+    );
+    state.UpdateFurniturePlacement(item);
   }
 
   private static void PurchaseTheme(
-    JsonObject home,
-    JsonObject savings,
-    JsonArray rewards,
-    JsonObject actor,
-    JsonObject payload
+    HomeCustomizationState state,
+    JsonObject payload,
+    bool actorIsChild
   )
   {
-    Require(StringValue(actor, "role") == "child", "Only children may purchase house themes.");
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.Themes.TryGetValue(id, out var price), "The house theme is unknown.");
-    var theme = RequireCatalogItem(home, "editions", id);
-    Require(!RequiredBool(theme, "owned"), "The house theme is already owned.");
-    DebitAvailableBalance(savings, rewards, RequiredString(actor, "id"), price);
-    theme["owned"] = true;
-    ApplyTheme(home, id);
+    var theme = state.Theme(RequiredString(payload, "id"));
+    RequireHomeAction(
+      state.Shop.PurchaseTheme(theme, state.RoomDesigns, actorIsChild),
+      "The house theme cannot be purchased."
+    );
   }
 
-  private static void SelectTheme(JsonObject home, JsonObject payload)
+  private static void SelectTheme(HomeCustomizationState state, JsonObject payload)
   {
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.Themes.ContainsKey(id), "The house theme is unknown.");
-    Require(RequiredBool(RequireCatalogItem(home, "editions", id), "owned"), "The house theme is not owned.");
-    ApplyTheme(home, id);
+    var theme = state.Theme(RequiredString(payload, "id"));
+    RequireHomeAction(
+      state.Shop.SelectTheme(theme, state.RoomDesigns),
+      "The house theme cannot be selected."
+    );
   }
 
   private static void PurchaseRoomDesign(
-    JsonObject home,
-    JsonObject savings,
-    JsonArray rewards,
-    JsonObject actor,
+    HomeCustomizationState state,
     JsonObject payload,
-    int houseLevel
+    bool actorIsChild
   )
   {
-    Require(StringValue(actor, "role") == "child", "Only children may purchase room designs.");
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.RoomDesigns.TryGetValue(id, out var definition), "The room design is unknown.");
-    Require(houseLevel >= definition.MinimumLevel, "The house level is too low for this room design.");
-    Require(
-      RequiredBool(RequireCatalogItem(home, "editions", definition.ThemeId), "owned"),
-      "The matching house theme is not owned."
+    var design = state.RoomDesign(RequiredString(payload, "id"));
+    RequireHomeAction(
+      state.Shop.PurchaseDesign(
+        design,
+        state.ThemeFor(design),
+        state.RoomDesigns,
+        actorIsChild
+      ),
+      "The room design cannot be purchased."
     );
-    var design = RequireCatalogItem(home, "roomDesigns", id);
-    Require(!RequiredBool(design, "owned"), "The room design is already owned.");
-    DebitAvailableBalance(savings, rewards, RequiredString(actor, "id"), definition.Price);
-    design["owned"] = true;
-    home["selectedEditionId"] = definition.ThemeId;
-    SetSelectedRoomDesign(home, definition.Area, id);
   }
 
-  private static void SelectRoomDesign(JsonObject home, JsonObject payload, int houseLevel)
+  private static void SelectRoomDesign(HomeCustomizationState state, JsonObject payload)
   {
-    var id = RequiredString(payload, "id");
-    Require(HouseShopCatalog.RoomDesigns.TryGetValue(id, out var definition), "The room design is unknown.");
-    Require(houseLevel >= definition.MinimumLevel, "The house level is too low for this room design.");
-    Require(RequiredBool(RequireCatalogItem(home, "roomDesigns", id), "owned"), "The room design is not owned.");
-    Require(
-      RequiredBool(RequireCatalogItem(home, "editions", definition.ThemeId), "owned"),
-      "The matching house theme is not owned."
+    var design = state.RoomDesign(RequiredString(payload, "id"));
+    RequireHomeAction(
+      state.Shop.SelectDesign(design, state.ThemeFor(design), state.RoomDesigns),
+      "The room design cannot be selected."
     );
-    home["selectedEditionId"] = definition.ThemeId;
-    SetSelectedRoomDesign(home, definition.Area, id);
   }
 
-  private static void ApplyTheme(JsonObject home, string themeId)
+  private static void MoveHouseEntity(HomeCustomizationState state, JsonObject payload)
   {
-    home["selectedEditionId"] = themeId;
-
-    foreach (var item in HouseShopCatalog.RoomDesigns.Where(item => item.Value.ThemeId == themeId))
-    {
-      RequireCatalogItem(home, "roomDesigns", item.Key)["owned"] = true;
-      SetSelectedRoomDesign(home, item.Value.Area, item.Key);
-    }
-  }
-
-  private static void SetSelectedRoomDesign(JsonObject home, string area, string designId)
-  {
-    var selected = RequireArray(home, "selectedRoomDesigns");
-    var existing = selected.OfType<JsonObject>().FirstOrDefault(item => StringValue(item, "zoneId") == area);
-
-    if (existing is null)
-    {
-      selected.Add(new JsonObject { ["designId"] = designId, ["zoneId"] = area });
-    }
-    else
-    {
-      existing["designId"] = designId;
-    }
-  }
-
-  private static void MoveHouseEntity(
-    JsonObject profile,
-    JsonObject home,
-    JsonObject payload,
-    int houseLevel
-  )
-  {
-    Require(StringValue(profile, "subscriptionTier") == "pro", "House arrangement requires a pro subscription.");
-    var placement = RequireCatalogItem(home, "placements", RequiredString(payload, "placementId"));
-    var area = RequiredString(payload, "zoneId");
-    RequireAreaAvailable(area, houseLevel);
-    RequireMovablePlacement(placement);
-    var entityType = RequiredString(placement, "entityType");
-    var entityId = RequiredString(placement, "entityId");
-    var normalized = new HouseLayoutPolicy().Normalize(
-      entityType,
-      entityId,
-      area,
+    var entity = state.Placement(RequiredString(payload, "placementId"));
+    var placement = state.Shop.ArrangeEntity(
+      entity,
+      RequiredString(payload, "zoneId"),
       RequiredDecimal(payload, "x"),
       RequiredDecimal(payload, "y"),
-      RequiredDecimal(placement, "scale")
+      state.SubscriptionTier,
+      state.FurnitureFor(entity),
+      state.Placements
     );
-    var moved = new HouseLayoutEntity(
-      RequiredString(placement, "id"),
-      entityType,
-      entityId,
-      normalized,
-      true
-    );
-    Require(
-      !new HouseLayoutPolicy().CollidesWithFurniture(moved, HouseLayoutEntities(home)),
-      "A family member or pet cannot overlap equipped furniture."
-    );
-    ApplyPlacement(placement, normalized);
+    RequireHomeAction(placement is not null, "The house entity cannot be moved.");
+    state.UpdatePlacement(entity, placement!);
   }
 
-  private static void ResetHouseEntity(
-    JsonObject profile,
-    JsonObject home,
-    JsonObject payload,
-    int houseLevel
-  )
+  private static void ResetHouseEntity(HomeCustomizationState state, JsonObject payload)
   {
-    Require(StringValue(profile, "subscriptionTier") == "pro", "House arrangement requires a pro subscription.");
-    var placement = RequireCatalogItem(home, "placements", RequiredString(payload, "placementId"));
-    RequireMovablePlacement(placement);
-    HousePlacement initial;
-
-    if (StringValue(placement, "entityType") == "furniture")
-    {
-      var furnitureId = RequiredString(placement, "entityId");
-      Require(HouseShopCatalog.Accessories.TryGetValue(furnitureId, out var definition), "The house accessory is unknown.");
-      initial = definition.Initial;
-    }
-    else
-    {
-      initial = HomePlacementReadModel.InitialFor(profile, placement);
-    }
-
-    RequireAreaAvailable(initial.Area, houseLevel);
-    var entityType = RequiredString(placement, "entityType");
-    var entityId = RequiredString(placement, "entityId");
-    var layoutPolicy = new HouseLayoutPolicy();
-    var normalized = layoutPolicy.Normalize(
-      entityType,
-      entityId,
-      initial.Area,
-      initial.X,
-      initial.Y,
-      initial.Scale
+    var entity = state.Placement(RequiredString(payload, "placementId"));
+    var placement = state.Shop.ResetEntity(
+      entity,
+      state.InitialPlacement(entity.Id),
+      state.SubscriptionTier,
+      state.FurnitureFor(entity),
+      state.Placements
     );
-    var reset = new HouseLayoutEntity(
-      RequiredString(placement, "id"),
-      entityType,
-      entityId,
-      normalized,
-      true
-    );
-    Require(
-      !layoutPolicy.CollidesWithFurniture(reset, HouseLayoutEntities(home)),
-      "A family member or pet cannot overlap equipped furniture."
-    );
-    ApplyPlacement(placement, normalized);
+    RequireHomeAction(placement is not null, "The house entity cannot be reset.");
+    state.UpdatePlacement(entity, placement!);
   }
 
-  private static void ApplyPlacement(JsonObject placement, HousePlacement value)
+  private static bool IsHomePurchase(string commandType)
   {
-    placement["zoneId"] = value.Area;
-    placement["x"] = value.X;
-    placement["y"] = value.Y;
-    placement["scale"] = value.Scale;
+    return commandType is
+      "home.purchase-accessory"
+      or "home.purchase-furniture-set"
+      or "home.purchase-theme"
+      or "home.purchase-room-design";
   }
 
-  private static IEnumerable<HouseLayoutEntity> HouseLayoutEntities(JsonObject home)
+  private static void RequireHomeAction(bool accepted, string message)
   {
-    var accessoryStates = RequireArray(home, "accessories")
-      .OfType<JsonObject>()
-      .ToDictionary(item => RequiredString(item, "id"), StringComparer.Ordinal);
-
-    foreach (var placement in RequireArray(home, "placements").OfType<JsonObject>())
+    if (!accepted)
     {
-      var entityType = RequiredString(placement, "entityType");
-      var entityId = RequiredString(placement, "entityId");
-      var active = true;
-
-      if (entityType == "furniture")
-      {
-        active = accessoryStates.TryGetValue(entityId, out var accessory)
-          && RequiredBool(accessory, "owned")
-          && RequiredBool(accessory, "equipped");
-      }
-
-      yield return new HouseLayoutEntity(
-        RequiredString(placement, "id"),
-        entityType,
-        entityId,
-        new HousePlacement(
-          RequiredString(placement, "zoneId"),
-          RequiredDecimal(placement, "x"),
-          RequiredDecimal(placement, "y"),
-          RequiredDecimal(placement, "scale")
-        ),
-        active
-      );
+      throw new FamilyCommandException(message);
     }
   }
-
-  private static void RequireMovablePlacement(JsonObject placement)
-  {
-    if (StringValue(placement, "entityType") != "furniture")
-    {
-      return;
-    }
-
-    var entityId = RequiredString(placement, "entityId");
-    Require(HouseShopCatalog.Accessories.TryGetValue(entityId, out var definition), "The house accessory is unknown.");
-    Require(definition.Movable, "A fixed house accessory cannot be moved.");
-  }
-
-  private static void RequireAreaAvailable(string area, int houseLevel)
-  {
-    Require(HouseShopCatalog.AreaMinimumLevels.TryGetValue(area, out var minimumLevel), "The house area is unknown.");
-    Require(houseLevel >= minimumLevel, "The house area is not unlocked.");
-  }
-
-  private static JsonObject RequireFurniturePlacement(JsonObject home, string accessoryId)
-  {
-    return RequireArray(home, "placements")
-      .OfType<JsonObject>()
-      .FirstOrDefault(item => StringValue(item, "entityType") == "furniture" && StringValue(item, "entityId") == accessoryId)
-      ?? throw new FamilyCommandException("The house accessory placement does not exist.");
-  }
-
-  private static JsonObject RequireCatalogItem(JsonObject state, string collection, string id)
-  {
-    return FindById(RequireArray(state, collection), id)
-      ?? throw new FamilyCommandException($"The {collection} item does not exist.");
-  }
-
 }

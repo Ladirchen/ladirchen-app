@@ -13,7 +13,7 @@ Feature: Savings-goal vouchers and family consent
 
   Scenario: An incomplete savings goal cannot create a voucher
     Given a personal or family savings goal has not reached its target
-    When a family member attempts to create its voucher
+    When the savings vouchers are inspected
     Then no voucher is created
     And the starter bonus remains locked
 

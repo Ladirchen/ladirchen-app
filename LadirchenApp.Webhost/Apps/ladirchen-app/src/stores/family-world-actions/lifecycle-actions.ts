@@ -73,6 +73,10 @@ export const lifecycleActions = {
           contributions.state.perfectRatingBonusPercent ?? this.perfectRatingBonusPercent;
         this.promotions = [...contributions.state.promotions];
         this.todayEarnedByMember = { ...contributions.state.todayEarnedByMember };
+        this.currentWeekEarnedByMember = { ...contributions.state.currentWeekEarnedByMember };
+        this.currentWeekApprovedContributionCountByMember = {
+          ...contributions.state.currentWeekApprovedContributionCountByMember,
+        };
       }
     });
     const savingsLoaded = applySettledLoad(savingsResult, (savings) => {
@@ -195,6 +199,10 @@ export const lifecycleActions = {
           this.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent ?? this.perfectRatingBonusPercent;
           this.promotions = [...snapshot.state.promotions];
           this.todayEarnedByMember = { ...snapshot.state.todayEarnedByMember };
+          this.currentWeekEarnedByMember = { ...snapshot.state.currentWeekEarnedByMember };
+          this.currentWeekApprovedContributionCountByMember = {
+            ...snapshot.state.currentWeekApprovedContributionCountByMember,
+          };
         }
 
         return;

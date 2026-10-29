@@ -6,7 +6,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.House.Shop;
 
-public sealed class HouseTheme
+public sealed partial class HouseTheme
 {
   public HouseTheme(string id, decimal price, IEnumerable<RoomDesign> designs)
   {

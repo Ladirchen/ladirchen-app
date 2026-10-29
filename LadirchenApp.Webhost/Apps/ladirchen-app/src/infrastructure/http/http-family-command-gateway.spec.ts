@@ -30,6 +30,41 @@ describe("HttpFamilyCommandGateway", () => {
 
     await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).resolves.toEqual(["savings"]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstRequest = fetchMock.mock.calls[0]?.[1];
+    const secondRequest = fetchMock.mock.calls[1]?.[1];
+    expect(firstRequest?.body).toBe(secondRequest?.body);
+    const firstBody = firstRequest?.body;
+    expect(typeof firstBody).toBe("string");
+
+    if (typeof firstBody !== "string") {
+      throw new TypeError("The command request body must be serialized JSON.");
+    }
+
+    const command = JSON.parse(firstBody) as Record<string, unknown>;
+    expect(command).toMatchObject({
+      actorId,
+      commandType: "savings.deposit",
+      payload: { amount: 10 },
+    });
+    expect(command.commandId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+  });
+
+  it("reuses the command ID when retrying an uncertain network failure", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockRejectedValueOnce(new TypeError("The response was lost"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ changedAggregates: [{ aggregateType: "savings" }] }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const gateway = new HttpFamilyCommandGateway("");
+
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).resolves.toEqual(["savings"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(fetchMock.mock.calls[1]?.[1]?.body);
   });
 
   it("exposes a repeated conflict as a typed HTTP error", async () => {

@@ -4,7 +4,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.House.Shop;
 
-public sealed class HouseItem
+public sealed partial class HouseItem
 {
   public HouseItem(
     string id,
@@ -12,7 +12,9 @@ public sealed class HouseItem
     HouseItemCategory category,
     HouseItemMobility mobility,
     string intendedArea,
-    HousePlacement initialPlacement
+    HousePlacement initialPlacement,
+    int minimumLevel = 0,
+    string? assignedArea = null
   )
   {
     Id = Rules.Text(id);
@@ -22,6 +24,9 @@ public sealed class HouseItem
     Mobility = Rules.Defined(mobility);
     IntendedArea = Rules.Text(intendedArea);
     InitialPlacement = initialPlacement ?? throw new ArgumentNullException(nameof(initialPlacement));
+    Rules.Require(minimumLevel >= 0, DomainError.InvalidValue, "A minimum level cannot be negative.");
+    MinimumLevel = minimumLevel;
+    AssignedArea = Rules.Text(assignedArea ?? initialPlacement.Area);
     Placement = initialPlacement;
   }
 
@@ -30,6 +35,8 @@ public sealed class HouseItem
   public HouseItemCategory Category { get; }
   public HouseItemMobility Mobility { get; }
   public string IntendedArea { get; }
+  public string AssignedArea { get; }
+  public int MinimumLevel { get; }
   public HousePlacement InitialPlacement { get; }
   public HousePlacement Placement { get; private set; }
   public bool Owned { get; private set; }

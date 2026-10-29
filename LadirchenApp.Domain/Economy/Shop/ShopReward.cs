@@ -58,8 +58,36 @@ public sealed class ShopReward : Entity<ShopRewardId>
   }
   public bool IsPublished(DateTimeOffset now, IanaTimeZone zone)
   {
+    return PublicationStatus(zone.LocalDate(now)) == ShopRewardPublicationStatus.Visible;
+  }
 
-    return !Deleted && IsVisible && Window.Contains(zone.LocalDate(now));
+  public ShopRewardPublicationStatus PublicationStatus(DateOnly localDate)
+  {
+    if (Deleted || !IsVisible)
+    {
+      return ShopRewardPublicationStatus.Hidden;
+    }
+
+    if (Window.From is not null && localDate < Window.From)
+    {
+      return ShopRewardPublicationStatus.Scheduled;
+    }
+
+    return Window.Until is not null && localDate > Window.Until
+      ? ShopRewardPublicationStatus.Expired
+      : ShopRewardPublicationStatus.Visible;
+  }
+
+  public DateOnly? NextPublicationChangeDate(DateOnly localDate)
+  {
+    if (Window.From is not null && localDate < Window.From)
+    {
+      return Window.From;
+    }
+
+    return Window.Until is not null && localDate <= Window.Until
+      ? Window.Until.Value.AddDays(1)
+      : null;
   }
 
   internal void SetVisibility(bool visible)

@@ -42,14 +42,42 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
     CancellationToken cancellationToken
   )
   {
-    var entity = await _database.FamilyAggregateSnapshots
-      .AsNoTracking()
-      .SingleOrDefaultAsync(
-        item => item.FamilyId == familyId.Value && item.AggregateType == aggregateType,
-        cancellationToken
-      );
+    var snapshots = await GetManyAsync(familyId, [aggregateType], cancellationToken);
+    snapshots.TryGetValue(aggregateType, out var snapshot);
 
-    return entity is null ? null : ToSnapshot(entity);
+    return snapshot;
+  }
+
+  public async Task<IReadOnlyDictionary<string, FamilyAggregateSnapshot>> GetManyAsync(
+    FamilyId familyId,
+    IReadOnlyCollection<string> aggregateTypes,
+    CancellationToken cancellationToken
+  )
+  {
+    ArgumentNullException.ThrowIfNull(aggregateTypes);
+
+    if (aggregateTypes.Count == 0)
+    {
+      return new Dictionary<string, FamilyAggregateSnapshot>(StringComparer.Ordinal);
+    }
+
+    var requestedTypes = aggregateTypes.Distinct(StringComparer.Ordinal).ToArray();
+
+    if (requestedTypes.Any(string.IsNullOrWhiteSpace))
+    {
+      throw new ArgumentException("Aggregate types must not be empty.", nameof(aggregateTypes));
+    }
+
+    var entities = await _database.FamilyAggregateSnapshots
+      .AsNoTracking()
+      .Where(item => item.FamilyId == familyId.Value && requestedTypes.Contains(item.AggregateType))
+      .ToArrayAsync(cancellationToken);
+
+    return entities.ToDictionary(
+      item => item.AggregateType,
+      ToSnapshot,
+      StringComparer.Ordinal
+    );
   }
 
   public async Task<FamilyAggregateSnapshot> SaveAsync(
@@ -68,20 +96,63 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
     CancellationToken cancellationToken
   )
   {
-    ArgumentNullException.ThrowIfNull(saves);
+    return await SaveBatchAsync(saves, [], cancellationToken);
+  }
 
-    if (saves.Count == 0)
+  public async Task<IReadOnlyList<FamilyAggregateSnapshot>> SaveBatchAsync(
+    IReadOnlyList<PendingFamilyAggregateSave> saves,
+    IReadOnlyList<FamilyAggregateRevisionGuard> revisionGuards,
+    CancellationToken cancellationToken
+  )
+  {
+    ArgumentNullException.ThrowIfNull(saves);
+    ArgumentNullException.ThrowIfNull(revisionGuards);
+
+    if (saves.Count == 0 && revisionGuards.Count == 0)
     {
       return [];
     }
 
-    var duplicate = saves
-      .GroupBy(item => (item.Command.FamilyId.Value, item.Command.AggregateType))
-      .FirstOrDefault(group => group.Count() > 1);
+    var saveKeys = saves
+      .Select(item => (item.Command.FamilyId.Value, item.Command.AggregateType))
+      .ToHashSet();
 
-    if (duplicate is not null)
+    if (saveKeys.Count != saves.Count)
     {
       throw new ArgumentException("An aggregate may only be saved once per transaction.", nameof(saves));
+    }
+
+    var guardKeys = revisionGuards
+      .Select(item => (item.FamilyId.Value, item.AggregateType))
+      .ToHashSet();
+
+    if (guardKeys.Count != revisionGuards.Count)
+    {
+      throw new ArgumentException(
+        "An aggregate may only be guarded once per transaction.",
+        nameof(revisionGuards)
+      );
+    }
+
+    if (guardKeys.Overlaps(saveKeys))
+    {
+      throw new ArgumentException(
+        "A revision guard must reference an aggregate that is not included in the writes.",
+        nameof(revisionGuards)
+      );
+    }
+
+    if (revisionGuards.Any(item => string.IsNullOrWhiteSpace(item.AggregateType)))
+    {
+      throw new ArgumentException("Aggregate types must not be empty.", nameof(revisionGuards));
+    }
+
+    if (revisionGuards.Any(item => item.ExpectedRevision < 0))
+    {
+      throw new ArgumentOutOfRangeException(
+        nameof(revisionGuards),
+        "Expected revisions must not be negative."
+      );
     }
 
     IDbContextTransaction? transaction = null;
@@ -92,6 +163,53 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
       {
         transaction = await _database.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
       }
+      else if (
+        revisionGuards.Count > 0
+        && _database.Database.CurrentTransaction.GetDbTransaction().IsolationLevel
+          != IsolationLevel.Serializable
+      )
+      {
+        throw new InvalidOperationException(
+          "Revision guards require a serializable database transaction."
+        );
+      }
+
+      var targetKeys = saveKeys.Concat(guardKeys).ToHashSet();
+      var familyIds = targetKeys.Select(item => item.Value).Distinct().ToArray();
+      var aggregateTypes = targetKeys.Select(item => item.AggregateType).Distinct().ToArray();
+
+      foreach (
+        var entry in _database.ChangeTracker
+          .Entries<FamilyAggregateSnapshotEntity>()
+          .Where(item => targetKeys.Contains((item.Entity.FamilyId, item.Entity.AggregateType)))
+      )
+      {
+        entry.State = EntityState.Detached;
+      }
+
+      var loadedEntities = await _database.FamilyAggregateSnapshots
+        .Where(
+          item => familyIds.Contains(item.FamilyId) && aggregateTypes.Contains(item.AggregateType)
+        )
+        .ToArrayAsync(cancellationToken);
+      var entitiesByKey = loadedEntities
+        .Where(item => targetKeys.Contains((item.FamilyId, item.AggregateType)))
+        .ToDictionary(item => (item.FamilyId, item.AggregateType));
+
+      foreach (var guard in revisionGuards)
+      {
+        entitiesByKey.TryGetValue((guard.FamilyId.Value, guard.AggregateType), out var guardedEntity);
+        var actualRevision = guardedEntity?.Revision ?? 0;
+
+        if (actualRevision != guard.ExpectedRevision)
+        {
+          throw new FamilyAggregateConflictException(
+            guard.AggregateType,
+            guard.ExpectedRevision,
+            actualRevision
+          );
+        }
+      }
 
       var validated = new List<(PendingFamilyAggregateSave Save, FamilyAggregateSnapshotEntity? Entity)>(
         saves.Count
@@ -100,10 +218,7 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
       foreach (var save in saves)
       {
         var command = save.Command;
-        var entity = await _database.FamilyAggregateSnapshots.SingleOrDefaultAsync(
-          item => item.FamilyId == command.FamilyId.Value && item.AggregateType == command.AggregateType,
-          cancellationToken
-        );
+        entitiesByKey.TryGetValue((command.FamilyId.Value, command.AggregateType), out var entity);
         var actualRevision = entity?.Revision ?? 0;
 
         if (actualRevision != command.ExpectedRevision)
@@ -154,11 +269,39 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
     }
     catch (DbUpdateConcurrencyException exception)
     {
-      throw await CreateConflictAsync(saves, exception, cancellationToken);
+      var canReadActualRevision = await RollbackAndDisposeOwnedTransactionAsync(transaction);
+      transaction = null;
+
+      throw await CreateConflictAsync(
+        saves,
+        exception,
+        canReadActualRevision,
+        cancellationToken
+      );
     }
-    catch (DbUpdateException exception)
+    catch (DbUpdateException exception) when (
+      PostgreSqlConcurrencyExceptionClassifier.IsAggregateSnapshotInsertConflict(exception)
+    )
     {
-      throw await CreateConflictAsync(saves, exception, cancellationToken);
+      var canReadActualRevision = await RollbackAndDisposeOwnedTransactionAsync(transaction);
+      transaction = null;
+
+      throw await CreateConflictAsync(
+        saves,
+        exception,
+        canReadActualRevision,
+        cancellationToken
+      );
+    }
+    catch (Exception exception) when (
+      PostgreSqlConcurrencyExceptionClassifier.IsSerializableConflict(exception)
+    )
+    {
+      await RollbackAndDisposeOwnedTransactionAsync(transaction);
+      transaction = null;
+      _database.ChangeTracker.Clear();
+
+      throw FamilyAggregateConflictException.ConcurrentChange(exception);
     }
     finally
     {
@@ -172,16 +315,46 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
   private async Task<FamilyAggregateConflictException> CreateConflictAsync(
     IReadOnlyList<PendingFamilyAggregateSave> saves,
     Exception exception,
+    bool canReadActualRevision,
     CancellationToken cancellationToken
   )
   {
     _database.ChangeTracker.Clear();
+
+    if (saves.Count == 0)
+    {
+      return FamilyAggregateConflictException.ConcurrentChange(exception);
+    }
+
     var first = saves[0].Command;
-    var actualRevision = await _database.FamilyAggregateSnapshots
-      .AsNoTracking()
-      .Where(item => item.FamilyId == first.FamilyId.Value && item.AggregateType == first.AggregateType)
-      .Select(item => (long?)item.Revision)
-      .SingleOrDefaultAsync(cancellationToken) ?? 0;
+
+    if (!canReadActualRevision)
+    {
+      return FamilyAggregateConflictException.UnknownActualRevision(
+        first.AggregateType,
+        first.ExpectedRevision,
+        exception
+      );
+    }
+
+    long actualRevision;
+
+    try
+    {
+      actualRevision = await _database.FamilyAggregateSnapshots
+        .AsNoTracking()
+        .Where(item => item.FamilyId == first.FamilyId.Value && item.AggregateType == first.AggregateType)
+        .Select(item => (long?)item.Revision)
+        .SingleOrDefaultAsync(cancellationToken) ?? 0;
+    }
+    catch (Exception) when (!cancellationToken.IsCancellationRequested)
+    {
+      return FamilyAggregateConflictException.UnknownActualRevision(
+        first.AggregateType,
+        first.ExpectedRevision,
+        exception
+      );
+    }
 
     return new FamilyAggregateConflictException(
       first.AggregateType,
@@ -189,6 +362,40 @@ public sealed class DatabaseFamilyAggregateSnapshotRepository : IFamilyAggregate
       actualRevision,
       exception
     );
+  }
+
+  private static async Task<bool> RollbackAndDisposeOwnedTransactionAsync(
+    IDbContextTransaction? transaction
+  )
+  {
+    if (transaction is null)
+    {
+      return false;
+    }
+
+    var rolledBack = false;
+
+    try
+    {
+      await transaction.RollbackAsync(CancellationToken.None);
+      rolledBack = true;
+    }
+    catch
+    {
+      // Preserve the classified concurrency failure if rollback also fails.
+    }
+
+    try
+    {
+      await transaction.DisposeAsync();
+    }
+    catch
+    {
+      // Preserve the classified concurrency failure if disposal also fails.
+      rolledBack = false;
+    }
+
+    return rolledBack;
   }
 
   private static FamilyAggregateSnapshot ToSnapshot(FamilyAggregateSnapshotEntity entity)

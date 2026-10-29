@@ -1,17 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
 
-using LadirchenApp.Domain.Avatar;
-using LadirchenApp.Domain.Economy;
+using LadirchenApp.Application.Commands;
 using LadirchenApp.Domain.Family;
-using LadirchenApp.Domain.Family.Permissions;
-using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
 
@@ -27,120 +21,149 @@ public sealed partial class GetFamilyAggregateQueryHandler
     FamilyAggregateSnapshot rewardShop
   )
   {
-    var state = JsonNode.Parse(home.State.GetRawText()) as JsonObject
-      ?? throw new InvalidOperationException("The home customization state must be an object.");
-    var profileState = JsonNode.Parse(profile.State.GetRawText()) as JsonObject
-      ?? throw new InvalidOperationException("The family profile state must be an object.");
-    HomePlacementReadModel.Ensure(state, profileState);
-    var houseLevel = progression.State.GetProperty("houseLevel").GetInt32();
-    var accessories = state["accessories"] as JsonArray
-      ?? throw new InvalidOperationException("The house accessory collection is required.");
-    var editions = state["editions"] as JsonArray
-      ?? throw new InvalidOperationException("The house edition collection is required.");
-    var roomDesigns = state["roomDesigns"] as JsonArray
-      ?? throw new InvalidOperationException("The room design collection is required.");
-    var members = profileState["members"] as JsonArray
-      ?? throw new InvalidOperationException("The family member collection is required.");
-    var balances = JsonNode.Parse(savings.State.GetRawText())?["balances"] as JsonObject
-      ?? throw new InvalidOperationException("The savings balance collection is required.");
-    var rewards = JsonNode.Parse(rewardShop.State.GetRawText())?["rewards"] as JsonArray
-      ?? throw new InvalidOperationException("The reward collection is required.");
-    var availableBalances = new JsonObject();
-
-    foreach (var balance in balances)
-    {
-      var memberId = balance.Key;
-      availableBalances[memberId] = AvailableBalance(balance.Value?.GetValue<decimal>() ?? 0, rewards, memberId);
-    }
-    var ownedAccessoryIds = accessories.OfType<JsonObject>()
-      .Where(item => item["owned"]?.GetValue<bool>() ?? false)
-      .Select(item => item["id"]!.GetValue<string>())
-      .ToHashSet(StringComparer.Ordinal);
+    var profileState = ParseHomeObject(profile, "family profile");
+    var savingsState = ParseHomeObject(savings, "savings");
+    var rewardShopState = ParseHomeObject(rewardShop, "reward shop");
+    var family = FamilyProfileSnapshotMapper.Rehydrate(profile.FamilyId, profileState);
+    var economy = FamilyEconomySnapshotMapper.RehydrateRewardShop(
+      family,
+      rewardShopState,
+      savingsState
+    );
+    var houseLevel = FamilyProgressionSnapshotMapper.ReadHouseLevel(
+      ParseHomeObject(progression, "family progression")
+    );
+    var customization = HomeCustomizationSnapshotMapper.Rehydrate(
+      ParseHomeObject(home, "home customization"),
+      profileState,
+      0,
+      houseLevel
+    );
+    var state = customization.Presentation;
+    var activeMembers = family.Members.Where(member => !member.InvitationPending).ToArray();
+    var availableBalances = economy.Wallets.ToDictionary(
+      wallet => wallet.Id,
+      wallet => Math.Max(0, wallet.Available)
+    );
 
     state["capabilities"] = new JsonObject
     {
-      ["canArrangeHouse"] = profileState["subscriptionTier"]?.GetValue<string>() == "pro",
+      ["canArrangeHouse"] = customization.Shop.CanArrange(customization.SubscriptionTier),
     };
     state["catalog"] = new JsonObject
     {
-      ["accessories"] = new JsonArray(HouseShopCatalog.Accessories.Select(item => new JsonObject
+      ["accessories"] = new JsonArray(HouseShopCatalog.Accessories.Select(entry =>
       {
-        ["available"] = houseLevel >= item.Value.MinimumLevel,
-        ["catalogArea"] = HouseShopCatalog.CatalogAreaForAccessory(item.Key),
-        ["id"] = item.Key,
-        ["minimumHouseLevel"] = item.Value.MinimumLevel,
-        ["owned"] = ownedAccessoryIds.Contains(item.Key),
-        ["price"] = item.Value.Price,
-        ["purchasableByMemberIds"] = PurchasableByMemberIds(
-          members,
-          availableBalances,
-          houseLevel >= item.Value.MinimumLevel && !ownedAccessoryIds.Contains(item.Key),
-          item.Value.Price
-        ),
+        var item = customization.Accessory(entry.Key);
+
+        return new JsonObject
+        {
+          ["available"] = customization.Shop.IsAvailableAtCurrentLevel(item.MinimumLevel),
+          ["catalogArea"] = HouseShopCatalog.CatalogAreaForAccessory(item.Id),
+          ["id"] = item.Id,
+          ["minimumHouseLevel"] = item.MinimumLevel,
+          ["owned"] = item.Owned,
+          ["price"] = item.Price,
+          ["purchasableByMemberIds"] = HomePurchasableByMemberIds(
+            activeMembers,
+            availableBalances,
+            (member, availableBalance) => customization.Shop.CanPurchaseAccessory(
+              item,
+              member.Role == MemberRole.Child,
+              availableBalance
+            )
+          ),
+        };
       }).ToArray<JsonNode?>()),
-      ["areas"] = new JsonArray(HouseShopCatalog.AreaMinimumLevels.Select(item => new JsonObject
+      ["areas"] = new JsonArray(HouseShopCatalog.AreaMinimumLevels.Select(entry => new JsonObject
       {
-        ["available"] = houseLevel >= item.Value,
-        ["id"] = item.Key,
-        ["minimumHouseLevel"] = item.Value,
+        ["available"] = customization.Shop.IsAvailableAtCurrentLevel(entry.Value),
+        ["id"] = entry.Key,
+        ["minimumHouseLevel"] = entry.Value,
       }).ToArray<JsonNode?>()),
-      ["furnitureSets"] = new JsonArray(HouseShopCatalog.FurnitureSets.Select(item => new JsonObject
+      ["furnitureSets"] = new JsonArray(HouseShopCatalog.FurnitureSets.Select(entry =>
       {
-        ["accessoryIds"] = new JsonArray(item.Value.AccessoryIds.Select(id => JsonValue.Create(id)).ToArray<JsonNode?>()),
-        ["available"] = houseLevel >= item.Value.MinimumLevel,
-        ["catalogArea"] = item.Value.AccessoryIds.Any(id => HouseShopCatalog.CatalogAreaForAccessory(id) == "outside")
-          ? "outside"
-          : "inside",
-        ["id"] = item.Key,
-        ["minimumHouseLevel"] = item.Value.MinimumLevel,
-        ["owned"] = item.Value.AccessoryIds.All(ownedAccessoryIds.Contains),
-        ["price"] = item.Value.Price,
-        ["purchasableByMemberIds"] = PurchasableByMemberIds(
-          members,
-          availableBalances,
-          houseLevel >= item.Value.MinimumLevel && !item.Value.AccessoryIds.All(ownedAccessoryIds.Contains),
-          item.Value.Price
-        ),
+        var set = customization.FurnitureSet(entry.Key);
+
+        return new JsonObject
+        {
+          ["accessoryIds"] = new JsonArray(
+            set.Items.Select(item => JsonValue.Create(item.Id)).ToArray<JsonNode?>()
+          ),
+          ["available"] = customization.Shop.IsAvailableAtCurrentLevel(set.MinimumLevel),
+          ["catalogArea"] = set.Items.Any(item =>
+            HouseShopCatalog.CatalogAreaForAccessory(item.Id) == "outside"
+          )
+            ? "outside"
+            : "inside",
+          ["id"] = set.Id,
+          ["minimumHouseLevel"] = set.MinimumLevel,
+          ["owned"] = set.Owned,
+          ["price"] = set.Price,
+          ["purchasableByMemberIds"] = HomePurchasableByMemberIds(
+            activeMembers,
+            availableBalances,
+            (member, availableBalance) => customization.Shop.CanPurchaseSet(
+              set,
+              member.Role == MemberRole.Child,
+              availableBalance
+            )
+          ),
+        };
       }).ToArray<JsonNode?>()),
-      ["houseStages"] = new JsonArray(HouseShopCatalog.HouseStages.Select(item => new JsonObject
+      ["houseStages"] = new JsonArray(HouseShopCatalog.HouseStages.Select(stage => new JsonObject
       {
-        ["active"] = houseLevel == item.Level,
-        ["id"] = item.Id,
-        ["level"] = item.Level,
-        ["roomCount"] = item.RoomCount,
+        ["active"] = houseLevel == stage.Level,
+        ["id"] = stage.Id,
+        ["level"] = stage.Level,
+        ["roomCount"] = stage.RoomCount,
       }).ToArray<JsonNode?>()),
-      ["roomDesigns"] = new JsonArray(HouseShopCatalog.RoomDesigns.Select(item => new JsonObject
+      ["roomDesigns"] = new JsonArray(HouseShopCatalog.RoomDesigns.Select(entry =>
       {
-        ["available"] = houseLevel >= item.Value.MinimumLevel,
-        ["areaId"] = item.Value.Area,
-        ["id"] = item.Key,
-        ["minimumHouseLevel"] = item.Value.MinimumLevel,
-        ["owned"] = roomDesigns.OfType<JsonObject>().Any(design =>
-          design["id"]?.GetValue<string>() == item.Key && (design["owned"]?.GetValue<bool>() ?? false)),
-        ["price"] = item.Value.Price,
-        ["purchasableByMemberIds"] = PurchasableByMemberIds(
-          members,
-          availableBalances,
-          houseLevel >= item.Value.MinimumLevel && !roomDesigns.OfType<JsonObject>().Any(design =>
-            design["id"]?.GetValue<string>() == item.Key && (design["owned"]?.GetValue<bool>() ?? false)),
-          item.Value.Price
-        ),
-        ["themeId"] = item.Value.ThemeId,
+        var design = customization.RoomDesign(entry.Key);
+        var theme = customization.ThemeFor(design);
+
+        return new JsonObject
+        {
+          ["available"] = customization.Shop.IsAvailableAtCurrentLevel(design.MinimumLevel),
+          ["areaId"] = design.Room,
+          ["id"] = design.Id,
+          ["minimumHouseLevel"] = design.MinimumLevel,
+          ["owned"] = design.Owned,
+          ["price"] = design.Price,
+          ["purchasableByMemberIds"] = HomePurchasableByMemberIds(
+            activeMembers,
+            availableBalances,
+            (member, availableBalance) => customization.Shop.CanPurchaseDesign(
+              design,
+              theme,
+              member.Role == MemberRole.Child,
+              availableBalance
+            )
+          ),
+          ["themeId"] = design.ThemeId,
+        };
       }).ToArray<JsonNode?>()),
-      ["themes"] = new JsonArray(HouseShopCatalog.Themes.Select(item => new JsonObject
+      ["themes"] = new JsonArray(HouseShopCatalog.Themes.Select(entry =>
       {
-        ["available"] = true,
-        ["id"] = item.Key,
-        ["owned"] = editions.OfType<JsonObject>().Any(edition =>
-          edition["id"]?.GetValue<string>() == item.Key && (edition["owned"]?.GetValue<bool>() ?? false)),
-        ["price"] = item.Value,
-        ["purchasableByMemberIds"] = PurchasableByMemberIds(
-          members,
-          availableBalances,
-          !editions.OfType<JsonObject>().Any(edition =>
-            edition["id"]?.GetValue<string>() == item.Key && (edition["owned"]?.GetValue<bool>() ?? false)),
-          item.Value
-        ),
+        var theme = customization.Theme(entry.Key);
+
+        return new JsonObject
+        {
+          ["available"] = true,
+          ["id"] = theme.Id,
+          ["owned"] = theme.Owned,
+          ["price"] = theme.Price,
+          ["purchasableByMemberIds"] = HomePurchasableByMemberIds(
+            activeMembers,
+            availableBalances,
+            (member, availableBalance) => customization.Shop.CanPurchaseTheme(
+              theme,
+              member.Role == MemberRole.Child,
+              availableBalance
+            )
+          ),
+        };
       }).ToArray<JsonNode?>()),
     };
 
@@ -149,30 +172,21 @@ public sealed partial class GetFamilyAggregateQueryHandler
     return home with { State = document.RootElement.Clone() };
   }
 
-  private static JsonArray PurchasableByMemberIds(
-    IEnumerable<JsonNode?> members,
-    JsonObject balances,
-    bool available,
-    decimal price
+  private static JsonArray HomePurchasableByMemberIds(
+    IEnumerable<FamilyMember> members,
+    IReadOnlyDictionary<FamilyMemberId, decimal> availableBalances,
+    Func<FamilyMember, decimal, bool> canPurchase
   )
   {
     return new JsonArray(members
-      .OfType<JsonObject>()
-      .Where(member => available && member["role"]?.GetValue<string>() == "child")
-      .Where(member => (balances[member["id"]!.GetValue<string>()]?.GetValue<decimal>() ?? 0) >= price)
-      .Select(member => JsonValue.Create(member["id"]!.GetValue<string>()))
+      .Where(member => canPurchase(member, availableBalances.GetValueOrDefault(member.Id)))
+      .Select(member => JsonValue.Create(member.Id.Value))
       .ToArray<JsonNode?>());
   }
 
-  private static decimal AvailableBalance(decimal balance, IEnumerable<JsonNode?> rewards, string memberId)
+  private static JsonObject ParseHomeObject(FamilyAggregateSnapshot snapshot, string name)
   {
-    var reserved = rewards
-      .OfType<JsonObject>()
-      .Where(reward => reward["status"]?.GetValue<string>() == "requested")
-      .Where(reward => reward["requesterId"]?.GetValue<string>() == memberId)
-      .Sum(reward => reward["price"]?.GetValue<decimal>() ?? 0);
-
-    return Math.Max(0, balance - reserved);
+    return JsonNode.Parse(snapshot.State.GetRawText()) as JsonObject
+      ?? throw new InvalidOperationException($"The {name} state must be an object.");
   }
-
 }

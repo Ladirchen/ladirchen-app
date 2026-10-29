@@ -23,6 +23,22 @@ public sealed class LadirchenDbContext : DbContext
     }
   }
 
+  public DbSet<FamilyCommandReceiptEntity> FamilyCommandReceipts
+  {
+    get
+    {
+      return Set<FamilyCommandReceiptEntity>();
+    }
+  }
+
+  public DbSet<FamilyAggregateOutboxMessageEntity> FamilyAggregateOutboxMessages
+  {
+    get
+    {
+      return Set<FamilyAggregateOutboxMessageEntity>();
+    }
+  }
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     var account = modelBuilder.Entity<AuthenticationAccountEntity>();
@@ -42,5 +58,28 @@ public sealed class LadirchenDbContext : DbContext
     aggregate.Property(item => item.Revision).IsConcurrencyToken();
     aggregate.Property(item => item.StateJson).IsRequired();
     aggregate.Property(item => item.UpdatedBy).HasMaxLength(100);
+
+    var receipt = modelBuilder.Entity<FamilyCommandReceiptEntity>();
+    receipt.ToTable("FamilyCommandReceipts");
+    receipt.HasKey(item => item.CommandId);
+    receipt.Property(item => item.ActorId).HasMaxLength(128);
+    receipt.Property(item => item.CommandType).HasMaxLength(100);
+    receipt.Property(item => item.RequestFingerprint).HasMaxLength(64);
+    receipt.Property(item => item.ResultJson);
+    receipt.HasIndex(item => item.FamilyId);
+
+    var outbox = modelBuilder.Entity<FamilyAggregateOutboxMessageEntity>();
+    outbox.ToTable("FamilyAggregateOutboxMessages");
+    outbox.HasKey(item => item.MessageId);
+    outbox.Property(item => item.AggregateType).HasMaxLength(100);
+    outbox.Property(item => item.UpdatedBy).HasMaxLength(128);
+    outbox.Property(item => item.LastError).HasMaxLength(2000);
+    outbox.HasIndex(item => new { item.FamilyId, item.AggregateType, item.Revision }).IsUnique();
+    outbox.HasIndex(item => new { item.PublishedAt, item.NextAttemptAt });
+    outbox
+      .HasOne<FamilyCommandReceiptEntity>()
+      .WithMany()
+      .HasForeignKey(item => item.CommandId)
+      .OnDelete(DeleteBehavior.Cascade);
   }
 }

@@ -87,4 +87,42 @@ describe("family aggregate runtime validation", () => {
       }),
     ).toBe(false);
   });
+
+  it("validates backend-projected contribution partner identifiers", () => {
+    const contribution = {
+      area: "Family home",
+      description: "Work together",
+      dueLabel: "Optional",
+      energy: 10,
+      icon: "🤝",
+      id: "extra-task",
+      kind: "extra",
+      partnerableMemberIds: ["guardian-1", "child-2"],
+      reward: 10,
+      status: "available",
+      title: "Extra task",
+    };
+
+    const currentWeekReadModel = {
+      currentWeekApprovedContributionCountByMember: { "child-2": 2 },
+      currentWeekEarnedByMember: { "child-2": 25 },
+    };
+
+    expect(isContributionsState({ contributions: [contribution], ...currentWeekReadModel, promotions: [] })).toBe(true);
+    expect(
+      isContributionsState({
+        contributions: [{ ...contribution, partnerableMemberIds: ["guardian-1", "guardian-1"] }],
+        ...currentWeekReadModel,
+        promotions: [],
+      }),
+    ).toBe(false);
+    expect(
+      isContributionsState({
+        contributions: [contribution],
+        ...currentWeekReadModel,
+        currentWeekApprovedContributionCountByMember: { "child-2": 1.5 },
+        promotions: [],
+      }),
+    ).toBe(false);
+  });
 });

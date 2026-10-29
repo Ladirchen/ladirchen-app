@@ -7,6 +7,8 @@ export const CONTRIBUTIONS_AGGREGATE_TYPE = "contributions";
 
 export interface ContributionsState {
   readonly contributions: ReadonlyArray<Contribution>;
+  readonly currentWeekApprovedContributionCountByMember: Readonly<Record<FamilyMemberId, number>>;
+  readonly currentWeekEarnedByMember: Readonly<Record<FamilyMemberId, number>>;
   readonly perfectRatingBonusPercent?: number;
   readonly promotions: ReadonlyArray<Promotion>;
   readonly todayEarnedByMember?: Readonly<Record<FamilyMemberId, number>>;

@@ -16,6 +16,12 @@ public interface IFamilyAggregateSnapshotRepository
     CancellationToken cancellationToken
   );
 
+  Task<IReadOnlyDictionary<string, FamilyAggregateSnapshot>> GetManyAsync(
+    FamilyId familyId,
+    IReadOnlyCollection<string> aggregateTypes,
+    CancellationToken cancellationToken
+  );
+
   Task<FamilyAggregateSnapshot> SaveAsync(
     SaveFamilyAggregateCommand command,
     int schemaVersion,
@@ -24,6 +30,12 @@ public interface IFamilyAggregateSnapshotRepository
 
   Task<IReadOnlyList<FamilyAggregateSnapshot>> SaveBatchAsync(
     IReadOnlyList<PendingFamilyAggregateSave> saves,
+    CancellationToken cancellationToken
+  );
+
+  Task<IReadOnlyList<FamilyAggregateSnapshot>> SaveBatchAsync(
+    IReadOnlyList<PendingFamilyAggregateSave> saves,
+    IReadOnlyList<FamilyAggregateRevisionGuard> revisionGuards,
     CancellationToken cancellationToken
   );
 }

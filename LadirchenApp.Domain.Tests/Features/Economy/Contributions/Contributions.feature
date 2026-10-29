@@ -23,6 +23,13 @@ Feature: Contributions and rewards
     And there are 1 ledger entries
     And the rejected command left the economy unchanged
 
+  Scenario: The configured five-star bonus is used for contribution approval
+    Given a core economy
+    And the five-star contribution bonus is configured as 25 percent
+    And a submitted child contribution worth 10 Ladirchen
+    When the administrator approves it with 5 stars
+    Then the child wallet contains 13 Ladirchen
+
   Scenario: A child can review a guardian contribution
     Given a core economy
     And a submitted guardian contribution worth 20 Ladirchen

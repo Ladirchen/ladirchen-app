@@ -1,0 +1,108 @@
+using System;
+using System.Collections.Generic;
+
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.Shared;
+
+namespace LadirchenApp.Domain.Economy;
+
+public sealed partial class FamilyEconomy
+{
+  public void RestoreWallet(FamilyMemberId memberId, decimal balance, decimal reserved)
+  {
+    _family.ActiveMember(memberId);
+    Rules.Require(balance >= 0, DomainError.InvalidValue, "A restored wallet balance cannot be negative.");
+    Rules.Require(reserved >= 0 && reserved <= balance, DomainError.InvalidValue, "A restored reservation must be covered by the wallet balance.");
+    var wallet = _wallets.Find(item => item.Id == memberId) ?? new MemberWallet(memberId);
+
+    if (!_wallets.Contains(wallet))
+    {
+      _wallets.Add(wallet);
+    }
+
+    wallet.Set(balance, reserved);
+  }
+
+  public void RestoreContribution(
+    ContributionId id,
+    ContributionDefinition definition,
+    ContributionStatus status,
+    StarRating? rating,
+    ContributionRewardBreakdown? earnedReward,
+    DateTimeOffset? approvedAt,
+    IReadOnlyCollection<FamilyMemberId> invitedPartners
+  )
+  {
+    ArgumentNullException.ThrowIfNull(id);
+    ArgumentNullException.ThrowIfNull(definition);
+    ArgumentNullException.ThrowIfNull(invitedPartners);
+    Rules.Require(
+      _usedContributionIds.Add(id),
+      DomainError.Duplicate,
+      "This contribution identity was already restored."
+    );
+    var contribution = new Contribution(
+      id,
+      definition.Title,
+      definition.Kind,
+      definition.Reward,
+      definition.Energy,
+      definition.AssigneeId
+    );
+
+    if (definition.AssigneeId is not null)
+    {
+      _family.ActiveMember(definition.AssigneeId);
+    }
+
+    foreach (var partner in invitedPartners)
+    {
+      _family.ActiveMember(partner);
+      Rules.Require(
+        partner != definition.AssigneeId,
+        DomainError.InvalidValue,
+        "The assignee cannot also be a restored partner."
+      );
+    }
+
+    contribution.SetPartners([.. invitedPartners]);
+
+    switch (status)
+    {
+      case ContributionStatus.Available:
+        break;
+      case ContributionStatus.Pending:
+        contribution.Submit();
+        break;
+      case ContributionStatus.Approved:
+        Rules.Require(
+          rating is not null && earnedReward is not null && approvedAt is not null,
+          DomainError.InvalidValue,
+          "An approved contribution requires its rating, reward and approval time."
+        );
+        contribution.Approve(rating!, earnedReward!, approvedAt!.Value);
+        break;
+      default:
+        throw new ArgumentOutOfRangeException(nameof(status));
+    }
+
+    _contributions.Add(contribution);
+  }
+
+  public void RestorePromotion(
+    PromotionId id,
+    ContributionId contributionId,
+    RewardMultiplier multiplier,
+    LadirchenAmount teamworkBonus,
+    PromotionDeadline deadline,
+    bool active
+  )
+  {
+    ArgumentNullException.ThrowIfNull(id);
+    FindContribution(contributionId);
+    Rules.Require(_promotions.TrueForAll(item => item.Id != id), DomainError.Duplicate, "The promotion already exists.");
+    var promotion = new Promotion(id, contributionId, multiplier, teamworkBonus, deadline);
+    promotion.SetActive(active);
+    _promotions.Add(promotion);
+  }
+}

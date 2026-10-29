@@ -63,6 +63,15 @@ public sealed partial class EconomySteps
   public void FiveStarBonus(decimal bonus)
   {
     _perfectRatingBonus = bonus;
+
+    if (_economy is not null)
+    {
+      _economy.UpdateContributionSettings(
+        _admin,
+        new ContributionSettings(new Percentage(bonus)),
+        _now
+      );
+    }
   }
 
   [When("the contribution is approved with {int} stars before the deadline")]

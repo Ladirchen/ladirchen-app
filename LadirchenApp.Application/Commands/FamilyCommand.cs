@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 
 using LadirchenApp.Domain.Shared;
@@ -5,8 +6,10 @@ using LadirchenApp.Domain.Shared;
 namespace LadirchenApp.Application.Commands;
 
 public sealed record FamilyCommand(
+  Guid CommandId,
   FamilyId FamilyId,
   FamilyMemberId ActorId,
   string CommandType,
-  JsonElement Payload
+  JsonElement Payload,
+  FamilyMemberId? AuthenticatedMemberId = null
 );

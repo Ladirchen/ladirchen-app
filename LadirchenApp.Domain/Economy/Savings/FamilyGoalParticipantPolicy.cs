@@ -15,15 +15,53 @@ public sealed class FamilyGoalParticipantPolicy
     IEnumerable<FamilyMemberId>? selected = null
   )
   {
-    ArgumentNullException.ThrowIfNull(activeMembers);
-    var members = activeMembers.Where(item => !item.InvitationPending).ToArray();
+    return Select(
+      activeMembers,
+      participation switch
+      {
+        "the entire family" => FamilyGoalParticipation.EntireFamily,
+        "children only" => FamilyGoalParticipation.ChildrenOnly,
+        "selected family members" => FamilyGoalParticipation.SelectedMembers,
+        _ => throw new DomainRuleException(DomainError.InvalidValue, "Unknown family-goal participation selection."),
+      },
+      selected
+    );
+  }
 
-    return participation switch
+  public IReadOnlySet<FamilyMemberId> Select(
+    IEnumerable<FamilyMember> activeMembers,
+    FamilyGoalParticipation participation,
+    IEnumerable<FamilyMemberId>? selected = null
+  )
+  {
+    ArgumentNullException.ThrowIfNull(activeMembers);
+    var members = activeMembers
+      .Where(item => !item.InvitationPending)
+      .Where(item => item.Role is MemberRole.Child or MemberRole.Guardian)
+      .ToArray();
+    var selectedIds = (selected ?? Array.Empty<FamilyMemberId>()).ToHashSet();
+    var result = participation switch
     {
-      "the entire family" => members.Select(item => item.Id).ToHashSet(),
-      "children only" => members.Where(item => item.Role == MemberRole.Child).Select(item => item.Id).ToHashSet(),
-      "selected family members" => (selected ?? Array.Empty<FamilyMemberId>()).ToHashSet(),
-      _ => throw new DomainRuleException(DomainError.InvalidValue, "Unknown family-goal participation selection."),
+      FamilyGoalParticipation.EntireFamily => members.Select(item => item.Id).ToHashSet(),
+      FamilyGoalParticipation.ChildrenOnly => members
+        .Where(item => item.Role == MemberRole.Child)
+        .Select(item => item.Id)
+        .ToHashSet(),
+      FamilyGoalParticipation.SelectedMembers => selectedIds,
+      _ => throw new ArgumentOutOfRangeException(nameof(participation)),
     };
+    var eligible = members.Select(item => item.Id).ToHashSet();
+    Rules.Require(
+      result.Count > 0,
+      DomainError.InvalidValue,
+      "A family savings goal requires at least one participant."
+    );
+    Rules.Require(
+      result.All(eligible.Contains),
+      DomainError.InvalidValue,
+      "Every selected participant must be an active child or guardian."
+    );
+
+    return result;
   }
 }

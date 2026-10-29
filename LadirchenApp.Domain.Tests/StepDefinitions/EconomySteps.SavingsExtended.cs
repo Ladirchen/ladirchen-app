@@ -26,7 +26,7 @@ public sealed partial class EconomySteps
   private bool _goalVisible;
   private bool _goalChanged;
   private IReadOnlySet<FamilyMemberId> _goalParticipants = new HashSet<FamilyMemberId>();
-  private SavingsVoucher? _voucher;
+  private GoalSavingsVoucher? _voucher;
   private bool _redemptionResult;
   private bool _secondRedemptionResult;
 
@@ -36,12 +36,19 @@ public sealed partial class EconomySteps
     CreateEconomy();
     _expectedStarterBonus = starterBonus;
     var owner = goalType == "Family" ? GoalOwner.Family : GoalOwner.Member(_child);
-    var visibility = goalType == "Family" ? GoalVisibility.Family : GoalVisibility.Family;
+    const GoalVisibility visibility = GoalVisibility.Family;
     var memberCount = goalType == "Family" ? (int)(starterBonus / 5) : 0;
+    var participants = goalType == "Family"
+      ? _family.Members
+        .Where(item => !item.InvitationPending)
+        .Take(memberCount)
+        .Select(item => item.Id)
+        .ToArray()
+      : null;
     _economy.AddGoal(
       _child,
       _goalId,
-      new SavingGoalDefinition(owner, "Goal", new LadirchenAmount(100), visibility, memberCount),
+      new SavingGoalDefinition(owner, "Goal", new LadirchenAmount(100), visibility, participants),
       NextOperation(),
       _now
     );
@@ -94,8 +101,7 @@ public sealed partial class EconomySteps
   [When("the completed savings goal is closed")]
   public void CloseCompletedGoal()
   {
-    var goal = _economy.GoalFor(_child, _goalId);
-    _voucher = new SavingsVoucher(goal.Saved, goal.Owner.MemberId, Array.Empty<FamilyMemberId>());
+    _voucher = _economy.SavingsVouchers.Single(item => item.Id == _goalId);
   }
 
   [Then("its full balance including {float} starter-bonus Ladirchen is available")]
@@ -486,8 +492,7 @@ public sealed partial class EconomySteps
   public void DepositFinalLadirchen()
   {
     Deposit(1);
-    var goal = _economy.GoalFor(_child, _goalId);
-    _voucher = new SavingsVoucher(goal.Saved, _child, Array.Empty<FamilyMemberId>());
+    _voucher = _economy.SavingsVouchers.Single(item => item.Id == _goalId);
   }
 
   [Then("the savings goal is completed")]
@@ -516,11 +521,10 @@ public sealed partial class EconomySteps
     CreateGoal("Private", 100);
   }
 
-  [When("a family member attempts to create its voucher")]
+  [When("the savings vouchers are inspected")]
   public void AttemptIncompleteVoucher()
   {
-    var goal = _economy.GoalFor(_child, _goalId);
-    _voucher = goal.Completed ? new SavingsVoucher(goal.Saved, _child, Array.Empty<FamilyMemberId>()) : null;
+    _voucher = _economy.SavingsVouchers.SingleOrDefault(item => item.Id == _goalId);
   }
 
   [Then("no voucher is created")]
@@ -539,7 +543,21 @@ public sealed partial class EconomySteps
   public void SelectGoalParticipants(string participation)
   {
     var selected = new[] { _child, _supporter };
-    _goalParticipants = _participantPolicy.Select(_family.Members, participation, selected);
+    var participants = _participantPolicy.Select(_family.Members, participation, selected);
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        participants.ToArray()
+      ),
+      NextOperation(),
+      _now
+    );
+    _goalParticipants = _economy.GoalFor(_admin, _goalId).Participants;
   }
 
   [Then("the goal participants are {string}")]
@@ -563,7 +581,25 @@ public sealed partial class EconomySteps
   [When("one child and one guardian are selected")]
   public void SelectChildAndGuardian()
   {
-    _goalParticipants = _participantPolicy.Select(_family.Members, "selected family members", [_child, _supporter]);
+    var participants = _participantPolicy.Select(
+      _family.Members,
+      "selected family members",
+      [_child, _supporter]
+    );
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Selected Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        participants.ToArray()
+      ),
+      NextOperation(),
+      _now
+    );
+    _goalParticipants = _economy.GoalFor(_admin, _goalId).Participants;
   }
 
   [Then("both are participants in the family goal")]
@@ -593,7 +629,28 @@ public sealed partial class EconomySteps
   [When("the family voucher is created")]
   public void CreateFamilyVoucher()
   {
-    _voucher = new SavingsVoucher(100, null, _goalParticipants);
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        _goalParticipants.ToArray()
+      ),
+      NextOperation(),
+      _now
+    );
+    var goal = _economy.GoalFor(_admin, _goalId);
+    _economy.SupportGoal(
+      _admin,
+      _goalId,
+      new LadirchenAmount(goal.Target - goal.Saved),
+      NextOperation(),
+      _now
+    );
+    _voucher = _economy.SavingsVouchers.Single(item => item.Id == _goalId);
   }
 
   [Then("the voucher contains the full goal balance including the family starter bonus")]
@@ -618,6 +675,7 @@ public sealed partial class EconomySteps
   [Given("a completed family voucher has three participating family members")]
   public void ThreeParticipantVoucher()
   {
+    CreateEconomy();
     ThreeParticipants();
     CreateFamilyVoucher();
   }
@@ -626,14 +684,14 @@ public sealed partial class EconomySteps
   [Given("only two participants have consented")]
   public void TwoConsents()
   {
-    _voucher!.Consent(_child);
-    _voucher.Consent(_sibling);
+    _ = _economy.ConsentSavingsVoucher(_child, _goalId, _now);
+    _ = _economy.ConsentSavingsVoucher(_sibling, _goalId, _now);
   }
 
   [When("the final participant consents")]
   public void FinalConsent()
   {
-    _voucher!.Consent(_supporter);
+    _ = _economy.ConsentSavingsVoucher(_supporter, _goalId, _now);
   }
 
   [Then("the family voucher becomes redeemable")]
@@ -645,7 +703,7 @@ public sealed partial class EconomySteps
   [When("redemption is attempted")]
   public void AttemptRedemption()
   {
-    _redemptionResult = _voucher!.Redeem();
+    _redemptionResult = TryVoucherRedemption(_child);
   }
 
   [Then("the redemption is rejected")]
@@ -671,7 +729,7 @@ public sealed partial class EconomySteps
   [When("a non-participating family member attempts to consent")]
   public void NonParticipantConsents()
   {
-    _voucher!.Consent(_sibling);
+    Try(() => _economy.ConsentSavingsVoucher(_sibling, _goalId, _now));
   }
 
   [Then("the recorded participant consents remain unchanged")]
@@ -691,13 +749,13 @@ public sealed partial class EconomySteps
   [When("the voucher is redeemed")]
   public void RedeemVoucher()
   {
-    _redemptionResult = _voucher!.Redeem();
+    _redemptionResult = TryVoucherRedemption(_child);
   }
 
   [When("redemption is attempted again")]
   public void RedeemVoucherAgain()
   {
-    _secondRedemptionResult = _voucher!.Redeem();
+    _secondRedemptionResult = TryVoucherRedemption(_child);
   }
 
   [Then("the second redemption is rejected")]
@@ -717,6 +775,20 @@ public sealed partial class EconomySteps
     if (bonus != 5)
     {
       throw new InvalidOperationException("The configured family starter bonus must be five Ladirchen per member.");
+    }
+  }
+
+  private bool TryVoucherRedemption(FamilyMemberId actorId)
+  {
+    try
+    {
+      _economy.RedeemSavingsVoucher(actorId, _goalId, _now);
+
+      return true;
+    }
+    catch (DomainRuleException)
+    {
+      return false;
     }
   }
 }

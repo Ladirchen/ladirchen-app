@@ -1,18 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Domain.Avatar;
-using LadirchenApp.Domain.Economy;
-using LadirchenApp.Domain.House;
-using LadirchenApp.Domain.House.Shop;
-using LadirchenApp.Domain.Ladi;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
@@ -20,17 +13,17 @@ namespace LadirchenApp.Application.Commands;
 public sealed partial class ExecuteFamilyCommandHandler
 {
   private readonly IFamilyAggregateSnapshotRepository _repository;
-  private readonly IFamilyAggregateChangePublisher _publisher;
+  private readonly IFamilyCommandExecutionCoordinator _executionCoordinator;
   private readonly TimeProvider _timeProvider;
 
   public ExecuteFamilyCommandHandler(
     IFamilyAggregateSnapshotRepository repository,
-    IFamilyAggregateChangePublisher publisher,
+    IFamilyCommandExecutionCoordinator executionCoordinator,
     TimeProvider timeProvider
   )
   {
     _repository = repository;
-    _publisher = publisher;
+    _executionCoordinator = executionCoordinator;
     _timeProvider = timeProvider;
   }
 
@@ -38,7 +31,16 @@ public sealed partial class ExecuteFamilyCommandHandler
   {
     ArgumentNullException.ThrowIfNull(command);
 
-    return await ExecuteAsync(command, cancellationToken);
+    if (command.CommandId == Guid.Empty)
+    {
+      throw new FamilyCommandException("A command ID is required.");
+    }
+
+    return await _executionCoordinator.ExecuteOnceAsync(
+      command,
+      token => ExecuteAsync(command, token),
+      cancellationToken
+    );
   }
 
   private async Task<FamilyCommandResult> ExecuteAsync(
@@ -48,32 +50,40 @@ public sealed partial class ExecuteFamilyCommandHandler
   {
     var profile = await RequireSnapshotAsync(command.FamilyId, "family-profile", cancellationToken);
     var profileState = RequireObject(profile.State);
-    var members = RequireArray(profileState, "members");
     var payload = RequireObject(command.Payload);
-    var actor = RequireMember(members, command.ActorId.Value.ToString());
+    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
+    family.RequireActorAccess(
+      command.AuthenticatedMemberId ?? command.ActorId,
+      command.ActorId
+    );
 
     if (command.CommandType.StartsWith("profile.", StringComparison.Ordinal))
     {
-      return await ExecuteProfileAsync(command, profile, profileState, members, actor, payload, cancellationToken);
+      return await ExecuteProfileAsync(command, profile, profileState, payload, cancellationToken);
     }
 
     if (command.CommandType.StartsWith("home.", StringComparison.Ordinal))
     {
-      return await ExecuteHomeAsync(command, profileState, actor, payload, cancellationToken);
+      return await ExecuteHomeAsync(command, profile, profileState, payload, cancellationToken);
     }
 
     if (command.CommandType.StartsWith("savings.", StringComparison.Ordinal))
     {
-      return await ExecuteSavingsAsync(command, profileState, members, actor, payload, cancellationToken);
+      return await ExecuteSavingsAsync(
+        command,
+        profile,
+        profileState,
+        payload,
+        cancellationToken
+      );
     }
 
     if (command.CommandType.StartsWith("reward-shop.", StringComparison.Ordinal))
     {
       return await ExecuteRewardShopAsync(
         command,
+        profile,
         profileState,
-        members,
-        actor,
         payload,
         cancellationToken
       );
@@ -81,16 +91,15 @@ public sealed partial class ExecuteFamilyCommandHandler
 
     if (command.CommandType.StartsWith("progression.", StringComparison.Ordinal))
     {
-      return await ExecuteProgressionAsync(command, profile, profileState, members, actor, cancellationToken);
+      return await ExecuteProgressionAsync(command, profile, profileState, cancellationToken);
     }
 
     if (command.CommandType.StartsWith("contributions.", StringComparison.Ordinal))
     {
       return await ExecuteContributionsAsync(
         command,
+        profile,
         profileState,
-        members,
-        actor,
         payload,
         cancellationToken
       );
@@ -130,31 +139,6 @@ public sealed partial class ExecuteFamilyCommandHandler
   private static decimal Round(decimal value)
   {
     return decimal.Round(value, 0, MidpointRounding.AwayFromZero);
-  }
-
-  private static JsonObject RequireMember(JsonArray members, string id)
-  {
-    return FindById(members, id) ?? throw new FamilyCommandException("The family member does not exist.");
-  }
-
-  private static JsonObject? FindById(JsonArray items, string id)
-  {
-    return items.OfType<JsonObject>().FirstOrDefault(item => StringValue(item, "id") == id);
-  }
-
-  private static void RequireStatus(JsonObject contribution, string status)
-  {
-    Require(StringValue(contribution, "status") == status, $"The contribution must be {status}.");
-  }
-
-  private static void RequireAdministrator(JsonObject actor)
-  {
-    Require(IsAdministrator(actor), "Only a family administrator may perform this command.");
-  }
-
-  private static bool IsAdministrator(JsonObject member)
-  {
-    return FamilyMemberPermissionResolver.Resolve(member).ManageFamily;
   }
 
   private static JsonObject RequireObject(JsonElement element)
@@ -213,11 +197,6 @@ public sealed partial class ExecuteFamilyCommandHandler
     return value[property]?.GetValue<decimal>();
   }
 
-  private static bool BoolValue(JsonObject value, string property)
-  {
-    return value[property]?.GetValue<bool>() ?? false;
-  }
-
   private static bool BoolValueOrDefault(JsonObject value, string property, bool defaultValue)
   {
     return value[property]?.GetValue<bool>() ?? defaultValue;
@@ -227,16 +206,6 @@ public sealed partial class ExecuteFamilyCommandHandler
   {
     return value[property]?.GetValue<bool>()
       ?? throw new FamilyCommandException($"The {property} value is required.");
-  }
-
-  private static void CopyOptionalString(JsonObject source, JsonObject target, string property)
-  {
-    var value = StringValue(source, property);
-
-    if (!string.IsNullOrWhiteSpace(value))
-    {
-      target[property] = value;
-    }
   }
 
   private static void Require(bool condition, string message)

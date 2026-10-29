@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text.Json.Nodes;
 
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House.Shop;
 
 namespace LadirchenApp.Application.Aggregates;
@@ -13,20 +14,21 @@ internal static class HomePlacementReadModel
     var placements = RequireArray(home, "placements");
     var members = RequireArray(profile, "members").OfType<JsonObject>().ToArray();
     var pets = RequireArray(profile, "pets").OfType<JsonObject>().ToArray();
+    var policy = new HouseInitialPlacementPolicy();
 
-    AddMissing(placements, "family-ladi", "family-ladi", "ladi", new HousePlacement("living-room", 18, 30, 0.78m));
+    AddMissing(placements, "family-ladi", "family-ladi", "ladi", policy.FamilyLadi());
 
     for (var index = 0; index < members.Length; index++)
     {
       var member = members[index];
       var memberId = RequiredString(member, "id");
-      var scale = StringValue(member, "role") == "guardian" ? 0.78m : 0.75m;
+      var role = ParseRole(RequiredString(member, "role"));
       AddMissing(
         placements,
         $"member-{memberId}",
         memberId,
         "member",
-        new HousePlacement("living-room", Math.Min(75, 35 + index * 10), 72, scale)
+        policy.FamilyMember(index, role)
       );
     }
 
@@ -38,7 +40,7 @@ internal static class HomePlacementReadModel
         $"pet-{petId}",
         petId,
         "pet",
-        new HousePlacement("living-room", Math.Min(88, 18 + index * 14), 80, 0.72m)
+        policy.FamilyPet(index)
       );
     }
   }
@@ -47,27 +49,39 @@ internal static class HomePlacementReadModel
   {
     var entityType = RequiredString(placement, "entityType");
     var entityId = RequiredString(placement, "entityId");
+    var policy = new HouseInitialPlacementPolicy();
 
     if (entityType == "furniture")
     {
-      return HouseShopCatalog.Accessories.TryGetValue(entityId, out var definition)
-        ? definition.Initial
-        : throw new InvalidOperationException("The house accessory is unknown.");
+      return policy.Accessory(entityId);
     }
 
-    var temporaryHome = new JsonObject { ["placements"] = new JsonArray() };
-    Ensure(temporaryHome, profile);
-    var initial = RequireArray(temporaryHome, "placements")
-      .OfType<JsonObject>()
-      .FirstOrDefault(item => StringValue(item, "entityType") == entityType && StringValue(item, "entityId") == entityId)
-      ?? throw new InvalidOperationException("The house entity is unknown.");
+    if (entityType == "ladi" && entityId == "family-ladi")
+    {
+      return policy.FamilyLadi();
+    }
 
-    return new HousePlacement(
-      RequiredString(initial, "zoneId"),
-      RequiredDecimal(initial, "x"),
-      RequiredDecimal(initial, "y"),
-      RequiredDecimal(initial, "scale")
-    );
+    if (entityType == "member")
+    {
+      var members = RequireArray(profile, "members").OfType<JsonObject>().ToArray();
+      var index = Array.FindIndex(members, member => StringValue(member, "id") == entityId);
+
+      return index >= 0
+        ? policy.FamilyMember(index, ParseRole(RequiredString(members[index], "role")))
+        : throw new InvalidOperationException("The family member placement is unknown.");
+    }
+
+    if (entityType == "pet")
+    {
+      var pets = RequireArray(profile, "pets").OfType<JsonObject>().ToArray();
+      var index = Array.FindIndex(pets, pet => StringValue(pet, "id") == entityId);
+
+      return index >= 0
+        ? policy.FamilyPet(index)
+        : throw new InvalidOperationException("The family pet placement is unknown.");
+    }
+
+    throw new InvalidOperationException("The house entity is unknown.");
   }
 
   private static void AddMissing(
@@ -112,9 +126,13 @@ internal static class HomePlacementReadModel
     return source[property]?.GetValue<string>();
   }
 
-  private static decimal RequiredDecimal(JsonObject source, string property)
+  private static MemberRole ParseRole(string value)
   {
-    return source[property]?.GetValue<decimal>()
-      ?? throw new InvalidOperationException($"The '{property}' value is required.");
+    return value switch
+    {
+      "child" => MemberRole.Child,
+      "guardian" => MemberRole.Guardian,
+      _ => throw new InvalidOperationException("The family-member role is invalid."),
+    };
   }
 }

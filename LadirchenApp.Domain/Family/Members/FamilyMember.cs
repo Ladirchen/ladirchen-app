@@ -19,6 +19,18 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
     ParticipatesInWeeklyGoal = role == MemberRole.Child && !pending;
   }
 
+  internal FamilyMember(FamilyMemberState state)
+    : base(state?.Id ?? throw new ArgumentNullException(nameof(state)))
+  {
+    Name = state.Name;
+    Role = state.Role;
+    Access = state.Access;
+    InvitationPending = state.InvitationPending;
+    Nickname = state.Nickname;
+    EmailAddress = state.EmailAddress;
+    ParticipatesInWeeklyGoal = state.ParticipatesInWeeklyGoal;
+  }
+
   public string Name
   {
     get; private set;

@@ -83,12 +83,14 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     LadirchenAmount amount,
     string reason,
     TransactionId operationId,
-    DateTimeOffset now
+    DateTimeOffset now,
+    GuardianGiftId? giftId = null
   )
   {
     _family.RequireAdministrator(actor);
     RequireChild(childId);
-    var value = Rules.Positive(amount);
+    RequireNewPendingGiftId(giftId);
+    var value = Rules.Round(Rules.Positive(amount));
     Rules.Require(
       value >= SpecialGiftPolicy.MinimumAmount && value <= SpecialGiftPolicy.MaximumAmount,
       DomainError.InvalidValue,
@@ -103,6 +105,13 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
       operationId,
       new LedgerEntry(operationId, childId, null, LedgerKind.Credit, value, childId, text, now.ToUniversalTime(), actor)
     );
+
+    if (giftId is not null)
+    {
+      AddPendingGift(
+        new GuardianGoalGift(giftId, childId, actor, value, null, GiftDestination.Balance)
+      );
+    }
   }
 
   public void AddContribution(
@@ -236,8 +245,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     ContributionId id,
     StarRating rating,
     TransactionId operationId,
-    DateTimeOffset now,
-    Percentage? perfectRatingBonus = null
+    DateTimeOffset now
   )
   {
     var contribution = FindContribution(id);
@@ -249,7 +257,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     var reward = ContributionRewardPolicy.Calculate(
       contribution.Reward,
       rating,
-      perfectRatingBonus ?? ContributionRewardPolicy.DefaultPerfectRatingBonus,
+      _contributionSettings.PerfectRatingBonus,
       promotion?.Multiplier,
       promotion?.TeamworkBonus
     );

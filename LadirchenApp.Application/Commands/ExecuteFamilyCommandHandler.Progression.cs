@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -9,10 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House;
-using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Ladi;
 using LadirchenApp.Domain.Shared;
 
@@ -24,73 +21,111 @@ public sealed partial class ExecuteFamilyCommandHandler
     FamilyCommand command,
     FamilyAggregateSnapshot profile,
     JsonObject profileState,
-    JsonArray members,
-    JsonObject actor,
     CancellationToken cancellationToken
   )
   {
+    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
+    _ = family.ActiveMember(command.ActorId);
     var contributions = await RequireSnapshotAsync(command.FamilyId, "contributions", cancellationToken);
     var contributionState = RequireObject(contributions.State);
+    var economy = FamilyEconomySnapshotMapper.RehydrateContributions(family, contributionState);
     var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
-    var progressionState = BuildProgressionState(profileState, contributionState, RequireObject(progression.State));
-    var saves = new List<PendingFamilyAggregateSave>();
-    var zone = new IanaTimeZone(RequiredString(profileState, "timeZone"));
+    var storedProgression = RequireObject(progression.State);
+    var house = RestoreHouse(family, profileState, storedProgression);
+    var zone = family.TimeZone;
     var currentPeriod = IsoWeekPeriod.For(zone.LocalDate(_timeProvider.GetUtcNow()));
+    var maximumRate = FamilyProgressionSnapshotMapper.ReadMaximumSavingsInterestRate(storedProgression);
+    var evaluation = EvaluateProgression(
+      family,
+      economy,
+      profileState,
+      storedProgression,
+      currentPeriod,
+      maximumRate
+    );
+    var progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
+      storedProgression,
+      evaluation,
+      house
+    );
+    var saves = new List<PendingFamilyAggregateSave>();
+    var profileIsWritten = false;
 
     switch (command.CommandType)
     {
       case "progression.refresh":
         break;
       case "progression.set-maximum-savings-rate":
-        RequireAdministrator(actor);
-        var maximumSavingsRate = RequiredDecimal(RequireObject(command.Payload), "percent");
-        Require(maximumSavingsRate > 0 && maximumSavingsRate <= 100, "The maximum savings rate must be above zero and at most 100 percent.");
-        progressionState["maximumSavingsInterestRate"] = Round(maximumSavingsRate);
-        progressionState = BuildProgressionState(profileState, contributionState, progressionState);
+        family.RequireAdministrator(command.ActorId);
+        var requestedMaximum = Round(RequiredDecimal(RequireObject(command.Payload), "percent"));
+        maximumRate = new SavingsInterestPolicy(new Percentage(requestedMaximum)).MaximumRate;
+        evaluation = EvaluateProgression(
+          family,
+          economy,
+          profileState,
+          storedProgression,
+          currentPeriod,
+          maximumRate
+        );
+        progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
+          storedProgression,
+          evaluation,
+          house
+        );
         break;
       case "progression.complete-week":
-        RequireAdministrator(actor);
-        RequireWeekNotClosed(progressionState, currentPeriod);
+        family.RequireAdministrator(command.ActorId);
         Require(
-          RequiredInt(progressionState, "familyEnergy") >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+          house.CloseSuccessfulWeek(
+            currentPeriod,
+            evaluation.FamilyEnergy,
+            evaluation.Members.Select(item => item.LadiEvaluation),
+            _timeProvider.GetUtcNow()
+          ),
           "Family energy is too low to complete the week."
         );
-        var completedStreak = RequiredInt(progressionState, "completedWeeklyStreak") + 1;
-        progressionState["completedWeeklyStreak"] = completedStreak;
-        progressionState["houseLevel"] = Math.Min(4, RequiredInt(progressionState, "houseLevel") + 1);
-        SetParticipantStreaks(members, completedStreak);
-        StoreWeeklyEvaluation(progressionState, currentPeriod, "completed", _timeProvider.GetUtcNow());
+        FamilyProgressionSnapshotMapper.WriteParticipantStreaks(profileState, family, house);
+        progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
+          progressionState,
+          evaluation,
+          house
+        );
         saves.Add(CreateSave(profile, profileState, command.ActorId));
+        profileIsWritten = true;
         break;
       case "progression.fail-week":
-        RequireAdministrator(actor);
-        RequireWeekNotClosed(progressionState, currentPeriod);
-        var familyEnergy = RequiredInt(progressionState, "familyEnergy");
-        Require(
-          familyEnergy < HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
-          "A successful family week cannot be closed as failed."
+        family.RequireAdministrator(command.ActorId);
+        house.CloseFailedWeek(
+          currentPeriod,
+          evaluation.FamilyEnergy,
+          evaluation.Members.Select(item => item.LadiEvaluation),
+          _timeProvider.GetUtcNow()
         );
-        var currentStreak = RequiredInt(progressionState, "completedWeeklyStreak");
-        var failedStreak = familyEnergy < HouseEnergyPolicy.SevereFailureEnergyThreshold
-          ? Math.Max(0, currentStreak - 1)
-          : currentStreak;
-        progressionState["completedWeeklyStreak"] = failedStreak;
-        progressionState["houseLevel"] = Math.Max(0, RequiredInt(progressionState, "houseLevel") - 1);
-        SetParticipantStreaks(members, failedStreak);
-        StoreWeeklyEvaluation(progressionState, currentPeriod, "failed", _timeProvider.GetUtcNow());
+        FamilyProgressionSnapshotMapper.WriteParticipantStreaks(profileState, family, house);
+        progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
+          progressionState,
+          evaluation,
+          house
+        );
         saves.Add(CreateSave(profile, profileState, command.ActorId));
+        profileIsWritten = true;
         break;
       default:
         throw new FamilyCommandException("The progression command is not supported.");
     }
 
     saves.Add(CreateProgressionSave(progression, progressionState, command.ActorId));
-    var changed = await _repository.SaveBatchAsync(saves, cancellationToken);
-
-    foreach (var snapshot in changed)
+    var revisionGuards = new List<FamilyAggregateRevisionGuard>
     {
-      await _publisher.PublishAsync(snapshot, cancellationToken);
+      FamilyAggregateRevisionGuard.FromSnapshot(contributions),
+    };
+
+    if (!profileIsWritten)
+    {
+      revisionGuards.Add(FamilyAggregateRevisionGuard.FromSnapshot(profile));
     }
+
+    var changed = await _repository.SaveBatchAsync(saves, revisionGuards, cancellationToken);
 
     return new FamilyCommandResult(changed);
   }
@@ -104,7 +139,20 @@ public sealed partial class ExecuteFamilyCommandHandler
   )
   {
     var progression = await RequireSnapshotAsync(familyId, "family-progression", cancellationToken);
-    var state = BuildProgressionState(profileState, contributionState, RequireObject(progression.State));
+    var storedProgression = RequireObject(progression.State);
+    var family = FamilyProfileSnapshotMapper.Rehydrate(familyId, profileState);
+    var economy = FamilyEconomySnapshotMapper.RehydrateContributions(family, contributionState);
+    var house = RestoreHouse(family, profileState, storedProgression);
+    var period = IsoWeekPeriod.For(family.TimeZone.LocalDate(_timeProvider.GetUtcNow()));
+    var evaluation = EvaluateProgression(
+      family,
+      economy,
+      profileState,
+      storedProgression,
+      period,
+      FamilyProgressionSnapshotMapper.ReadMaximumSavingsInterestRate(storedProgression)
+    );
+    var state = FamilyProgressionSnapshotMapper.WriteEvaluation(storedProgression, evaluation, house);
 
     return CreateProgressionSave(progression, state, actorId);
   }
@@ -124,157 +172,103 @@ public sealed partial class ExecuteFamilyCommandHandler
       actorId
     );
 
-    return new PendingFamilyAggregateSave(command, 4);
+    return new PendingFamilyAggregateSave(command, progression.SchemaVersion);
   }
 
-  private JsonObject BuildProgressionState(
+  private static FamilyHouse RestoreHouse(
+    Family family,
     JsonObject profile,
-    JsonObject contributionsState,
-    JsonObject current
+    JsonObject progression
   )
   {
-    var members = RequireArray(profile, "members");
-    var contributions = RequireArray(contributionsState, "contributions");
-    var weeklyTarget = RequiredInt(current, "currentWeekTarget");
-    var completedWeeklyStreak = RequiredInt(current, "completedWeeklyStreak");
-    var zone = new IanaTimeZone(RequiredString(profile, "timeZone"));
-    var today = zone.LocalDate(_timeProvider.GetUtcNow());
-    var period = IsoWeekPeriod.For(today);
+    var house = new FamilyHouse();
+    var storedStreaks = FamilyProgressionSnapshotMapper.ReadStoredWeeklyStreaks(profile);
+
+    foreach (var member in family.Members)
+    {
+      house.RegisterParticipant(
+        member.Id,
+        FamilyProgressionSnapshotMapper.IsWeeklyParticipant(member),
+        storedStreaks.TryGetValue(member.Id, out var storedStreak) ? storedStreak : 0
+      );
+    }
+
+    house.Restore(
+      FamilyProgressionSnapshotMapper.ReadHouseLevel(progression),
+      FamilyProgressionSnapshotMapper.ReadCompletedWeeklyStreak(progression)
+    );
+    FamilyProgressionSnapshotMapper.RestoreClosedWeeks(progression, house);
+
+    return house;
+  }
+
+  private static FamilyProgressionEvaluation EvaluateProgression(
+    Family family,
+    FamilyEconomy economy,
+    JsonObject profile,
+    JsonObject progression,
+    IsoWeekPeriod period,
+    Percentage maximumRate
+  )
+  {
+    var weeklyTarget = FamilyProgressionSnapshotMapper.ReadCurrentWeekTarget(progression);
+    var storedStreaks = FamilyProgressionSnapshotMapper.ReadStoredWeeklyStreaks(profile);
     var progressionPolicy = new LadiProgressionPolicy();
     var streakPolicy = new PersonalStreakPolicy();
     var energyPolicy = new HouseEnergyPolicy();
-    var maximumRate = new Percentage(
-      DecimalValue(current, "maximumSavingsInterestRate") ?? SavingsInterestPolicy.Default.MaximumRate.Value
-    );
-    var evaluations = new JsonObject();
-    var participantStages = new List<LadiStage>();
+    var interestPolicy = new SavingsInterestPolicy(maximumRate);
+    var memberEvaluations = new List<MemberProgressionEvaluation>();
 
-    foreach (var member in members.OfType<JsonObject>().Where(IsWeeklyParticipant))
+    foreach (var member in family.Members.Where(FamilyProgressionSnapshotMapper.IsWeeklyParticipant))
     {
-      var memberId = RequiredString(member, "id");
-      var owned = contributions
-        .OfType<JsonObject>()
-        .Where(item => StringValue(item, "assigneeId") == memberId)
-        .ToArray();
-      var basic = owned.Where(item => StringValue(item, "kind") == "basic").ToArray();
-      var assignedBasicEnergy = basic.Sum(item => DecimalValue(item, "energy") ?? 0);
-      var approvedBasicEnergy = basic
-        .Where(item => StringValue(item, "status") == "approved")
-        .Sum(item => DecimalValue(item, "energy") ?? 0);
-      var approvedExtraEnergy = owned
-        .Where(item => StringValue(item, "kind") == "extra" && StringValue(item, "status") == "approved")
-        .Sum(item => DecimalValue(item, "energy") ?? 0);
-      var completion = ContributionParticipationPolicy.EffectiveCompletion(
-        assignedBasicEnergy,
-        approvedBasicEnergy,
-        approvedExtraEnergy
-      );
-      var ratings = basic
-        .Where(item => DecimalValue(item, "stars") is not null)
-        .Select(item => RequiredDecimal(item, "stars"))
-        .ToArray();
-      var averageRating = ratings.Length == 0 ? 0 : ratings.Average();
-      var approvedDates = owned
-        .Where(item => StringValue(item, "status") == "approved")
-        .Select(item => ParseOptionalInstant(item, "approvedAt"))
-        .Where(item => item is not null)
-        .Select(item => zone.LocalDate(item!.Value))
+      var approvedDates = economy.Contributions
+        .Where(item => item.AssigneeId == member.Id)
+        .Where(item => item.Status == ContributionStatus.Approved && item.ApprovedAt is not null)
+        .Select(item => family.TimeZone.LocalDate(item.ApprovedAt!.Value))
         .Where(period.Contains)
         .Distinct()
         .Order()
         .ToArray();
       var streakDays = streakPolicy.Calculate(
-        RequiredInt(member, "weeklyStreak"),
+        storedStreaks.TryGetValue(member.Id, out var completedStreak) ? completedStreak : 0,
         weeklyTarget,
         approvedDates.Length
       );
-      var participation = new PersonalParticipation(streakDays, completion.Value, averageRating);
+      var participation = new PersonalParticipation(
+        streakDays,
+        ContributionParticipationPolicy.Completion(economy.Contributions, member.Id).Value,
+        ContributionParticipationPolicy.AverageRating(economy.Contributions, member.Id)
+      );
       var value = progressionPolicy.Calculate(participation);
       var stage = progressionPolicy.DetermineStage(value.Capped);
-      var interestRate = SavingsInterestPolicy.CalculateRate(stage, maximumRate);
-      var energyContribution = energyPolicy.ContributionFor(stage);
-      participantStages.Add(stage);
-      evaluations[memberId] = new JsonObject
-      {
-        ["streakDays"] = streakDays,
-        ["approvedDates"] = new JsonArray(approvedDates
-          .Select(date => JsonValue.Create(date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
-          .ToArray<JsonNode?>()),
-        ["completionPercent"] = completion.Value,
-        ["averageBasicRating"] = averageRating,
-        ["participationValue"] = value.Capped,
-        ["ladiStageId"] = stage.Id,
-        ["ladiStagePosition"] = stage.Position,
-        ["energyContribution"] = energyContribution,
-        ["savingsInterestRate"] = interestRate.Value,
-      };
+      var personalEvaluation = new PersonalLadiEvaluation(
+        member.Id,
+        period.Year,
+        period.Week,
+        participation,
+        value,
+        stage
+      );
+      memberEvaluations.Add(
+        new MemberProgressionEvaluation(
+          personalEvaluation,
+          approvedDates,
+          energyPolicy.ContributionFor(stage),
+          interestPolicy.RateFor(personalEvaluation)
+        )
+      );
     }
 
-    var familyEnergy = energyPolicy.Calculate(participantStages);
-    current["memberProgressions"] = evaluations;
-    current["familyEnergy"] = familyEnergy;
-    current["houseVisualLevel"] = energyPolicy.VisualLevel(familyEnergy);
-    current["maximumSavingsInterestRate"] = maximumRate.Value;
-    current["completedWeeklyStreak"] = completedWeeklyStreak;
-
-    return current;
-  }
-
-  private static bool IsWeeklyParticipant(JsonObject member)
-  {
-    return !BoolValue(member, "invitationPending")
-      && (StringValue(member, "role") == "child" || BoolValue(member, "participatesInWeeklyGoal"));
-  }
-
-  private static void SetParticipantStreaks(JsonArray members, int weeklyStreak)
-  {
-    foreach (var member in members.OfType<JsonObject>().Where(IsWeeklyParticipant))
-    {
-      member["weeklyStreak"] = weeklyStreak;
-    }
-  }
-
-  private static void RequireWeekNotClosed(JsonObject progression, IsoWeekPeriod period)
-  {
-    var outcomes = progression["closedWeekOutcomes"] as JsonObject ?? new JsonObject();
-    progression["closedWeekOutcomes"] = outcomes;
-    Require(outcomes[period.Key] is null, "The family week has already been closed.");
-  }
-
-  private static void StoreWeeklyEvaluation(
-    JsonObject progression,
-    IsoWeekPeriod period,
-    string outcome,
-    DateTimeOffset evaluatedAt
-  )
-  {
-    var outcomes = progression["closedWeekOutcomes"] as JsonObject ?? new JsonObject();
-    var evaluations = progression["weeklyEvaluations"] as JsonObject ?? new JsonObject();
-    progression["closedWeekOutcomes"] = outcomes;
-    progression["weeklyEvaluations"] = evaluations;
-    outcomes[period.Key] = outcome;
-    evaluations[period.Key] = new JsonObject
-    {
-      ["evaluatedAt"] = evaluatedAt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
-      ["members"] = progression["memberProgressions"]?.DeepClone() ?? new JsonObject(),
-    };
-  }
-
-  private static DateTimeOffset? ParseOptionalInstant(JsonObject source, string property)
-  {
-    var value = StringValue(source, property);
-
-    if (string.IsNullOrWhiteSpace(value))
-    {
-      return null;
-    }
-
-    Require(
-      DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var result),
-      "The contribution approval timestamp is invalid."
+    var energy = energyPolicy.Calculate(
+      memberEvaluations.Select(item => item.LadiEvaluation.Stage)
     );
 
-    return result;
+    return new FamilyProgressionEvaluation(
+      memberEvaluations,
+      energy,
+      energyPolicy.VisualLevel(energy),
+      maximumRate
+    );
   }
 
 }

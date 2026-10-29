@@ -7,7 +7,6 @@ import { DEFAULT_TRANSFER_AMOUNT } from "@/features/savings/transfer-defaults";
 import type { FamilyCurrency } from "@/domain/savings/types";
 import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
 import { percentageOfTotal } from "@/domain/shared/numbers";
-import { isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
@@ -39,31 +38,19 @@ export function useSavingsPiggy() {
     store.members
       .filter((member) => member.role === "child")
       .map(function callback(member) {
-        const now = new Date(store.currentTimeMilliseconds);
-        const completedThisWeek = store.contributions.filter(
-          (contribution) =>
-            contribution.assigneeId === member.id &&
-            contribution.status === "approved" &&
-            contribution.approvedAt !== undefined &&
-            isInstantInIsoWeek(contribution.approvedAt, now, store.familyTimeZone),
-        );
         const available = store.availableBalances[member.id] ?? 0;
         const saved = store.totalVisibleSavedFor(member.id);
         const ladiLevel = store.memberProgressions[member.id]?.ladiStagePosition ?? 1;
 
         return {
           available,
-          completedThisWeek: completedThisWeek.length,
+          completedThisWeek: store.currentWeekApprovedContributionCountFor(member.id),
           id: member.id,
           ladiLevel,
           name: member.nickname?.trim() || member.name,
           saved,
           total: available + saved,
-          weekEarned: completedThisWeek.reduce(
-            (sum, contribution) =>
-              sum + (contribution.earnedReward ?? contribution.reward) + (contribution.earnedRatingBonus ?? 0),
-            0,
-          ),
+          weekEarned: store.currentWeekEarnedFor(member.id),
         };
       }),
   );

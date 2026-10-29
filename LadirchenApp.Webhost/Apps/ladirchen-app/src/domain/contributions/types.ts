@@ -29,6 +29,7 @@ export interface Contribution {
   worldEffect?: WorldEffect;
   stars?: number;
   invitedChildIds?: FamilyMemberId[];
+  partnerableMemberIds?: FamilyMemberId[];
   earnedReward?: number;
   earnedRatingBonus?: number;
   earnedPromotionMultiplier?: number;

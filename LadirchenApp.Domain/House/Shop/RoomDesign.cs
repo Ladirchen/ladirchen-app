@@ -2,7 +2,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.House.Shop;
 
-public sealed class RoomDesign
+public sealed partial class RoomDesign
 {
   public RoomDesign(string id, string themeId, string room, decimal price, int minimumLevel)
   {

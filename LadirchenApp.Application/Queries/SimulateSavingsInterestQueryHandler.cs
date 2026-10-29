@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,32 +26,35 @@ public sealed class SimulateSavingsInterestQueryHandler
   )
   {
     ArgumentNullException.ThrowIfNull(query);
-    var profile = await RequireSnapshotAsync(query, "family-profile", cancellationToken);
-    var memberExists = profile.State.GetProperty("members").EnumerateArray().Any(member =>
-      member.GetProperty("id").GetString() == query.MemberId.Value
+    var snapshots = await _repository.GetManyAsync(
+      query.FamilyId,
+      ["family-profile", "family-progression", "savings"],
+      cancellationToken
     );
+    var profile = RequireSnapshot(snapshots, "family-profile");
+    var family = SavingsReadModelSnapshotMapper.RehydrateFamily(profile);
+    var memberExists = family.Members.Any(member => member.Id == query.MemberId);
 
     if (!memberExists)
     {
       throw new ArgumentException("The family member does not exist.", nameof(query));
     }
 
-    var progression = await RequireSnapshotAsync(query, "family-progression", cancellationToken);
-    var maximumRate = progression.State.GetProperty("maximumSavingsInterestRate").GetDecimal();
+    var progression = RequireSnapshot(snapshots, "family-progression");
+    var maximumRate = SavingsReadModelSnapshotMapper.ReadMaximumInterestRate(progression);
     var participation = new PersonalParticipation(query.StreakDays, query.CompletionPercent, query.AverageRating);
     var policy = new LadiProgressionPolicy();
     var value = policy.Calculate(participation);
     var stage = policy.DetermineStage(value.Capped);
-    var rate = SavingsInterestPolicy.CalculateRate(stage, new Percentage(maximumRate));
-    var savings = await RequireSnapshotAsync(query, "savings", cancellationToken);
-    var projectedCredit = savings.State
-      .GetProperty("goals")
-      .EnumerateArray()
-      .Where(goal => goal.GetProperty("ownerId").GetString() == query.MemberId.Value)
+    var rate = SavingsInterestPolicy.CalculateRate(stage, maximumRate);
+    var savings = RequireSnapshot(snapshots, "savings");
+    var economy = SavingsReadModelSnapshotMapper.RehydrateEconomy(family, savings, null);
+    var projectedCredit = economy.SavingsGoals
+      .Where(goal => goal.Owner.MemberId == query.MemberId)
       .Sum(goal =>
         SavingsInterestPolicy.CalculateCredit(
-          new LadirchenAmount(goal.GetProperty("saved").GetDecimal()),
-          new LadirchenAmount(goal.GetProperty("target").GetDecimal()),
+          new LadirchenAmount(goal.Saved),
+          new LadirchenAmount(goal.Target),
           rate
         )
       );
@@ -59,13 +62,13 @@ public sealed class SimulateSavingsInterestQueryHandler
     return new SavingsInterestSimulation(stage.Id, stage.Position, rate.Value, projectedCredit);
   }
 
-  private async Task<FamilyAggregateSnapshot> RequireSnapshotAsync(
-    SimulateSavingsInterestQuery query,
-    string aggregateType,
-    CancellationToken cancellationToken
+  private static FamilyAggregateSnapshot RequireSnapshot(
+    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots,
+    string aggregateType
   )
   {
-    return await _repository.GetAsync(query.FamilyId, aggregateType, cancellationToken)
-      ?? throw new InvalidOperationException($"The {aggregateType} aggregate has not been initialized.");
+    return snapshots.TryGetValue(aggregateType, out var snapshot)
+      ? snapshot
+      : throw new InvalidOperationException($"The {aggregateType} aggregate has not been initialized.");
   }
 }

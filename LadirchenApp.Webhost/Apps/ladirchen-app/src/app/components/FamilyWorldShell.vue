@@ -213,7 +213,6 @@ import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import AppNavigationIcon from "./AppNavigationIcon.vue";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { CURRENT_TIME_REFRESH_INTERVAL_MS } from "@/shared/runtime-timing";
-import { isInstantInIsoWeek } from "@/domain/shared/zoned-calendar";
 type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
 interface NavigationItem {
   to: string;
@@ -246,23 +245,12 @@ const headerBalance = computed(() =>
   store.viewerRole === "guardian" ? store.balanceFor(store.signedInMemberId) : store.availableBalance,
 );
 const childMembers = computed(() => store.members.filter((member) => member.role === "child"));
-const childrenWeekContributions = computed(() =>
-  store.contributions.filter(
-    (contribution) =>
-      contribution.status === "approved" &&
-      contribution.approvedAt !== undefined &&
-      isInstantInIsoWeek(contribution.approvedAt, new Date(store.currentTimeMilliseconds), store.familyTimeZone) &&
-      childMembers.value.some((child) => child.id === contribution.assigneeId),
-  ),
-);
 const childrenWeekEarned = computed(() =>
-  childrenWeekContributions.value.reduce(
-    (sum, contribution) =>
-      sum + (contribution.earnedReward ?? contribution.reward) + (contribution.earnedRatingBonus ?? 0),
-    0,
-  ),
+  childMembers.value.reduce((sum, child) => sum + store.currentWeekEarnedFor(child.id), 0),
 );
-const childrenWeekCompleted = computed(() => childrenWeekContributions.value.length);
+const childrenWeekCompleted = computed(() =>
+  childMembers.value.reduce((sum, child) => sum + store.currentWeekApprovedContributionCountFor(child.id), 0),
+);
 const childrenTotalAssets = computed(() =>
   childMembers.value.reduce(
     (sum, child) =>
@@ -341,11 +329,9 @@ onMounted(function callback() {
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
 });
 onBeforeUnmount(function callback() {
-
   if (clockTimer !== undefined) {
     window.clearInterval(clockTimer);
   }
-
 });
 watch(isLandscape, resetContentScroll);
 </script>

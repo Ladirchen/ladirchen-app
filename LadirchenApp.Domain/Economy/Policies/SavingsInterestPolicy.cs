@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Domain.Ladi;
@@ -9,50 +7,28 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed class SavingsInterestPolicy
 {
-  public SavingsInterestPolicy(Percentage baseRate, Percentage streakBonus, Percentage completionBonus,
-    Percentage ratingBonus, Percentage maximumRate)
+  public SavingsInterestPolicy(Percentage maximumRate)
   {
-    ArgumentNullException.ThrowIfNull(baseRate);
-    ArgumentNullException.ThrowIfNull(streakBonus);
-    ArgumentNullException.ThrowIfNull(completionBonus);
-    ArgumentNullException.ThrowIfNull(ratingBonus);
     ArgumentNullException.ThrowIfNull(maximumRate);
-    BaseRate = baseRate;
-    StreakBonus = streakBonus;
-    CompletionBonus = completionBonus;
-    RatingBonus = ratingBonus;
+    Rules.Require(
+      maximumRate.Value > 0,
+      DomainError.InvalidValue,
+      "The maximum savings interest rate must be above zero."
+    );
     MaximumRate = maximumRate;
   }
 
-  public static SavingsInterestPolicy Default { get; } = new(new(1), new(0.5m), new(3.5m), new(2.5m), new(8));
-  public Percentage BaseRate
-  {
-    get;
-  }
-  public Percentage StreakBonus
-  {
-    get;
-  }
-  public Percentage CompletionBonus
-  {
-    get;
-  }
-  public Percentage RatingBonus
-  {
-    get;
-  }
+  public static SavingsInterestPolicy Default { get; } = new(new(8));
   public Percentage MaximumRate
   {
     get;
   }
 
-  public Percentage CalculateRate(InterestEvaluationContext context)
+  public Percentage RateFor(PersonalLadiEvaluation evaluation)
   {
-    ArgumentNullException.ThrowIfNull(context);
-    var rate = BaseRate.Value + context.StreakDays * StreakBonus.Value
-      + context.Completion.Value / 100 * CompletionBonus.Value + context.AverageRating / 5 * RatingBonus.Value;
+    ArgumentNullException.ThrowIfNull(evaluation);
 
-    return new(decimal.Round(Math.Min(MaximumRate.Value, rate), 2, MidpointRounding.AwayFromZero));
+    return CalculateRate(evaluation.Stage, MaximumRate);
   }
 
   public static Percentage CalculateRate(LadiStage stage, Percentage maximumRate)
