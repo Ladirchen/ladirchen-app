@@ -209,6 +209,10 @@ export class Client {
       return response.text().then((_responseText) => {
         return throwException("A server side error occurred.", status, _responseText, _headers);
       });
+    } else if (status === 429) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -265,6 +269,10 @@ export class Client {
         result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
         return throwException("A server side error occurred.", status, _responseText, _headers, result409);
       });
+    } else if (status === 429) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -273,44 +281,37 @@ export class Client {
     return Promise.resolve<AuthenticationSessionResponse>(null as any);
   }
 
-  authenticationUsernameExists(username: string, signal?: AbortSignal): Promise<boolean> {
-    let url_ = this.baseUrl + "/api/auth/username-exists?";
-    if (username === undefined || username === null)
-      throw new globalThis.Error("The parameter 'username' must be defined and cannot be null.");
-    else url_ += "username=" + encodeURIComponent("" + username) + "&";
+  signOutAccount(signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/auth/logout";
     url_ = url_.replace(/[?&]$/, "");
 
     let options_: RequestInit = {
-      method: "GET",
+      method: "POST",
       signal,
-      headers: {
-        Accept: "application/json",
-      },
+      headers: {},
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processAuthenticationUsernameExists(_response);
+      return this.processSignOutAccount(_response);
     });
   }
 
-  protected processAuthenticationUsernameExists(response: Response): Promise<boolean> {
+  protected processSignOutAccount(response: Response): Promise<void> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
       response.headers.forEach((v: any, k: any) => (_headers[k] = v));
     }
-    if (status === 200) {
+    if (status === 204) {
       return response.text().then((_responseText) => {
-        let result200: any = null;
-        result200 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as boolean);
-        return result200;
+        return;
       });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
       });
     }
-    return Promise.resolve<boolean>(null as any);
+    return Promise.resolve<void>(null as any);
   }
 
   getFamilyAggregate(
@@ -364,73 +365,6 @@ export class Client {
     } else if (status === 404) {
       return response.text().then((_responseText) => {
         return throwException("A server side error occurred.", status, _responseText, _headers);
-      });
-    } else if (status !== 200 && status !== 204) {
-      return response.text().then((_responseText) => {
-        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-      });
-    }
-    return Promise.resolve<FamilyAggregateSnapshotResponse>(null as any);
-  }
-
-  saveFamilyAggregate(
-    familyId: string,
-    aggregateType: string,
-    request: SaveFamilyAggregateRequest,
-    signal?: AbortSignal,
-  ): Promise<FamilyAggregateSnapshotResponse> {
-    let url_ = this.baseUrl + "/api/families/{familyId}/aggregates/{aggregateType}";
-    if (familyId === undefined || familyId === null)
-      throw new globalThis.Error("The parameter 'familyId' must be defined.");
-    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
-    if (aggregateType === undefined || aggregateType === null)
-      throw new globalThis.Error("The parameter 'aggregateType' must be defined.");
-    url_ = url_.replace("{aggregateType}", encodeURIComponent("" + aggregateType));
-    url_ = url_.replace(/[?&]$/, "");
-
-    const content_ = JSON.stringify(request);
-
-    let options_: RequestInit = {
-      body: content_,
-      method: "PUT",
-      signal,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    };
-
-    return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processSaveFamilyAggregate(_response);
-    });
-  }
-
-  protected processSaveFamilyAggregate(response: Response): Promise<FamilyAggregateSnapshotResponse> {
-    const status = response.status;
-    let _headers: any = {};
-    if (response.headers && response.headers.forEach) {
-      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
-    }
-    if (status === 200) {
-      return response.text().then((_responseText) => {
-        let result200: any = null;
-        result200 =
-          _responseText === ""
-            ? null
-            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyAggregateSnapshotResponse);
-        return result200;
-      });
-    } else if (status === 400) {
-      return response.text().then((_responseText) => {
-        let result400: any = null;
-        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
-        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-      });
-    } else if (status === 409) {
-      return response.text().then((_responseText) => {
-        let result409: any = null;
-        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
-        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
       });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
@@ -520,13 +454,6 @@ export interface RegisterAccountRequest {
   memberId?: string;
   password?: string;
   username?: string;
-}
-
-export interface SaveFamilyAggregateRequest {
-  aggregateType?: string;
-  expectedRevision?: number;
-  state?: any;
-  updatedBy?: string;
 }
 
 export class ApiException extends Error {
