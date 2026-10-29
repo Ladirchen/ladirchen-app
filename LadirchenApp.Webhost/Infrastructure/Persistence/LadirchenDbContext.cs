@@ -1,11 +1,12 @@
 using LadirchenApp.Webhost.Infrastructure.Persistence.Typed;
 using LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities;
 
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace LadirchenApp.Webhost.Infrastructure.Persistence;
 
-public sealed class LadirchenDbContext : DbContext
+public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
 {
   public LadirchenDbContext(DbContextOptions<LadirchenDbContext> options)
     : base(options) { }
@@ -15,6 +16,14 @@ public sealed class LadirchenDbContext : DbContext
     get
     {
       return Set<AuthenticationAccountEntity>();
+    }
+  }
+
+  public DbSet<DataProtectionKey> DataProtectionKeys
+  {
+    get
+    {
+      return Set<DataProtectionKey>();
     }
   }
 

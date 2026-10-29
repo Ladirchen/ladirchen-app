@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +13,7 @@ using LadirchenApp.Webhost.Models;
 using LadirchenApp.Webhost.Realtime;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +34,11 @@ public static partial class WebApplicationExtensions
     string aboutInfoPath = "about"
   )
   {
+    if (ForwardedHeadersConfiguration.IsEnabled(app.Configuration))
+    {
+      app.UseForwardedHeaders();
+    }
+
     app.UseSerilogRequestLogging();
     app.UseNswag();
     app.UseWhenDev(appLogger);
@@ -39,6 +46,7 @@ public static partial class WebApplicationExtensions
     app.UseAuthentication();
     app.UseAuthorization();
 
+    app.MapLadirchenHealthChecks();
     app.MapAboutInfo(aboutInfoPath);
     app.MapAuthenticationApi();
     app.MapFamilyReadModelApi();
@@ -46,6 +54,32 @@ public static partial class WebApplicationExtensions
     app.MapFamilyProjectionApi();
     app.MapHub<FamilyUpdatesHub>("/hubs/family-updates");
     app.MapSinglePageApps(appSettings);
+  }
+
+  public static void ConfigLadierchenDaemonApp(this WebApplication app)
+  {
+    app.UseSerilogRequestLogging();
+    app.MapLadirchenHealthChecks();
+  }
+
+  public static void MapLadirchenHealthChecks(this WebApplication app)
+  {
+    app.MapHealthChecks(
+        "/health/live",
+        new HealthCheckOptions
+        {
+          Predicate = _ => false,
+        }
+      )
+      .AllowAnonymous();
+    app.MapHealthChecks(
+        "/health/ready",
+        new HealthCheckOptions
+        {
+          Predicate = registration => registration.Tags.Contains("ready"),
+        }
+      )
+      .AllowAnonymous();
   }
 
   public static WebApplication UseNswag(this WebApplication aWebApplication)

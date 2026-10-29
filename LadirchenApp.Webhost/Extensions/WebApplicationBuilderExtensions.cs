@@ -12,11 +12,13 @@ using LadirchenApp.Webhost.Infrastructure.Persistence;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using Mumrich.SpaDevMiddleware.Domain.Contracts;
 using Mumrich.SpaDevMiddleware.Extensions;
@@ -27,12 +29,17 @@ namespace LadirchenApp.Webhost.Extensions;
 
 public static class WebApplicationBuilderExtensions
 {
+  private static readonly TimeSpan _webShutdownTimeout = TimeSpan.FromSeconds(25);
+  private static readonly TimeSpan _daemonShutdownTimeout = TimeSpan.FromSeconds(55);
+
   public static void SetupLadierchenWebhost(
     this WebApplicationBuilder webApplicationBuilder,
     ISpaMiddlewareSettings appSettings
   )
   {
-    webApplicationBuilder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
+    ConfigureSerilog(webApplicationBuilder);
+    ConfigureWebEndpoint(webApplicationBuilder);
+    ConfigureForwardedHeaders(webApplicationBuilder);
     ConfigureSpaPaths(webApplicationBuilder, appSettings);
     ConfigureLocalSpaToolPath(webApplicationBuilder);
     webApplicationBuilder.SetupSpaMiddleware(appSettings);
@@ -41,8 +48,157 @@ public static class WebApplicationBuilderExtensions
     {
       options.SerializerOptions.AllowOutOfOrderMetadataProperties = true;
     });
+    ConfigureSharedServices(
+      webApplicationBuilder,
+      requireRedisBackplane: RedisConnectionString.IsRequiredForWeb(
+        webApplicationBuilder.Configuration
+      ),
+      shutdownTimeout: _webShutdownTimeout
+    );
+    ConfigureWebServices(webApplicationBuilder);
+  }
+
+  public static void SetupLadierchenDaemon(this WebApplicationBuilder webApplicationBuilder)
+  {
+    ConfigureSerilog(webApplicationBuilder);
+    webApplicationBuilder.WebHost.UseUrls(
+      HostingEndpointResolver.ResolveDaemonUrl()
+    );
+    ConfigureSharedServices(
+      webApplicationBuilder,
+      requireRedisBackplane: true,
+      shutdownTimeout: _daemonShutdownTimeout
+    );
+    webApplicationBuilder.Services.AddHostedService<FamilyAggregateOutboxDispatcher>();
+    webApplicationBuilder.Services.AddHostedService<WeeklyInterestSettlementService>();
+  }
+
+  public static void SetupLadierchenMigration(this WebApplicationBuilder webApplicationBuilder)
+  {
+    ConfigureSerilog(webApplicationBuilder);
     ConfigurePersistence(webApplicationBuilder);
-    webApplicationBuilder.Services.AddSignalR();
+    ConfigureGracefulShutdown(webApplicationBuilder, _webShutdownTimeout);
+  }
+
+  private static void ConfigureSharedServices(
+    WebApplicationBuilder webApplicationBuilder,
+    bool requireRedisBackplane,
+    TimeSpan shutdownTimeout
+  )
+  {
+    ConfigurePersistence(webApplicationBuilder);
+    webApplicationBuilder.Services.AddLadirchenDataProtection(
+      webApplicationBuilder.Configuration
+    );
+    ConfigureSignalR(webApplicationBuilder, requireRedisBackplane);
+    ConfigureHealthChecks(webApplicationBuilder);
+    ConfigureGracefulShutdown(webApplicationBuilder, shutdownTimeout);
+    ConfigureApplicationServices(webApplicationBuilder);
+  }
+
+  private static void ConfigureApplicationServices(WebApplicationBuilder webApplicationBuilder)
+  {
+    webApplicationBuilder.Services.AddSingleton(TimeProvider.System);
+    webApplicationBuilder.Services.AddScoped<ITypedAggregateUnitOfWork, DatabaseTypedAggregateUnitOfWork>();
+    webApplicationBuilder.Services.AddScoped<IFamilyRepository, DatabaseFamilyRepository>();
+    webApplicationBuilder.Services.AddScoped<IFamilyEconomyRepository, DatabaseFamilyEconomyRepository>();
+    webApplicationBuilder.Services.AddScoped<IFamilyProgressionRepository, DatabaseFamilyProgressionRepository>();
+    webApplicationBuilder.Services.AddScoped<IHouseCustomizationRepository, DatabaseHouseCustomizationRepository>();
+    webApplicationBuilder.Services.AddScoped<
+      IFamilyCommandExecutionCoordinator,
+      PostgreSqlFamilyCommandExecutionCoordinator
+    >();
+    webApplicationBuilder.Services.AddScoped<AuthenticationService>();
+    webApplicationBuilder.Services.AddScoped<CurrentAuthenticationSessionReader>();
+    webApplicationBuilder.Services.AddScoped<FamilyMembershipOutboxWriter>();
+    webApplicationBuilder.Services.AddScoped<MemberAccountService>();
+    webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
+    webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();
+    webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<
+      ICommandHandler<SettleAvailableWeeklyInterestCommand, WeeklyInterestSettlementResult>,
+      SettleAvailableWeeklyInterestCommandHandler
+    >();
+    webApplicationBuilder.Services.AddScoped<SimulateSavingsInterestQueryHandler>();
+  }
+
+  private static void ConfigureForwardedHeaders(WebApplicationBuilder webApplicationBuilder)
+  {
+    if (ForwardedHeadersConfiguration.IsEnabled(webApplicationBuilder.Configuration))
+    {
+      webApplicationBuilder.Services.Configure<ForwardedHeadersOptions>(
+        ForwardedHeadersConfiguration.Configure
+      );
+    }
+  }
+
+  private static void ConfigureGracefulShutdown(
+    WebApplicationBuilder webApplicationBuilder,
+    TimeSpan shutdownTimeout
+  )
+  {
+    webApplicationBuilder.Services.Configure<HostOptions>(options =>
+    {
+      options.ServicesStopConcurrently = true;
+      options.ShutdownTimeout = shutdownTimeout;
+    });
+  }
+
+  private static void ConfigureHealthChecks(WebApplicationBuilder webApplicationBuilder)
+  {
+    webApplicationBuilder.Services
+      .AddHealthChecks()
+      .AddDbContextCheck<LadirchenDbContext>("postgresql", tags: ["ready"]);
+  }
+
+  private static void ConfigurePersistence(WebApplicationBuilder webApplicationBuilder)
+  {
+    var connectionString = PostgreSqlConnectionString.Resolve(webApplicationBuilder.Configuration);
+
+    webApplicationBuilder.Services.AddDbContext<LadirchenDbContext>(options =>
+      options.UseNpgsql(connectionString)
+    );
+  }
+
+  private static void ConfigureSerilog(WebApplicationBuilder webApplicationBuilder)
+  {
+    webApplicationBuilder.Host.UseSerilog((context, config) =>
+      config.ReadFrom.Configuration(context.Configuration)
+    );
+  }
+
+  private static void ConfigureSignalR(
+    WebApplicationBuilder webApplicationBuilder,
+    bool requireRedisBackplane
+  )
+  {
+    var signalR = webApplicationBuilder.Services.AddSignalR();
+    var redis = RedisConnectionString.Resolve(
+      webApplicationBuilder.Configuration,
+      requireRedisBackplane
+    );
+
+    if (redis is not null)
+    {
+      signalR.AddStackExchangeRedis(options =>
+      {
+        options.Configuration = redis;
+      });
+    }
+  }
+
+  private static void ConfigureWebEndpoint(WebApplicationBuilder webApplicationBuilder)
+  {
+    var webUrl = HostingEndpointResolver.ResolveWebUrl(webApplicationBuilder.Configuration);
+
+    if (webUrl is not null)
+    {
+      webApplicationBuilder.WebHost.UseUrls(webUrl);
+    }
+  }
+
+  private static void ConfigureWebServices(WebApplicationBuilder webApplicationBuilder)
+  {
     webApplicationBuilder.Services
       .AddAuthentication(FamilySessionIdentity.AuthenticationScheme)
       .AddCookie(
@@ -90,30 +246,6 @@ public static class WebApplicationBuilderExtensions
         )
       );
     });
-    webApplicationBuilder.Services.AddSingleton(TimeProvider.System);
-    webApplicationBuilder.Services.AddScoped<ITypedAggregateUnitOfWork, DatabaseTypedAggregateUnitOfWork>();
-    webApplicationBuilder.Services.AddScoped<IFamilyRepository, DatabaseFamilyRepository>();
-    webApplicationBuilder.Services.AddScoped<IFamilyEconomyRepository, DatabaseFamilyEconomyRepository>();
-    webApplicationBuilder.Services.AddScoped<IFamilyProgressionRepository, DatabaseFamilyProgressionRepository>();
-    webApplicationBuilder.Services.AddScoped<IHouseCustomizationRepository, DatabaseHouseCustomizationRepository>();
-    webApplicationBuilder.Services.AddScoped<
-      IFamilyCommandExecutionCoordinator,
-      PostgreSqlFamilyCommandExecutionCoordinator
-    >();
-    webApplicationBuilder.Services.AddScoped<AuthenticationService>();
-    webApplicationBuilder.Services.AddScoped<CurrentAuthenticationSessionReader>();
-    webApplicationBuilder.Services.AddScoped<FamilyMembershipOutboxWriter>();
-    webApplicationBuilder.Services.AddScoped<MemberAccountService>();
-    webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
-    webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();
-    webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
-    webApplicationBuilder.Services.AddScoped<
-      ICommandHandler<SettleAvailableWeeklyInterestCommand, WeeklyInterestSettlementResult>,
-      SettleAvailableWeeklyInterestCommandHandler
-    >();
-    webApplicationBuilder.Services.AddScoped<SimulateSavingsInterestQueryHandler>();
-    webApplicationBuilder.Services.AddHostedService<FamilyAggregateOutboxDispatcher>();
-    webApplicationBuilder.Services.AddHostedService<WeeklyInterestSettlementService>();
   }
 
   private static void ConfigureSpaPaths(
@@ -132,15 +264,6 @@ public static class WebApplicationBuilderExtensions
         );
       }
     }
-  }
-
-  private static void ConfigurePersistence(WebApplicationBuilder webApplicationBuilder)
-  {
-    var connectionString = PostgreSqlConnectionString.Resolve(webApplicationBuilder.Configuration);
-
-    webApplicationBuilder.Services.AddDbContext<LadirchenDbContext>(options =>
-      options.UseNpgsql(connectionString)
-    );
   }
 
   private static void ConfigureLocalSpaToolPath(WebApplicationBuilder webApplicationBuilder)

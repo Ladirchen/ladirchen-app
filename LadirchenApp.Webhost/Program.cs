@@ -14,16 +14,33 @@ public static class Program
 {
   private static async Task Main(string[] args)
   {
+    var processRole = ApplicationProcessRoleParser.Parse(args);
+    var hostArguments = ApplicationProcessRoleParser.RemoveRoleArguments(args);
+
     await LoggerHelper.RunWithSerilogAsync(async logger =>
     {
-      var builder = WebApplication.CreateBuilder(args);
-      var appSettings = builder.Configuration.Get<AppSettings>();
+      var builder = WebApplication.CreateBuilder(hostArguments);
+      AppSettings? appSettings = null;
 
-      ArgumentNullException.ThrowIfNull(appSettings);
+      if (processRole == ApplicationProcessRole.Web)
+      {
+        appSettings = builder.Configuration.Get<AppSettings>();
+        ArgumentNullException.ThrowIfNull(appSettings);
+        builder.SetupLadierchenWebhost(appSettings);
+      }
+      else if (processRole == ApplicationProcessRole.Daemon)
+      {
+        builder.SetupLadierchenDaemon();
+      }
+      else
+      {
+        builder.SetupLadierchenMigration();
+      }
 
-      builder.SetupLadierchenWebhost(appSettings);
-
-      logger.Information("*** Setup for Ladirchen webhost complete, building and configuring application..§.");
+      logger.Information(
+        "*** Setup for Ladirchen {ProcessRole} process complete, building application...",
+        processRole
+      );
 
       var app = builder.Build();
 
@@ -32,9 +49,27 @@ public static class Program
         await app.MigrateLadirchenDatabaseAsync();
       }
 
-      app.ConfigLadierchenWebhostApp(appSettings, logger);
+      if (processRole == ApplicationProcessRole.Migration)
+      {
+        logger.Information("*** Ladirchen database migration complete.");
 
-      logger.Information("*** Configuration for Ladirchen webhost complete, launching application...");
+        return;
+      }
+
+      if (processRole == ApplicationProcessRole.Web)
+      {
+        ArgumentNullException.ThrowIfNull(appSettings);
+        app.ConfigLadierchenWebhostApp(appSettings, logger);
+      }
+      else
+      {
+        app.ConfigLadierchenDaemonApp();
+      }
+
+      logger.Information(
+        "*** Configuration for Ladirchen {ProcessRole} process complete, launching application...",
+        processRole
+      );
 
       await app.RunAsync();
     });
