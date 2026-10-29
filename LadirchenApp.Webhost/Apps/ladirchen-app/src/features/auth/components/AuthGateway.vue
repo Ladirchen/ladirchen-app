@@ -63,13 +63,6 @@
           <span>{{ loginSubmitLabel }}</span>
           <i aria-hidden="true">→</i>
         </button>
-        <div class="demo-login">
-          <v-icon icon="i-mdi:flask-outline" />
-          <span>
-            <strong>{{ t("auth.login.demoTitle") }}</strong>
-            <small>{{ t("auth.login.demoHint", { users: demoAccessLabel }) }}</small>
-          </span>
-        </div>
       </form>
 
       <form v-else class="auth-form mt-5" @submit.prevent="register">
@@ -142,7 +135,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authenticationGateway } from "@/app/composition-root";
 import { createDomainId } from "@/domain/shared/identifiers";
-import { AUTH_INPUT_RULES, DEMO_CREDENTIALS } from "@/features/auth/auth-config";
+import { AUTH_INPUT_RULES } from "@/features/auth/auth-config";
 import { useFamilyWorldStore } from "@/stores/family-world";
 type AuthMode = "login" | "register";
 const store = useFamilyWorldStore();
@@ -159,13 +152,6 @@ const showLoginPassword = ref(false);
 const showRegisterPassword = ref(false);
 const submitting = ref(false);
 const errorMessage = ref("");
-const demoAccessLabel = computed(function callback() {
-  const names = store.members
-    .slice(0, AUTH_INPUT_RULES.demoMemberCount)
-    .map((member) => `„${member.nickname || member.name}“`);
-
-  return names.length > 1 ? `${names[0]} / ${names[1]}` : names[0] || t("auth.login.demoFallback");
-});
 const registrationIsValid = computed(
   () =>
     familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength &&
@@ -195,9 +181,7 @@ function setMode(nextMode: AuthMode) {
   errorMessage.value = "";
 }
 async function login() {
-
   if (submitting.value) {
-
     return;
   }
 
@@ -217,35 +201,13 @@ async function login() {
       return;
     }
 
-    const normalizedUsername = loginUsername.value.trim().toLocaleLowerCase("de");
-    const demoMember = store.members.find(
-      (member) =>
-        member.name.trim().toLocaleLowerCase("de") === normalizedUsername ||
-        member.nickname?.trim().toLocaleLowerCase("de") === normalizedUsername,
-    );
-
-    if (loginPassword.value === DEMO_CREDENTIALS.password && demoMember && store.signInCurrentFamily(demoMember.id)) {
-
-      return;
-    }
-
     errorMessage.value = t("auth.login.credentialsError");
-
   } finally {
     submitting.value = false;
   }
-
 }
 async function register() {
-
   if (submitting.value || !registrationIsValid.value) {
-
-    return;
-  }
-
-  if (await authenticationGateway.usernameExists(registerUsername.value)) {
-    errorMessage.value = t("auth.register.usernameExists");
-
     return;
   }
 
@@ -258,20 +220,22 @@ async function register() {
     await authenticationGateway.register({
       familyId,
       familyName: familyName.value,
+      guardianName: guardianName.value,
       memberId: guardianId,
       password: registerPassword.value,
       username: registerUsername.value,
     });
-    store.createRegisteredFamily(familyId, guardianId, guardianName.value);
 
+    const signedIn = await store.signInToFamily(familyId, guardianId);
+
+    if (!signedIn) {
+      throw new Error("The registered family could not be loaded.");
+    }
   } catch {
     errorMessage.value = t("auth.register.createError");
-
   } finally {
-
     submitting.value = false;
   }
-
 }
 </script>
 
@@ -451,31 +415,6 @@ async function register() {
   box-shadow:
     0 rem(5) 0 var(--lad-color-primary-deep),
     0 rem(10) rem(18) color-mix(in srgb, var(--lad-color-primary-deep) 18%, transparent);
-}
-.demo-login {
-  margin-top: rem(14);
-  padding: rem(10) rem(11);
-  --uno: d-flex align-center;
-  gap: rem(9);
-  color: var(--lad-color-accent-warm-deep);
-  border: rem(1) solid color-mix(in srgb, var(--lad-color-reward-accent) 18%, transparent);
-  border-radius: rem(14);
-  background: var(--lad-color-reward-soft);
-}
-.demo-login > :deep(.v-icon) {
-  color: var(--lad-color-reward-shadow);
-}
-.demo-login strong,
-.demo-login small {
-  --uno: d-block;
-}
-.demo-login strong {
-  font-size: rem(9);
-}
-.demo-login small {
-  margin-top: rem(1);
-  font-size: 0.5rem;
-  line-height: 1.35;
 }
 @include respond-down(phone) {
   .auth-card {

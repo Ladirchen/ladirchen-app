@@ -143,11 +143,8 @@ import { useI18n } from "vue-i18n";
 
 import SavingsInterestSimulator from "./SavingsInterestSimulator.vue";
 import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import type { ViewerRole } from "@/domain/family/types";
-
-const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
 
 const store = useFamilyWorldStore();
 const { t } = useI18n();
@@ -164,7 +161,7 @@ const weekAlertMessage = computed(() =>
     ? t("profile.development.week.ready", { energy: store.familyEnergy })
     : t("profile.development.week.missing", {
         energy: store.familyEnergy,
-        missing: minimumHouseEnergyPercent - store.familyEnergy,
+        missing: store.minimumSuccessfulWeekEnergy - store.familyEnergy,
       }),
 );
 const resultTitle = computed(() =>
@@ -180,21 +177,17 @@ const resultDescription = computed(() =>
 );
 
 function memberRoleLabel(role: ViewerRole) {
-
   return t(role === "guardian" ? "profile.development.session.guardian" : "profile.development.session.child");
 }
-function finishWeek(successful: boolean) {
+async function finishWeek(successful: boolean) {
   lastWeekSuccessful.value = successful;
 
   if (successful) {
-
-    if (!store.completeWeekDemo()) {
-
+    if (!(await store.completeWeekDemo())) {
       return;
     }
-
   } else {
-    store.failWeekDemo();
+    await store.failWeekDemo();
   }
 
   revealDialog.value = true;

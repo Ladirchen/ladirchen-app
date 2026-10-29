@@ -58,6 +58,7 @@ function hasValidResult(value: Record<string, unknown>): boolean {
         value.stars >= CONTRIBUTION_RATING.minimum &&
         value.stars <= CONTRIBUTION_RATING.maximum)) &&
     isOptionalNonNegativeNumber(value.earnedReward) &&
+    isOptionalNonNegativeNumber(value.projectedReward) &&
     isOptionalNonNegativeNumber(value.earnedRatingBonus) &&
     isOptionalPositiveNumber(value.earnedPromotionMultiplier) &&
     (value.approvedAt === undefined || isIsoDateTime(value.approvedAt)) &&
@@ -101,7 +102,8 @@ function isPromotion(value: unknown): value is Promotion {
     isClockTime(value.deadline) &&
     isFiniteNumber(value.teamworkBonus) &&
     value.teamworkBonus >= 0 &&
-    typeof value.active === "boolean"
+    typeof value.active === "boolean" &&
+    isOptionalBoolean(value.available)
   );
 }
 export function isContributionsState(value: unknown): value is ContributionsState {
@@ -109,8 +111,17 @@ export function isContributionsState(value: unknown): value is ContributionsStat
     !isRecord(value) ||
     !isArrayOf(value.contributions, isContribution) ||
     !hasUniqueIds(value.contributions) ||
+    (value.perfectRatingBonusPercent !== undefined &&
+      (!isFiniteNumber(value.perfectRatingBonusPercent) ||
+        value.perfectRatingBonusPercent < 0 ||
+        value.perfectRatingBonusPercent > 100)) ||
     !isArrayOf(value.promotions, isPromotion) ||
-    !hasUniqueIds(value.promotions)
+    !hasUniqueIds(value.promotions) ||
+    (value.todayEarnedByMember !== undefined &&
+      (!isRecord(value.todayEarnedByMember) ||
+        !Object.entries(value.todayEarnedByMember).every(
+          ([memberId, amount]) => isFamilyMemberId(memberId) && isFiniteNumber(amount) && amount >= 0,
+        )))
   ) {
     return false;
   }

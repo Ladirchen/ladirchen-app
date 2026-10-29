@@ -4,10 +4,10 @@ import type {
   HouseExteriorAssetId,
   HouseExteriorBackgroundAssetId,
   HouseExteriorHouseAssetId,
+  HouseEnergyVisualLevel,
   HouseStageId,
   HouseThemeId,
 } from "@/domain/house";
-import { resolveHouseEnergyVisualLevel } from "@/domain/house";
 const modules = import.meta.glob("../../../assets/room-designs/*.webp", { import: "default" }) as AssetGlobModules;
 // Legacy/renamed art files: these ids don't follow the "<id>.webp" naming convention.
 const HOUSE_EXTERIOR_ASSET_FILE_NAMES = {
@@ -66,11 +66,12 @@ export const getHouseExteriorAssetUrl = createLazyAssetLoader<HouseExteriorAsset
   modules,
   (id) => HOUSE_EXTERIOR_ASSET_FILE_NAMES[id],
 );
-export function houseExteriorBackgroundAssetId(themeId: HouseThemeId, energy: number): HouseExteriorBackgroundAssetId {
-
-  return `${themeId}-energy-${resolveHouseEnergyVisualLevel(energy)}-exterior-background`;
+export function houseExteriorBackgroundAssetId(
+  themeId: HouseThemeId,
+  visualLevel: HouseEnergyVisualLevel,
+): HouseExteriorBackgroundAssetId {
+  return `${themeId}-energy-${visualLevel}-exterior-background`;
 }
 export function houseExteriorHouseAssetId(stageId: HouseStageId, themeId: HouseThemeId): HouseExteriorHouseAssetId {
-
   return `${stageId}-${themeId}-house`;
 }

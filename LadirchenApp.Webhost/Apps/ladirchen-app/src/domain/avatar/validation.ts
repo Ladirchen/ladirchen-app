@@ -11,11 +11,9 @@ import { AVATAR_OUTFIT_CATALOG } from "./outfit-catalog";
 import type { AvatarAppearance } from "./appearance";
 import type { AvatarHairColorId, AvatarOutfitColorId, AvatarSkinToneId } from "./color-catalog";
 function isRecord(value: unknown): value is Record<string, unknown> {
-
   return typeof value === "object" && value !== null;
 }
 function isOption<TOption extends string>(value: unknown, options: readonly TOption[]): value is TOption {
-
   return typeof value === "string" && options.some((option) => option === value);
 }
 function catalogIds<Id extends string>(
@@ -23,23 +21,18 @@ function catalogIds<Id extends string>(
     readonly id: Id;
   }[],
 ): Id[] {
-
   return catalog.map((entry) => entry.id);
 }
 export function isAvatarSkinToneId(value: unknown): value is AvatarSkinToneId {
-
   return isOption(value, Object.keys(avatarSkinToneColors));
 }
 export function isAvatarHairColorId(value: unknown): value is AvatarHairColorId {
-
   return isOption(value, Object.keys(avatarHairColors));
 }
 export function isAvatarOutfitColorId(value: unknown): value is AvatarOutfitColorId {
-
   return isOption(value, Object.keys(avatarOutfitColors));
 }
 export function isAvatarAppearance(value: unknown): value is AvatarAppearance {
-
   return (
     isRecord(value) &&
     isOption(value.age, AVATAR_AGES) &&
@@ -53,5 +46,22 @@ export function isAvatarAppearance(value: unknown): value is AvatarAppearance {
     isAvatarSkinToneId(value.skinToneId) &&
     isAvatarHairColorId(value.hairColorId) &&
     isAvatarOutfitColorId(value.outfitColorId)
+  );
+}
+
+export function isAvatarAppearanceStructure(value: unknown): value is AvatarAppearance {
+  return (
+    isRecord(value) &&
+    typeof value.age === "string" &&
+    typeof value.face === "string" &&
+    typeof value.faceShape === "string" &&
+    typeof value.hair === "string" &&
+    typeof value.outfit === "string" &&
+    typeof value.accessoryId === "string" &&
+    typeof value.funAccessoryId === "string" &&
+    typeof value.seasonalAccessoryId === "string" &&
+    typeof value.skinToneId === "string" &&
+    typeof value.hairColorId === "string" &&
+    typeof value.outfitColorId === "string"
   );
 }

@@ -183,13 +183,13 @@ public sealed class AvatarSteps
   {
     return new AvatarAppearance(
       profile == AvatarProfile.Child ? "child" : "adult",
-      "light",
-      "round",
-      "smile",
+      "skin-light",
+      "soft",
+      "happy",
       "short",
-      "brown",
-      profile == AvatarProfile.Child ? "play" : "casual",
-      "blue",
+      "hair-brown",
+      profile == AvatarProfile.Child ? "hoodie" : "shirt",
+      "outfit-blue",
       "none",
       "none",
       "none"

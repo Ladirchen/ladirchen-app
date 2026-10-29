@@ -165,6 +165,52 @@
       </TransitionGroup>
     </template>
 
+    <section v-if="visibleSavingsVouchers.length > 0" class="mt-6">
+      <SectionHeader :description="t('wishes.voucher.description')" :title="t('wishes.voucher.title')" />
+      <div class="goal-grid">
+        <BrandedCard v-for="voucher in visibleSavingsVouchers" :key="voucher.id" class="pa-4" tone="wishes">
+          <div class="d-flex align-center justify-space-between ga-3">
+            <div>
+              <p class="eyebrow mb-1">{{ t(`wishes.voucher.status.${voucher.status}`) }}</p>
+              <strong>{{ voucherGoalTitle(voucher.goalId) }}</strong>
+              <p class="text-caption mt-1">
+                {{ t("wishes.voucher.amount", { amount: voucher.amount }) }}
+              </p>
+            </div>
+            <v-icon color="warning" icon="i-mdi:ticket-confirmation-outline" size="38" />
+          </div>
+          <p v-if="voucher.participantIds.length > 0" class="text-caption mt-3">
+            {{
+              t("wishes.voucher.consents", {
+                agreed: voucher.consentedMemberIds.length,
+                total: voucher.participantIds.length,
+              })
+            }}
+          </p>
+          <div class="d-flex ga-2 mt-3">
+            <v-btn
+              v-if="voucher.consentableByMemberIds.includes(store.signedInMemberId)"
+              color="primary"
+              size="small"
+              variant="tonal"
+              @click="consentToVoucher(voucher.id)"
+            >
+              {{ t("wishes.voucher.consent") }}
+            </v-btn>
+            <v-btn
+              v-if="voucher.redeemableByMemberIds.includes(store.signedInMemberId)"
+              color="success"
+              size="small"
+              variant="flat"
+              @click="redeemVoucher(voucher.id)"
+            >
+              {{ t("wishes.voucher.redeem") }}
+            </v-btn>
+          </div>
+        </BrandedCard>
+      </div>
+    </section>
+
     <v-dialog v-model="saveDialog" max-width="420">
       <v-card class="save-dialog-card" :class="{ 'is-saving': saveMotion }" rounded="xl">
         <header class="save-dialog-header">
@@ -226,7 +272,12 @@
       </v-card>
     </v-dialog>
 
-    <SavingGoalDialog v-model="goalDialog" @submit="addGoal" />
+    <SavingGoalDialog
+      v-model="goalDialog"
+      :family-goal="newGoalOwnerId === 'family'"
+      :family-members="store.members"
+      @submit="addGoal"
+    />
 
     <v-dialog v-model="supportDialog" max-width="420" :persistent="supportSending">
       <v-card
@@ -303,12 +354,14 @@ const {
   activeTab,
   addGoal,
   canCreatePersonalGoal,
+  consentToVoucher,
   depositedAmount,
   formatInterestRate,
   giveSupport,
   goalBalanceLabel,
   goalDialog,
   maxAssignable,
+  newGoalOwnerId,
   openGoalDialog,
   openSave,
   openSupport,
@@ -316,6 +369,7 @@ const {
   personalGoalOwnerId,
   personalGoals,
   progress,
+  redeemVoucher,
   saveAmount,
   saveDialog,
   saveMotion,
@@ -328,6 +382,8 @@ const {
   supportMaximum,
   supportSending,
   visibilityLabel,
+  visibleSavingsVouchers,
+  voucherGoalTitle,
   visibleFamilyGoals,
   weeklyInterestForGoal,
   wishViewOptions,
@@ -350,7 +406,7 @@ const personalGoalCards = computed(() =>
       isOwn,
       ownerLabel: ownerName(goal.ownerId),
       visibilityLabel: personalGoalVisibilityLabel(goal),
-      canSave: isOwn && store.viewerRole === "child",
+      canSave: (goal.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0) > 0,
       deposited: depositedAmount(goal),
       weeklyInterest: weeklyInterestForGoal(goal),
       interestEarned: goal.interestEarned ?? 0,
@@ -359,7 +415,6 @@ const personalGoalCards = computed(() =>
     };
   }),
 );
-const canGiftToFamilyGoals = computed(() => store.viewerRole === "child" || store.permissions.canSupportChildGoals);
 const familyGoalCards = computed(() =>
   visibleFamilyGoals.value.map((goal) => ({
     goal,
@@ -367,7 +422,7 @@ const familyGoalCards = computed(() =>
     progress: progress(goal.saved, goal.target),
     balanceLabel: goalBalanceLabel(goal),
     cheerAriaLabel: t("wishes.cheerAria", { title: goal.title }),
-    canGift: goal.saved < goal.target && canGiftToFamilyGoals.value,
+    canGift: (goal.commandLimits?.[store.signedInMemberId]?.maximumSupportAmount ?? 0) > 0,
   })),
 );
 const saveSliderMax = computed(() => Math.max(1, maxAssignable.value));
@@ -375,7 +430,6 @@ const supportSliderMax = computed(() => Math.max(1, supportMaximum.value));
 const canSubmitSave = computed(() => saveAmount.value > 0 && !saveMotion.value);
 const canSubmitSupport = computed(() => supportMaximum.value > 0 && supportAmount.value > 0 && !supportSending.value);
 function personalGoalVisibilityLabel(goal: SavingGoal) {
-
   return goal.shared ? t("wishes.shared") : visibilityLabel(goal.visibility);
 }
 </script>

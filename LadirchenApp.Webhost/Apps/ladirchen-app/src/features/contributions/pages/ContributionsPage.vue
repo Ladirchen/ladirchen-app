@@ -280,7 +280,7 @@
                 <strong class="bonus-value">{{ store.perfectRatingBonusPercent }} %</strong>
               </div>
               <v-slider
-                v-model="store.perfectRatingBonusPercent"
+                :model-value="store.perfectRatingBonusPercent"
                 class="mt-3"
                 color="warning"
                 hide-details
@@ -288,6 +288,7 @@
                 min="0"
                 step="1"
                 thumb-label
+                @end="store.setPerfectRatingBonusPercent(Number($event))"
               />
             </div>
           </div>
@@ -667,7 +668,6 @@ function toggleEmptyStateFilter() {
   filter.value = "all";
 }
 function managedContributionDescription(contribution: Contribution) {
-
   return contribution.kind === "basic"
     ? t("contributions.manage.energyPoints", { value: contribution.energy })
     : t("contributions.kind.extra");

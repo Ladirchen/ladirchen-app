@@ -60,6 +60,7 @@
           class="mb-5"
           :completed-weeks="store.completedWeeklyStreak"
           :house-level="store.houseLevel"
+          :minimum-house-energy-percent="store.minimumSuccessfulWeekEnergy"
           :show-evolution="false"
         />
 
@@ -132,14 +133,11 @@ const children = computed(() => store.members.filter((member) => member.role ===
 // 100 % energy maps to a full 360deg ring.
 const energyOrbStyle = computed(() => ({ "--energy": `${store.familyEnergy * 3.6}deg` }));
 const energyState = computed(function callback() {
-
   if (store.familyEnergy === 100) {
-
     return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
   }
 
-  if (store.familyEnergy >= 60) {
-
+  if (store.familyEnergy >= store.minimumSuccessfulWeekEnergy) {
     return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
   }
 
@@ -148,7 +146,7 @@ const energyState = computed(function callback() {
 const dailyGoalStatus = computed(() =>
   store.houseMeetsMinimumEnergy
     ? t("world.energy.reached")
-    : t("world.energy.remaining", { value: 60 - store.familyEnergy }),
+    : t("world.energy.remaining", { value: store.minimumSuccessfulWeekEnergy - store.familyEnergy }),
 );
 const guideSteps = computed(() => [
   {
@@ -169,15 +167,12 @@ const guideSteps = computed(() => [
   },
 ]);
 function baseContributions(childId: FamilyMemberId) {
-
   return store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
 }
 function baseCount(childId: FamilyMemberId) {
-
   return baseContributions(childId).length;
 }
 function approvedCount(childId: FamilyMemberId) {
-
   return baseContributions(childId).filter((item) => item.status === "approved").length;
 }
 function startEnergyGuide() {
@@ -185,7 +180,6 @@ function startEnergyGuide() {
   const step = guideSteps.value[guideStep.value];
 
   if (!step) {
-
     return;
   }
 
@@ -199,19 +193,16 @@ function startEnergyGuide() {
   });
 }
 function close() {
-
   return emit("update:modelValue", false);
 }
 watch(
   () => props.modelValue,
   (isOpen) => {
-
     if (guideStartTimer !== undefined) {
       window.clearTimeout(guideStartTimer);
     }
 
     if (!isOpen) {
-
       return;
     }
 
@@ -226,7 +217,6 @@ onMounted(() => {
   unregisterGuideAction = ladiGuideController.registerAction("house-energy:next", startEnergyGuide);
 });
 onUnmounted(function callback() {
-
   if (guideStartTimer !== undefined) {
     window.clearTimeout(guideStartTimer);
   }

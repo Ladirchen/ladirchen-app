@@ -1,6 +1,7 @@
 import type { AvatarAppearance } from "@/domain/avatar";
 import type { HexColor } from "@/domain/house";
 import type { FamilyMemberId, FamilyPetId } from "@/domain/shared/identifiers";
+import type { FamilyPermissions } from "./permissions";
 
 export type { IanaTimeZone } from "./time-zone";
 
@@ -22,6 +23,7 @@ export interface FamilyMember {
   email?: string;
   invitationPending?: boolean;
   appearance?: AvatarAppearance;
+  permissions?: FamilyPermissions;
 }
 
 export interface FamilyPet {

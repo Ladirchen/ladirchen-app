@@ -11,16 +11,16 @@ public sealed class AvatarCatalog
   private static readonly IReadOnlyDictionary<string, string[]> Values = new Dictionary<string, string[]>
   {
     ["age"] = ["child", "adult", "senior"],
-    ["skin tone"] = ["light", "medium", "dark"],
-    ["face shape"] = ["round", "oval"],
-    ["face"] = ["smile", "happy"],
-    ["hair"] = ["short", "long", "curly"],
-    ["hair color"] = ["brown", "black", "blonde"],
-    ["outfit"] = ["play", "casual", "formal"],
-    ["outfit color"] = ["blue", "green", "red"],
-    ["accessory"] = ["none", "glasses"],
-    ["fun accessory"] = ["none", "party-hat"],
-    ["seasonal accessory"] = ["none", "winter-hat"],
+    ["skin tone"] = ["skin-light", "skin-medium", "skin-tan", "skin-deep"],
+    ["face shape"] = ["soft", "round", "oval", "angular"],
+    ["face"] = ["happy", "freckles", "wink", "surprised", "confident", "dreamy", "silly", "sparkle"],
+    ["hair"] = ["short", "waves", "ponytail", "curls", "afro", "bob", "braids", "bun", "space-buns", "undercut"],
+    ["hair color"] = ["hair-black", "hair-brown", "hair-auburn", "hair-blonde", "hair-purple", "hair-blue", "hair-gray", "hair-silver", "hair-white"],
+    ["outfit"] = ["superhero", "dinosaur", "monster", "vampire", "shark", "robot", "space", "fairy", "hoodie", "overalls", "explorer", "party", "sporty", "pajamas", "shirt", "blouse", "cardigan", "blazer"],
+    ["outfit color"] = ["outfit-blue", "outfit-green", "outfit-coral", "outfit-gold", "outfit-purple", "outfit-navy", "outfit-emerald", "outfit-lavender", "outfit-mint", "outfit-ocean", "outfit-rose", "outfit-slate"],
+    ["accessory"] = ["none", "glasses", "headphones", "cat-ears", "cap", "crown", "star-glasses", "flower-crown", "propeller-cap"],
+    ["fun accessory"] = ["none", "mustache", "whiskers", "rainbow", "clown-nose", "pirate", "monster-horns"],
+    ["seasonal accessory"] = ["none", "witch", "pumpkin", "santa", "reindeer", "bat", "elf", "snow-monster"],
   };
 
   public IReadOnlyList<string> Options(string part, AvatarProfile profile)
@@ -37,7 +37,23 @@ public sealed class AvatarCatalog
 
     if (part == "outfit")
     {
-      return profile == AvatarProfile.Child ? ["play"] : ["casual", "formal"];
+      return profile == AvatarProfile.Child
+        ? ["superhero", "dinosaur", "monster", "vampire", "shark", "robot", "space", "fairy", "hoodie", "overalls", "explorer", "party", "sporty", "pajamas"]
+        : ["explorer", "party", "sporty", "shirt", "blouse", "cardigan", "blazer"];
+    }
+
+    if (part == "hair")
+    {
+      return profile == AvatarProfile.Child
+        ? Values[part]
+        : ["short", "waves", "ponytail", "curls", "afro", "bob", "bun", "undercut"];
+    }
+
+    if (part == "hair color")
+    {
+      return profile == AvatarProfile.Child
+        ? ["hair-black", "hair-brown", "hair-auburn", "hair-blonde", "hair-purple", "hair-blue"]
+        : ["hair-black", "hair-brown", "hair-auburn", "hair-blonde", "hair-gray", "hair-silver", "hair-white"];
     }
 
     return options;

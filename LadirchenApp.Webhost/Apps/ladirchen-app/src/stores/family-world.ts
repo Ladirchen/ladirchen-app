@@ -1,23 +1,14 @@
 import { defineStore } from "pinia";
 import { inject } from "vue";
 import type { InjectionKey } from "vue";
-import {
-  calculateAverageEnergy,
-  calculateContributionProgress,
-  MINIMUM_HOUSE_ENERGY_PERCENT,
-} from "@/domain/contributions/energy";
-import { FURNITURE_SETS, HOUSE_ROOMS } from "@/domain/house/catalog";
+import { HOUSE_ROOMS } from "@/domain/house/catalog";
 import type { FurnitureSetId } from "@/domain/house";
-import { resolveFamilyPermissions } from "@/domain/family/permissions";
+import { NO_FAMILY_PERMISSIONS } from "@/domain/family/permissions";
 import type { FamilyPermissions } from "@/domain/family/permissions";
-import { isPromotionAvailable } from "@/domain/contributions/promotions";
-import { familyParticipationInterestStrategy } from "@/domain/savings/interest";
 import type { Contribution, WorldEffect } from "@/domain/contributions/types";
 import type { FamilyMember } from "@/domain/family/types";
 import type { SavingGoal } from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
-import { isSameCalendarDay } from "@/domain/shared/zoned-calendar";
-import { currentWeekDaysFromContributions } from "@/domain/contributions/weekly-progress";
 import { contributionsActions } from "@/stores/family-world-actions/contributions-actions";
 import { familyActions } from "@/stores/family-world-actions/family-actions";
 import { homeActions } from "@/stores/family-world-actions/home-actions";
@@ -27,49 +18,40 @@ import { shopActions } from "@/stores/family-world-actions/shop-actions";
 import { createFamilyWorldState } from "@/stores/family-world-state";
 import type { FamilyWorldInitialDataFactory } from "@/application/ports/family-world-initial-data";
 export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorldInitialDataFactory) {
-
   return defineStore("ladirchenFamilyWorld", {
     state(this: void) {
-
       return createFamilyWorldState(initialDataFactory.create());
     },
     getters: {
       activeChild(state): FamilyMember {
-
         return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0]!;
       },
       signedInMember(state): FamilyMember {
-
         return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0]!;
       },
       permissions(): FamilyPermissions {
-
-        return resolveFamilyPermissions(this.signedInMember);
+        return this.signedInMember.permissions ?? NO_FAMILY_PERMISSIONS;
       },
       isFamilyAdmin(): boolean {
-
-        return this.signedInMember.role === "guardian" && this.signedInMember.guardianAccess === "admin";
+        return this.permissions.canManageFamily;
       },
       canArrangeHouse(state): boolean {
-
-        return state.subscriptionTier === "pro";
+        return state.canArrangeHouseReadModel;
       },
       unlockedHouseRooms(state) {
+        const availableAreas = new Set(
+          state.houseCatalog?.areas.filter((area) => area.available).map((area) => area.id) ?? [],
+        );
 
-        return HOUSE_ROOMS.filter((room) => room.minimumHouseLevel <= state.houseLevel);
+        return HOUSE_ROOMS.filter((room) => availableAreas.has(room.id));
       },
       ownedFurnitureSetIds(state): FurnitureSetId[] {
-
-        return FURNITURE_SETS.filter((set) =>
-          set.accessoryIds.every((id) => state.accessories.find((accessory) => accessory.id === id)?.owned),
-        ).map((set) => set.id);
+        return state.houseCatalog?.furnitureSets.filter((set) => set.owned).map((set) => set.id) ?? [];
       },
       balanceFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => state.balances[memberId] ?? 0;
       },
       displayNameFor(this: void, state) {
-
         return (memberId: FamilyMemberId): string => {
           const member = state.members.find((item) => item.id === memberId);
 
@@ -77,132 +59,64 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         };
       },
       balance(): number {
-
         return this.balanceFor(this.activeChildId);
       },
       totalVisibleSavedFor(this: void, state) {
-
-        return (memberId: FamilyMemberId): number =>
-          state.goals
-            .filter((goal) => goal.ownerId === memberId && goal.visibility !== "private")
-            .reduce((sum, goal) => sum + goal.saved, 0);
+        return (memberId: FamilyMemberId): number => state.sharedSavedBalances[memberId] ?? 0;
       },
       averageTaskRatingFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
-          const rated = state.contributions.filter(
-            (contribution) => contribution.assigneeId === memberId && contribution.stars,
-          );
+          const evaluated = state.memberProgressions[memberId]?.averageBasicRating;
 
-          return rated.length === 0
-            ? 0
-            : rated.reduce((sum, contribution) => sum + (contribution.stars ?? 0), 0) / rated.length;
+          if (evaluated !== undefined) {
+            return evaluated;
+          }
+
+          return 0;
         };
       },
-      pendingCountFor(this: void, state) {
-
-        return (memberId: FamilyMemberId): number =>
-          state.contributions.filter(
-            (contribution) => contribution.assigneeId === memberId && contribution.status === "pending",
-          ).length;
-      },
-      openCountFor(this: void, state) {
-
-        return (memberId: FamilyMemberId): number =>
-          state.contributions.filter(
-            (contribution) => contribution.assigneeId === memberId && contribution.status === "available",
-          ).length;
-      },
-      dailyBaseContributions(state): Contribution[] {
-
-        return state.contributions.filter(
-          (contribution) => contribution.kind === "basic" && contribution.assigneeId === state.activeChildId,
-        );
-      },
       dailyEnergy(state): number {
-
         if (state.simulatedEnergy !== null) {
-
           return state.simulatedEnergy;
         }
 
-        return calculateContributionProgress(state.contributions, state.activeChildId);
-      },
-      approvedBaseCount(): number {
-
-        return this.dailyBaseContributions.filter((contribution) => contribution.status === "approved").length;
+        return state.memberProgressions[state.activeChildId]?.completionPercent ?? 0;
       },
       pendingContributions(state): Contribution[] {
-
         return state.contributions.filter((contribution) => contribution.status === "pending");
       },
       contributionProgress(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
-
-          return calculateContributionProgress(state.contributions, memberId);
+          return state.memberProgressions[memberId]?.completionPercent ?? 0;
         };
       },
       familyEnergy(): number {
-
         if (this.simulatedEnergy !== null) {
-
           return this.simulatedEnergy;
         }
 
-        const participants = this.members.filter(
-          (member) => member.role === "child" || member.participatesInWeeklyGoal,
-        );
-
-        return calculateAverageEnergy(participants.map((member) => this.contributionProgress(member.id)));
+        return this.familyEnergyReadModel;
       },
       houseMeetsMinimumEnergy(): boolean {
-
-        return this.familyEnergy >= MINIMUM_HOUSE_ENERGY_PERCENT;
+        return this.simulatedEnergy === null
+          ? this.canCloseWeekSuccessfully
+          : this.familyEnergy >= this.minimumSuccessfulWeekEnergy;
       },
       currentWeekDays(state): number {
-
-        return currentWeekDaysFromContributions(
-          state.contributions,
-          state.familyTimeZone,
-          new Date(state.currentTimeMilliseconds),
-        );
+        return state.memberProgressions[state.activeChildId]?.approvedDates.length ?? 0;
       },
       currentDailyStreak(): number {
-
-        return this.completedWeeklyStreak * this.currentWeekTarget + this.currentWeekDays;
+        return this.memberProgressions[this.activeChildId]?.streakDays ?? 0;
       },
       rewardForContribution(this: void, state) {
-
         return (contributionId: ContributionId): number => {
           const contribution = state.contributions.find((item) => item.id === contributionId);
 
-          if (contribution?.status === "approved" && contribution.earnedReward !== undefined) {
-
-            return contribution.earnedReward;
-          }
-
-          const promotion = state.promotions.find(
-            (item) =>
-              item.contributionId === contributionId &&
-              isPromotionAvailable(item, state.familyTimeZone, new Date(state.currentTimeMilliseconds)),
-          );
-
-          return (contribution?.reward ?? 0) * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
+          return contribution?.projectedReward ?? contribution?.earnedReward ?? contribution?.reward ?? 0;
         };
       },
       activeGoal(state): SavingGoal {
-        const visibleGoals = state.goals.filter(function callback(goal) {
-          const permissions = resolveFamilyPermissions(
-            state.members.find((member) => member.id === state.signedInMemberId),
-          );
-
-          return (
-            (goal.visibility === "family" && (goal.ownerId !== "family" || permissions.canViewFamilyGoals)) ||
-            (state.viewerRole === "child" && goal.ownerId === state.activeChildId) ||
-            (state.viewerRole === "guardian" && permissions.canViewGuardianGoals && goal.visibility === "guardians")
-          );
-        });
+        const visibleGoals = state.goals.filter((goal) => goal.visibleToMemberIds?.includes(state.signedInMemberId));
 
         return (
           visibleGoals.find((goal) => goal.id === state.activeGoalId) ??
@@ -215,122 +129,57 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         const ownerId = state.viewerRole === "child" ? state.signedInMemberId : state.activeChildId;
 
         return state.goals.filter(
-          (goal) =>
-            goal.ownerId === ownerId &&
-            (state.viewerRole === "child" ||
-              goal.visibility === "family" ||
-              (goal.visibility === "guardians" &&
-                resolveFamilyPermissions(state.members.find((member) => member.id === state.signedInMemberId))
-                  .canViewGuardianGoals)),
+          (goal) => goal.ownerId === ownerId && goal.visibleToMemberIds?.includes(state.signedInMemberId),
         );
       },
       totalSaved(): number {
-
         return this.ownSavingGoals.reduce((sum, goal) => sum + goal.saved, 0);
       },
       totalInterestEarned(): number {
-
         return this.ownSavingGoals.reduce((sum, goal) => sum + (goal.interestEarned ?? 0), 0);
       },
       todayEarnedFor(this: void, state) {
-
-        return (memberId: FamilyMemberId): number => {
-          const today = new Date(state.currentTimeMilliseconds);
-
-          return state.contributions
-            .filter(
-              (contribution) =>
-                contribution.status === "approved" &&
-                contribution.assigneeId === memberId &&
-                contribution.approvedAt !== undefined &&
-                isSameCalendarDay(contribution.approvedAt, today, state.familyTimeZone),
-            )
-            .reduce(
-              (sum, contribution) =>
-                sum + (contribution.earnedReward ?? contribution.reward) + (contribution.earnedRatingBonus ?? 0),
-              0,
-            );
-        };
+        return (memberId: FamilyMemberId): number => state.todayEarnedByMember[memberId] ?? 0;
       },
       todayEarned(): number {
-
         return this.todayEarnedFor(this.activeChildId);
       },
       withdrawableGoalBalance(this: void) {
-
         return (goal?: SavingGoal): number => {
-
           if (!goal) {
-
             return 0;
           }
 
-          if (goal.saved >= goal.target) {
-
-            return goal.saved;
-          }
-
-          return Math.max(0, goal.saved - (goal.starterBonus ?? 0));
+          return goal.withdrawableBalance ?? 0;
         };
       },
       reservedBalance(state): number {
-
-        return state.shopRewards
-          .filter((reward) => reward.status === "requested" && reward.requesterId === state.activeChildId)
-          .reduce((sum, reward) => sum + reward.price, 0);
+        return Math.max(0, this.balance - (state.availableBalances[state.activeChildId] ?? 0));
       },
-      availableBalance(): number {
-
-        return Math.max(0, this.balance - this.reservedBalance);
+      availableBalance(state): number {
+        return state.availableBalances[state.activeChildId] ?? 0;
       },
       familyCurrencyValue(this: void, state) {
-
         return (ladirchen: number): number => Number((ladirchen / state.ladirchenPerCurrencyUnit).toFixed(2));
       },
       averageTaskRating(): number {
-
         return this.averageTaskRatingFor(this.activeChildId);
       },
       savingsInterestRateFor(this: void, state) {
-
         return (memberId: FamilyMemberId): number => {
-          const baseContributions = state.contributions.filter(
-            (contribution) => contribution.kind === "basic" && contribution.assigneeId === memberId,
-          );
-          const streak =
-            memberId === state.activeChildId
-              ? state.completedWeeklyStreak * state.currentWeekTarget +
-                currentWeekDaysFromContributions(
-                  state.contributions,
-                  state.familyTimeZone,
-                  new Date(state.currentTimeMilliseconds),
-                )
-              : (state.members.find((member) => member.id === memberId)?.weeklyStreak ?? 0);
-          const ratedContributions = baseContributions.filter((contribution) => contribution.stars);
-          const rating =
-            ratedContributions.length === 0
-              ? 0
-              : ratedContributions.reduce((sum, contribution) => sum + (contribution.stars ?? 0), 0) /
-                ratedContributions.length;
+          const evaluated = state.memberProgressions[memberId]?.savingsInterestRate;
 
-          return familyParticipationInterestStrategy.calculateRate({
-            baseRate: state.baseSavingsRatePercent,
-            completionBonusRate: state.completionBonusRate,
-            completionPercent: calculateContributionProgress(state.contributions, memberId),
-            maxRate: state.maxSavingsRatePercent,
-            rating,
-            ratingBonusRate: state.ratingBonusRate,
-            streakBonusRate: state.streakBonusRate,
-            streakDays: streak,
-          });
+          if (evaluated !== undefined) {
+            return evaluated;
+          }
+
+          return 0;
         };
       },
       savingsInterestRate(): number {
-
         return this.savingsInterestRateFor(this.activeChildId);
       },
       activeWorldEffects(state): WorldEffect[] {
-
         return state.contributions
           .filter(
             (

@@ -3,8 +3,7 @@ import { useI18n } from "vue-i18n";
 import { isFamilyCurrency } from "@/application/contracts/family-aggregate-validation";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
-import { getLadiStage, LADI_STAGES } from "@/domain/ladi";
-import { SAVINGS_RULES } from "@/domain/savings/rules";
+import { DEFAULT_TRANSFER_AMOUNT } from "@/features/savings/transfer-defaults";
 import type { FamilyCurrency } from "@/domain/savings/types";
 import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
 import { percentageOfTotal } from "@/domain/shared/numbers";
@@ -21,7 +20,7 @@ export function useSavingsPiggy() {
   const selectedGoalId = ref<SavingGoalId>();
   const selectedMemberId = ref<FamilyMemberId>();
   const transferDestination = ref<"goal" | "member">("goal");
-  const amount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
+  const amount = ref<number>(DEFAULT_TRANSFER_AMOUNT);
   const transferDirection = ref<"deposit" | "withdraw" | "gift" | "">("");
   const piggyGuideStep = ref(-1);
   let transferTimer: number | undefined;
@@ -48,18 +47,15 @@ export function useSavingsPiggy() {
             contribution.approvedAt !== undefined &&
             isInstantInIsoWeek(contribution.approvedAt, now, store.familyTimeZone),
         );
-        const reserved = store.shopRewards
-          .filter((reward) => reward.status === "requested" && reward.requesterId === member.id)
-          .reduce((sum, reward) => sum + reward.price, 0);
-        const available = Math.max(0, store.balanceFor(member.id) - reserved);
+        const available = store.availableBalances[member.id] ?? 0;
         const saved = store.totalVisibleSavedFor(member.id);
-        const ladiStage = getLadiStage(store.averageTaskRatingFor(member.id));
+        const ladiLevel = store.memberProgressions[member.id]?.ladiStagePosition ?? 1;
 
         return {
           available,
           completedThisWeek: completedThisWeek.length,
           id: member.id,
-          ladiLevel: LADI_STAGES.length - LADI_STAGES.indexOf(ladiStage),
+          ladiLevel,
           name: member.nickname?.trim() || member.name,
           saved,
           total: available + saved,
@@ -72,9 +68,13 @@ export function useSavingsPiggy() {
       }),
   );
   const selectedGoal = computed(() => store.ownSavingGoals.find((goal) => goal.id === selectedGoalId.value));
-  const selectedGoalWithdrawable = computed(() => store.withdrawableGoalBalance(selectedGoal.value));
-  const maxDeposit = computed(() =>
-    Math.min(store.availableBalance, Math.max(0, (selectedGoal.value?.target ?? 0) - (selectedGoal.value?.saved ?? 0))),
+  const selectedGoalWithdrawable = computed(() =>
+    selectedGoal.value?.commandLimits?.[store.signedInMemberId]?.canWithdraw
+      ? store.withdrawableGoalBalance(selectedGoal.value)
+      : 0,
+  );
+  const maxDeposit = computed(
+    () => selectedGoal.value?.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
   );
   const transferAmountMaximum = computed(() =>
     transferDestination.value === "member"
@@ -112,18 +112,14 @@ export function useSavingsPiggy() {
     ),
   );
   function formatRate(value: number) {
-
     return value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
   }
   function setCurrency(value: unknown) {
-
     if (isFamilyCurrency(value)) {
-      store.setFamilyCurrency(value);
+      void store.setFamilyCurrency(value);
     }
-
   }
   function goalProgress(saved: number, target: number) {
-
     return Math.round(percentageOfTotal(saved, target));
   }
   function adjustTransferAmount(change: number) {
@@ -131,10 +127,9 @@ export function useSavingsPiggy() {
   }
   function setTransferDestination(destination: "goal" | "member") {
     transferDestination.value = destination;
-    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, transferAmountMaximum.value);
+    amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, transferAmountMaximum.value);
   }
   function playTransfer(direction: "deposit" | "withdraw" | "gift") {
-
     if (transferTimer !== undefined) {
       window.clearTimeout(transferTimer);
     }
@@ -146,45 +141,39 @@ export function useSavingsPiggy() {
     }, TRANSFER_ANIMATION_DURATION_MS);
   }
   function deposit() {
-
     if (!selectedGoalId.value) {
-
       return;
     }
 
-    store.saveToGoal(selectedGoalId.value, amount.value);
+    void store.saveToGoal(selectedGoalId.value, amount.value);
     playTransfer("deposit");
-    amount.value = SAVINGS_RULES.defaultTransferAmount;
+    amount.value = DEFAULT_TRANSFER_AMOUNT;
   }
   function withdraw() {
-
     if (!selectedGoalId.value) {
-
       return;
     }
 
-    store.withdrawFromGoal(selectedGoalId.value, amount.value);
+    void store.withdrawFromGoal(selectedGoalId.value, amount.value);
     playTransfer("withdraw");
-    amount.value = SAVINGS_RULES.defaultTransferAmount;
+    amount.value = DEFAULT_TRANSFER_AMOUNT;
   }
   function giftToMember() {
-
     if (!selectedMemberId.value || amount.value <= 0) {
-
       return;
     }
 
     const recipientName =
       memberOptions.value.find((member) => member.value === selectedMemberId.value)?.title ??
       t("savings.piggy.transfer.memberFallback");
-    store.giftLadirchenToFamilyMember(selectedMemberId.value, amount.value);
+    void store.giftLadirchenToFamilyMember(selectedMemberId.value, amount.value);
     playTransfer("gift");
     ladiGuideController.say({
       heading: t("savings.piggy.guide.giftTitle"),
       message: t("savings.piggy.guide.giftMessage", { name: recipientName }),
       celebration: "gift",
     });
-    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, store.availableBalance);
+    amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance);
   }
   const piggyGuideSteps = computed(() => [
     {
@@ -199,7 +188,6 @@ export function useSavingsPiggy() {
     const step = piggyGuideSteps.value[piggyGuideStep.value];
 
     if (!step) {
-
       return;
     }
 
@@ -216,13 +204,11 @@ export function useSavingsPiggy() {
   watch(
     () => store.piggyBankOpen,
     (isOpen) => {
-
       if (guidanceTimer !== undefined) {
         window.clearTimeout(guidanceTimer);
       }
 
       if (!isOpen || store.viewerRole === "guardian") {
-
         return;
       }
 
@@ -231,7 +217,7 @@ export function useSavingsPiggy() {
         : store.ownSavingGoals[0]?.id;
       selectedMemberId.value = memberOptions.value[0]?.value;
       transferDestination.value = "goal";
-      amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, store.availableBalance);
+      amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance);
       piggyGuideStep.value = -1;
       guidanceTimer = window.setTimeout(function callback() {
         nextPiggyGuide();
@@ -244,7 +230,6 @@ export function useSavingsPiggy() {
     unregisterGuideAction = ladiGuideController.registerAction("piggy:next", nextPiggyGuide);
   });
   onUnmounted(function callback() {
-
     if (transferTimer !== undefined) {
       window.clearTimeout(transferTimer);
     }

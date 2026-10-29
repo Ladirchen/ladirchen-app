@@ -2,7 +2,6 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { isPromotionAvailable } from "@/domain/contributions/promotions";
 import type {
   Contribution,
   ContributionKind,
@@ -11,7 +10,6 @@ import type {
   Promotion,
 } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
-import { CONTRIBUTION_IDS } from "@/infrastructure/fixtures/family-world-fixtures";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
@@ -51,9 +49,7 @@ export function useContributionsPage() {
     { title: t("contributions.kind.extraOptional"), value: "extra" },
   ]);
   const assignmentOptions = computed(function callback() {
-
     if (!store.permissions.canManageContent) {
-
       return [
         {
           title: t("contributions.assignment.own", { name: store.signedInMember.name }),
@@ -70,8 +66,8 @@ export function useContributionsPage() {
       })),
     ];
   });
-  const newPromotion = reactive<NewPromotion>({
-    contributionId: CONTRIBUTION_IDS.dishwasher,
+  const newPromotion = reactive<Omit<NewPromotion, "contributionId"> & { contributionId: ContributionId | "" }>({
+    contributionId: "",
     multiplier: 2,
     deadline: "17:00",
     teamworkBonus: 10,
@@ -134,44 +130,36 @@ export function useContributionsPage() {
       .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
   );
   function promotionFor(contributionId: ContributionId) {
-
     return localizedPromotions.value.find(
-      (promotion) =>
-        promotion.contributionId === contributionId &&
-        isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
+      (promotion) => promotion.contributionId === contributionId && promotion.available,
     );
   }
   function contributionTitle(contributionId: ContributionId) {
-
     return (
       localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
       t("contributions.singular")
     );
   }
   function memberName(memberId?: FamilyMemberId) {
-
     return store.members.find((member) => member.id === memberId)?.name ?? t("contributions.assignment.stillOpen");
   }
   function guardianContributionStatus(contribution: Contribution): string {
-
     if (contribution.status === "pending") {
-
       return t("contributions.guardianOwn.awaitingRating");
     }
 
     if (contribution.status === "approved") {
-
       return t("contributions.starsReceived", { value: contribution.stars ?? 1 });
     }
 
     return t("contributions.guardianOwn.ready");
   }
   function approveWithRating(contributionId: ContributionId) {
-    store.approveContribution(contributionId, ratings[contributionId] ?? 4);
+    void store.approveContribution(contributionId, ratings[contributionId] ?? 4);
   }
   function assignContribution(contributionId: ContributionId, value: unknown) {
     const member = store.members.find((item) => item.id === value);
-    store.assignContribution(contributionId, member?.id);
+    void store.assignContribution(contributionId, member?.id);
   }
   function openOwnTaskDialog() {
     Object.assign(newContribution, { assigneeId: store.signedInMemberId });
@@ -181,23 +169,19 @@ export function useContributionsPage() {
     contributionToDelete.value = contribution;
   }
   function confirmContributionDelete() {
-
     if (!contributionToDelete.value) {
-
       return;
     }
 
-    store.deleteContribution(contributionToDelete.value.id);
+    void store.deleteContribution(contributionToDelete.value.id);
     contributionToDelete.value = undefined;
   }
   function confirmPromotionDelete() {
-
     if (!promotionToDelete.value) {
-
       return;
     }
 
-    store.deletePromotion(promotionToDelete.value.id);
+    void store.deletePromotion(promotionToDelete.value.id);
     promotionToDelete.value = undefined;
   }
   function openTeamInvite(contribution: Contribution) {
@@ -209,54 +193,45 @@ export function useContributionsPage() {
     const seedKey = contribution.translationKey?.split(".").at(-1);
 
     if (seedKey === "roomAir") {
-
       return t("contributions.tips.air");
     }
 
     if (seedKey === "setTable" || seedKey === "adamBreakfast") {
-
       return t("contributions.tips.table");
     }
 
     if (seedKey === "dishwasher") {
-
       return t("contributions.tips.dishes");
     }
 
     if (seedKey === "feedPet" || seedKey === "danielCats") {
-
       return t("contributions.tips.pets");
     }
 
     if (seedKey === "waterPlants") {
-
       return t("contributions.tips.plants");
     }
 
     if (seedKey === "danielLaundry") {
-
       return t("contributions.tips.laundry");
     }
 
     if (seedKey === "takeTrash") {
-
       return t("contributions.tips.trash");
     }
 
     return t("contributions.tips.default", { description: contribution.description });
   }
   function saveTeamInvite() {
-
     if (!teamContributionId.value) {
-
       return;
     }
 
-    store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
+    void store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
     teamDialog.value = false;
   }
   function addContribution() {
-    store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
+    void store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
     addDialog.value = false;
     Object.assign(newContribution, {
       title: "",
@@ -269,10 +244,16 @@ export function useContributionsPage() {
     });
   }
   function addPromotion() {
-    store.addPromotion({ ...newPromotion });
+    const contributionId = newPromotion.contributionId;
+
+    if (!contributionId) {
+      return;
+    }
+
+    void store.addPromotion({ ...newPromotion, contributionId });
     promotionDialog.value = false;
     Object.assign(newPromotion, {
-      contributionId: CONTRIBUTION_IDS.dishwasher,
+      contributionId: "",
       multiplier: 2,
       deadline: "17:00",
       teamworkBonus: 10,
@@ -290,9 +271,7 @@ export function useContributionsPage() {
     { immediate: false },
   );
   onMounted(function callback() {
-
     if (store.viewerRole !== "child") {
-
       return;
     }
 
@@ -301,22 +280,18 @@ export function useContributionsPage() {
   watch(
     () => route.query.new,
     function callback(value) {
-
       if (value === "1" && store.permissions.canManageContent) {
         addDialog.value = true;
       }
-
     },
     { immediate: true },
   );
   watch(
     () => route.query.promotion,
     function callback(value) {
-
       if (value === "1" && store.permissions.canManageContent) {
         promotionDialog.value = true;
       }
-
     },
     { immediate: true },
   );

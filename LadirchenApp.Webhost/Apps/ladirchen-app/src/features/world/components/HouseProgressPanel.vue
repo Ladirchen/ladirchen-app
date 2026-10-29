@@ -38,15 +38,15 @@
       </div>
       <div class="evolution-steps mt-3">
         <div>
-          <span>{{ minimumHouseEnergyPercent }} %</span>
-          <p>{{ t("world.progress.steps.daily", { value: minimumHouseEnergyPercent }) }}</p>
+          <span>{{ props.minimumHouseEnergyPercent }} %</span>
+          <p>{{ t("world.progress.steps.daily", { value: props.minimumHouseEnergyPercent }) }}</p>
         </div>
         <div>
           <span>{{ t("world.progress.sevenDays") }}</span>
           <p>{{ t("world.progress.steps.week") }}</p>
         </div>
         <div>
-          <span>{{ t("world.progress.underThreshold", { value: minimumHouseEnergyPercent }) }}</span>
+          <span>{{ t("world.progress.underThreshold", { value: props.minimumHouseEnergyPercent }) }}</span>
           <p>{{ t("world.progress.steps.fallback") }}</p>
         </div>
       </div>
@@ -59,15 +59,14 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { DEFAULT_HOUSE_STAGE, HOUSE_STAGES } from "@/domain/house/catalog";
-import { MINIMUM_HOUSE_ENERGY_PERCENT } from "@/domain/contributions/energy";
 import type { HouseStageLevel } from "@/domain/house";
 export interface Props {
   completedWeeks: number;
   houseLevel: HouseStageLevel;
+  minimumHouseEnergyPercent: number;
   showEvolution?: boolean;
 }
 const houseStages = HOUSE_STAGES;
-const minimumHouseEnergyPercent = MINIMUM_HOUSE_ENERGY_PERCENT;
 const props = defineProps<Props>();
 const { t } = useI18n();
 const currentStage = computed(() => houseStages[props.houseLevel] ?? DEFAULT_HOUSE_STAGE);

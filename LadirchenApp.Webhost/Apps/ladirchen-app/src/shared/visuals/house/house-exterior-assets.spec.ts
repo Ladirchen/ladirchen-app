@@ -8,11 +8,10 @@ import {
 } from "./house-exterior-assets";
 
 describe("house exterior asset registry", () => {
-  it.each(HOUSE_THEME_IDS.flatMap((themeId) => [1, 2, 3, 4, 5].map((level) => [themeId, level] as const)))(
+  it.each(HOUSE_THEME_IDS.flatMap((themeId) => ([1, 2, 3, 4, 5] as const).map((level) => [themeId, level] as const)))(
     `resolves a bundled background for theme "%s" at energy level %s`,
     async (themeId, level) => {
-      const energy = { 1: 0, 2: 25, 3: 45, 4: 70, 5: 90 }[level]!;
-      await expect(getHouseExteriorAssetUrl(houseExteriorBackgroundAssetId(themeId, energy))).resolves.toEqual(
+      await expect(getHouseExteriorAssetUrl(houseExteriorBackgroundAssetId(themeId, level))).resolves.toEqual(
         expect.any(String),
       );
     },

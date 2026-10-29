@@ -4,11 +4,14 @@ import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
 import type { WorldEffect } from "@/domain/contributions/types";
 import type { FamilyMember, FamilyPet } from "@/domain/family/types";
-import { HOUSE_ENERGY_THRESHOLDS, HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
+import type { LadiStageId } from "@/domain/ladi";
+import { HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
 import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
 import type {
   HouseAccessory,
   HouseAccessoryId,
+  HouseAtmosphere,
+  HouseEnergyVisualLevel,
   HouseLayoutPlacement,
   HouseRoomDefinition,
   HouseStageLevel,
@@ -28,11 +31,13 @@ const MEMBER_LABEL_DURATION_MS = 1900;
 const MINIMUM_SUN_OPACITY = 0.08;
 export interface FamilyWorldSceneProps {
   energy: number;
+  houseAtmosphere: HouseAtmosphere;
   houseLevel: HouseStageLevel;
+  houseVisualLevel: HouseEnergyVisualLevel;
   houseThemeId?: HouseThemeId;
   houseLayout: HouseLayoutPlacement[];
   rooms: ReadonlyArray<HouseRoomDefinition>;
-  ladiScore: number;
+  ladiStageId: LadiStageId;
   canArrangeHouse: boolean;
   effects: WorldEffect[];
   accessories: HouseAccessory[];
@@ -59,35 +64,18 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
   let memberNameTimer: number | undefined;
   let petNameTimer: number | undefined;
   const viewLabel = computed(() => t(`world.scene.views.${view.value}`));
-  const weather = computed(function callback() {
-
-    if (props.energy >= HOUSE_ENERGY_THRESHOLDS.bright) {
-
-      return "sunny";
-    }
-
-    if (props.energy >= HOUSE_ENERGY_THRESHOLDS.cloudy) {
-
-      return "cloudy";
-    }
-
-    return "rainy";
-  });
+  const weather = computed(() => props.houseAtmosphere);
   const weatherLabel = computed(() => t(`world.scene.weather.${weather.value}`));
   const houseEnergyClass = computed(function callback() {
-
-    if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
-
+    if (props.houseVisualLevel === 1) {
       return "energy-critical";
     }
 
-    if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
-
+    if (props.houseVisualLevel === 2) {
       return "energy-low";
     }
 
-    if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
-
+    if (props.houseVisualLevel === 3) {
       return "energy-tired";
     }
 
@@ -106,7 +94,6 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     const activeMember = lineup.find((member) => member.id === props.viewerMemberId);
 
     if (!activeMember) {
-
       return lineup;
     }
 
@@ -138,7 +125,9 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     t("world.scene.editionAria", { name: activeTheme.value ? t(activeTheme.value.nameKey) : "" }),
   );
   const activeHouseStage = computed(() => HOUSE_STAGES.find((stage) => stage.level === props.houseLevel));
-  const frontExteriorBackgroundId = computed(() => houseExteriorBackgroundAssetId(activeThemeId.value, props.energy));
+  const frontExteriorBackgroundId = computed(() =>
+    houseExteriorBackgroundAssetId(activeThemeId.value, props.houseVisualLevel),
+  );
   const frontExteriorHouseId = computed(function callback() {
     const stage = activeHouseStage.value;
 
@@ -147,9 +136,7 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
   const frontExteriorBackgroundUrl = useLazyAssetUrl(frontExteriorBackgroundId, getHouseExteriorAssetUrl);
   const frontExteriorHouseUrl = useLazyAssetUrl(frontExteriorHouseId, getHouseExteriorAssetUrl);
   const frontExterior = computed(function callback() {
-
     if (!activeHouseStage.value) {
-
       return undefined;
     }
 
@@ -180,32 +167,26 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     }),
   );
   function hasEffect(effect: WorldEffect) {
-
     return props.effects.includes(effect);
   }
   const storageAccessories = computed(() =>
     props.accessories.filter((accessory) => accessory.owned && !accessory.equipped),
   );
   const storageTargetZone = computed<HouseZoneId>(function callback() {
-
     if (view.value === "garden") {
-
       return "garden";
     }
 
     if (selectedRoomView.value === "all" || selectedRoomView.value === "garden") {
-
       return "living-room";
     }
 
     return selectedRoomView.value;
   });
   function storeAccessory(accessoryId: HouseAccessoryId) {
-
     return emit("store-furniture", accessoryId);
   }
   function placeStoredAccessory(accessory: HouseAccessory) {
-
     return emit("place-furniture", accessory.id, storageTargetZone.value);
   }
   function appearanceFor(member: FamilyMember, _index: number): AvatarAppearance {
@@ -236,11 +217,9 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     }, MEMBER_LABEL_DURATION_MS);
   }
   function forwardEntityMove(placementId: HouseLayoutPlacementId, zoneId: HouseZoneId, x: number, y: number) {
-
     return emit("move-entity", placementId, zoneId, x, y);
   }
   function forwardEntityReset(placementId: HouseLayoutPlacementId) {
-
     return emit("reset-entity", placementId);
   }
   function enterHouse() {
@@ -256,7 +235,6 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     view.value = "front";
   }
   onUnmounted(function callback() {
-
     if (memberNameTimer !== undefined) {
       window.clearTimeout(memberNameTimer);
     }
@@ -264,7 +242,6 @@ export function useFamilyWorldScene(props: FamilyWorldSceneProps, emit: FamilyWo
     if (petNameTimer !== undefined) {
       window.clearTimeout(petNameTimer);
     }
-
   });
 
   return {

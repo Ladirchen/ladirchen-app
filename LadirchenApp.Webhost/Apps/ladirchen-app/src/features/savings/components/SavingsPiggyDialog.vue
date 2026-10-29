@@ -360,30 +360,18 @@
           <h3 class="dialog-section-title">{{ t("savings.piggy.interest.title") }}</h3>
           <p class="text-caption text-medium-emphasis mt-1 mb-4">{{ t("savings.piggy.interest.description") }}</p>
           <label class="setting-label">
-            {{ t("savings.piggy.interest.base") }}
-            <strong>{{ formatRate(store.baseSavingsRatePercent) }} %</strong>
-          </label>
-          <v-slider v-model="store.baseSavingsRatePercent" color="primary" hide-details max="5" min="0" step="0.1" />
-          <label class="setting-label">
-            {{ t("savings.piggy.interest.streak") }}
-            <strong>+{{ formatRate(store.streakBonusRate) }} %</strong>
-          </label>
-          <v-slider v-model="store.streakBonusRate" color="primary" hide-details max="2" min="0" step="0.1" />
-          <label class="setting-label">
-            {{ t("savings.piggy.interest.completion") }}
-            <strong>+{{ formatRate(store.completionBonusRate) }} %</strong>
-          </label>
-          <v-slider v-model="store.completionBonusRate" color="primary" hide-details max="5" min="0" step="0.1" />
-          <label class="setting-label">
-            {{ t("savings.piggy.interest.rating") }}
-            <strong>+{{ formatRate(store.ratingBonusRate) }} %</strong>
-          </label>
-          <v-slider v-model="store.ratingBonusRate" color="primary" hide-details max="5" min="0" step="0.1" />
-          <label class="setting-label">
             {{ t("savings.piggy.interest.maximum") }}
             <strong>{{ formatRate(store.maxSavingsRatePercent) }} %</strong>
           </label>
-          <v-slider v-model="store.maxSavingsRatePercent" color="warning" hide-details max="20" min="1" step="0.5" />
+          <v-slider
+            color="warning"
+            hide-details
+            max="20"
+            min="1"
+            :model-value="store.maxSavingsRatePercent"
+            step="0.5"
+            @end="store.setMaximumSavingsInterestRate(Number($event))"
+          />
         </v-card>
       </v-card-text>
     </v-card>

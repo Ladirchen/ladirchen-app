@@ -10,7 +10,7 @@
     </div>
 
     <div class="simulator-preview mt-4">
-      <LadiMascot :score="simulatedRating" :show-score="false" :size="68" />
+      <LadiMascot :stage-id="simulatedLadiStageId" :size="68" />
       <div class="flex-grow-1">
         <span>{{ t("savings.simulator.preview") }}</span>
         <strong>{{ t(simulatedLadiStage.nameKey) }}</strong>
@@ -100,17 +100,19 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import AnimatedPiggyBank from "@/shared/components/AnimatedPiggyBank.vue";
-import { getLadiStage } from "@/domain/ladi";
-import { calculateSavingsCredit, familyParticipationInterestStrategy } from "@/domain/savings/interest";
+import { LADI_STAGES } from "@/domain/ladi";
+import type { LadiStageId } from "@/domain/ladi";
 import { PAYOUT_CELEBRATION_DURATION_MS } from "@/shared/runtime-timing";
 import { useFamilyWorldStore } from "@/stores/family-world";
+import { familyContext, savingsInterestSimulationGateway } from "@/app/composition-root";
 let payoutTimer: number | undefined;
+let simulationRequest = 0;
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const simulatedCompletion = ref(0);
@@ -119,43 +121,17 @@ const simulatedStreak = ref(0);
 const payoutVisible = ref(false);
 const payoutVersion = ref(0);
 const lastPayout = ref(0);
-const simulatedLadiStage = computed(() => getLadiStage(simulatedRating.value));
-const simulationMatchesCurrentWeek = computed(
-  () =>
-    simulatedCompletion.value === store.dailyEnergy &&
-    simulatedRating.value === store.averageTaskRating &&
-    simulatedStreak.value === store.currentDailyStreak,
-);
-const simulatedInterestRate = computed(() =>
-  simulationMatchesCurrentWeek.value
-    ? store.savingsInterestRate
-    : familyParticipationInterestStrategy.calculateRate({
-        baseRate: store.baseSavingsRatePercent,
-        completionBonusRate: store.completionBonusRate,
-        completionPercent: simulatedCompletion.value,
-        maxRate: store.maxSavingsRatePercent,
-        rating: simulatedRating.value,
-        ratingBonusRate: store.ratingBonusRate,
-        streakBonusRate: store.streakBonusRate,
-        streakDays: simulatedStreak.value,
-      }),
-);
-const simulatedWeeklyInterest = computed(() =>
-  store.ownSavingGoals.reduce(
-    (sum, goal) => sum + interestForRate(goal.saved, goal.target, simulatedInterestRate.value),
-    0,
-  ),
+const simulatedInterestRate = ref(0);
+const simulatedWeeklyInterest = ref(0);
+const simulatedLadiStageId = ref<LadiStageId>("idle-ladi");
+const simulatedLadiStage = computed(
+  () => LADI_STAGES.find((stage) => stage.id === simulatedLadiStageId.value) ?? LADI_STAGES[LADI_STAGES.length - 1]!,
 );
 function formatRate(value: number) {
-
   return value.toLocaleString(locale.value, {
     maximumFractionDigits: 2,
     minimumFractionDigits: 1,
   });
-}
-function interestForRate(saved: number, target: number, rate: number): number {
-
-  return calculateSavingsCredit(saved, target, rate);
 }
 function resetSimulation(): void {
   simulatedCompletion.value = store.dailyEnergy;
@@ -163,11 +139,37 @@ function resetSimulation(): void {
   simulatedStreak.value = store.currentDailyStreak;
   payoutVisible.value = false;
 }
+async function refreshSimulation(): Promise<void> {
+  const request = ++simulationRequest;
+
+  try {
+    const result = await savingsInterestSimulationGateway.simulate(
+      familyContext.activeFamilyId,
+      store.activeChildId,
+      simulatedStreak.value,
+      simulatedCompletion.value,
+      simulatedRating.value,
+    );
+
+    if (request !== simulationRequest) {
+      return;
+    }
+
+    simulatedInterestRate.value = result.interestRate;
+    simulatedWeeklyInterest.value = result.projectedCredit;
+    simulatedLadiStageId.value = result.ladiStageId;
+  } catch {
+    if (request === simulationRequest) {
+      simulatedInterestRate.value = 0;
+      simulatedWeeklyInterest.value = 0;
+      simulatedLadiStageId.value = "idle-ladi";
+    }
+  }
+}
 function simulatePayout(): void {
-  lastPayout.value = store.creditActiveChildInterestDemo(simulatedInterestRate.value);
+  lastPayout.value = simulatedWeeklyInterest.value;
 
   if (lastPayout.value <= 0) {
-
     return;
   }
 
@@ -183,12 +185,11 @@ function simulatePayout(): void {
   }, PAYOUT_CELEBRATION_DURATION_MS);
 }
 onMounted(resetSimulation);
+watch([simulatedCompletion, simulatedRating, simulatedStreak], () => void refreshSimulation(), { immediate: true });
 onUnmounted(function callback() {
-
   if (payoutTimer !== undefined) {
     window.clearTimeout(payoutTimer);
   }
-
 });
 </script>
 

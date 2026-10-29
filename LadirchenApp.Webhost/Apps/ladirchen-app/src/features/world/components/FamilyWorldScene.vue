@@ -59,17 +59,17 @@
           <circle class="sun-core" cx="375" cy="48" r="23" />
           <path class="sun-rays" d="M375 10V1m0 94v-9m38-38h9m-94 0h9m65-27 7-7m-67 67 7-7m53 7 7 7m-67-67 7 7" />
         </g>
-        <g class="cloud cloud-a" :class="{ heavy: energy < 45 }">
+        <g class="cloud cloud-a" :class="{ heavy: houseAtmosphere === 'rainy' }">
           <ellipse cx="75" cy="79" rx="38" ry="12" />
           <circle cx="60" cy="70" r="15" />
           <circle cx="81" cy="65" r="21" />
         </g>
-        <g class="cloud cloud-b" :class="{ heavy: energy < 60 }">
+        <g class="cloud cloud-b" :class="{ heavy: houseAtmosphere !== 'sunny' }">
           <ellipse cx="381" cy="91" rx="32" ry="10" />
           <circle cx="370" cy="84" r="13" />
           <circle cx="388" cy="80" r="17" />
         </g>
-        <g v-if="energy < 40" class="rain-cloud" aria-hidden="true">
+        <g v-if="houseAtmosphere === 'rainy'" class="rain-cloud" aria-hidden="true">
           <ellipse cx="229" cy="68" rx="48" ry="15" />
           <circle cx="209" cy="57" r="20" />
           <circle cx="237" cy="52" r="25" />
@@ -280,13 +280,15 @@
           contextual-neighbors
           :editable="canArrangeHouse"
           :energy="energy"
+          :house-atmosphere="houseAtmosphere"
+          :house-visual-level="houseVisualLevel"
           include-garden
           :members="members"
           :pets="pets"
           :placements="houseLayout"
           :room-designs="roomDesigns"
           :rooms="rooms"
-          :score="ladiScore"
+          :ladi-stage-id="ladiStageId"
           :selected-zone-id="selectedRoomView"
           :show-room-labels="false"
           :storage-open="storageOpen"
@@ -470,11 +472,9 @@ const roofDetailPath = computed(() =>
   houseHasUpperFloor.value ? "M170 82l60-33 61 34M184 89l46-25 47 25" : "M143 145l87-51 88 51M160 151l70-41 71 41",
 );
 function memberRoleClass(member: FamilyMember) {
-
   return member.role === "child" ? "is-child" : "is-guardian";
 }
 function backgroundMemberSize(member: FamilyMember) {
-
   return member.role === "child" ? 42 : 55;
 }
 </script>

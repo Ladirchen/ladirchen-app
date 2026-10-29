@@ -21,6 +21,7 @@
       class="pixi-scene-background"
       :design="activeSceneDesign"
       :energy="energy"
+      :house-visual-level="houseVisualLevel"
     />
     <section
       v-for="room in displayedRooms"
@@ -53,7 +54,7 @@
       <div class="room-baseboard" aria-hidden="true"></div>
       <div class="room-floor" aria-hidden="true"></div>
       <div class="room-partition" aria-hidden="true"></div>
-      <div v-if="energy < HOUSE_ENERGY_THRESHOLDS.bright" class="room-wear" aria-hidden="true">
+      <div v-if="houseAtmosphere !== 'sunny'" class="room-wear" aria-hidden="true">
         <i v-for="mark in ROOM_WEAR_MARK_COUNT" :key="mark"></i>
       </div>
       <div v-if="room.id === 'kitchen'" class="room-detail kitchen-tiles" aria-hidden="true"></div>
@@ -76,7 +77,7 @@
         :pet="petFor(placement)"
         :perched="ladiIsPerched(placement)"
         :placement="placement"
-        :score="score"
+        :ladi-stage-id="ladiStageId"
         :speech="placementSpeech(placement)"
         :viewer-member-id="viewerMemberId"
         @ladi-interact="motivateLadi"
@@ -152,7 +153,7 @@
         :pet="petFor(placement)"
         :perched="false"
         :placement="placement"
-        :score="score"
+        :ladi-stage-id="ladiStageId"
         :speech="placementSpeech(placement)"
         :viewer-member-id="viewerMemberId"
         @ladi-interact="motivateLadi"
@@ -171,15 +172,13 @@ import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
-import {
-  furnitureVisualDefinitionFor,
-  HOUSE_ENERGY_THRESHOLDS,
-  HOUSE_LAYOUT_CONSTRAINTS,
-  resolveHouseEnergyVisualLevel,
-} from "@/domain/house";
-import { getLadiStage } from "@/domain/ladi";
+import { furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS } from "@/domain/house";
+import { ladiStageById } from "@/domain/ladi";
+import type { LadiStageId } from "@/domain/ladi";
 import type {
   HouseAccessory,
+  HouseAtmosphere,
+  HouseEnergyVisualLevel,
   HouseLayoutPlacement,
   HouseRoomDefinition,
   HouseZoneId,
@@ -195,6 +194,8 @@ export interface Props {
   compact?: boolean;
   editable?: boolean;
   energy?: number;
+  houseAtmosphere: HouseAtmosphere;
+  houseVisualLevel: HouseEnergyVisualLevel;
   includeGarden?: boolean;
   contextualNeighbors?: boolean;
   members: FamilyMember[];
@@ -202,7 +203,7 @@ export interface Props {
   placements: HouseLayoutPlacement[];
   roomDesigns: ReadonlyArray<RoomDesignDefinition>;
   rooms: ReadonlyArray<HouseRoomDefinition>;
-  score: number;
+  ladiStageId: LadiStageId;
   selectedZoneId?: HouseZoneId | "all";
   showRoomLabels?: boolean;
   storageOpen?: boolean;
@@ -250,45 +251,37 @@ const orderedZoneIds = computed<HouseZoneId[]>(function callback() {
   const roomIds = props.rooms.map((room) => room.id);
 
   if (!props.includeGarden) {
-
     return roomIds;
   }
 
   const kitchenIndex = roomIds.indexOf("kitchen");
 
   if (kitchenIndex < 0) {
-
     return [...roomIds, "garden"];
   }
 
   return [...roomIds.slice(0, kitchenIndex + 1), "garden", ...roomIds.slice(kitchenIndex + 1)];
 });
 const contextualZoneIds = computed<HouseZoneId[]>(function callback() {
-
   if (props.selectedZoneId === "all") {
-
     return props.rooms.map((room) => room.id);
   }
 
   if (!props.contextualNeighbors) {
-
     return [props.selectedZoneId];
   }
 
   if (props.selectedZoneId === "garden" && orderedZoneIds.value.includes("kitchen")) {
-
     return ["kitchen", "garden"];
   }
 
   if (props.selectedZoneId === "living-room" && orderedZoneIds.value.includes("kitchen")) {
-
     return ["living-room", "kitchen"];
   }
 
   const selectedIndex = orderedZoneIds.value.indexOf(props.selectedZoneId);
 
   if (selectedIndex < 0) {
-
     return [props.selectedZoneId];
   }
 
@@ -313,18 +306,15 @@ const activeSceneDesign = computed(() =>
     ? undefined
     : props.roomDesigns.find((design) => design.zoneId === props.selectedZoneId),
 );
-const pixiSceneKey = computed(() => `${activeSceneDesign.value?.id}-${resolveHouseEnergyVisualLevel(props.energy)}`);
+const pixiSceneKey = computed(() => `${activeSceneDesign.value?.id}-${props.houseVisualLevel}`);
 const contextGridStyle = computed(function callback() {
-
   if (!isContextualZone.value) {
-
     return undefined;
   }
 
   const selectedZoneId = props.selectedZoneId;
 
   if (selectedZoneId === "all") {
-
     return undefined;
   }
 
@@ -346,19 +336,15 @@ const isLadiOnPerch = computed(
 );
 const ladiSpeech = computed(() => ladiMotivation.value || perchMessage.value);
 const energyClass = computed(function callback() {
-
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.critical) {
-
+  if (props.houseVisualLevel === 1) {
     return "energy-critical";
   }
 
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.low) {
-
+  if (props.houseVisualLevel === 2) {
     return "energy-low";
   }
 
-  if (props.energy < HOUSE_ENERGY_THRESHOLDS.bright) {
-
+  if (props.houseVisualLevel === 3) {
     return "energy-tired";
   }
 
@@ -366,18 +352,14 @@ const energyClass = computed(function callback() {
 });
 const perchMessages = computed(() => perchMessageKeys.map((key) => t(`world.interior.perch.${key}`)));
 function isPreviewZone(zoneId: HouseZoneId) {
-
   return isContextualZone.value && zoneId !== props.selectedZoneId;
 }
 function selectPreviewZone(zoneId: HouseZoneId) {
-
   if (isPreviewZone(zoneId)) {
     emit("select-zone", zoneId);
   }
-
 }
 function visiblePlacements(zoneId: HouseZoneId) {
-
   return props.placements
     .filter((placement) => placement.zoneId === zoneId)
     .filter(() => !isPreviewZone(zoneId))
@@ -394,20 +376,17 @@ function visiblePlacements(zoneId: HouseZoneId) {
     .sort((left, right) => left.y - right.y);
 }
 function accessoryFor(placement: HouseLayoutPlacement) {
-
   return placement.entityType === "furniture"
     ? props.accessories.find((accessory) => accessory.id === placement.entityId)
     : undefined;
 }
 function placementIsEditable(placement: HouseLayoutPlacement) {
-
   return (
     accessoryFor(placement)?.mobility !== "fixed" &&
     (props.editable || (props.storageOpen && placement.entityType === "furniture"))
   );
 }
 function placementSpeech(placement: HouseLayoutPlacement) {
-
   return placement.entityType === "ladi" ? ladiSpeech.value : "";
 }
 function memberFor(placement: HouseLayoutPlacement):
@@ -415,41 +394,33 @@ function memberFor(placement: HouseLayoutPlacement):
       resolvedAppearance: AvatarAppearance;
     })
   | undefined {
-
   if (placement.entityType !== "member") {
-
     return undefined;
   }
 
   const member = props.members.find((item) => item.id === placement.entityId);
 
   if (!member) {
-
     return undefined;
   }
 
   return { ...member, resolvedAppearance: resolveFamilyMemberAvatarAppearance(member, props.members) };
 }
 function petFor(placement: HouseLayoutPlacement): FamilyPet | undefined {
-
   return placement.entityType === "pet" ? props.pets.find((pet) => pet.id === placement.entityId) : undefined;
 }
 function ladiIsPerched(placement: HouseLayoutPlacement) {
-
   return placement.entityType === "ladi" && isLadiOnPerch.value;
 }
 function motivateLadi() {
-  const tier = getLadiStage(props.score).tier;
+  const tier = ladiStageById(props.ladiStageId).tier;
 
   if (tier === "spark") {
     ladiMotivation.value = t("world.interior.motivation.wakeUp");
-
   } else if (tier === "super") {
     ladiMotivation.value = t("world.interior.motivation.superTeam");
-
   } else if (tier === "aurora") {
     ladiMotivation.value = t("world.interior.motivation.coolTeam");
-
   } else {
     ladiMotivation.value = t("world.interior.motivation.default");
   }
@@ -465,7 +436,6 @@ function motivateLadi() {
 function schedulePerchMessage() {
   perchScheduleTimer = window.setTimeout(
     function callback() {
-
       if (isLadiOnPerch.value) {
         perchMessage.value =
           perchMessages.value[Math.floor(Math.random() * perchMessages.value.length)] ?? perchMessages.value[0]!;
@@ -489,7 +459,6 @@ onMounted(async () => {
 });
 onMounted(schedulePerchMessage);
 onUnmounted(function callback() {
-
   if (motivationTimer !== undefined) {
     window.clearTimeout(motivationTimer);
   }
@@ -501,7 +470,6 @@ onUnmounted(function callback() {
   if (perchScheduleTimer !== undefined) {
     window.clearTimeout(perchScheduleTimer);
   }
-
 });
 </script>
 

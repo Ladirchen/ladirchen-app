@@ -95,16 +95,38 @@ German and English messages live as flat, alphabetically sorted JSON files in `s
 
 ## 🔌 Backend integration boundary
 
-The application defaults to versioned local-storage aggregate repositories. Set `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL` to use the HTTP adapters. Each aggregate adapter expects:
+The application uses backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. Each aggregate adapter expects:
 
 ```text
 GET /api/families/{familyId}/aggregates/{aggregateType}
-PUT /api/families/{familyId}/aggregates/{aggregateType}
+POST /api/families/{familyId}/commands
 ```
 
-Responses use the versioned snapshot contracts from `src/application/contracts/`; writes carry an `expectedRevision`, and the API must return HTTP 409 for concurrent-update conflicts. On a conflict, the application reloads the current snapshot, performs a three-way merge against the locally loaded base, and retries with the new revision. Runtime guards validate every loaded snapshot before it reaches the store. Parallel hydration retains successful aggregates independently and remains retryable when only part of the backend is unavailable.
+Responses use the versioned snapshot contracts from `src/application/contracts/`. Runtime guards validate every loaded snapshot before it reaches the store. Parallel hydration retains successful aggregates independently and remains retryable when only part of the backend is unavailable. Business writes are expressed only as commands; the frontend does not save aggregate snapshots. If an atomic command save detects a revision conflict, the API returns HTTP 409 and the command gateway retries the command once against the newly loaded server state.
 
-Authentication is exposed through `src/application/ports/authentication-gateway.ts`. The current local adapter is intentionally isolated in `src/features/auth/local-auth.ts`; replace it in `src/app/composition-root.ts` when the server authentication contract is available. Password hashing and authorization remain server responsibilities in API mode.
+Family aggregate reads, commands, projections, and SignalR subscriptions require an HTTP-only family-session cookie. The server verifies that the route or subscription family matches the authenticated family. The shared-device member switch remains a UI concept inside that authenticated family; command handlers still verify the selected actor's current membership and permissions.
+
+In API mode the application also connects to:
+
+```text
+/hubs/family-updates
+```
+
+After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. After a SignalR reconnection, the client subscribes to the family again and reloads every aggregate so that changes missed during the interruption are recovered. Authentication accounts and aggregate snapshots are stored in PostgreSQL through Npgsql. The server applies EF Core migrations during startup, saves multi-aggregate commands transactionally, and rejects stale aggregate revisions with HTTP 409. Production can use `DATABASE_URL`, `POSTGRES_URL`, or `ConnectionStrings__Ladirchen`; local development uses the `Ladirchen` connection string from `appsettings.json`.
+
+Family profile, avatar, contribution, savings, family reward-shop, progression and house-customization writes in API mode use the backend-owned command endpoint:
+
+```text
+POST /api/families/{familyId}/commands
+```
+
+These actions no longer mutate Pinia first. The backend validates each command, applies the C# domain policies, saves all affected snapshots atomically, publishes their revisions through SignalR, and Pinia reloads the snapshots as a reactive read-model cache. The savings-interest simulator also obtains its projection from the backend. Production and local development use the HTTP backend; fixtures are limited to tests and explicitly isolated visual-development tooling.
+
+Authentication is exposed through `src/application/ports/authentication-gateway.ts`. Registration and authentication run through the server, where passwords are salted and hashed with PBKDF2, an HTTP-only cookie is issued, and family registration initializes all aggregate snapshots in one database transaction. The product currently uses a shared-device identity model: a signed-in family manager may switch to another family member, while members without `ManageFamily` may issue commands only as themselves. Authentication endpoints are rate-limited and repeated failed sign-ins temporarily lock the account. Sign-out invalidates the server cookie and disconnects the SignalR client.
+
+The production application settles every closed ISO week through an idempotent background workflow. The immutable weekly progression evaluation determines each personal Ladi stage, and that stage determines the authoritative savings-interest credit. Completed personal goals receive a redeemable voucher immediately; family-goal vouchers require consent from every participating family member before redemption.
+
+Local SPA development uses the workspace-local `node_modules/.bin/vp`. The web host prepends that directory to its child-process `PATH`, so no globally installed Vite+ executable is required.
 
 ## 🎨 Adding Designs
 

@@ -21,6 +21,7 @@ export interface Contribution {
   kind: ContributionKind;
   status: ContributionStatus;
   reward: number;
+  projectedReward?: number;
   energy: number;
   assigneeId?: FamilyMemberId;
   dueLabel: string;
@@ -45,6 +46,7 @@ export interface Promotion {
   deadline: string;
   teamworkBonus: number;
   active: boolean;
+  available?: boolean;
 }
 
 export interface NewPromotion {

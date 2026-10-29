@@ -1,3 +1,11 @@
+using System;
+
+using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Queries;
+using LadirchenApp.Webhost.Infrastructure;
+using LadirchenApp.Webhost.Realtime;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +26,15 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
     webApplicationBuilder.SetupSpaMiddleware(appSettings);
     webApplicationBuilder.SetupNswag();
+    webApplicationBuilder.Services.AddSignalR();
+    webApplicationBuilder.Services.AddSingleton(TimeProvider.System);
+    webApplicationBuilder.Services.AddSingleton<IFamilyAggregateSnapshotRepository, InMemoryFamilyAggregateSnapshotRepository>();
+    webApplicationBuilder.Services.AddSingleton<IFamilyAggregateChangePublisher, SignalRFamilyAggregateChangePublisher>();
+    webApplicationBuilder.Services.AddSingleton<InMemoryAuthenticationService>();
+    webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
+    webApplicationBuilder.Services.AddScoped<SaveFamilyAggregateCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<SimulateSavingsInterestQueryHandler>();
   }
 
   /// <summary>

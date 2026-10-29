@@ -25,7 +25,7 @@
     />
     <AnimatedPet v-else-if="placement.entityType === 'pet' && pet" :pet="pet" :size="ENTITY_VISUAL_CONFIG.petSize" />
     <span v-else-if="placement.entityType === 'ladi'" class="ladi-on-perch" :class="{ perched }">
-      <LadiMascot :perched="perched" :score="score" :show-score="false" :size="ENTITY_VISUAL_CONFIG.ladiSize" />
+      <LadiMascot :perched="perched" :stage-id="ladiStageId" :size="ENTITY_VISUAL_CONFIG.ladiSize" />
       <Transition name="ladi-speech">
         <output
           v-if="speech"
@@ -47,6 +47,7 @@ import type { AvatarAppearance } from "@/domain/avatar";
 import { ENTITY_LAYER_BASE, furnitureVisualDefinitionFor } from "@/domain/house";
 import type { HouseAccessory, HouseLayoutPlacement } from "@/domain/house";
 import type { FamilyMember, FamilyPet } from "@/domain/family/types";
+import type { LadiStageId } from "@/domain/ladi";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
@@ -66,7 +67,7 @@ export interface Props {
   perched?: boolean;
   pet?: FamilyPet;
   placement: HouseLayoutPlacement;
-  score: number;
+  ladiStageId: LadiStageId;
   speech?: string;
   viewerMemberId?: FamilyMemberId;
 }
@@ -83,16 +84,12 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 const doorOpen = ref(false);
 const entityName = computed(function callback() {
-
   if (props.placement.entityType === "furniture") {
-
     return props.accessory?.title ?? t("world.scene.entity.furniture");
   }
 
   if (props.placement.entityType === "member") {
-
     if (!props.member) {
-
       return t("world.scene.entity.member");
     }
 
@@ -102,21 +99,17 @@ const entityName = computed(function callback() {
   }
 
   if (props.placement.entityType === "pet") {
-
     return props.pet?.name ?? t("world.scene.entity.pet");
   }
 
   return "Ladi";
 });
 const accessibleLabel = computed(function callback() {
-
   if (props.editable) {
-
     return t("world.scene.moveEntity", { name: entityName.value });
   }
 
   if (props.accessory?.interaction !== "toggle-door") {
-
     return entityName.value;
   }
 
@@ -136,7 +129,6 @@ const entityStyle = computed(() => ({
     : ENTITY_LAYER_BASE[props.placement.entityType] + Math.round(layerY.value),
 }));
 function interact() {
-
   if (props.placement.entityType === "ladi") {
     emit("ladi-interact");
   }
@@ -144,25 +136,20 @@ function interact() {
   if (props.accessory?.interaction === "toggle-door") {
     doorOpen.value = !doorOpen.value;
   }
-
 }
 function forwardPointerDown(event: PointerEvent) {
   emit("pointerdown", event, props.placement);
 }
 function forwardLostPointerCapture(event: PointerEvent) {
-
   return emit("lostpointercapture", event);
 }
 function forwardPointerMove(event: PointerEvent) {
-
   return emit("pointermove", event);
 }
 function forwardPointerUp(event: PointerEvent) {
-
   return emit("pointerup", event);
 }
 function forwardPointerCancel(event: PointerEvent) {
-
   return emit("pointercancel", event);
 }
 </script>

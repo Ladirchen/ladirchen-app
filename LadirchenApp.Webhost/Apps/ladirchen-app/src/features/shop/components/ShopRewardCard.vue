@@ -72,6 +72,7 @@
         <div v-if="reward.status === 'requested'" class="d-flex ga-1">
           <v-btn
             :aria-label="t('shop.rewards.reject')"
+            :disabled="!store.permissions.canManageContent"
             icon="i-mdi:close"
             size="small"
             variant="tonal"
@@ -80,7 +81,7 @@
           <v-btn
             :aria-label="t('shop.rewards.approve')"
             color="primary"
-            :disabled="!redemptionOpen"
+            :disabled="!reward.approvableByMemberIds?.includes(store.signedInMemberId)"
             icon="i-mdi:check"
             size="small"
             variant="flat"
@@ -107,7 +108,6 @@ export interface Emits {
 export interface Props {
   readonly canRequest: boolean;
   readonly publicationStatus: ShopRewardPublicationStatus;
-  readonly redemptionOpen: boolean;
   readonly reward: ShopReward;
 }
 const props = defineProps<Props>();
@@ -120,9 +120,7 @@ const cardClasses = computed(() => ({
   "reward-card--hidden": rewardIsHidden.value,
   "reward-card--scheduled": props.publicationStatus.tone === "scheduled",
 }));
-const canCancelRequest = computed(
-  () => props.reward.status === "requested" && props.reward.requesterId === store.activeChildId,
-);
+const canCancelRequest = computed(() => props.reward.cancellableByMemberIds?.includes(store.signedInMemberId) ?? false);
 const visibilityActionLabel = computed(() =>
   t(rewardIsHidden.value ? "shop.rewards.show" : "shop.rewards.hide", { title: props.reward.title }),
 );

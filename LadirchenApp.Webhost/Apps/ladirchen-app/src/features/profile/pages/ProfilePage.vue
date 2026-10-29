@@ -168,6 +168,7 @@
     <AsyncAvatarBuilderDialog
       v-if="avatarBuilderOpen"
       v-model="avatarBuilderOpen"
+      :allowed-options="store.avatarCatalog?.[store.viewerRole]"
       :initial-appearance="activeAppearance"
       :profile-role="store.viewerRole"
       :user-name="store.displayNameFor(store.signedInMemberId)"
@@ -207,16 +208,13 @@ const profileEditorOpen = ref(false);
 const nicknameDraft = ref(store.activeChild.nickname ?? "");
 const activeLocale = computed<SupportedLocale>({
   get(this: void) {
-
     return isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE;
   },
   set: setActiveLocale,
 });
 const activeAppearance = computed(() => resolveFamilyMemberAvatarAppearance(store.signedInMember, store.members));
 const profileDescription = computed(function callback() {
-
   if (store.viewerRole === "child") {
-
     return t("profile.editor.childDescription");
   }
 
@@ -224,7 +222,6 @@ const profileDescription = computed(function callback() {
 });
 const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild.nickname ?? ""));
 function saveNickname() {
-
   return store.setOwnNickname(nicknameDraft.value);
 }
 watch(

@@ -4,8 +4,8 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from "vue";
-import type * as PixiNamespace from "pixi.js";
-import type { RoomDesignDefinition, RoomSceneOverlayDefinition } from "@/domain/house";
+import { Application, Assets, Container, Graphics, Sprite } from "pixi.js";
+import type { HouseEnergyVisualLevel, RoomDesignDefinition, RoomSceneOverlayDefinition } from "@/domain/house";
 import { PERCENTAGE_BASE } from "@/domain/shared/numbers";
 import { MILLISECONDS_PER_SECOND } from "@/domain/shared/time";
 import { getRoomDesignBackgroundUrl, roomDesignBackgroundAssetId } from "@/shared/visuals/house/room-design-assets";
@@ -13,13 +13,13 @@ import { visualColorPalette } from "@/theme/color-palette";
 export interface Props {
   design: RoomDesignDefinition;
   energy: number;
+  houseVisualLevel: HouseEnergyVisualLevel;
 }
-type Pixi = typeof PixiNamespace;
 const MAXIMUM_DEVICE_PIXEL_RATIO = 2;
 const OVERLAY_FLOAT_FREQUENCY = 1.15;
 const OVERLAY_FLOAT_ROTATION = 0.055;
 const OVERLAY_SPIN_SPEED = 0.45;
-let application: PixiNamespace.Application | undefined;
+let application: Application | undefined;
 let resizeObserver: ResizeObserver | undefined;
 let destroyed = false;
 const props = defineProps<Props>();
@@ -30,20 +30,18 @@ function paletteColor(token: string, fallback: string): string {
   return value || fallback;
 }
 function createOverlay(
-  pixi: Pixi,
   overlay: RoomSceneOverlayDefinition,
   colors: {
     accent: string;
     leaf: string;
     outline: string;
   },
-): PixiNamespace.Container {
-  const container = new pixi.Container();
+): Container {
+  const container = new Container();
 
   if (overlay.id === "garden-wind-spinner") {
-
     for (let index = 0; index < 6; index += 1) {
-      const petal = new pixi.Graphics()
+      const petal = new Graphics()
         .ellipse(0, -25, 8, 20)
         .fill(colors.accent)
         .stroke({ color: colors.outline, width: 3 });
@@ -51,15 +49,13 @@ function createOverlay(
       container.addChild(petal);
     }
 
-    container.addChild(
-      new pixi.Graphics().circle(0, 0, 9).fill(colors.accent).stroke({ color: colors.outline, width: 3 }),
-    );
+    container.addChild(new Graphics().circle(0, 0, 9).fill(colors.accent).stroke({ color: colors.outline, width: 3 }));
 
     return container;
   }
 
   for (let index = 0; index < 4; index += 1) {
-    const leaf = new pixi.Graphics()
+    const leaf = new Graphics()
       .ellipse(index * 18, Math.abs(index - 1.5) * 6, 13, 7)
       .fill(colors.leaf)
       .stroke({ color: colors.outline, width: 3 });
@@ -70,20 +66,11 @@ function createOverlay(
   return container;
 }
 onMounted(async () => {
-
   if (!host.value) {
-
     return;
   }
 
-  const pixi = await import("pixi.js");
-
-  if (destroyed || !host.value) {
-
-    return;
-  }
-
-  const app = new pixi.Application();
+  const app = new Application();
   await app.init({
     antialias: true,
     autoDensity: true,
@@ -102,16 +89,17 @@ onMounted(async () => {
   application = app;
   app.canvas.className = "pixi-room-scene__canvas";
   host.value.append(app.canvas);
-  const scene = new pixi.Container();
-  const backgroundUrl = await getRoomDesignBackgroundUrl(roomDesignBackgroundAssetId(props.design, props.energy));
-  const texture = await pixi.Assets.load(backgroundUrl);
+  const scene = new Container();
+  const backgroundUrl = await getRoomDesignBackgroundUrl(
+    roomDesignBackgroundAssetId(props.design, props.houseVisualLevel),
+  );
+  const texture = await Assets.load(backgroundUrl);
 
   if (destroyed) {
-
     return;
   }
 
-  const background = new pixi.Sprite(texture);
+  const background = new Sprite(texture);
   background.width = props.design.canvasWidth;
   background.height = props.design.canvasHeight;
   scene.addChild(background);
@@ -119,13 +107,13 @@ onMounted(async () => {
   const outline = paletteColor("--lad-palette-teal-700", visualColorPalette["teal-700"]);
   const leaf = paletteColor("--lad-palette-green-500", visualColorPalette["green-500"]);
   const overlayNodes = props.design.overlays.map(function callback(overlay) {
-    const node = new pixi.Container();
+    const node = new Container();
     node.position.set(
       (props.design.canvasWidth * overlay.xPercent) / PERCENTAGE_BASE,
       (props.design.canvasHeight * overlay.yPercent) / PERCENTAGE_BASE,
     );
     node.scale.set(overlay.scale);
-    node.addChild(createOverlay(pixi, overlay, { accent, leaf, outline }));
+    node.addChild(createOverlay(overlay, { accent, leaf, outline }));
     scene.addChild(node);
 
     return { definition: overlay, node };
@@ -157,7 +145,6 @@ onMounted(async () => {
       });
     });
   }
-
 });
 onUnmounted(function callback() {
   destroyed = true;

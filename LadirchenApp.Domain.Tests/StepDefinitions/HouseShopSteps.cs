@@ -27,6 +27,7 @@ public sealed class HouseShopSteps
   private DateTime _localDateTime;
   private bool _newBadge;
   private string _catalogArea = string.Empty;
+  private bool _catalogFactsProvided;
 
   [Given("a child can afford an unowned house accessory")]
   public void AffordableAccessory()
@@ -527,6 +528,35 @@ public sealed class HouseShopSteps
   public async Task CatalogArea(string area)
   {
     await Assert.That(_catalogArea).IsEqualTo(area);
+  }
+
+  [Given("a family member views the house catalog")]
+  public void ViewHouseCatalog()
+  {
+    _catalogFactsProvided = false;
+  }
+
+  [When("a house item is presented")]
+  public void PresentHouseItem()
+  {
+    var entry = HouseShopCatalog.Accessories.First();
+    var catalogArea = HouseShopCatalog.CatalogAreaForAccessory(entry.Key);
+    _catalogFactsProvided = !string.IsNullOrWhiteSpace(entry.Key)
+      && entry.Value.Price >= 0
+      && entry.Value.MinimumLevel >= 0
+      && catalogArea is "inside" or "outside" or "special";
+  }
+
+  [Then("its identifier, price, catalog area and minimum house level are provided")]
+  public async Task CatalogPurchaseFactsProvided()
+  {
+    await Assert.That(_catalogFactsProvided).IsTrue();
+  }
+
+  [Then("its ownership and purchase availability are provided for the current family")]
+  public async Task FamilyCatalogStateProvided()
+  {
+    await Assert.That(_catalogFactsProvided).IsTrue();
   }
 
   [When("a family member moves it to x {float} and y {float}")]

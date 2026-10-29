@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 import type { TranslationKey } from "@/locales/translation-keys";
+import type { LadiStageId } from "@/domain/ladi";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import type { LadiGuideActionId, LadiGuideMessage } from "@/shared/services/ladi-guide-controller";
 import {
@@ -31,11 +32,9 @@ export function useGlobalLadiGuide() {
   const mood = useStorage<GuideMood>(moodStorageKey, "calm", browserClientStorage, {
     serializer: {
       read(value) {
-
         return value === "gentle" || value === "happy" || value === "calm" ? value : "calm";
       },
       write(value) {
-
         return value;
       },
     },
@@ -44,11 +43,9 @@ export function useGlobalLadiGuide() {
   const hiddenPreference = useStorage<boolean | null>(hiddenStorageKey, null, browserClientStorage, {
     serializer: {
       read(value) {
-
         return value === "true" ? true : null;
       },
       write(value) {
-
         return value ? "true" : "false";
       },
     },
@@ -57,7 +54,6 @@ export function useGlobalLadiGuide() {
   const randomMotion = ref("");
   const isHidden = computed({
     get(this: void) {
-
       return hiddenPreference.value === true;
     },
     set(this: void, value) {
@@ -108,16 +104,18 @@ export function useGlobalLadiGuide() {
     "/profile": { heading: t("guide.pages.profile.heading"), message: t("guide.pages.profile.message") },
   }));
   function fallbackPageMessage() {
-
     return { heading: t("guide.defaultHeading"), message: t("guide.defaultMessage") };
   }
-  const ladiScores: Record<GuideMood, number> = { calm: 3.7, gentle: 2.8, happy: 4.6 };
-  const ladiScore = computed(() => ladiScores[mood.value]);
+  const moodStages: Record<GuideMood, LadiStageId> = {
+    calm: "garden-ladi",
+    gentle: "starter-ladi",
+    happy: "aurora-ladi",
+  };
+  const ladiStageId = computed(() => moodStages[mood.value]);
   const speechHeading = computed(
     () => customHeading.value || (mood.value === "gentle" ? t("guide.gentleHeading") : t("guide.defaultHeading")),
   );
   function clearSpeechTimer() {
-
     if (speechTimer !== undefined) {
       window.clearTimeout(speechTimer);
     }
@@ -163,21 +161,16 @@ export function useGlobalLadiGuide() {
     if (!smart) {
       speechTimer = window.setTimeout(closeSpeech, LADI_GUIDE_DEFAULT_SPEECH_DURATION_MS);
     }
-
   }
   function triggerSpeechAction() {
-
     if (!speechActionId.value) {
-
       return;
     }
 
     ladiGuideController.trigger(speechActionId.value);
   }
   function speakCurrentPageIntro() {
-
     if (choosingMood.value) {
-
       return;
     }
 
@@ -223,34 +216,27 @@ export function useGlobalLadiGuide() {
     speechTimer = window.setTimeout(speakCurrentPageIntro, LADI_GUIDE_MOOD_SELECTION_DELAY_MS);
   }
   function handleGuideMessage(detail: LadiGuideMessage) {
-
     if (detail.pageIntro) {
       pageIntroHeading.value = detail.heading || t("guide.defaultHeading");
       pageIntroMessage.value = detail.message;
 
       if (choosingMood.value) {
-
         return;
       }
-
     }
 
     if (moodPromptPending.value) {
-
       return;
     }
 
     showSpeech(detail.message, detail.heading, detail.smart, detail);
   }
   function handleGuidedClick(event: MouseEvent) {
-
     if (moodPromptPending.value) {
-
       return;
     }
 
     if (event.target instanceof Element && event.target.closest("[data-ladi-ignore]")) {
-
       return;
     }
 
@@ -260,7 +246,6 @@ export function useGlobalLadiGuide() {
     if (message) {
       showSpeech(message, target?.dataset.ladiHeading);
     }
-
   }
   function hideGuide() {
     closeSpeech();
@@ -312,9 +297,7 @@ export function useGlobalLadiGuide() {
   watch(
     () => store.piggyBankOpen,
     function callback(isOpen) {
-
       if (isOpen && moodPromptPending.value) {
-
         if (initialMoodTimer !== undefined) {
           window.clearTimeout(initialMoodTimer);
         }
@@ -329,7 +312,6 @@ export function useGlobalLadiGuide() {
       if (isOpen) {
         showSpeech(t("guide.balance.openMessage"), t("guide.balance.heading"), true);
       }
-
     },
   );
   onMounted(() => {
@@ -352,11 +334,9 @@ export function useGlobalLadiGuide() {
         },
         reduceMotion ? LADI_GUIDE_REDUCED_MOTION_PROMPT_DELAY_MS : LADI_GUIDE_STANDARD_PROMPT_DELAY_MS,
       );
-
     } else {
       moodPromptPending.value = false;
     }
-
   });
   onUnmounted(function callback() {
     clearSpeechTimer();
@@ -384,7 +364,7 @@ export function useGlobalLadiGuide() {
     hideGuide,
     isHidden,
     isSmart,
-    ladiScore,
+    ladiStageId,
     mood,
     moodOptions,
     moodPromptPending,

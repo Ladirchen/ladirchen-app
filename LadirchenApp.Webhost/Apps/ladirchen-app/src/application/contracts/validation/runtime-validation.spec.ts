@@ -28,6 +28,36 @@ describe("family aggregate runtime validation", () => {
     ).toBe(false);
   });
 
+  it("owns week-closing eligibility at family level instead of personal progression level", () => {
+    const progression = {
+      canCloseWeekSuccessfully: true,
+      completedWeeklyStreak: 2,
+      currentWeekTarget: 7,
+      familyEnergy: 60,
+      houseAtmosphere: "sunny",
+      houseLevel: 2,
+      houseVisualLevel: 3,
+      maximumSavingsInterestRate: 8,
+      memberProgressions: {
+        "member-1": {
+          approvedDates: ["2026-10-29"],
+          averageBasicRating: 4,
+          completionPercent: 80,
+          energyContribution: 60,
+          ladiStageId: "sun-ladi",
+          ladiStagePosition: 4,
+          participationValue: 5,
+          savingsInterestRate: 5.33,
+          streakDays: 8,
+        },
+      },
+      minimumSuccessfulWeekEnergy: 60,
+    };
+
+    expect(isFamilyProgressionState(progression)).toBe(true);
+    expect(isFamilyProgressionState({ ...progression, canCloseWeekSuccessfully: undefined })).toBe(false);
+  });
+
   it("requires the selected house edition to be owned", () => {
     expect(
       isHomeCustomizationState({

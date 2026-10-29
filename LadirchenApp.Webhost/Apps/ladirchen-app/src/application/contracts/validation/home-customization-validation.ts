@@ -1,6 +1,6 @@
 import type { HomeCustomizationState } from "@/application/contracts/home-customization-contract";
 import type { HouseAccessoryId, HouseThemeId, HouseZoneId, RoomDesignId } from "@/domain/house";
-import { HOUSE_ROOMS, HOUSE_THEMES, ROOM_DESIGNS, createHouseAccessories } from "@/domain/house";
+import { HOUSE_ACCESSORY_DEFINITIONS, HOUSE_ROOMS, HOUSE_THEMES, ROOM_DESIGNS } from "@/domain/house";
 import type { HouseLayoutPlacement } from "@/domain/house/entities";
 import {
   hasUniqueIds,
@@ -12,7 +12,7 @@ import {
   isRecord,
   values,
 } from "./runtime-validation";
-const accessoryIds = values<HouseAccessoryId>(createHouseAccessories().map((item) => item.id));
+const accessoryIds = values<HouseAccessoryId>(HOUSE_ACCESSORY_DEFINITIONS.map((item) => item.id));
 const themeIds = values<HouseThemeId>(HOUSE_THEMES.map((item) => item.id));
 const zoneIds = values<HouseZoneId>(["garden", ...HOUSE_ROOMS.map((room) => room.id)]);
 const roomDesignIds = values<RoomDesignId>(ROOM_DESIGNS.map((design) => design.id));
@@ -27,6 +27,31 @@ export function isHouseZoneId(value: unknown): value is HouseZoneId {
 }
 export function isRoomDesignId(value: unknown): value is RoomDesignId {
   return isKnownString(value, roomDesignIds);
+}
+function isCatalogEntry(value: unknown): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    typeof value.available === "boolean" &&
+    typeof value.id === "string" &&
+    isArrayOf(value.purchasableByMemberIds, isFamilyMemberId)
+  );
+}
+function isHouseCatalog(value: unknown): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    isArrayOf(value.accessories, isCatalogEntry) &&
+    isArrayOf(
+      value.areas,
+      (item): item is Record<string, unknown> => isRecord(item) && typeof item.available === "boolean",
+    ) &&
+    isArrayOf(value.furnitureSets, isCatalogEntry) &&
+    isArrayOf(
+      value.houseStages,
+      (item): item is Record<string, unknown> => isRecord(item) && typeof item.active === "boolean",
+    ) &&
+    isArrayOf(value.roomDesigns, isCatalogEntry) &&
+    isArrayOf(value.themes, isCatalogEntry)
+  );
 }
 function isHouseLayoutPlacement(value: unknown): value is HouseLayoutPlacement {
   if (
@@ -61,6 +86,14 @@ function isHouseLayoutPlacement(value: unknown): value is HouseLayoutPlacement {
 }
 export function isHomeCustomizationState(value: unknown): value is HomeCustomizationState {
   if (!isRecord(value)) {
+    return false;
+  }
+
+  if (
+    !isHouseCatalog(value.catalog) ||
+    !isRecord(value.capabilities) ||
+    typeof value.capabilities.canArrangeHouse !== "boolean"
+  ) {
     return false;
   }
 

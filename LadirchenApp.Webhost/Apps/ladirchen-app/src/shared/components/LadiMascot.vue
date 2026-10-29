@@ -1,7 +1,7 @@
 <template>
   <motion.span
     class="ladi-wrap"
-    :class="[stage.tier, { 'has-score': showScore }]"
+    :class="stage.tier"
     :style="{ '--ladi-size': `${size}px` }"
     :data-motion-state="motionState"
     :initial="false"
@@ -13,10 +13,6 @@
     :aria-label="ariaLabel"
   >
     <img v-if="spriteUrl" class="ladi-sprite" :src="spriteUrl" alt="" />
-    <span v-if="showScore" class="ladi-score">
-      <i aria-hidden="true"></i>
-      {{ score.toFixed(1) }}
-    </span>
   </motion.span>
 </template>
 
@@ -24,14 +20,13 @@
 import { computed } from "vue";
 import { motion, useReducedMotion } from "motion-v";
 import { useI18n } from "vue-i18n";
-import { getLadiStage } from "@/domain/ladi";
-import type { LadiSpriteId } from "@/domain/ladi";
+import { ladiStageById } from "@/domain/ladi";
+import type { LadiSpriteId, LadiStageId } from "@/domain/ladi";
 import { getLadiSpriteUrl } from "@/shared/assets/ladi-sprite-assets";
 import { useLazyAssetUrl } from "@/shared/composables/use-lazy-asset-url";
 export interface Props {
-  score: number;
+  stageId: LadiStageId;
   perched?: boolean;
-  showScore?: boolean;
   size?: number;
   smart?: boolean;
 }
@@ -39,21 +34,17 @@ const characterTransition = { type: "spring", stiffness: 260, damping: 22, mass:
 const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), {
   perched: false,
-  showScore: true,
   size: 46,
   smart: false,
 });
 const reducedMotion = useReducedMotion();
-const stage = computed(() => getLadiStage(props.score));
+const stage = computed(() => ladiStageById(props.stageId));
 const spriteId = computed<LadiSpriteId>(function callback() {
-
   if (props.perched) {
-
     return "perched-ladi";
   }
 
   if (props.smart) {
-
     return "smart-ladi";
   }
 
@@ -64,43 +55,34 @@ const isBored = computed(() => stage.value.id === "idle-ladi");
 const isCool = computed(() => stage.value.tier === "aurora");
 const isSuper = computed(() => stage.value.tier === "super");
 const motionState = computed(function callback() {
-
   if (isSuper.value) {
-
     return "super";
   }
 
   if (isCool.value) {
-
     return "cool";
   }
 
   if (isBored.value) {
-
     return "bored";
   }
 
   return "happy";
 });
 const characterMotion = computed(function callback() {
-
   if (reducedMotion.value) {
-
     return { rotate: 0, y: 0, scale: 1 };
   }
 
   if (isSuper.value) {
-
     return { rotate: 0, y: -4, scale: 1.06 };
   }
 
   if (isCool.value) {
-
     return { rotate: 1.5, y: -1, scale: 1.025 };
   }
 
   if (isBored.value) {
-
     return { rotate: -2, y: 3, scale: 0.96 };
   }
 
@@ -113,7 +95,6 @@ const pressMotion = computed(() => (reducedMotion.value ? undefined : { scale: c
 const ariaLabel = computed(() =>
   t("ladi.mascotAria", {
     name: props.smart ? t("ladi.smartName") : t(stage.value.nameKey),
-    score: props.score.toFixed(1),
   }),
 );
 </script>
@@ -125,9 +106,6 @@ const ariaLabel = computed(() =>
   width: var(--ladi-size);
   height: var(--ladi-size);
   --uno: position-relative d-inline-flex align-center flex-shrink-0;
-}
-.ladi-wrap.has-score {
-  width: calc(var(--ladi-size) + 23px);
 }
 .ladi-sprite {
   width: var(--ladi-size);
