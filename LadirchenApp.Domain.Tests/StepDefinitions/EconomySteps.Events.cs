@@ -78,7 +78,7 @@ public sealed partial class EconomySteps
     _economy.ClearDomainEvents();
   }
 
-  [When("an authorized member performs {string}")]
+  [When("a family member permitted to perform {string}")]
   public void PerformEventAction(string action)
   {
     if (_eventAction != action)

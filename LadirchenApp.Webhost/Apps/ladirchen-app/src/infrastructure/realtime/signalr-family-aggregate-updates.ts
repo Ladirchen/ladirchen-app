@@ -6,47 +6,38 @@ import type {
   FamilyAggregateReconnectedHandler,
   FamilyAggregateUpdatesGateway,
 } from "@/application/ports/family-aggregate-updates";
-import { isDomainIdValue, isUuidValue } from "@/domain/shared/identifiers";
-import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
-import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
-
-const aggregateTypes = new Set<FamilyAggregateType>([
-  "contributions",
-  "family-profile",
-  "family-progression",
-  "home-customization",
-  "reward-shop",
-  "savings",
-]);
-
-function isFamilyAggregateType(value: unknown): value is FamilyAggregateType {
-  return typeof value === "string" && aggregateTypes.has(value as FamilyAggregateType);
-}
+import {
+  isFamilyId,
+  isFamilyMemberId,
+  isInteger,
+  isRecord,
+} from "@/application/contracts/validation/runtime-validation";
+import { isFamilyReadModelType } from "@/application/contracts/family-read-model-contract";
+import type { FamilyId } from "@/domain/shared/identifiers";
 
 function parseChange(value: unknown): FamilyAggregateChanged | null {
-  if (typeof value !== "object" || value === null) {
+  if (!isRecord(value)) {
     return null;
   }
 
-  const candidate = value as Record<string, unknown>;
-
   if (
-    !isFamilyAggregateType(candidate.aggregateType) ||
-    !isUuidValue(candidate.familyId) ||
-    !Number.isSafeInteger(candidate.revision) ||
-    (candidate.revision as number) < 1 ||
-    typeof candidate.updatedAt !== "string" ||
-    !isDomainIdValue(candidate.updatedBy)
+    !isFamilyReadModelType(value.aggregateType) ||
+    !isFamilyId(value.familyId) ||
+    !isInteger(value.revision) ||
+    !Number.isSafeInteger(value.revision) ||
+    value.revision < 1 ||
+    typeof value.updatedAt !== "string" ||
+    !isFamilyMemberId(value.updatedBy)
   ) {
     return null;
   }
 
   return {
-    aggregateType: candidate.aggregateType,
-    familyId: candidate.familyId as FamilyId,
-    revision: candidate.revision as number,
-    updatedAt: candidate.updatedAt,
-    updatedBy: candidate.updatedBy as FamilyMemberId,
+    aggregateType: value.aggregateType,
+    familyId: value.familyId,
+    revision: value.revision,
+    updatedAt: value.updatedAt,
+    updatedBy: value.updatedBy,
   };
 }
 

@@ -13,7 +13,6 @@ import {
   isKnownString,
   isNonEmptyString,
   isNonNegativeInteger,
-  isOptionalBoolean,
   isOptionalString,
   isRecord,
   values,
@@ -27,8 +26,8 @@ const categories = exhaustiveValues<ShopRewardCategory>({
   privilege: true,
   time: true,
 });
-function isOptionalUniqueDomainIdArray(value: unknown): boolean {
-  return value === undefined || (isArrayOf(value, isDomainId) && new Set(value).size === value.length);
+function isUniqueDomainIdArray(value: unknown): boolean {
+  return isArrayOf(value, isDomainId) && new Set(value).size === value.length;
 }
 function isShopReward(value: unknown): value is ShopReward {
   return (
@@ -45,17 +44,16 @@ function isShopReward(value: unknown): value is ShopReward {
     typeof value.conditions === "string" &&
     (value.availableFrom === undefined || isCalendarDate(value.availableFrom)) &&
     (value.availableUntil === undefined || isCalendarDate(value.availableUntil)) &&
-    isOptionalBoolean(value.isVisible) &&
-    isOptionalBoolean(value.published) &&
-    (value.publicationStatus === undefined ||
-      value.publicationStatus === "expired" ||
+    typeof value.isVisible === "boolean" &&
+    typeof value.published === "boolean" &&
+    (value.publicationStatus === "expired" ||
       value.publicationStatus === "hidden" ||
       value.publicationStatus === "scheduled" ||
       value.publicationStatus === "visible") &&
     isOptionalString(value.nextStatusChangeAt) &&
-    isOptionalUniqueDomainIdArray(value.requestableByMemberIds) &&
-    isOptionalUniqueDomainIdArray(value.cancellableByMemberIds) &&
-    isOptionalUniqueDomainIdArray(value.approvableByMemberIds) &&
+    isUniqueDomainIdArray(value.requestableByMemberIds) &&
+    isUniqueDomainIdArray(value.cancellableByMemberIds) &&
+    isUniqueDomainIdArray(value.approvableByMemberIds) &&
     isKnownString(value.status, statuses) &&
     hasOptionalDomainId(value.requesterId)
   );
@@ -63,7 +61,7 @@ function isShopReward(value: unknown): value is ShopReward {
 export function isRewardShopState(value: unknown): value is RewardShopState {
   return (
     isRecord(value) &&
-    isOptionalBoolean(value.redemptionOpen) &&
+    typeof value.redemptionOpen === "boolean" &&
     isArrayOf(value.rewards, isShopReward) &&
     hasUniqueIds(value.rewards) &&
     value.rewards.every(

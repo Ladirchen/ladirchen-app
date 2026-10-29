@@ -4,11 +4,21 @@ import type {
   AuthenticationSession,
   RegisterAccountCommand,
 } from "@/application/ports/authentication-gateway";
+import { isRecord } from "@/application/contracts/validation/runtime-validation";
 
 interface AuthenticationSessionDto {
   readonly familyId: string;
   readonly familyName: string;
   readonly memberId: string;
+}
+
+function isAuthenticationSessionDto(value: unknown): value is AuthenticationSessionDto {
+  return (
+    isRecord(value) &&
+    typeof value.familyId === "string" &&
+    typeof value.familyName === "string" &&
+    typeof value.memberId === "string"
+  );
 }
 
 function sessionFromDto(dto: AuthenticationSessionDto): AuthenticationSession {
@@ -42,7 +52,13 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
       throw new Error(`Authentication failed with status ${response.status}.`);
     }
 
-    return sessionFromDto((await response.json()) as AuthenticationSessionDto);
+    const value: unknown = await response.json();
+
+    if (!isAuthenticationSessionDto(value)) {
+      throw new TypeError("The authentication response is invalid.");
+    }
+
+    return sessionFromDto(value);
   }
 
   async register(command: RegisterAccountCommand): Promise<void> {

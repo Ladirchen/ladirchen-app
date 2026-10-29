@@ -133,7 +133,10 @@ export function isFamilyProfileState(value: unknown): value is FamilyProfileStat
     return false;
   }
 
-  const avatarCatalog = value.avatarCatalog as Readonly<Record<ViewerRole, AvatarProfileCatalog>>;
+  const avatarCatalog = {
+    child: value.avatarCatalog.child,
+    guardian: value.avatarCatalog.guardian,
+  } satisfies Readonly<Record<ViewerRole, AvatarProfileCatalog>>;
 
   return (
     isArrayOf(value.members, (member): member is FamilyMember => isFamilyMember(member, avatarCatalog)) &&

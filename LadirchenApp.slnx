@@ -98,4 +98,5 @@
   <Project Path="LadirchenApp.Domain/LadirchenApp.Domain.csproj" />
   <Project Path="LadirchenApp.Prototypes/LadirchenApp.Prototypes.csproj" />
   <Project Path="LadirchenApp.Webhost/LadirchenApp.Webhost.csproj" />
+  <Project Path="LadirchenApp.Webhost.Tests/LadirchenApp.Webhost.Tests.csproj" />
 </Solution>

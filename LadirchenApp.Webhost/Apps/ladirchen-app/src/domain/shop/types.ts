@@ -18,15 +18,15 @@ export interface ShopReward {
   conditions: string;
   availableFrom?: string;
   availableUntil?: string;
-  isVisible?: boolean;
+  isVisible: boolean;
   status: ShopRewardStatus;
   requesterId?: FamilyMemberId;
-  published?: boolean;
-  publicationStatus?: ShopRewardPublicationStatus;
+  published: boolean;
+  publicationStatus: ShopRewardPublicationStatus;
   nextStatusChangeAt?: string;
-  requestableByMemberIds?: ReadonlyArray<FamilyMemberId>;
-  cancellableByMemberIds?: ReadonlyArray<FamilyMemberId>;
-  approvableByMemberIds?: ReadonlyArray<FamilyMemberId>;
+  requestableByMemberIds: ReadonlyArray<FamilyMemberId>;
+  cancellableByMemberIds: ReadonlyArray<FamilyMemberId>;
+  approvableByMemberIds: ReadonlyArray<FamilyMemberId>;
 }
 
 export interface NewShopReward {

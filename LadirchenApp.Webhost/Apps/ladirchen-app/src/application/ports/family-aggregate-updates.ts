@@ -1,8 +1,8 @@
-import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
+import type { FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 
 export interface FamilyAggregateChanged {
-  readonly aggregateType: FamilyAggregateType;
+  readonly aggregateType: FamilyReadModelType;
   readonly familyId: FamilyId;
   readonly revision: number;
   readonly updatedAt: string;

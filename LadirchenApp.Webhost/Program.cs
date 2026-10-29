@@ -6,6 +6,7 @@ using LadirchenApp.Webhost.Helpers;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace LadirchenApp.Webhost;
 
@@ -25,6 +26,11 @@ public static class Program
       logger.Information("*** Setup for Ladirchen webhost complete, building and configuring application..§.");
 
       var app = builder.Build();
+
+      if (!app.Environment.IsEnvironment("NSWAG"))
+      {
+        await app.MigrateLadirchenDatabaseAsync();
+      }
 
       app.ConfigLadierchenWebhostApp(appSettings, logger);
 

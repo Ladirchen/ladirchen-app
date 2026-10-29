@@ -26,7 +26,7 @@ public sealed partial class EconomySteps
   private bool _goalVisible;
   private bool _goalChanged;
   private IReadOnlySet<FamilyMemberId> _goalParticipants = new HashSet<FamilyMemberId>();
-  private SavingsVoucher? _voucher;
+  private GoalSavingsVoucher? _voucher;
   private bool _redemptionResult;
   private bool _secondRedemptionResult;
 
@@ -36,12 +36,19 @@ public sealed partial class EconomySteps
     CreateEconomy();
     _expectedStarterBonus = starterBonus;
     var owner = goalType == "Family" ? GoalOwner.Family : GoalOwner.Member(_child);
-    var visibility = goalType == "Family" ? GoalVisibility.Family : GoalVisibility.Family;
+    const GoalVisibility visibility = GoalVisibility.Family;
     var memberCount = goalType == "Family" ? (int)(starterBonus / 5) : 0;
+    var participants = goalType == "Family"
+      ? _family.Members
+        .Where(item => !item.InvitationPending)
+        .Take(memberCount)
+        .Select(item => item.Id)
+        .ToArray()
+      : null;
     _economy.AddGoal(
       _child,
       _goalId,
-      new SavingGoalDefinition(owner, "Goal", new LadirchenAmount(100), visibility, memberCount),
+      new SavingGoalDefinition(owner, "Goal", new LadirchenAmount(100), visibility, participants),
       NextOperation(),
       _now
     );
@@ -50,11 +57,21 @@ public sealed partial class EconomySteps
   [Given("the goal contains {float} contributed Ladirchen in addition to its starter bonus")]
   public void GoalContainsContributions(decimal amount)
   {
-    _economy.SupportGoal(_admin, _goalId, new LadirchenAmount(amount), NextOperation(), _now);
+    FundChild(amount);
+    var goal = _economy.GoalFor(_child, _goalId);
+
+    if (goal.Owner.IsFamily)
+    {
+      _economy.GiftToGoal(_child, _goalId, new LadirchenAmount(amount), NextOperation(), _now);
+    }
+    else
+    {
+      _economy.DepositToGoal(_child, _goalId, new LadirchenAmount(amount), NextOperation(), _now);
+    }
   }
 
-  [When("an authorized family member cancels the goal before its target is reached")]
-  public void CancelIncompleteGoal()
+  [When("the owner cancels the personal goal before its target is reached")]
+  public void CancelIncompletePersonalGoal()
   {
     _returnedContribution = _economy.CancelGoal(_child, _goalId, NextOperation(), _now);
     _forfeitedBonus = _economy.Ledger.Single(item => item.Kind == LedgerKind.BonusForfeited).Amount;
@@ -78,6 +95,194 @@ public sealed partial class EconomySteps
     await Assert.That(_returnedContribution).IsEqualTo(amount);
   }
 
+  [Given("a family savings goal with the child, sibling and guardian as participants")]
+  public void FamilyGoalForRefunds()
+  {
+    CreateEconomy();
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        [_child, _sibling, _supporter]
+      ),
+      NextOperation(),
+      _now
+    );
+  }
+
+  [Given("a family savings goal with the child and sibling as participants")]
+  public void FamilyGoalForTwoParticipants()
+  {
+    CreateEconomy();
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        [_child, _sibling]
+      ),
+      NextOperation(),
+      _now
+    );
+  }
+
+  [Given("a family savings goal with only the child as participant")]
+  public void FamilyGoalForOneParticipant()
+  {
+    CreateEconomy();
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        [_child]
+      ),
+      NextOperation(),
+      _now
+    );
+  }
+
+  [Given("the child contributes {float} Ladirchen to the family goal from their wallet")]
+  public void ChildContributesToFamilyGoal(decimal amount)
+  {
+    _economy.GiftToGoal(_child, _goalId, new LadirchenAmount(amount), NextOperation(), _now);
+  }
+
+  [Given("the child and sibling each have {float} Ladirchen")]
+  public void FundChildAndSibling(decimal amount)
+  {
+    FundChild(amount);
+    _economy.GiveSpecialGift(_admin, _sibling, new LadirchenAmount(amount), "Savings", NextOperation(), _now);
+  }
+
+  [Given("the child contributes {float} Ladirchen and the sibling contributes {float} Ladirchen from their wallets")]
+  public void FamilyGoalWalletContributions(decimal childAmount, decimal siblingAmount)
+  {
+    _economy.GiftToGoal(_child, _goalId, new LadirchenAmount(childAmount), NextOperation(), _now);
+    _economy.GiftToGoal(_sibling, _goalId, new LadirchenAmount(siblingAmount), NextOperation(), _now);
+  }
+
+  [Given("the guardian adds {float} non-refundable support Ladirchen")]
+  public void NonRefundableGuardianSupport(decimal amount)
+  {
+    _economy.SupportGoal(_supporter, _goalId, new LadirchenAmount(amount), NextOperation(), _now);
+  }
+
+  [When("the child requests cancellation of the family goal")]
+  [When("the child requests cancellation of the family goal again")]
+  public void ChildRequestsFamilyGoalCancellation()
+  {
+    _economy.RequestGoalCancellation(_child, _goalId, NextOperation(), _now);
+  }
+
+  [When("all other selected participants approve the family-goal cancellation")]
+  public void OtherParticipantsApproveFamilyGoalCancellation()
+  {
+    var goal = _economy.GoalFor(_child, _goalId);
+    _returnedContribution = goal.RefundableContributions.Values.Sum();
+
+    foreach (var participantId in goal.Participants.Where(memberId => memberId != _child))
+    {
+      _ = _economy.DecideGoalCancellation(participantId, _goalId, true, NextOperation(), _now);
+    }
+
+    _forfeitedBonus = _economy.Ledger.Single(item => item.Kind == LedgerKind.BonusForfeited).Amount;
+  }
+
+  [When("the sibling approves the family-goal cancellation")]
+  public void SiblingApprovesFamilyGoalCancellation()
+  {
+    _ = _economy.DecideGoalCancellation(_sibling, _goalId, true, NextOperation(), _now);
+  }
+
+  [When("the sibling rejects the family-goal cancellation")]
+  public void SiblingRejectsFamilyGoalCancellation()
+  {
+    _ = _economy.DecideGoalCancellation(_sibling, _goalId, false, NextOperation(), _now);
+  }
+
+  [When("the guardian approves the family-goal cancellation")]
+  public void GuardianApprovesFamilyGoalCancellation()
+  {
+    _ = _economy.DecideGoalCancellation(_supporter, _goalId, true, NextOperation(), _now);
+    _forfeitedBonus = _economy.Ledger.Single(item => item.Kind == LedgerKind.BonusForfeited).Amount;
+  }
+
+  [When("the child attempts to cancel the family goal directly")]
+  public void ChildAttemptsDirectFamilyGoalCancellation()
+  {
+    Try(() => _economy.CancelGoal(_child, _goalId, NextOperation(), _now));
+  }
+
+  [When("a non-participating guardian attempts to approve the family-goal cancellation")]
+  public void NonParticipantAttemptsFamilyGoalCancellationApproval()
+  {
+    Try(() => _economy.DecideGoalCancellation(_supporter, _goalId, true, NextOperation(), _now));
+  }
+
+  [Then("the cancellation request records the child and awaits the sibling and guardian")]
+  public async Task CancellationRequestAwaitsSiblingAndGuardian()
+  {
+    var request = _economy.GoalFor(_child, _goalId).CancellationRequest;
+    await Assert.That(request?.RequestedByMemberId).IsEqualTo(_child);
+    await Assert.That(request?.ConsentedMemberIds).IsEquivalentTo([_child]);
+    await Assert.That(
+      _economy.GoalFor(_child, _goalId).Participants
+        .Except(request?.ConsentedMemberIds ?? Enumerable.Empty<FamilyMemberId>())
+        .ToArray()
+    ).IsEquivalentTo([_sibling, _supporter]);
+  }
+
+  [Then("the family goal remains unchanged while one participant is still pending")]
+  public async Task FamilyGoalAwaitsFinalCancellationDecision()
+  {
+    var goal = _economy.GoalFor(_child, _goalId);
+    await Assert.That(goal.Saved).IsEqualTo(52);
+    await Assert.That(goal.CancellationRequest?.ConsentedMemberIds).IsEquivalentTo([_child, _sibling]);
+  }
+
+  [Then("the family goal still exists without a cancellation request")]
+  public async Task FamilyGoalRemainsAfterCancellationRejection()
+  {
+    var goal = _economy.GoalFor(_child, _goalId);
+    await Assert.That(goal.Cancelled).IsFalse();
+    await Assert.That(goal.CancellationRequest).IsNull();
+  }
+
+  [Then("the cancellation request still awaits the sibling")]
+  public async Task CancellationRequestStillAwaitsSibling()
+  {
+    var request = _economy.GoalFor(_child, _goalId).CancellationRequest;
+    await Assert.That(request?.ConsentedMemberIds).IsEquivalentTo([_child]);
+    await Assert.That(request?.ConsentedMemberIds.Contains(_sibling)).IsFalse();
+  }
+
+  [Then("the cancellation ledger refunds {float} Ladirchen to the child and {float} Ladirchen to the sibling")]
+  public async Task CancellationRefundLedger(decimal childAmount, decimal siblingAmount)
+  {
+    var refunds = _economy.Ledger
+      .Where(item => item.Kind == LedgerKind.Credit && item.Reason == "Goal cancellation refund")
+      .ToDictionary(item => item.MemberId, item => item.Amount);
+    await Assert.That(refunds[_child]).IsEqualTo(childAmount);
+    await Assert.That(refunds[_sibling]).IsEqualTo(siblingAmount);
+  }
+
+  [Then("{float} non-refundable Ladirchen are forfeited")]
+  public async Task NonRefundableCreditsForfeited(decimal amount)
+  {
+    await Assert.That(_forfeitedBonus).IsEqualTo(amount);
+  }
+
   [Given("a {string} savings goal contains {float} starter-bonus Ladirchen")]
   public void GoalWithStarterBonus(string goalType, decimal bonus)
   {
@@ -94,8 +299,7 @@ public sealed partial class EconomySteps
   [When("the completed savings goal is closed")]
   public void CloseCompletedGoal()
   {
-    var goal = _economy.GoalFor(_child, _goalId);
-    _voucher = new SavingsVoucher(goal.Saved, goal.Owner.MemberId, Array.Empty<FamilyMemberId>());
+    _voucher = _economy.SavingsVouchers.Single(item => item.Id == _goalId);
   }
 
   [Then("its full balance including {float} starter-bonus Ladirchen is available")]
@@ -272,7 +476,7 @@ public sealed partial class EconomySteps
     {
       "child" => _child,
       "guardian" => _supporter,
-      "family administrator" => _admin,
+      "guardian administrator" => _admin,
       _ => _child,
     };
     var owner = goalType == "Family"
@@ -317,7 +521,7 @@ public sealed partial class EconomySteps
     _expectedOwner = GoalOwner.Member(_child);
   }
 
-  [When("an authorized family member changes its title, icon, target and visibility")]
+  [When("a family member who can manage savings goals changes its title, icon, target and visibility")]
   [When("the child changes its valid title, icon, target or visibility")]
   [When("the guardian changes valid goal data")]
   public void AuthorizedGoalEdit()
@@ -365,7 +569,7 @@ public sealed partial class EconomySteps
     var member = viewer switch
     {
       "owner" => _child,
-      "family administrator" or "guardian admin" => _admin,
+      "guardian administrator" => _admin,
       "guardian supporter" => _supporter,
       "another child" => _sibling,
       _ => _sibling,
@@ -379,8 +583,8 @@ public sealed partial class EconomySteps
     await Assert.That(_goalVisible).IsEqualTo(result == "visible");
   }
 
-  [Given("an authorized guardian supports a visible savings goal")]
-  [Given("an authorized guardian supports a visible personal goal owned by a child")]
+  [Given("a guardian with goal-support permission supports a visible savings goal")]
+  [Given("a guardian with goal-support permission supports a visible personal goal owned by a child")]
   public void VisibleSupportedGoal()
   {
     CreateEconomy();
@@ -426,7 +630,7 @@ public sealed partial class EconomySteps
     );
   }
 
-  [When("an authorized guardian contributes {float} Ladirchen")]
+  [When("a guardian with goal-support permission contributes {float} Ladirchen")]
   public void NormalizedGuardianContribution(decimal entered)
   {
     var goal = _economy.GoalFor(_supporter, _goalId);
@@ -454,7 +658,7 @@ public sealed partial class EconomySteps
     await Assert.That(gift.Amount).IsEqualTo(10);
   }
 
-  [Given("an authorized guardian supports a family savings goal")]
+  [Given("a guardian with goal-support permission supports a family savings goal")]
   public void SupportedFamilyGoal()
   {
     CreateEconomy();
@@ -486,8 +690,7 @@ public sealed partial class EconomySteps
   public void DepositFinalLadirchen()
   {
     Deposit(1);
-    var goal = _economy.GoalFor(_child, _goalId);
-    _voucher = new SavingsVoucher(goal.Saved, _child, Array.Empty<FamilyMemberId>());
+    _voucher = _economy.SavingsVouchers.Single(item => item.Id == _goalId);
   }
 
   [Then("the savings goal is completed")]
@@ -516,11 +719,10 @@ public sealed partial class EconomySteps
     CreateGoal("Private", 100);
   }
 
-  [When("a family member attempts to create its voucher")]
+  [When("the savings vouchers are inspected")]
   public void AttemptIncompleteVoucher()
   {
-    var goal = _economy.GoalFor(_child, _goalId);
-    _voucher = goal.Completed ? new SavingsVoucher(goal.Saved, _child, Array.Empty<FamilyMemberId>()) : null;
+    _voucher = _economy.SavingsVouchers.SingleOrDefault(item => item.Id == _goalId);
   }
 
   [Then("no voucher is created")]
@@ -539,7 +741,21 @@ public sealed partial class EconomySteps
   public void SelectGoalParticipants(string participation)
   {
     var selected = new[] { _child, _supporter };
-    _goalParticipants = _participantPolicy.Select(_family.Members, participation, selected);
+    var participants = _participantPolicy.Select(_family.Members, participation, selected);
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        participants.ToArray()
+      ),
+      NextOperation(),
+      _now
+    );
+    _goalParticipants = _economy.GoalFor(_admin, _goalId).Participants;
   }
 
   [Then("the goal participants are {string}")]
@@ -563,7 +779,25 @@ public sealed partial class EconomySteps
   [When("one child and one guardian are selected")]
   public void SelectChildAndGuardian()
   {
-    _goalParticipants = _participantPolicy.Select(_family.Members, "selected family members", [_child, _supporter]);
+    var participants = _participantPolicy.Select(
+      _family.Members,
+      "selected family members",
+      [_child, _supporter]
+    );
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Selected Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        participants.ToArray()
+      ),
+      NextOperation(),
+      _now
+    );
+    _goalParticipants = _economy.GoalFor(_admin, _goalId).Participants;
   }
 
   [Then("both are participants in the family goal")]
@@ -593,7 +827,28 @@ public sealed partial class EconomySteps
   [When("the family voucher is created")]
   public void CreateFamilyVoucher()
   {
-    _voucher = new SavingsVoucher(100, null, _goalParticipants);
+    _economy.AddGoal(
+      _admin,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Family,
+        "Family Goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family,
+        _goalParticipants.ToArray()
+      ),
+      NextOperation(),
+      _now
+    );
+    var goal = _economy.GoalFor(_admin, _goalId);
+    _economy.SupportGoal(
+      _admin,
+      _goalId,
+      new LadirchenAmount(goal.Target - goal.Saved),
+      NextOperation(),
+      _now
+    );
+    _voucher = _economy.SavingsVouchers.Single(item => item.Id == _goalId);
   }
 
   [Then("the voucher contains the full goal balance including the family starter bonus")]
@@ -618,6 +873,7 @@ public sealed partial class EconomySteps
   [Given("a completed family voucher has three participating family members")]
   public void ThreeParticipantVoucher()
   {
+    CreateEconomy();
     ThreeParticipants();
     CreateFamilyVoucher();
   }
@@ -626,14 +882,14 @@ public sealed partial class EconomySteps
   [Given("only two participants have consented")]
   public void TwoConsents()
   {
-    _voucher!.Consent(_child);
-    _voucher.Consent(_sibling);
+    _ = _economy.ConsentSavingsVoucher(_child, _goalId, _now);
+    _ = _economy.ConsentSavingsVoucher(_sibling, _goalId, _now);
   }
 
   [When("the final participant consents")]
   public void FinalConsent()
   {
-    _voucher!.Consent(_supporter);
+    _ = _economy.ConsentSavingsVoucher(_supporter, _goalId, _now);
   }
 
   [Then("the family voucher becomes redeemable")]
@@ -645,7 +901,7 @@ public sealed partial class EconomySteps
   [When("redemption is attempted")]
   public void AttemptRedemption()
   {
-    _redemptionResult = _voucher!.Redeem();
+    _redemptionResult = TryVoucherRedemption(_child);
   }
 
   [Then("the redemption is rejected")]
@@ -671,7 +927,7 @@ public sealed partial class EconomySteps
   [When("a non-participating family member attempts to consent")]
   public void NonParticipantConsents()
   {
-    _voucher!.Consent(_sibling);
+    Try(() => _economy.ConsentSavingsVoucher(_sibling, _goalId, _now));
   }
 
   [Then("the recorded participant consents remain unchanged")]
@@ -691,13 +947,13 @@ public sealed partial class EconomySteps
   [When("the voucher is redeemed")]
   public void RedeemVoucher()
   {
-    _redemptionResult = _voucher!.Redeem();
+    _redemptionResult = TryVoucherRedemption(_child);
   }
 
   [When("redemption is attempted again")]
   public void RedeemVoucherAgain()
   {
-    _secondRedemptionResult = _voucher!.Redeem();
+    _secondRedemptionResult = TryVoucherRedemption(_child);
   }
 
   [Then("the second redemption is rejected")]
@@ -717,6 +973,20 @@ public sealed partial class EconomySteps
     if (bonus != 5)
     {
       throw new InvalidOperationException("The configured family starter bonus must be five Ladirchen per member.");
+    }
+  }
+
+  private bool TryVoucherRedemption(FamilyMemberId actorId)
+  {
+    try
+    {
+      _economy.RedeemSavingsVoucher(actorId, _goalId, _now);
+
+      return true;
+    }
+    catch (DomainRuleException)
+    {
+      return false;
     }
   }
 }

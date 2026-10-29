@@ -4,6 +4,7 @@ import type {
   GoalVisibility,
   GuardianGift,
   SavingGoal,
+  SavingGoalCancellationRequest,
   SavingsVoucher,
   SavingsVoucherStatus,
 } from "@/domain/savings/types";
@@ -27,6 +28,16 @@ const voucherStatuses = exhaustiveValues<SavingsVoucherStatus>({ pending: true, 
 export function isFamilyCurrency(value: unknown): value is FamilyCurrency {
   return isKnownString(value, familyCurrencies);
 }
+function isSavingGoalCancellationRequest(value: unknown): value is SavingGoalCancellationRequest {
+  return (
+    isRecord(value) &&
+    isFamilyMemberId(value.requestedByMemberId) &&
+    isArrayOf(value.consentedMemberIds, isFamilyMemberId) &&
+    new Set(value.consentedMemberIds).size === value.consentedMemberIds.length &&
+    isArrayOf(value.pendingMemberIds, isFamilyMemberId) &&
+    new Set(value.pendingMemberIds).size === value.pendingMemberIds.length
+  );
+}
 function isSavingGoal(value: unknown): value is SavingGoal {
   return (
     isRecord(value) &&
@@ -48,13 +59,17 @@ function isSavingGoal(value: unknown): value is SavingGoal {
     (value.visibleToMemberIds === undefined || isArrayOf(value.visibleToMemberIds, isFamilyMemberId)) &&
     (value.participantIds === undefined || isArrayOf(value.participantIds, isFamilyMemberId)) &&
     (value.voucherId === undefined || isDomainId(value.voucherId)) &&
+    (value.cancellationRequest === undefined || isSavingGoalCancellationRequest(value.cancellationRequest)) &&
     (value.commandLimits === undefined ||
       (isRecord(value.commandLimits) &&
         Object.entries(value.commandLimits).every(
           ([memberId, limit]) =>
             isFamilyMemberId(memberId) &&
             isRecord(limit) &&
+            typeof limit.canApproveCancellation === "boolean" &&
             typeof limit.canCancel === "boolean" &&
+            typeof limit.canRejectCancellation === "boolean" &&
+            typeof limit.canRequestCancellation === "boolean" &&
             typeof limit.canWithdraw === "boolean" &&
             isFiniteNumber(limit.maximumDepositAmount) &&
             limit.maximumDepositAmount >= 0 &&
@@ -102,16 +117,14 @@ export function isSavingsState(value: unknown): value is SavingsState {
     Object.entries(value.balances).every(
       ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
     ) &&
-    (value.availableBalances === undefined ||
-      (isRecord(value.availableBalances) &&
-        Object.entries(value.availableBalances).every(
-          ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
-        ))) &&
-    (value.sharedSavedBalances === undefined ||
-      (isRecord(value.sharedSavedBalances) &&
-        Object.entries(value.sharedSavedBalances).every(
-          ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
-        ))) &&
+    isRecord(value.availableBalances) &&
+    Object.entries(value.availableBalances).every(
+      ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
+    ) &&
+    isRecord(value.sharedSavedBalances) &&
+    Object.entries(value.sharedSavedBalances).every(
+      ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
+    ) &&
     isFamilyCurrency(value.familyCurrencyCode) &&
     isArrayOf(value.goals, isSavingGoal) &&
     hasUniqueIds(value.goals) &&

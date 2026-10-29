@@ -62,8 +62,20 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const pendingGuardianGifts: GuardianGift[] = [];
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
-  const houseCatalog = undefined as HouseCatalogState | undefined;
+  const houseCatalog = initialStateValue<HouseCatalogState | undefined>(undefined);
   const subscriptionTier = initialStateValue<SubscriptionTier>("free");
+  const sharedSavedBalances: Partial<Record<FamilyMemberId, number>> = {};
+  const todayEarnedByMember: Partial<Record<FamilyMemberId, number>> = {};
+  const currentWeekEarnedByMember: Partial<Record<FamilyMemberId, number>> = {};
+  const currentWeekApprovedContributionCountByMember: Partial<Record<FamilyMemberId, number>> = {};
+  const avatarCatalog = initialStateValue<Readonly<Record<ViewerRole, AvatarProfileCatalog>> | undefined>(undefined);
+  const houseAtmosphere = initialStateValue<HouseAtmosphere>("cloudy");
+  const houseVisualLevel = initialStateValue<HouseEnergyVisualLevel>(1);
+  const savingsVouchers: SavingsVoucher[] = [];
+  const houseThemeId = initialStateValue<HouseThemeId>("sunny-dollhouse");
+  const ownedHouseThemeIds: HouseThemeId[] = [];
+  const ownedRoomDesignIds: RoomDesignId[] = [];
+  const selectedRoomDesignIds: Partial<Record<HouseZoneId, RoomDesignId>> = {};
   const snackbarParams: Record<string, number | string> = {};
   const snackbar: {
     visible: boolean;
@@ -86,39 +98,41 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     familySetupOpen: false,
     balances: initialData.balances,
     availableBalances: { ...initialData.balances },
-    sharedSavedBalances: {} as Partial<Record<FamilyMemberId, number>>,
-    todayEarnedByMember: {} as Partial<Record<FamilyMemberId, number>>,
+    sharedSavedBalances,
+    todayEarnedByMember,
+    currentWeekEarnedByMember,
+    currentWeekApprovedContributionCountByMember,
     familyCurrencyCode,
     familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
     ladirchenPerCurrencyUnit: 1,
     perfectRatingBonusPercent: 0,
     maxSavingsRatePercent: 0,
-    avatarCatalog: undefined as Readonly<Record<ViewerRole, AvatarProfileCatalog>> | undefined,
+    avatarCatalog,
     memberProgressions,
     familyEnergyReadModel: 0,
     canCloseWeekSuccessfully: false,
     minimumSuccessfulWeekEnergy: 0,
-    houseAtmosphere: "cloudy" as HouseAtmosphere,
-    houseVisualLevel: 1 as HouseEnergyVisualLevel,
+    houseAtmosphere,
+    houseVisualLevel,
     simulatedEnergy,
     piggyBankOpen: false,
     rewardAnimation,
     guardianGiftAnimation,
     pendingGuardianGifts,
-    savingsVouchers: [] as SavingsVoucher[],
+    savingsVouchers,
     completedWeeklyStreak: 0,
     currentWeekTarget: 0,
     houseLevel,
     houseCatalog,
-    houseThemeId: "sunny-dollhouse" as HouseThemeId,
-    ownedHouseThemeIds: [] as HouseThemeId[],
-    ownedRoomDesignIds: [] as RoomDesignId[],
-    selectedRoomDesignIds: {} as Partial<Record<HouseZoneId, RoomDesignId>>,
+    houseThemeId,
+    ownedHouseThemeIds,
+    ownedRoomDesignIds,
+    selectedRoomDesignIds,
     canArrangeHouseReadModel: false,
     subscriptionTier,
     houseLayout: initialData.houseLayout,
     homeCustomizationHydrated: false,
-    familyAggregatesHydrated: false,
+    familyReadModelsHydrated: false,
     revealVersion: 0,
     snackbar,
     members: normalizeFamilyMembers(initialData.members),

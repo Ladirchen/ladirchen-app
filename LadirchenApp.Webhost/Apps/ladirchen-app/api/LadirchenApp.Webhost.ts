@@ -103,6 +103,24 @@ export class Client {
         result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
         return throwException("A server side error occurred.", status, _responseText, _headers, result400);
       });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        let result404: any = null;
+        result404 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -158,6 +176,12 @@ export class Client {
         result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
         return throwException("A server side error occurred.", status, _responseText, _headers, result400);
       });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -206,6 +230,10 @@ export class Client {
         return result200;
       });
     } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status === 429) {
       return response.text().then((_responseText) => {
         return throwException("A server side error occurred.", status, _responseText, _headers);
       });
@@ -265,6 +293,10 @@ export class Client {
         result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
         return throwException("A server side error occurred.", status, _responseText, _headers, result409);
       });
+    } else if (status === 429) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -273,58 +305,50 @@ export class Client {
     return Promise.resolve<AuthenticationSessionResponse>(null as any);
   }
 
-  authenticationUsernameExists(username: string, signal?: AbortSignal): Promise<boolean> {
-    let url_ = this.baseUrl + "/api/auth/username-exists?";
-    if (username === undefined || username === null)
-      throw new globalThis.Error("The parameter 'username' must be defined and cannot be null.");
-    else url_ += "username=" + encodeURIComponent("" + username) + "&";
+  signOutAccount(signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/auth/logout";
     url_ = url_.replace(/[?&]$/, "");
 
     let options_: RequestInit = {
-      method: "GET",
+      method: "POST",
       signal,
-      headers: {
-        Accept: "application/json",
-      },
+      headers: {},
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processAuthenticationUsernameExists(_response);
+      return this.processSignOutAccount(_response);
     });
   }
 
-  protected processAuthenticationUsernameExists(response: Response): Promise<boolean> {
+  protected processSignOutAccount(response: Response): Promise<void> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
       response.headers.forEach((v: any, k: any) => (_headers[k] = v));
     }
-    if (status === 200) {
+    if (status === 204) {
       return response.text().then((_responseText) => {
-        let result200: any = null;
-        result200 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as boolean);
-        return result200;
+        return;
       });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
       });
     }
-    return Promise.resolve<boolean>(null as any);
+    return Promise.resolve<void>(null as any);
   }
 
-  getFamilyAggregate(
+  getContributionsReadModel(
     familyId: string,
-    aggregateType: string,
+    viewerMemberId?: string | null | undefined,
     signal?: AbortSignal,
-  ): Promise<FamilyAggregateSnapshotResponse> {
-    let url_ = this.baseUrl + "/api/families/{familyId}/aggregates/{aggregateType}";
+  ): Promise<ContributionsReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/contributions?";
     if (familyId === undefined || familyId === null)
       throw new globalThis.Error("The parameter 'familyId' must be defined.");
     url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
-    if (aggregateType === undefined || aggregateType === null)
-      throw new globalThis.Error("The parameter 'aggregateType' must be defined.");
-    url_ = url_.replace("{aggregateType}", encodeURIComponent("" + aggregateType));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
     url_ = url_.replace(/[?&]$/, "");
 
     let options_: RequestInit = {
@@ -336,11 +360,11 @@ export class Client {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processGetFamilyAggregate(_response);
+      return this.processGetContributionsReadModel(_response);
     });
   }
 
-  protected processGetFamilyAggregate(response: Response): Promise<FamilyAggregateSnapshotResponse> {
+  protected processGetContributionsReadModel(response: Response): Promise<ContributionsReadModelResponse> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -352,7 +376,7 @@ export class Client {
         result200 =
           _responseText === ""
             ? null
-            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyAggregateSnapshotResponse);
+            : (JSON.parse(_responseText, this.jsonParseReviver) as ContributionsReadModelResponse);
         return result200;
       });
     } else if (status === 400) {
@@ -370,42 +394,36 @@ export class Client {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
       });
     }
-    return Promise.resolve<FamilyAggregateSnapshotResponse>(null as any);
+    return Promise.resolve<ContributionsReadModelResponse>(null as any);
   }
 
-  saveFamilyAggregate(
+  getFamilyProfileReadModel(
     familyId: string,
-    aggregateType: string,
-    request: SaveFamilyAggregateRequest,
+    viewerMemberId?: string | null | undefined,
     signal?: AbortSignal,
-  ): Promise<FamilyAggregateSnapshotResponse> {
-    let url_ = this.baseUrl + "/api/families/{familyId}/aggregates/{aggregateType}";
+  ): Promise<FamilyProfileReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/family-profile?";
     if (familyId === undefined || familyId === null)
       throw new globalThis.Error("The parameter 'familyId' must be defined.");
     url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
-    if (aggregateType === undefined || aggregateType === null)
-      throw new globalThis.Error("The parameter 'aggregateType' must be defined.");
-    url_ = url_.replace("{aggregateType}", encodeURIComponent("" + aggregateType));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
     url_ = url_.replace(/[?&]$/, "");
 
-    const content_ = JSON.stringify(request);
-
     let options_: RequestInit = {
-      body: content_,
-      method: "PUT",
+      method: "GET",
       signal,
       headers: {
-        "Content-Type": "application/json",
         Accept: "application/json",
       },
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processSaveFamilyAggregate(_response);
+      return this.processGetFamilyProfileReadModel(_response);
     });
   }
 
-  protected processSaveFamilyAggregate(response: Response): Promise<FamilyAggregateSnapshotResponse> {
+  protected processGetFamilyProfileReadModel(response: Response): Promise<FamilyProfileReadModelResponse> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -417,7 +435,7 @@ export class Client {
         result200 =
           _responseText === ""
             ? null
-            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyAggregateSnapshotResponse);
+            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyProfileReadModelResponse);
         return result200;
       });
     } else if (status === 400) {
@@ -426,18 +444,250 @@ export class Client {
         result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
         return throwException("A server side error occurred.", status, _responseText, _headers, result400);
       });
-    } else if (status === 409) {
+    } else if (status === 404) {
       return response.text().then((_responseText) => {
-        let result409: any = null;
-        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
-        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+        return throwException("A server side error occurred.", status, _responseText, _headers);
       });
     } else if (status !== 200 && status !== 204) {
       return response.text().then((_responseText) => {
         return throwException("An unexpected server error occurred.", status, _responseText, _headers);
       });
     }
-    return Promise.resolve<FamilyAggregateSnapshotResponse>(null as any);
+    return Promise.resolve<FamilyProfileReadModelResponse>(null as any);
+  }
+
+  getFamilyProgressionReadModel(
+    familyId: string,
+    viewerMemberId?: string | null | undefined,
+    signal?: AbortSignal,
+  ): Promise<FamilyProgressionReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/family-progression?";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetFamilyProgressionReadModel(_response);
+    });
+  }
+
+  protected processGetFamilyProgressionReadModel(response: Response): Promise<FamilyProgressionReadModelResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyProgressionReadModelResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<FamilyProgressionReadModelResponse>(null as any);
+  }
+
+  getHomeCustomizationReadModel(
+    familyId: string,
+    viewerMemberId?: string | null | undefined,
+    signal?: AbortSignal,
+  ): Promise<HomeCustomizationReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/home-customization?";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetHomeCustomizationReadModel(_response);
+    });
+  }
+
+  protected processGetHomeCustomizationReadModel(response: Response): Promise<HomeCustomizationReadModelResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as HomeCustomizationReadModelResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<HomeCustomizationReadModelResponse>(null as any);
+  }
+
+  getRewardShopReadModel(
+    familyId: string,
+    viewerMemberId?: string | null | undefined,
+    signal?: AbortSignal,
+  ): Promise<RewardShopReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/reward-shop?";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetRewardShopReadModel(_response);
+    });
+  }
+
+  protected processGetRewardShopReadModel(response: Response): Promise<RewardShopReadModelResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as RewardShopReadModelResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<RewardShopReadModelResponse>(null as any);
+  }
+
+  getSavingsReadModel(
+    familyId: string,
+    viewerMemberId?: string | null | undefined,
+    signal?: AbortSignal,
+  ): Promise<SavingsReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/savings?";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetSavingsReadModel(_response);
+    });
+  }
+
+  protected processGetSavingsReadModel(response: Response): Promise<SavingsReadModelResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as SavingsReadModelResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<SavingsReadModelResponse>(null as any);
   }
 }
 
@@ -459,17 +709,7 @@ export interface Version {
 }
 
 export interface ExecuteFamilyCommandResponse {
-  changedAggregates?: FamilyAggregateSnapshotResponse[];
-}
-
-export interface FamilyAggregateSnapshotResponse {
-  familyId?: string;
-  aggregateType?: string;
-  schemaVersion?: number;
-  revision?: number;
-  state?: any;
-  updatedBy?: string;
-  updatedAt?: Date;
+  changedReadModelTypes?: string[];
 }
 
 export interface ProblemDetails {
@@ -483,9 +723,457 @@ export interface ProblemDetails {
 }
 
 export interface ExecuteFamilyCommandRequest {
-  actorId?: string;
-  commandType?: string;
-  payload?: any;
+  commandId: string;
+  actorId: string;
+  commandType: string;
+}
+
+export interface ContributionsAcknowledgeRewardCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface IdFamilyCommandPayload {
+  id: string;
+}
+
+export interface ContributionsAddCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddContributionPayload;
+}
+
+export interface AddContributionPayload {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  reward: number;
+  energy: number;
+  kind: string;
+  assigneeId?: string | null;
+}
+
+export interface ContributionsAddPromotionCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddContributionPromotionPayload;
+}
+
+export interface AddContributionPromotionPayload {
+  id: string;
+  contributionId: string;
+  multiplier: number;
+  deadline: string;
+  teamworkBonus: number;
+}
+
+export interface ContributionsApproveCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ContributionApprovalPayload;
+}
+
+export interface ContributionApprovalPayload {
+  id: string;
+  stars: number;
+}
+
+export interface ContributionsAssignCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ContributionAssignmentPayload;
+}
+
+export interface ContributionAssignmentPayload {
+  id: string;
+  memberId?: string | null;
+}
+
+export interface ContributionsClaimCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface ContributionsDeleteCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface ContributionsDeletePromotionCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface ContributionsReturnCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface ContributionsSetPartnersCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ContributionPartnersPayload;
+}
+
+export interface ContributionPartnersPayload {
+  id: string;
+  partnerIds: string[];
+}
+
+export interface ContributionsSetPerfectRatingBonusCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: PercentageFamilyCommandPayload;
+}
+
+export interface PercentageFamilyCommandPayload {
+  percent: number;
+}
+
+export interface ContributionsSubmitCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomeMoveEntityCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: HouseEntityMovePayload;
+}
+
+export interface HouseEntityMovePayload {
+  placementId: string;
+  zoneId: string;
+  x: number;
+  y: number;
+}
+
+export interface HomePlaceAccessoryCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: HouseAccessoryPlacementPayload;
+}
+
+export interface HouseAccessoryPlacementPayload {
+  id: string;
+  zoneId: string;
+}
+
+export interface HomePurchaseAccessoryCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomePurchaseFurnitureSetCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomePurchaseRoomDesignCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomePurchaseThemeCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomeResetEntityCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: HouseEntityReferencePayload;
+}
+
+export interface HouseEntityReferencePayload {
+  placementId: string;
+}
+
+export interface HomeSelectRoomDesignCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomeSelectThemeCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomeStoreAccessoryCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface HomeToggleAccessoryCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface ProfileCompleteSetupCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: CompleteFamilySetupPayload;
+}
+
+export interface CompleteFamilySetupPayload {
+  members: FamilySetupMemberPayload[];
+  pets: FamilySetupPetPayload[];
+}
+
+export interface FamilySetupMemberPayload {
+  id: string;
+  name: string;
+  avatar: string;
+  color: string;
+  role: string;
+  guardianAccess?: string | null;
+  nickname?: string | null;
+  email?: string | null;
+  invitationPending?: boolean | null;
+  participatesInWeeklyGoal?: boolean | null;
+  appearance?: AvatarAppearancePayload | null;
+}
+
+export interface AvatarAppearancePayload {
+  age: string;
+  skinToneId: string;
+  faceShape: string;
+  face: string;
+  hair: string;
+  hairColorId: string;
+  outfit: string;
+  outfitColorId: string;
+  accessoryId: string;
+  funAccessoryId: string;
+  seasonalAccessoryId: string;
+}
+
+export interface FamilySetupPetPayload {
+  id: string;
+  name: string;
+  kind: string;
+  avatar: string;
+  color: string;
+}
+
+export interface ProfileInviteGuardianCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: InviteGuardianPayload;
+}
+
+export interface InviteGuardianPayload {
+  id: string;
+  name: string;
+  email: string;
+  guardianAccess: string;
+}
+
+export interface ProfileSaveOwnAppearanceCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SaveAvatarAppearancePayload;
+}
+
+export interface SaveAvatarAppearancePayload {
+  appearance: AvatarAppearancePayload;
+}
+
+export interface ProfileSetGuardianAccessCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: GuardianAccessPayload;
+}
+
+export interface GuardianAccessPayload {
+  memberId: string;
+  guardianAccess: string;
+}
+
+export interface ProfileSetOwnNicknameCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: NicknamePayload;
+}
+
+export interface NicknamePayload {
+  nickname: string;
+}
+
+export interface ProfileSetWeeklyParticipationCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: WeeklyParticipationPayload;
+}
+
+export interface WeeklyParticipationPayload {
+  memberId: string;
+  participates: boolean;
+}
+
+export interface ProgressionCompleteWeekCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: EmptyFamilyCommandPayload;
+}
+
+export interface EmptyFamilyCommandPayload {}
+
+export interface ProgressionFailWeekCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: EmptyFamilyCommandPayload;
+}
+
+export interface ProgressionRefreshCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: EmptyFamilyCommandPayload;
+}
+
+export interface ProgressionSetMaximumSavingsRateCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: PercentageFamilyCommandPayload;
+}
+
+export interface RewardShopAddCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddShopRewardPayload;
+}
+
+export interface AddShopRewardPayload {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  price: number;
+  category: string;
+  quantity: number;
+  conditions: string;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
+  isVisible?: boolean | null;
+}
+
+export interface RewardShopCancelCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface RewardShopDecideCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: RewardDecisionPayload;
+}
+
+export interface RewardDecisionPayload {
+  id: string;
+  approved: boolean;
+}
+
+export interface RewardShopDeleteCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface RewardShopRequestCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface RewardShopSetVisibilityCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: RewardVisibilityPayload;
+}
+
+export interface RewardVisibilityPayload {
+  id: string;
+  isVisible: boolean;
+}
+
+export interface SavingsAddGoalCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddSavingsGoalPayload;
+}
+
+export interface AddSavingsGoalPayload {
+  id: string;
+  ownerId: string;
+  title: string;
+  icon: string;
+  target: number;
+  visibility: string;
+  participantScope?: string | null;
+  participantIds?: string[] | null;
+}
+
+export interface SavingsCancelGoalCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface SavingsDecideGoalCancellationCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: GoalCancellationDecisionPayload;
+}
+
+export interface GoalCancellationDecisionPayload {
+  id: string;
+  approved: boolean;
+}
+
+export interface SavingsConsentVoucherCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface SavingsConsumeGuardianGiftCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: GuardianGiftReferencePayload;
+}
+
+export interface GuardianGiftReferencePayload {
+  giftId: string;
+}
+
+export interface SavingsDepositCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsGoalAmountPayload;
+}
+
+export interface SavingsGoalAmountPayload {
+  id: string;
+  amount: number;
+}
+
+export interface SavingsGiftToGoalCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsGoalGiftPayload;
+}
+
+export interface SavingsGoalGiftPayload {
+  id: string;
+  amount: number;
+  giftId?: string | null;
+  senderName?: string | null;
+}
+
+export interface SavingsGiftToMemberCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsMemberGiftPayload;
+}
+
+export interface SavingsMemberGiftPayload {
+  recipientId: string;
+  amount: number;
+  giftId: string;
+  senderName?: string | null;
+}
+
+export interface SavingsRedeemVoucherCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface SavingsRequestGoalCancellationCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface SavingsSetCurrencyCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsCurrencyPayload;
+}
+
+export interface SavingsCurrencyPayload {
+  currency: string;
+}
+
+export interface SavingsSetExchangeRateCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsExchangeRatePayload;
+}
+
+export interface SavingsExchangeRatePayload {
+  rate: number;
+}
+
+export interface SavingsSettleWeeklyInterestCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: WeeklyInterestPeriodPayload;
+}
+
+export interface WeeklyInterestPeriodPayload {
+  year: number;
+  week: number;
+}
+
+export interface SavingsSpecialGiftCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsSpecialGiftPayload;
+}
+
+export interface SavingsSpecialGiftPayload {
+  childId: string;
+  amount: number;
+  giftId: string;
+  reason: string;
+  senderName?: string | null;
+}
+
+export interface SavingsSupportGoalCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsGoalGiftPayload;
+}
+
+export interface SavingsToggleCheerCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
+export interface SavingsUpdateGoalCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: UpdateSavingsGoalPayload;
+}
+
+export interface UpdateSavingsGoalPayload {
+  id: string;
+  title: string;
+  icon: string;
+  target: number;
+  visibility: string;
+  participantScope?: string | null;
+  participantIds?: string[] | null;
+}
+
+export interface SavingsWithdrawCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: SavingsGoalAmountPayload;
 }
 
 export interface SavingsInterestSimulation {
@@ -522,11 +1210,401 @@ export interface RegisterAccountRequest {
   username?: string;
 }
 
-export interface SaveFamilyAggregateRequest {
-  aggregateType?: string;
-  expectedRevision?: number;
-  state?: any;
-  updatedBy?: string;
+export interface ContributionsReadModelResponse {
+  readModelType: string;
+  revision: number;
+  state: ContributionsReadModelState;
+}
+
+export interface ContributionsReadModelState {
+  contributions: ContributionReadModelItem[];
+  currentWeekApprovedContributionCountByMember: { [key: string]: number };
+  currentWeekEarnedByMember: { [key: string]: number };
+  perfectRatingBonusPercent?: number | null;
+  promotions: ContributionPromotionReadModelItem[];
+  todayEarnedByMember?: { [key: string]: number } | null;
+}
+
+export interface ContributionReadModelItem {
+  id: string;
+  translationKey?: string | null;
+  title: string;
+  description: string;
+  icon: string;
+  area: string;
+  areaKey?: string | null;
+  kind: string;
+  status: string;
+  reward: number;
+  projectedReward?: number | null;
+  energy: number;
+  assigneeId?: string | null;
+  dueLabel: string;
+  dueLabelKey?: string | null;
+  worldEffect?: string | null;
+  stars?: number | null;
+  invitedChildIds?: string[] | null;
+  partnerableMemberIds?: string[] | null;
+  earnedReward?: number | null;
+  earnedRatingBonus?: number | null;
+  earnedPromotionMultiplier?: number | null;
+  approvedAt?: string | null;
+  rewardCelebrated?: boolean | null;
+}
+
+export interface ContributionPromotionReadModelItem {
+  id: string;
+  translationKey?: string | null;
+  contributionId: string;
+  title: string;
+  titleKey?: string | null;
+  multiplier: number;
+  deadline: string;
+  teamworkBonus: number;
+  active: boolean;
+  available?: boolean | null;
+}
+
+export interface FamilyProfileReadModelResponse {
+  readModelType: string;
+  revision: number;
+  state: FamilyProfileReadModelState;
+}
+
+export interface FamilyProfileReadModelState {
+  avatarCatalog: AvatarCatalogReadModel;
+  members: FamilyMemberReadModel[];
+  onboardingCompleted: boolean;
+  pets: FamilyPetReadModel[];
+  subscriptionTier: string;
+  timeZone: string;
+}
+
+export interface AvatarCatalogReadModel {
+  child: AvatarProfileCatalogReadModel;
+  guardian: AvatarProfileCatalogReadModel;
+}
+
+export interface AvatarProfileCatalogReadModel {
+  accessoryIds: string[];
+  ages: string[];
+  faceIds: string[];
+  faceShapeIds: string[];
+  funAccessoryIds: string[];
+  hairColorIds: string[];
+  hairIds: string[];
+  outfitColorIds: string[];
+  outfitIds: string[];
+  seasonalAccessoryIds: string[];
+  skinToneIds: string[];
+}
+
+export interface FamilyMemberReadModel {
+  id: string;
+  name: string;
+  nickname?: string | null;
+  avatar: string;
+  color: string;
+  role: string;
+  guardianAccess?: string | null;
+  participatesInWeeklyGoal?: boolean | null;
+  weeklyStreak: number;
+  email?: string | null;
+  invitationPending?: boolean | null;
+  appearance?: AvatarAppearanceReadModel | null;
+  permissions?: FamilyPermissionsReadModel | null;
+}
+
+export interface AvatarAppearanceReadModel {
+  age: string;
+  skinToneId: string;
+  faceShape: string;
+  face: string;
+  hair: string;
+  hairColorId: string;
+  outfit: string;
+  outfitColorId: string;
+  accessoryId: string;
+  funAccessoryId: string;
+  seasonalAccessoryId: string;
+}
+
+export interface FamilyPermissionsReadModel {
+  canInviteMembers: boolean;
+  canManageContent: boolean;
+  canManageFamily: boolean;
+  canManageGoals: boolean;
+  canSupportChildGoals: boolean;
+  canViewFamilyGoals: boolean;
+  canViewGuardianGoals: boolean;
+}
+
+export interface FamilyPetReadModel {
+  id: string;
+  name: string;
+  kind: string;
+  avatar: string;
+  color: string;
+}
+
+export interface FamilyProgressionReadModelResponse {
+  readModelType: string;
+  revision: number;
+  state: FamilyProgressionReadModelState;
+}
+
+export interface FamilyProgressionReadModelState {
+  canCloseWeekSuccessfully: boolean;
+  completedWeeklyStreak: number;
+  currentWeekTarget: number;
+  familyEnergy: number;
+  houseAtmosphere: string;
+  houseLevel: number;
+  houseVisualLevel: number;
+  maximumSavingsInterestRate: number;
+  minimumSuccessfulWeekEnergy: number;
+  memberProgressions: { [key: string]: MemberProgressionReadModel };
+}
+
+export interface MemberProgressionReadModel {
+  approvedDates: string[];
+  averageBasicRating: number;
+  completionPercent: number;
+  energyContribution: number;
+  ladiStageId: string;
+  ladiStagePosition: number;
+  participationValue: number;
+  savingsInterestRate: number;
+  streakDays: number;
+}
+
+export interface HomeCustomizationReadModelResponse {
+  readModelType: string;
+  revision: number;
+  state: HomeCustomizationReadModelState;
+}
+
+export interface HomeCustomizationReadModelState {
+  capabilities: HomeCapabilitiesReadModel;
+  catalog: HomeCatalogReadModel;
+  accessories: HouseAccessoryReadModel[];
+  editions: HouseEditionReadModel[];
+  placements: HousePlacementReadModel[];
+  roomDesigns: RoomDesignReadModel[];
+  selectedRoomDesigns: SelectedRoomDesignReadModel[];
+  selectedEditionId: string;
+}
+
+export interface HomeCapabilitiesReadModel {
+  canArrangeHouse: boolean;
+}
+
+export interface HomeCatalogReadModel {
+  accessories: HouseAccessoryCatalogEntryReadModel[];
+  areas: HouseAreaCatalogEntryReadModel[];
+  furnitureSets: FurnitureSetCatalogEntryReadModel[];
+  houseStages: HouseStageCatalogEntryReadModel[];
+  roomDesigns: RoomDesignCatalogEntryReadModel[];
+  themes: HouseThemeCatalogEntryReadModel[];
+}
+
+export interface HouseAccessoryCatalogEntryReadModel {
+  available: boolean;
+  catalogArea: string;
+  id: string;
+  minimumHouseLevel?: number | null;
+  owned?: boolean | null;
+  price?: number | null;
+  purchasableByMemberIds: string[];
+}
+
+export interface HouseAreaCatalogEntryReadModel {
+  available: boolean;
+  id: string;
+  minimumHouseLevel?: number | null;
+}
+
+export interface FurnitureSetCatalogEntryReadModel {
+  accessoryIds: string[];
+  available: boolean;
+  catalogArea: string;
+  id: string;
+  minimumHouseLevel?: number | null;
+  owned?: boolean | null;
+  price?: number | null;
+  purchasableByMemberIds: string[];
+}
+
+export interface HouseStageCatalogEntryReadModel {
+  active: boolean;
+  id: string;
+  level: number;
+  roomCount: number;
+}
+
+export interface RoomDesignCatalogEntryReadModel {
+  available: boolean;
+  areaId: string;
+  id: string;
+  minimumHouseLevel?: number | null;
+  owned?: boolean | null;
+  price?: number | null;
+  purchasableByMemberIds: string[];
+  themeId: string;
+}
+
+export interface HouseThemeCatalogEntryReadModel {
+  available: boolean;
+  id: string;
+  owned?: boolean | null;
+  price?: number | null;
+  purchasableByMemberIds: string[];
+}
+
+export interface HouseAccessoryReadModel {
+  id: string;
+  equipped: boolean;
+  owned: boolean;
+}
+
+export interface HouseEditionReadModel {
+  id: string;
+  owned: boolean;
+}
+
+export interface HousePlacementReadModel {
+  id: string;
+  entityType: string;
+  entityId: string;
+  zoneId: string;
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export interface RoomDesignReadModel {
+  id: string;
+  owned: boolean;
+}
+
+export interface SelectedRoomDesignReadModel {
+  designId: string;
+  zoneId: string;
+}
+
+export interface RewardShopReadModelResponse {
+  readModelType: string;
+  revision: number;
+  state: RewardShopReadModelState;
+}
+
+export interface RewardShopReadModelState {
+  redemptionOpen?: boolean | null;
+  rewards: ShopRewardReadModel[];
+}
+
+export interface ShopRewardReadModel {
+  id: string;
+  translationKey?: string | null;
+  title: string;
+  description: string;
+  icon: string;
+  price: number;
+  category: string;
+  quantity: number;
+  conditions: string;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
+  isVisible?: boolean | null;
+  status: string;
+  requesterId?: string | null;
+  published?: boolean | null;
+  publicationStatus?: string | null;
+  nextStatusChangeAt?: string | null;
+  requestableByMemberIds?: string[] | null;
+  cancellableByMemberIds?: string[] | null;
+  approvableByMemberIds?: string[] | null;
+}
+
+export interface SavingsReadModelResponse {
+  readModelType: string;
+  revision: number;
+  state: SavingsReadModelState;
+}
+
+export interface SavingsReadModelState {
+  availableBalances: { [key: string]: number };
+  balances: { [key: string]: number };
+  familyCurrencyCode: string;
+  goals: SavingGoalReadModel[];
+  ladirchenPerCurrencyUnit: number;
+  pendingGuardianGifts: GuardianGiftReadModel[];
+  settledInterestPeriods: string[];
+  sharedSavedBalances: { [key: string]: number };
+  vouchers: SavingsVoucherReadModel[];
+}
+
+export interface SavingGoalReadModel {
+  id: string;
+  translationKey?: string | null;
+  title: string;
+  icon: string;
+  ownerId: string;
+  target: number;
+  saved: number;
+  starterBonus?: number | null;
+  createdAt?: string | null;
+  interestEarned?: number | null;
+  projectedInterestCredit?: number | null;
+  remainingAmount?: number | null;
+  withdrawableBalance?: number | null;
+  visibleToMemberIds?: string[] | null;
+  participantIds?: string[] | null;
+  voucherId?: string | null;
+  cancellationRequest?: SavingGoalCancellationRequestReadModel | null;
+  commandLimits?: { [key: string]: SavingsGoalCommandLimitsReadModel } | null;
+  visibility: string;
+  shared: boolean;
+  cheered: boolean;
+}
+
+export interface SavingGoalCancellationRequestReadModel {
+  requestedByMemberId: string;
+  consentedMemberIds: string[];
+  pendingMemberIds: string[];
+}
+
+export interface SavingsGoalCommandLimitsReadModel {
+  canApproveCancellation: boolean;
+  canCancel: boolean;
+  canRejectCancellation: boolean;
+  canRequestCancellation: boolean;
+  canWithdraw: boolean;
+  maximumDepositAmount: number;
+  maximumSupportAmount: number;
+}
+
+export interface GuardianGiftReadModel {
+  id: string;
+  childId: string;
+  guardianName: string;
+  goalTitle: string;
+  destination: string;
+  amount: number;
+}
+
+export interface SavingsVoucherReadModel {
+  id: string;
+  goalId: string;
+  amount: number;
+  ownerId: string | null;
+  participantIds: string[];
+  consentedMemberIds: string[];
+  status: string;
+  redeemedAt?: string | null;
+  visibleToMemberIds: string[];
+  consentableByMemberIds: string[];
+  redeemableByMemberIds: string[];
 }
 
 export class ApiException extends Error {

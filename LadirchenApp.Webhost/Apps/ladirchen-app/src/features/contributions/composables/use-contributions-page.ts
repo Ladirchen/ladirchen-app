@@ -14,6 +14,7 @@ import { useLocalizedDomainContent } from "@/shared/composables/use-localized-do
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
+
 export function useContributionsPage() {
   const store = useFamilyWorldStore();
   const route = useRoute();
@@ -26,7 +27,7 @@ export function useContributionsPage() {
   const promotionDialog = ref(false);
   const teamDialog = ref(false);
   const teamContributionId = ref<ContributionId>();
-  const selectedSiblingIds = ref<FamilyMemberId[]>([]);
+  const selectedPartnerIds = ref<FamilyMemberId[]>([]);
   const selectedPromotion = ref<Promotion>();
   const contributionToDelete = ref<Contribution>();
   const promotionToDelete = ref<Promotion>();
@@ -52,7 +53,7 @@ export function useContributionsPage() {
     if (!store.permissions.canManageContent) {
       return [
         {
-          title: t("contributions.assignment.own", { name: store.signedInMember.name }),
+          title: t("contributions.assignment.own", { name: store.signedInMember?.name ?? "" }),
           value: store.signedInMemberId,
         },
       ];
@@ -124,10 +125,12 @@ export function useContributionsPage() {
   const teamContribution = computed(() =>
     localizedContributions.value.find((contribution) => contribution.id === teamContributionId.value),
   );
-  const siblingOptions = computed(() =>
-    store.members
-      .filter((member) => member.role === "child" && member.id !== teamContribution.value?.assigneeId)
-      .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
+  const partnerOptions = computed(() =>
+    (teamContribution.value?.partnerableMemberIds ?? []).flatMap((memberId) => {
+      const member = store.members.find((item) => item.id === memberId);
+
+      return member ? [{ title: `${member.avatar} ${member.name}`, value: member.id }] : [];
+    }),
   );
   function promotionFor(contributionId: ContributionId) {
     return localizedPromotions.value.find(
@@ -186,7 +189,7 @@ export function useContributionsPage() {
   }
   function openTeamInvite(contribution: Contribution) {
     teamContributionId.value = contribution.id;
-    selectedSiblingIds.value = [...(contribution.invitedChildIds ?? [])];
+    selectedPartnerIds.value = [...(contribution.invitedChildIds ?? [])];
     teamDialog.value = true;
   }
   function contributionTip(contribution: Contribution) {
@@ -227,7 +230,7 @@ export function useContributionsPage() {
       return;
     }
 
-    void store.setContributionPartners(teamContributionId.value, selectedSiblingIds.value);
+    void store.setContributionPartners(teamContributionId.value, selectedPartnerIds.value);
     teamDialog.value = false;
   }
   function addContribution() {
@@ -333,8 +336,8 @@ export function useContributionsPage() {
     saveTeamInvite,
     scopeFilter,
     selectedPromotion,
-    selectedSiblingIds,
-    siblingOptions,
+    selectedPartnerIds,
+    partnerOptions,
     statusFilter,
     store,
     teamContribution,

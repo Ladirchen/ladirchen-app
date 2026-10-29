@@ -4,6 +4,11 @@ namespace LadirchenApp.Domain.House.Shop;
 
 public sealed class HouseShopPolicy
 {
+  public bool CanArrange(HouseSubscriptionTier subscriptionTier)
+  {
+    return subscriptionTier == HouseSubscriptionTier.Pro;
+  }
+
   public HousePlacement NormalizePlacement(string area, decimal x, decimal y, decimal scale = 1)
   {
     return new HousePlacement(
@@ -16,6 +21,11 @@ public sealed class HouseShopPolicy
 
   public string CompatibleArea(string intendedArea, string requestedArea)
   {
+    return CompatibleArea(intendedArea, requestedArea, "its assigned room");
+  }
+
+  public string CompatibleArea(string intendedArea, string requestedArea, string assignedArea)
+  {
     if (intendedArea == "outside" && requestedArea != "garden")
     {
       return "garden";
@@ -23,7 +33,7 @@ public sealed class HouseShopPolicy
 
     if (intendedArea == "inside" && requestedArea == "garden")
     {
-      return "its assigned room";
+      return assignedArea;
     }
 
     return requestedArea;

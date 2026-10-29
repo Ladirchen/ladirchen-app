@@ -73,29 +73,30 @@
         </div>
         <div class="child-energy-list">
           <div
-            v-for="child in children"
-            :key="child.id"
+            v-for="participant in participants"
+            :key="participant.id"
             class="child-energy-row"
-            :style="{ '--avatar-color': child.color }"
+            :style="{ '--avatar-color': participant.color }"
           >
             <div class="child-avatar">
-              <AvatarFigure :appearance="resolveFamilyMemberAvatarAppearance(child, store.members)" calm :size="54" />
+              <AvatarFigure
+                :appearance="resolveFamilyMemberAvatarAppearance(participant, store.members)"
+                calm
+                :size="54"
+              />
             </div>
             <div class="child-energy-copy">
               <div class="child-energy-title">
-                <strong>{{ child.name }}</strong>
-                <b>{{ store.contributionProgress(child.id) }} %</b>
+                <strong>{{ participant.name }}</strong>
+                <b>{{ energyContributionFor(participant.id) }} %</b>
               </div>
               <v-progress-linear
                 class="mt-2"
                 color="primary"
                 height="8"
-                :model-value="store.contributionProgress(child.id)"
+                :model-value="energyContributionFor(participant.id)"
                 rounded
               />
-              <p class="child-energy-description">
-                {{ t("world.energy.approved", { approved: approvedCount(child.id), total: baseCount(child.id) }) }}
-              </p>
             </div>
           </div>
         </div>
@@ -129,7 +130,7 @@ const emit = defineEmits<Emits>();
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const guideStep = ref(-1);
-const children = computed(() => store.members.filter((member) => member.role === "child"));
+const participants = computed(() => store.members.filter((member) => member.participatesInWeeklyGoal === true));
 // 100 % energy maps to a full 360deg ring.
 const energyOrbStyle = computed(() => ({ "--energy": `${store.familyEnergy * 3.6}deg` }));
 const energyState = computed(function callback() {
@@ -137,7 +138,7 @@ const energyState = computed(function callback() {
     return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
   }
 
-  if (store.familyEnergy >= store.minimumSuccessfulWeekEnergy) {
+  if (store.houseMeetsMinimumEnergy) {
     return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
   }
 
@@ -151,7 +152,7 @@ const dailyGoalStatus = computed(() =>
 const guideSteps = computed(() => [
   {
     heading: t("world.energy.guide.calculation.title"),
-    message: t("world.energy.guide.calculation.message", { count: Math.max(1, children.value.length) }),
+    message: t("world.energy.guide.calculation.message"),
   },
   {
     heading: t("world.energy.guide.day.title"),
@@ -166,14 +167,8 @@ const guideSteps = computed(() => [
     message: t("world.energy.guide.safe.message"),
   },
 ]);
-function baseContributions(childId: FamilyMemberId) {
-  return store.contributions.filter((item) => item.kind === "basic" && item.assigneeId === childId);
-}
-function baseCount(childId: FamilyMemberId) {
-  return baseContributions(childId).length;
-}
-function approvedCount(childId: FamilyMemberId) {
-  return baseContributions(childId).filter((item) => item.status === "approved").length;
+function energyContributionFor(memberId: FamilyMemberId): number {
+  return store.memberProgressions[memberId]?.energyContribution ?? 0;
 }
 function startEnergyGuide() {
   guideStep.value = guideStep.value >= guideSteps.value.length - 1 ? 0 : guideStep.value + 1;
@@ -464,18 +459,6 @@ onUnmounted(function callback() {
   border-radius: var(--lad-radius-pill);
   background: var(--lad-surface-soft);
   font-size: rem(11);
-}
-.child-energy-description {
-  --uno: ma-0 mt-2;
-  color: var(--lad-color-primary-supporting);
-  font-size: rem(10);
-  font-weight: 650;
-  line-height: 1.35;
-}
-.child-energy-description span {
-  --uno: d-inline;
-  color: var(--lad-color-primary-strong);
-  font-weight: var(--lad-font-weight-heavy);
 }
 @keyframes energy-orb-breathe {
   0%,

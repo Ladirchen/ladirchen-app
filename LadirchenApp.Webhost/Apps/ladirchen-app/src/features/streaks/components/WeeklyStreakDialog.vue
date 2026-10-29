@@ -29,7 +29,7 @@
             <div class="summary-icon" aria-hidden="true"><v-icon icon="i-mdi:fire" size="25" /></div>
             <div>
               <span>{{ t("streaks.weekly.summary.streak") }}</span>
-              <strong>{{ t("streaks.weekly.summary.days", { count: store.currentDailyStreak }) }}</strong>
+              <strong>{{ t("streaks.weekly.summary.days", { count: store.currentParticipationStreakDays }) }}</strong>
             </div>
           </MetricCard>
           <MetricCard class="summary-tile summary-tile--week" tone="bonus">

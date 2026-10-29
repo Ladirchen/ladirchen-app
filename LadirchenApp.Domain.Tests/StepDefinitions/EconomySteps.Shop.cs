@@ -32,13 +32,13 @@ public sealed partial class EconomySteps
     _economy.RequestShopReward(_child, _rewardId, _requestId, NextOperation(), _now);
   }
 
-  [When("the administrator approves the reward")]
+  [When("the guardian administrator approves the reward")]
   public void ApproveReward()
   {
     _economy.ApproveShopReward(_admin, _requestId, NextOperation(), _now);
   }
 
-  [When("the administrator tries to approve the reward again")]
+  [When("the guardian administrator tries to approve the reward again")]
   public void DuplicateRewardApproval()
   {
     Try(ApproveReward);
@@ -89,7 +89,7 @@ public sealed partial class EconomySteps
     Try(() => _economy.CancelShopRewardRequest(_sibling, _requestId, NextOperation(), _now));
   }
 
-  [When("the administrator tries to change the price")]
+  [When("the guardian administrator tries to change the price")]
   public void ChangePendingPrice()
   {
     Try(() => _economy.UpdateShopReward(_admin, _rewardId, "Movie night", new(90), 1, new(), _now));

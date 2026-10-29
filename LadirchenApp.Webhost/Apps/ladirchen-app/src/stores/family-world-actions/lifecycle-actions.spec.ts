@@ -1,110 +1,114 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createFamilyWorldState } from "@/stores/family-world-state";
-import type { FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { createContributions, createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-world-fixtures";
 import { HOUSE_THEMES, ROOM_DESIGNS } from "@/domain/house";
-import type { FamilyAggregateChanged } from "@/application/ports/family-aggregate-updates";
-import { lifecycleActions } from "./lifecycle-actions";
+import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
+import { createDomainId } from "@/domain/shared/identifiers";
+import { createFamilyWorldTestDependencies, createFamilyWorldTestStore } from "@/stores/family-world-test-support";
 
 const serviceMocks = vi.hoisted(() => ({
-  contributionsLoad: vi.fn(),
-  familyProfileLoad: vi.fn(),
-  familyProgressionLoad: vi.fn(),
-  homeCustomizationLoad: vi.fn(),
-  updatesConnect: vi.fn(),
-  rewardShopLoad: vi.fn(),
-  savingsLoad: vi.fn(),
+  contributionsLoad: vi.fn<FamilyWorldDependencies["contributionsService"]["load"]>(),
+  familyProfileLoad: vi.fn<FamilyWorldDependencies["familyProfileService"]["load"]>(),
+  familyProgressionLoad: vi.fn<FamilyWorldDependencies["familyProgressionService"]["load"]>(),
+  homeCustomizationLoad: vi.fn<FamilyWorldDependencies["homeCustomizationService"]["load"]>(),
+  updatesConnect: vi.fn<FamilyWorldDependencies["familyAggregateUpdates"]["connect"]>(),
+  rewardShopLoad: vi.fn<FamilyWorldDependencies["rewardShopService"]["load"]>(),
+  savingsLoad: vi.fn<FamilyWorldDependencies["savingsService"]["load"]>(),
 }));
 
-const dependencies = {
+const dependencies = createFamilyWorldTestDependencies({
   clientStorage: { getItem: vi.fn(() => null), removeItem: vi.fn(), setItem: vi.fn() },
   contributionsService: { load: serviceMocks.contributionsLoad },
-  familyAggregateUpdates: { connect: serviceMocks.updatesConnect, disconnect: vi.fn() },
-  familyCommands: { execute: vi.fn() },
-  familyContext: { activeFamilyId: "c776a9b6-c37d-4a51-91ba-269a67274478", setActiveFamilyId: vi.fn() },
+  familyAggregateUpdates: { connect: serviceMocks.updatesConnect, disconnect: vi.fn(async () => undefined) },
+  familyContext: {
+    activeFamilyId: createDomainId.family("c776a9b6-c37d-4a51-91ba-269a67274478"),
+    setActiveFamilyId: vi.fn(),
+  },
   familyProfileService: { load: serviceMocks.familyProfileLoad },
   familyProgressionService: { load: serviceMocks.familyProgressionLoad },
   homeCustomizationService: { load: serviceMocks.homeCustomizationLoad },
   rewardShopService: { load: serviceMocks.rewardShopLoad },
   savingsService: { load: serviceMocks.savingsLoad },
-};
+});
 
-describe("hydrateFamilyAggregates", () => {
+describe("hydrateFamilyReadModels", () => {
   beforeEach(() => {
-    Object.values(serviceMocks).forEach((mock) => mock.mockReset().mockResolvedValue(null));
+    serviceMocks.contributionsLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.familyProfileLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.familyProgressionLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.homeCustomizationLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.rewardShopLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.savingsLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.updatesConnect.mockReset().mockResolvedValue(undefined);
   });
 
-  it("applies successful aggregate loads and remains retryable after a partial failure", async () => {
+  it("applies successful read-model loads and remains retryable after a partial failure", async () => {
     const contributions = createContributions();
     const firstContribution = contributions[0]!;
     firstContribution.title = "Loaded contribution";
     serviceMocks.contributionsLoad.mockResolvedValue({
-      aggregateType: "contributions",
-      familyId: "c776a9b6-c37d-4a51-91ba-269a67274478",
+      readModelType: "contributions",
       revision: 3,
-      schemaVersion: 1,
-      state: { contributions, promotions: [] },
-      updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "member-1",
+      state: {
+        contributions,
+        currentWeekApprovedContributionCountByMember: {},
+        currentWeekEarnedByMember: {},
+        perfectRatingBonusPercent: 15,
+        promotions: [],
+        todayEarnedByMember: {},
+      },
     });
     serviceMocks.familyProfileLoad.mockRejectedValue(new Error("Profile endpoint unavailable"));
-    const context = Object.assign(createFamilyWorldState(createFamilyWorldInitialData()), {
-      $familyWorld: dependencies,
-      hydrateHomeCustomization: vi.fn().mockResolvedValue(undefined),
-      notify: vi.fn(),
-      persistContributions: vi.fn(),
-    }) as unknown as FamilyWorldStoreContext;
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    vi.spyOn(context, "hydrateHomeCustomization").mockResolvedValue(undefined);
+    const notify = vi.spyOn(context, "notify").mockImplementation(() => undefined);
 
-    await lifecycleActions.hydrateFamilyAggregates.call(context);
+    await context.hydrateFamilyReadModels();
 
     expect(context.contributions[0]?.title).toBe("Loaded contribution");
-    expect(context.familyAggregatesHydrated).toBe(false);
-    expect(context.notify).toHaveBeenCalledWith("notifications.load.family");
+    expect(serviceMocks.familyProfileLoad).toHaveBeenCalledWith(
+      dependencies.familyContext.activeFamilyId,
+      context.signedInMemberId,
+    );
+    expect(context.familyReadModelsHydrated).toBe(false);
+    expect(notify).toHaveBeenCalledWith("notifications.load.family");
     expect(context.hydrateHomeCustomization).toHaveBeenCalledOnce();
   });
 
   it("marks hydration complete only when every aggregate load succeeds", async () => {
-    const refreshFamilyAggregate = vi.fn().mockResolvedValue(undefined);
-    const refreshAllFamilyAggregates = vi.fn().mockResolvedValue(undefined);
-    const context = Object.assign(createFamilyWorldState(createFamilyWorldInitialData()), {
-      $familyWorld: dependencies,
-      hydrateHomeCustomization: vi.fn().mockResolvedValue(undefined),
-      notify: vi.fn(),
-      persistContributions: vi.fn(),
-      refreshFamilyAggregate,
-      refreshAllFamilyAggregates,
-    }) as unknown as FamilyWorldStoreContext;
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    vi.spyOn(context, "hydrateHomeCustomization").mockResolvedValue(undefined);
+    const notify = vi.spyOn(context, "notify").mockImplementation(() => undefined);
+    const refreshFamilyReadModel = vi.spyOn(context, "refreshFamilyReadModel").mockResolvedValue(undefined);
+    const refreshAllFamilyReadModels = vi.spyOn(context, "refreshAllFamilyReadModels").mockResolvedValue(undefined);
 
-    await lifecycleActions.hydrateFamilyAggregates.call(context);
+    await context.hydrateFamilyReadModels();
 
-    expect(context.familyAggregatesHydrated).toBe(true);
-    expect(context.notify).not.toHaveBeenCalled();
-    const onChanged = serviceMocks.updatesConnect.mock.calls[0]?.[1] as
-      | ((change: FamilyAggregateChanged) => void)
-      | undefined;
+    expect(context.familyReadModelsHydrated).toBe(true);
+    expect(notify).not.toHaveBeenCalled();
+    const onChanged = serviceMocks.updatesConnect.mock.calls[0]?.[1];
     expect(onChanged).toBeDefined();
-    const onReconnected = serviceMocks.updatesConnect.mock.calls[0]?.[2] as (() => Promise<void>) | undefined;
+    const onReconnected = serviceMocks.updatesConnect.mock.calls[0]?.[2];
     expect(onReconnected).toBeDefined();
     await onReconnected?.();
-    expect(refreshAllFamilyAggregates).toHaveBeenCalledOnce();
+    expect(refreshAllFamilyReadModels).toHaveBeenCalledOnce();
     onChanged?.({
       aggregateType: "savings",
       familyId: dependencies.familyContext.activeFamilyId,
       revision: 2,
       updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "other-member",
-    } as FamilyAggregateChanged);
-    expect(refreshFamilyAggregate).toHaveBeenCalledWith("savings");
-    refreshFamilyAggregate.mockClear();
+      updatedBy: createDomainId.familyMember("other-member"),
+    });
+    expect(refreshFamilyReadModel).toHaveBeenCalledWith("savings");
+    refreshFamilyReadModel.mockClear();
     onChanged?.({
       aggregateType: "savings",
       familyId: dependencies.familyContext.activeFamilyId,
       revision: 3,
       updatedAt: "2026-09-10T08:01:00.000Z",
       updatedBy: context.signedInMemberId,
-    } as FamilyAggregateChanged);
-    expect(refreshFamilyAggregate).not.toHaveBeenCalled();
+    });
+    expect(refreshFamilyReadModel).not.toHaveBeenCalled();
   });
 });
 
@@ -115,13 +119,8 @@ describe("hydrateHomeCustomization", () => {
 
   function createHomeCustomizationContext() {
     const initialData = createFamilyWorldInitialData();
-    const context = Object.assign(createFamilyWorldState(initialData), {
-      $familyWorld: {
-        ...dependencies,
-        initialDataFactory: { create: createFamilyWorldInitialData },
-      },
-      notify: vi.fn(),
-    }) as unknown as FamilyWorldStoreContext;
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    vi.spyOn(context, "notify").mockImplementation(() => undefined);
 
     return { context, initialData };
   }
@@ -129,16 +128,18 @@ describe("hydrateHomeCustomization", () => {
   it("restores an unequipped default accessory", async () => {
     const { context, initialData } = createHomeCustomizationContext();
     serviceMocks.homeCustomizationLoad.mockResolvedValue({
-      aggregateType: "home-customization",
-      familyId: dependencies.familyContext.activeFamilyId,
+      readModelType: "home-customization",
       revision: 1,
-      schemaVersion: 3,
       state: {
         capabilities: { canArrangeHouse: true },
         catalog: {
           accessories: initialData.accessories.map((accessory) => ({
             available: true,
+            catalogArea: accessory.category === "special" ? "special" : accessory.placement,
             id: accessory.id,
+            minimumHouseLevel: accessory.minimumHouseLevel ?? 0,
+            owned: accessory.owned,
+            price: accessory.price,
             purchasableByMemberIds: [],
           })),
           areas: [],
@@ -166,11 +167,9 @@ describe("hydrateHomeCustomization", () => {
           }),
         ),
       },
-      updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "member-1",
     });
 
-    await lifecycleActions.hydrateHomeCustomization.call(context);
+    await context.hydrateHomeCustomization();
 
     expect(context.accessories.find((accessory) => accessory.id === "round-rug")?.equipped).toBe(false);
   });
@@ -179,16 +178,18 @@ describe("hydrateHomeCustomization", () => {
     const { context, initialData } = createHomeCustomizationContext();
     const ownedThemeIds = new Set(["sunny-dollhouse", "halloween-night"]);
     serviceMocks.homeCustomizationLoad.mockResolvedValue({
-      aggregateType: "home-customization",
-      familyId: dependencies.familyContext.activeFamilyId,
+      readModelType: "home-customization",
       revision: 1,
-      schemaVersion: 3,
       state: {
         capabilities: { canArrangeHouse: true },
         catalog: {
           accessories: initialData.accessories.map((accessory) => ({
             available: true,
+            catalogArea: accessory.category === "special" ? "special" : accessory.placement,
             id: accessory.id,
+            minimumHouseLevel: accessory.minimumHouseLevel ?? 0,
+            owned: accessory.owned,
+            price: accessory.price,
             purchasableByMemberIds: [],
           })),
           areas: [],
@@ -212,11 +213,9 @@ describe("hydrateHomeCustomization", () => {
           { designId: "kitchen-halloween-night", zoneId: "kitchen" },
         ],
       },
-      updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "member-1",
     });
 
-    await lifecycleActions.hydrateHomeCustomization.call(context);
+    await context.hydrateHomeCustomization();
 
     expect(context.selectedRoomDesignIds).toMatchObject({
       garden: "garden-halloween-night",

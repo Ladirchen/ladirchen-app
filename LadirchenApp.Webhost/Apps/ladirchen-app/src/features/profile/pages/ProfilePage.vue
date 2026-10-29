@@ -35,7 +35,7 @@
         </span>
         <span>
           <strong>{{ t("profile.nickname.title") }}</strong>
-          <small>{{ store.activeChild.nickname || t("profile.nickname.fallback") }}</small>
+          <small>{{ store.activeChild?.nickname || t("profile.nickname.fallback") }}</small>
         </span>
         <i class="profile-action-spark" aria-hidden="true">✧</i>
       </button>
@@ -183,7 +183,7 @@ import { useI18n } from "vue-i18n";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import PageHeader from "@/shared/components/ui/PageHeader.vue";
-import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import { createDefaultAvatarAppearance, resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { setActiveLocale } from "@/plugins/i18n";
 import type { SupportedLocale } from "@/plugins/i18n";
@@ -205,14 +205,18 @@ const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const avatarBuilderOpen = ref(false);
 const profileEditorOpen = ref(false);
-const nicknameDraft = ref(store.activeChild.nickname ?? "");
+const nicknameDraft = ref(store.activeChild?.nickname ?? "");
 const activeLocale = computed<SupportedLocale>({
   get(this: void) {
     return isSupportedLocale(locale.value) ? locale.value : DEFAULT_LOCALE;
   },
   set: setActiveLocale,
 });
-const activeAppearance = computed(() => resolveFamilyMemberAvatarAppearance(store.signedInMember, store.members));
+const activeAppearance = computed(() =>
+  store.signedInMember
+    ? resolveFamilyMemberAvatarAppearance(store.signedInMember, store.members)
+    : createDefaultAvatarAppearance(),
+);
 const profileDescription = computed(function callback() {
   if (store.viewerRole === "child") {
     return t("profile.editor.childDescription");
@@ -220,14 +224,14 @@ const profileDescription = computed(function callback() {
 
   return store.isFamilyAdmin ? t("profile.editor.administratorDescription") : t("profile.editor.guardianDescription");
 });
-const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild.nickname ?? ""));
+const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild?.nickname ?? ""));
 function saveNickname() {
   return store.setOwnNickname(nicknameDraft.value);
 }
 watch(
   () => store.activeChildId,
   () => {
-    nicknameDraft.value = store.activeChild.nickname ?? "";
+    nicknameDraft.value = store.activeChild?.nickname ?? "";
   },
 );
 </script>

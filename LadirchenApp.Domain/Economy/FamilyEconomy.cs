@@ -12,7 +12,8 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 {
-  private readonly FamilyAggregate _family;
+  private readonly IReadOnlyList<FamilyEconomyMember> _members;
+  private readonly IanaTimeZone _timeZone;
   private readonly List<MemberWallet> _wallets;
   private readonly List<Contribution> _contributions = new();
   private readonly HashSet<ContributionId> _usedContributionIds = new();
@@ -23,8 +24,11 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   public FamilyEconomy(FamilyAggregate family)
     : base(family?.Id ?? throw new ArgumentNullException(nameof(family)))
   {
-    this._family = family;
-    _wallets = family.Members.Where(item => !item.InvitationPending).Select(item => new MemberWallet(item.Id)).ToList();
+    _timeZone = family.TimeZone;
+    _members = family.Members
+      .Select(item => new FamilyEconomyMember(item.Id, item.Role, item.Access, item.InvitationPending))
+      .ToArray();
+    _wallets = _members.Where(item => !item.InvitationPending).Select(item => new MemberWallet(item.Id)).ToList();
   }
 
   public IReadOnlyList<MemberWallet> Wallets
@@ -61,9 +65,25 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     }
   }
 
+  public IReadOnlyCollection<TransactionId> AppliedOperationIds
+  {
+    get
+    {
+      return _operations.ToArray();
+    }
+  }
+
+  public IReadOnlyCollection<ContributionId> UsedContributionIds
+  {
+    get
+    {
+      return _usedContributionIds.ToArray();
+    }
+  }
+
   public MemberWallet WalletFor(FamilyMemberId memberId)
   {
-    _family.ActiveMember(memberId);
+    ActiveMember(memberId);
 
     return _wallets.Find(item => item.Id == memberId)
       ?? throw new DomainRuleException(DomainError.NotFound, "The wallet is not open.");
@@ -71,8 +91,8 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void OpenWallet(FamilyMemberId actor, FamilyMemberId memberId)
   {
-    _family.RequireAdministrator(actor);
-    _family.ActiveMember(memberId);
+    RequireAdministrator(actor);
+    ActiveMember(memberId);
     Rules.Require(_wallets.All(item => item.Id != memberId), DomainError.Duplicate, "The wallet is already open.");
     _wallets.Add(new MemberWallet(memberId));
   }
@@ -83,16 +103,18 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     LadirchenAmount amount,
     string reason,
     TransactionId operationId,
-    DateTimeOffset now
+    DateTimeOffset now,
+    GuardianGiftId? giftId = null
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     RequireChild(childId);
-    var value = Rules.Positive(amount);
+    RequireNewPendingGiftId(giftId);
+    var value = Rules.Round(Rules.Positive(amount));
     Rules.Require(
-      value >= 1 && value <= 10000,
+      value >= SpecialGiftPolicy.MinimumAmount && value <= SpecialGiftPolicy.MaximumAmount,
       DomainError.InvalidValue,
-      "A special gift must be between 1 and 10000."
+      $"A special gift must be between {SpecialGiftPolicy.MinimumAmount} and {SpecialGiftPolicy.MaximumAmount}."
     );
     var text = Rules.Text(reason);
     RequireNewOperation(operationId);
@@ -103,6 +125,13 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
       operationId,
       new LedgerEntry(operationId, childId, null, LedgerKind.Credit, value, childId, text, now.ToUniversalTime(), actor)
     );
+
+    if (giftId is not null)
+    {
+      AddPendingGift(
+        new GuardianGoalGift(giftId, childId, actor, value, null, GiftDestination.Balance)
+      );
+    }
   }
 
   public void AddContribution(
@@ -113,7 +142,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   )
   {
     ArgumentNullException.ThrowIfNull(definition);
-    var member = _family.ActiveMember(actor);
+    var member = ActiveMember(actor);
     Rules.Require(
       member.IsAdministrator || (member.Role == MemberRole.Guardian && actor == definition.AssigneeId),
       DomainError.Forbidden,
@@ -122,7 +151,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
     if (definition.AssigneeId is not null)
     {
-      _family.ActiveMember(definition.AssigneeId);
+      ActiveMember(definition.AssigneeId);
     }
 
     Rules.Require(
@@ -159,13 +188,13 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void AssignContribution(FamilyMemberId actor, ContributionId id, FamilyMemberId? memberId, DateTimeOffset now)
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var contribution = FindContribution(id);
     RequireAvailable(contribution);
 
     if (memberId is not null)
     {
-      _family.ActiveMember(memberId);
+      ActiveMember(memberId);
     }
 
     contribution.Assign(memberId);
@@ -180,7 +209,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   )
   {
     ArgumentNullException.ThrowIfNull(partners);
-    var member = _family.ActiveMember(actor);
+    var member = ActiveMember(actor);
     var contribution = FindContribution(id);
     RequireAvailable(contribution);
     Rules.Require(
@@ -197,7 +226,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
     foreach (var partner in ids)
     {
-      _family.ActiveMember(partner);
+      ActiveMember(partner);
       Rules.Require(
         partner != contribution.AssigneeId,
         DomainError.InvalidValue,
@@ -211,7 +240,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void SubmitContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
   {
-    _family.ActiveMember(actor);
+    ActiveMember(actor);
     var contribution = FindContribution(id);
     RequireAvailable(contribution);
     Rules.Require(
@@ -236,20 +265,19 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     ContributionId id,
     StarRating rating,
     TransactionId operationId,
-    DateTimeOffset now,
-    Percentage? perfectRatingBonus = null
+    DateTimeOffset now
   )
   {
     var contribution = FindContribution(id);
     RequireReviewer(actor, contribution);
     RequireNewOperation(operationId);
     var promotion = _promotions.Find(item =>
-      item.ContributionId == id && item.Active && item.Deadline.IsOpen(now, _family.TimeZone)
+      item.ContributionId == id && item.Active && item.Deadline.IsOpen(now, _timeZone)
     );
     var reward = ContributionRewardPolicy.Calculate(
       contribution.Reward,
       rating,
-      perfectRatingBonus ?? new Percentage(5),
+      _contributionSettings.PerfectRatingBonus,
       promotion?.Multiplier,
       promotion?.TeamworkBonus
     );
@@ -280,7 +308,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void DeleteContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var contribution = FindContribution(id);
     _contributions.Remove(contribution);
     _promotions.RemoveAll(item => item.ContributionId == id);
@@ -297,7 +325,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     DateTimeOffset now
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     FindContribution(contributionId);
     Rules.Require(
       multiplier.Value is 2 or 3,
@@ -312,7 +340,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void SetPromotionActive(FamilyMemberId actor, PromotionId id, bool active, DateTimeOffset now)
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var promotion = FindPromotion(id);
     promotion.SetActive(active);
     AddDomainEvent(new ContributionChanged(Id, promotion.ContributionId, "PromotionActivationChanged", now));
@@ -320,7 +348,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void DeletePromotion(FamilyMemberId actor, PromotionId id, DateTimeOffset now)
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var promotion = FindPromotion(id);
     _promotions.Remove(promotion);
     AddDomainEvent(new ContributionChanged(Id, promotion.ContributionId, "PromotionDeleted", now));
@@ -345,7 +373,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   private void RequireChild(FamilyMemberId id)
   {
     Rules.Require(
-      _family.ActiveMember(id).Role == MemberRole.Child,
+      ActiveMember(id).Role == MemberRole.Child,
       DomainError.Forbidden,
       "An active child is required."
     );
@@ -362,7 +390,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   private void RequireReviewer(FamilyMemberId actor, Contribution contribution)
   {
-    var reviewer = _family.ActiveMember(actor);
+    var reviewer = ActiveMember(actor);
     Rules.Require(
       contribution.Status == ContributionStatus.Pending && contribution.AssigneeId is not null,
       DomainError.InvalidState,
@@ -370,7 +398,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     );
     var assigneeId =
       contribution.AssigneeId ?? throw new DomainRuleException(DomainError.InvalidState, "An assignee is required.");
-    var assignee = _family.ActiveMember(assigneeId);
+    var assignee = ActiveMember(assigneeId);
     Rules.Require(
       (assignee.Role == MemberRole.Child && reviewer.IsAdministrator)
         || (assignee.Role == MemberRole.Guardian && reviewer.Role == MemberRole.Child),
@@ -383,6 +411,28 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   {
     ArgumentNullException.ThrowIfNull(operationId);
     Rules.Require(!_operations.Contains(operationId), DomainError.Duplicate, "This operation was already applied.");
+  }
+
+  private FamilyEconomyMember ActiveMember(FamilyMemberId id)
+  {
+    ArgumentNullException.ThrowIfNull(id);
+    var member = _members.FirstOrDefault(item => item.Id == id);
+    Rules.Require(
+      member is not null && !member.InvitationPending,
+      DomainError.Forbidden,
+      "An active family member is required."
+    );
+
+    return member!;
+  }
+
+  private void RequireAdministrator(FamilyMemberId actor)
+  {
+    Rules.Require(
+      ActiveMember(actor).IsAdministrator,
+      DomainError.Forbidden,
+      "Only an administrator may manage this content."
+    );
   }
 
   private void Record(TransactionId operationId, params LedgerEntry[] entries)

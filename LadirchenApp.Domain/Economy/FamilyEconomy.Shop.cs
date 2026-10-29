@@ -29,7 +29,7 @@ public sealed partial class FamilyEconomy
   public void AddShopReward(FamilyMemberId actor, ShopRewardId id, ShopRewardDefinition definition, DateTimeOffset now)
   {
     ArgumentNullException.ThrowIfNull(definition);
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     Rules.Require(
       _shopRewards.All(item => item.Id != id),
       DomainError.Duplicate,
@@ -50,7 +50,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var reward = FindShopReward(id);
     Rules.Require(
       reward.Status != ShopRewardStatus.Requested,
@@ -67,7 +67,7 @@ public sealed partial class FamilyEconomy
 
   public void SetShopRewardVisibility(FamilyMemberId actor, ShopRewardId id, bool visible, DateTimeOffset now)
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var reward = FindShopReward(id);
     reward.SetVisibility(visible);
     AddDomainEvent(new ShopCatalogChanged(Id, id, "VisibilityChanged", now));
@@ -89,7 +89,7 @@ public sealed partial class FamilyEconomy
       DomainError.InvalidState,
       "The offer must be available and in stock."
     );
-    Rules.Require(reward.IsPublished(now, _family.TimeZone), DomainError.Closed, "The offer is not published today.");
+    Rules.Require(reward.IsPublished(now, _timeZone), DomainError.Closed, "The offer is not published today.");
     RequireShopOpen(now);
     Rules.Require(
       _requests.All(item => item.Id != requestId),
@@ -148,7 +148,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     ReleaseRequest(actor, FindPendingRequest(requestId), RedemptionStatus.Rejected, operationId, now);
   }
 
@@ -159,7 +159,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     RequireShopOpen(now);
     var request = FindPendingRequest(requestId);
     RequireNewOperation(operationId);
@@ -193,7 +193,7 @@ public sealed partial class FamilyEconomy
 
   public void DeleteShopReward(FamilyMemberId actor, ShopRewardId id, TransactionId operationId, DateTimeOffset now)
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     var reward = FindShopReward(id);
     var request = _requests.Find(item => item.RewardId == id && item.Status == RedemptionStatus.Pending);
 
@@ -267,9 +267,9 @@ public sealed partial class FamilyEconomy
   private void RequireShopOpen(DateTimeOffset now)
   {
     Rules.Require(
-      ShopAvailabilityPolicy.RedemptionIsOpen(now, _family.TimeZone),
+      ShopAvailabilityPolicy.RedemptionIsOpen(now, _timeZone),
       DomainError.Closed,
-      "Shop requests and approvals close at 18:00 local time."
+      $"Shop requests and approvals close at {ShopAvailabilityPolicy.ClosingHour:00}:00 local time."
     );
   }
 }

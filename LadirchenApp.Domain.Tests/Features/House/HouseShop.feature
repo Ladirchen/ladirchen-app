@@ -10,17 +10,26 @@ Feature: House shop
     And the accessory is owned
     And the accessory is stored unequipped
 
-  Scenario: An accessory purchase is rejected when it is not allowed
-    Given a house accessory is "<accessoryState>"
-    And the viewer is "<viewer>"
-    And the available balance is "<balanceState>"
+  Scenario: An accessory purchase is rejected when it is not allowed [accessoryState=unowned; viewer=guardian; balanceState=sufficient]
+    Given a house accessory is "unowned"
+    And the viewer is "guardian"
+    And the available balance is "sufficient"
     When the viewer attempts to purchase the accessory
     Then ownership and balance remain unchanged
-    Examples:
-      | accessoryState | viewer   | balanceState |
-      | unowned        | guardian | sufficient   |
-      | owned          | child    | sufficient   |
-      | unowned        | child    | insufficient |
+
+  Scenario: An accessory purchase is rejected when it is not allowed [accessoryState=owned; viewer=child; balanceState=sufficient]
+    Given a house accessory is "owned"
+    And the viewer is "child"
+    And the available balance is "sufficient"
+    When the viewer attempts to purchase the accessory
+    Then ownership and balance remain unchanged
+
+  Scenario: An accessory purchase is rejected when it is not allowed [accessoryState=unowned; viewer=child; balanceState=insufficient]
+    Given a house accessory is "unowned"
+    And the viewer is "child"
+    And the available balance is "insufficient"
+    When the viewer attempts to purchase the accessory
+    Then ownership and balance remain unchanged
 
   Scenario: Purchasing a furniture set grants every accessory in the set
     Given a child can afford an unowned furniture set
@@ -30,18 +39,33 @@ Feature: House shop
     And every accessory in the set is owned
     And every accessory in the set is stored unequipped
 
-  Scenario: A furniture set purchase respects level, ownership and available balance
-    Given a furniture set is "<ownership>"
-    And its minimum house level is "<levelState>"
-    And the child's available balance is "<balanceState>"
+  Scenario: A furniture set purchase respects level, ownership and available balance [ownership=unowned; levelState=met; balanceState=sufficient; result=accepted]
+    Given a furniture set is "unowned"
+    And its minimum house level is "met"
+    And the child's available balance is "sufficient"
     When the child attempts to purchase the furniture set
-    Then the purchase is <result>
-    Examples:
-      | ownership | levelState | balanceState | result   |
-      | unowned   | met        | sufficient   | accepted |
-      | unowned   | locked     | sufficient   | rejected |
-      | owned     | met        | sufficient   | rejected |
-      | unowned   | met        | insufficient | rejected |
+    Then the purchase is accepted
+
+  Scenario: A furniture set purchase respects level, ownership and available balance [ownership=unowned; levelState=locked; balanceState=sufficient; result=rejected]
+    Given a furniture set is "unowned"
+    And its minimum house level is "locked"
+    And the child's available balance is "sufficient"
+    When the child attempts to purchase the furniture set
+    Then the purchase is rejected
+
+  Scenario: A furniture set purchase respects level, ownership and available balance [ownership=owned; levelState=met; balanceState=sufficient; result=rejected]
+    Given a furniture set is "owned"
+    And its minimum house level is "met"
+    And the child's available balance is "sufficient"
+    When the child attempts to purchase the furniture set
+    Then the purchase is rejected
+
+  Scenario: A furniture set purchase respects level, ownership and available balance [ownership=unowned; levelState=met; balanceState=insufficient; result=rejected]
+    Given a furniture set is "unowned"
+    And its minimum house level is "met"
+    And the child's available balance is "insufficient"
+    When the child attempts to purchase the furniture set
+    Then the purchase is rejected
 
   Scenario: Purchasing a house theme owns and selects the theme
     Given a child can afford an unowned house theme
@@ -71,15 +95,20 @@ Feature: House shop
     And the design is owned and selected for its room
     And its house theme becomes selected
 
-  Scenario: A room design cannot be purchased without its requirements
-    Given the room design purchase requirement "<missingRequirement>" is not met
+  Scenario: A room design cannot be purchased without its requirements [missingRequirement=minimum house level]
+    Given the room design purchase requirement "minimum house level" is not met
     When the child attempts to purchase the room design
     Then ownership, selection and balance remain unchanged
-    Examples:
-      | missingRequirement |
-      | minimum house level |
-      | owned house theme   |
-      | available balance   |
+
+  Scenario: A room design cannot be purchased without its requirements [missingRequirement=owned house theme]
+    Given the room design purchase requirement "owned house theme" is not met
+    When the child attempts to purchase the room design
+    Then ownership, selection and balance remain unchanged
+
+  Scenario: A room design cannot be purchased without its requirements [missingRequirement=available balance]
+    Given the room design purchase requirement "available balance" is not met
+    When the child attempts to purchase the room design
+    Then ownership, selection and balance remain unchanged
 
   Scenario: Only an owned and level-eligible room design can be selected
     Given a room design is not owned or requires a higher house level
@@ -108,14 +137,15 @@ Feature: House shop
     Then the item is equipped in that area
     And its placement uses the area's default position
 
-  Scenario: Indoor and outdoor furniture remain in compatible areas
-    Given an owned stored furniture item is intended for "<placement>" use
-    When a family member requests placement in "<requestedArea>"
-    Then the furniture is placed in "<actualArea>"
-    Examples:
-      | placement | requestedArea | actualArea        |
-      | outside   | living room   | garden            |
-      | inside    | garden        | its assigned room |
+  Scenario: Indoor and outdoor furniture remain in compatible areas [placement=outside; requestedArea=living room; actualArea=garden]
+    Given an owned stored furniture item is intended for "outside" use
+    When a family member requests placement in "living room"
+    Then the furniture is placed in "garden"
+
+  Scenario: Indoor and outdoor furniture remain in compatible areas [placement=inside; requestedArea=garden; actualArea=its assigned room]
+    Given an owned stored furniture item is intended for "inside" use
+    When a family member requests placement in "garden"
+    Then the furniture is placed in "its assigned room"
 
   Scenario: A family member can restore a movable entity's initial placement
     Given a family member has moved a movable house entity
@@ -127,15 +157,20 @@ Feature: House shop
     When ownership of the furniture set is determined
     Then the furniture set is owned
 
-  Scenario: The house catalog separates regular and special house items
-    Given a house accessory belongs to the "<category>" category
+  Scenario: The house catalog separates regular and special house items [category=furniture; catalogArea=inside]
+    Given a house accessory belongs to the "furniture" category
     When a family member views the house shop
-    Then the house item is shown in the "<catalogArea>" catalog area
-    Examples:
-      | category  | catalogArea |
-      | furniture | inside      |
-      | garden    | outside     |
-      | special   | special     |
+    Then the house item is shown in the "inside" catalog area
+
+  Scenario: The house catalog separates regular and special house items [category=garden; catalogArea=outside]
+    Given a house accessory belongs to the "garden" category
+    When a family member views the house shop
+    Then the house item is shown in the "outside" catalog area
+
+  Scenario: The house catalog separates regular and special house items [category=special; catalogArea=special]
+    Given a house accessory belongs to the "special" category
+    When a family member views the house shop
+    Then the house item is shown in the "special" catalog area
 
   Scenario: Catalog entries contain the facts required for a purchase decision
     Given a family member views the house catalog
@@ -143,28 +178,62 @@ Feature: House shop
     Then its identifier, price, catalog area and minimum house level are provided
     And its ownership and purchase availability are provided for the current family
 
-  Scenario: Moved house-item coordinates are rounded and bounded
+  Scenario: Moved house-item coordinates are rounded and bounded [requestedX=40.126; requestedY=70.124; storedX=40.13; storedY=70.12]
     Given an owned movable house item can be arranged in an unlocked area
-    When a family member moves it to x <requestedX> and y <requestedY>
-    Then its stored x coordinate is <storedX>
-    And its stored y coordinate is <storedY>
-    Examples:
-      | requestedX | requestedY | storedX | storedY |
-      | 40.126     | 70.124     | 40.13   | 70.12   |
-      | -10        | 2          | 4       | 8       |
-      | 120        | 110        | 96      | 94      |
+    When a family member moves it to x 40.126 and y 70.124
+    Then its stored x coordinate is 40.13
+    And its stored y coordinate is 70.12
 
-  Scenario: The New badge follows its local calendar-date schedule
+  Scenario: Moved house-item coordinates are rounded and bounded [requestedX=-10; requestedY=2; storedX=3; storedY=52]
+    Given an owned movable house item can be arranged in an unlocked area
+    When a family member moves it to x -10 and y 2
+    Then its stored x coordinate is 3
+    And its stored y coordinate is 52
+
+  Scenario: Moved house-item coordinates are rounded and bounded [requestedX=120; requestedY=110; storedX=97; storedY=94]
+    Given an owned movable house item can be arranged in an unlocked area
+    When a family member moves it to x 120 and y 110
+    Then its stored x coordinate is 97
+    And its stored y coordinate is 94
+
+  Scenario: Family members and pets remain on the house floor
+    Given a family member is moved to x -10 and y 2
+    When the authoritative house layout is calculated
+    Then the normalized house position is x 7 and y 62
+
+  Scenario: The Ladi snaps to its living-room perch
+    Given the Ladi is moved inside the living-room perch area
+    When the authoritative house layout is calculated
+    Then the normalized house position is x 18 and y 30
+
+  Scenario: Family members and pets cannot overlap equipped furniture
+    Given an equipped sofa occupies the requested family-member position
+    When the authoritative house layout is validated
+    Then the house placement is rejected
+
+  Scenario: The New badge follows its local calendar-date schedule [localDateTime=2026-09-09T23:59:59; visibility=hidden]
     Given a house item has a New-badge schedule from "2026-09-10" through "2026-09-23"
-    And the family local date and time is "<localDateTime>"
+    And the family local date and time is "2026-09-09T23:59:59"
     When the house catalog determines the item's New badge
-    Then the New badge is <visibility>
-    Examples:
-      | localDateTime       | visibility |
-      | 2026-09-09T23:59:59 | hidden     |
-      | 2026-09-10T00:00:00 | visible    |
-      | 2026-09-23T23:59:59 | visible    |
-      | 2026-09-24T00:00:00 | hidden     |
+    Then the New badge is hidden
+
+  Scenario: The New badge follows its local calendar-date schedule [localDateTime=2026-09-10T00:00:00; visibility=visible]
+    Given a house item has a New-badge schedule from "2026-09-10" through "2026-09-23"
+    And the family local date and time is "2026-09-10T00:00:00"
+    When the house catalog determines the item's New badge
+    Then the New badge is visible
+
+  Scenario: The New badge follows its local calendar-date schedule [localDateTime=2026-09-23T23:59:59; visibility=visible]
+    Given a house item has a New-badge schedule from "2026-09-10" through "2026-09-23"
+    And the family local date and time is "2026-09-23T23:59:59"
+    When the house catalog determines the item's New badge
+    Then the New badge is visible
+
+  Scenario: The New badge follows its local calendar-date schedule [localDateTime=2026-09-24T00:00:00; visibility=hidden]
+    Given a house item has a New-badge schedule from "2026-09-10" through "2026-09-23"
+    And the family local date and time is "2026-09-24T00:00:00"
+    When the house catalog determines the item's New badge
+    Then the New badge is hidden
 
   Scenario: A house item without a New-badge schedule has no New badge
     Given a house item has no New-badge schedule

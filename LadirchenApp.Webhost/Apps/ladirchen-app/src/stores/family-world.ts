@@ -23,14 +23,14 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
       return createFamilyWorldState(initialDataFactory.create());
     },
     getters: {
-      activeChild(state): FamilyMember {
-        return state.members.find((member) => member.id === state.activeChildId) ?? state.members[0]!;
+      activeChild(state): FamilyMember | undefined {
+        return state.members.find((member) => member.id === state.activeChildId);
       },
-      signedInMember(state): FamilyMember {
-        return state.members.find((member) => member.id === state.signedInMemberId) ?? state.members[0]!;
+      signedInMember(state): FamilyMember | undefined {
+        return state.members.find((member) => member.id === state.signedInMemberId);
       },
       permissions(): FamilyPermissions {
-        return this.signedInMember.permissions ?? NO_FAMILY_PERMISSIONS;
+        return this.signedInMember?.permissions ?? NO_FAMILY_PERMISSIONS;
       },
       isFamilyAdmin(): boolean {
         return this.permissions.canManageFamily;
@@ -105,7 +105,7 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
       currentWeekDays(state): number {
         return state.memberProgressions[state.activeChildId]?.approvedDates.length ?? 0;
       },
-      currentDailyStreak(): number {
+      currentParticipationStreakDays(): number {
         return this.memberProgressions[this.activeChildId]?.streakDays ?? 0;
       },
       rewardForContribution(this: void, state) {
@@ -115,15 +115,24 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
           return contribution?.projectedReward ?? contribution?.earnedReward ?? contribution?.reward ?? 0;
         };
       },
-      activeGoal(state): SavingGoal {
+      activeGoal(state): SavingGoal | undefined {
         const visibleGoals = state.goals.filter((goal) => goal.visibleToMemberIds?.includes(state.signedInMemberId));
 
         return (
           visibleGoals.find((goal) => goal.id === state.activeGoalId) ??
           visibleGoals.find((goal) => goal.ownerId === state.activeChildId) ??
-          visibleGoals[0] ??
-          state.goals[0]!
+          visibleGoals[0]
         );
+      },
+      pendingGoalCancellation(state): SavingGoal | undefined {
+        return state.goals.find((goal) => {
+          const limits = goal.commandLimits?.[state.signedInMemberId];
+
+          return (
+            goal.cancellationRequest?.pendingMemberIds.includes(state.signedInMemberId) === true &&
+            (limits?.canApproveCancellation === true || limits?.canRejectCancellation === true)
+          );
+        });
       },
       ownSavingGoals(state): SavingGoal[] {
         const ownerId = state.viewerRole === "child" ? state.signedInMemberId : state.activeChildId;
@@ -143,6 +152,12 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
       },
       todayEarned(): number {
         return this.todayEarnedFor(this.activeChildId);
+      },
+      currentWeekEarnedFor(this: void, state) {
+        return (memberId: FamilyMemberId): number => state.currentWeekEarnedByMember[memberId] ?? 0;
+      },
+      currentWeekApprovedContributionCountFor(this: void, state) {
+        return (memberId: FamilyMemberId): number => state.currentWeekApprovedContributionCountByMember[memberId] ?? 0;
       },
       withdrawableGoalBalance(this: void) {
         return (goal?: SavingGoal): number => {

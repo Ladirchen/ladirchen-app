@@ -1,0 +1,19 @@
+using System.Text.Json.Serialization;
+
+using LadirchenApp.Application.Aggregates;
+
+namespace LadirchenApp.Webhost.Models.ReadModels;
+
+public sealed record HomeCustomizationReadModelResponse(
+  [property: JsonRequired] string ReadModelType,
+  [property: JsonRequired] long Revision,
+  [property: JsonRequired] HomeCustomizationReadModelState State
+)
+{
+  public static HomeCustomizationReadModelResponse FromProjection(
+    HomeCustomizationReadModelProjection projection
+  )
+  {
+    return FamilyReadModelResponseMapper.Map(projection);
+  }
+}

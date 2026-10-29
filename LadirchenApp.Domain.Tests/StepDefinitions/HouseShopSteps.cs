@@ -2,9 +2,14 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House.Shop;
+using LadirchenApp.Domain.Shared;
 
 using Reqnroll;
+
+using FamilyAggregate = LadirchenApp.Domain.Family.Family;
 
 namespace LadirchenApp.Domain.Tests.StepDefinitions;
 
@@ -13,6 +18,10 @@ public sealed class HouseShopSteps
 {
   private readonly FamilyHouseShop _shop = new();
   private readonly HouseShopPolicy _policy = new();
+  private readonly HouseLayoutPolicy _layoutPolicy = new();
+  private readonly FamilyMemberId _administratorId = new("administrator");
+  private readonly FamilyMemberId _childId = new("child");
+  private FamilyEconomy _economy = null!;
   private HouseItem _item = null!;
   private FurnitureSet _set = null!;
   private HouseTheme _theme = null!;
@@ -28,25 +37,30 @@ public sealed class HouseShopSteps
   private bool _newBadge;
   private string _catalogArea = string.Empty;
   private bool _catalogFactsProvided;
+  private HouseLayoutEntity _layoutEntity = null!;
+  private HousePlacement _normalizedPlacement = null!;
+  private bool _layoutPlacementRejected;
+  private int _purchaseSequence;
 
   [Given("a child can afford an unowned house accessory")]
   public void AffordableAccessory()
   {
     CreateItem();
-    _shop.Restore(100, 4);
-    _initialBalance = _shop.Balance;
+    InitializeEconomy(100);
+    _shop.Restore(4);
+    _initialBalance = WalletBalance;
   }
 
   [When("the child purchases the accessory")]
   public void PurchaseAccessory()
   {
-    _result = _shop.PurchaseAccessory(_item, true);
+    _result = TryPurchaseAccessory(true);
   }
 
   [Then("its price is deducted from the child's wallet")]
   public async Task ItemPriceDeducted()
   {
-    await Assert.That(_shop.Balance).IsEqualTo(_initialBalance - _item.Price);
+    await Assert.That(WalletBalance).IsEqualTo(_initialBalance - _item.Price);
   }
 
   [Then("the accessory is owned")]
@@ -68,11 +82,12 @@ public sealed class HouseShopSteps
 
     if (state == "owned")
     {
-      _shop.PurchaseAccessory(_item, true);
-      _shop.Restore(100, 4);
+      TryPurchaseAccessory(true);
+      SetWalletBalance(100);
+      _shop.Restore(4);
     }
 
-    _initialBalance = _shop.Balance;
+    _initialBalance = WalletBalance;
   }
 
   [Given("the viewer is {string}")]
@@ -84,47 +99,48 @@ public sealed class HouseShopSteps
   [Given("the available balance is {string}")]
   public void AvailableBalance(string state)
   {
-    _shop.Restore(state == "sufficient" ? 100 : 0, _shop.HouseLevel);
-    _initialBalance = _shop.Balance;
+    SetWalletBalance(state == "sufficient" ? 100 : 0);
+    _initialBalance = WalletBalance;
   }
 
   [When("the viewer attempts to purchase the accessory")]
   public void ViewerPurchasesAccessory()
   {
-    _result = _shop.PurchaseAccessory(_item, _actorIsChild);
+    _result = TryPurchaseAccessory(_actorIsChild);
   }
 
   [Then("ownership and balance remain unchanged")]
   public async Task OwnershipAndBalanceUnchanged()
   {
     await Assert.That(_result).IsFalse();
-    await Assert.That(_shop.Balance).IsEqualTo(_initialBalance);
+    await Assert.That(WalletBalance).IsEqualTo(_initialBalance);
   }
 
   [Given("a child can afford an unowned furniture set")]
   public void AffordableSet()
   {
     CreateSet();
-    _shop.Restore(100, 4);
-    _initialBalance = _shop.Balance;
+    InitializeEconomy(100);
+    _shop.Restore(4);
+    _initialBalance = WalletBalance;
   }
 
   [Given("the house meets the set's minimum level")]
   public void SetLevelMet()
   {
-    _shop.Restore(_shop.Balance, _set.MinimumLevel);
+    _shop.Restore(_set.MinimumLevel);
   }
 
   [When("the child purchases the furniture set")]
   public void PurchaseSet()
   {
-    _result = _shop.PurchaseSet(_set, true);
+    _result = TryPurchaseSet();
   }
 
   [Then("the set price is deducted from the child's wallet")]
   public async Task SetPriceDeducted()
   {
-    await Assert.That(_shop.Balance).IsEqualTo(_initialBalance - _set.Price);
+    await Assert.That(WalletBalance).IsEqualTo(_initialBalance - _set.Price);
   }
 
   [Then("every accessory in the set is owned")]
@@ -146,30 +162,31 @@ public sealed class HouseShopSteps
 
     if (ownership == "owned")
     {
-      _shop.PurchaseSet(_set, true);
-      _shop.Restore(100, 4);
+      TryPurchaseSet();
+      SetWalletBalance(100);
+      _shop.Restore(4);
     }
 
-    _initialBalance = _shop.Balance;
+    _initialBalance = WalletBalance;
   }
 
   [Given("its minimum house level is {string}")]
   public void SetLevelState(string state)
   {
-    _shop.Restore(_shop.Balance, state == "met" ? _set.MinimumLevel : _set.MinimumLevel - 1);
+    _shop.Restore(state == "met" ? _set.MinimumLevel : _set.MinimumLevel - 1);
   }
 
   [Given("the child's available balance is {string}")]
   public void ChildBalanceState(string state)
   {
-    _shop.Restore(state == "sufficient" ? 100 : 0, _shop.HouseLevel);
-    _initialBalance = _shop.Balance;
+    SetWalletBalance(state == "sufficient" ? 100 : 0);
+    _initialBalance = WalletBalance;
   }
 
   [When("the child attempts to purchase the furniture set")]
   public void AttemptSetPurchase()
   {
-    _result = _shop.PurchaseSet(_set, true);
+    _result = TryPurchaseSet();
   }
 
   [Then("the purchase is {word}")]
@@ -182,20 +199,21 @@ public sealed class HouseShopSteps
   public void AffordableTheme()
   {
     CreateTheme();
-    _shop.Restore(100, 4);
-    _initialBalance = _shop.Balance;
+    InitializeEconomy(100);
+    _shop.Restore(4);
+    _initialBalance = WalletBalance;
   }
 
   [When("the child purchases the theme")]
   public void PurchaseTheme()
   {
-    _result = _shop.PurchaseTheme(_theme, true);
+    _result = TryPurchaseTheme();
   }
 
   [Then("the theme price is deducted from the child's wallet")]
   public async Task ThemePriceDeducted()
   {
-    await Assert.That(_shop.Balance).IsEqualTo(_initialBalance - _theme.Price);
+    await Assert.That(WalletBalance).IsEqualTo(_initialBalance - _theme.Price);
   }
 
   [Then("the theme is owned and selected")]
@@ -235,7 +253,7 @@ public sealed class HouseShopSteps
   public void OwnedTheme()
   {
     AffordableTheme();
-    _shop.PurchaseTheme(_theme, true);
+    TryPurchaseTheme();
   }
 
   [When("a family member selects the theme")]
@@ -261,35 +279,37 @@ public sealed class HouseShopSteps
   {
     CreateTheme();
     _design = _theme.Designs[0];
-    _shop.Restore(100, 4);
-    _initialBalance = _shop.Balance;
+    InitializeEconomy(100);
+    _shop.Restore(4);
+    _initialBalance = WalletBalance;
   }
 
   [Given("the family owns the design's house theme")]
   public void OwnDesignTheme()
   {
-    _shop.PurchaseTheme(_theme, true);
-    _shop.Restore(100, 4);
+    TryPurchaseTheme();
+    SetWalletBalance(100);
+    _shop.Restore(4);
     _design = new RoomDesign("extra-design", _theme.Id, "kitchen", 20, 2);
-    _initialBalance = _shop.Balance;
+    _initialBalance = WalletBalance;
   }
 
   [Given("the house meets the design's minimum level")]
   public void DesignLevelMet()
   {
-    _shop.Restore(_shop.Balance, _design.MinimumLevel);
+    _shop.Restore(_design.MinimumLevel);
   }
 
   [When("the child purchases the room design")]
   public void PurchaseDesign()
   {
-    _result = _shop.PurchaseDesign(_design, _theme, true);
+    _result = TryPurchaseDesign();
   }
 
   [Then("the design price is deducted from the child's wallet")]
   public async Task DesignPriceDeducted()
   {
-    await Assert.That(_shop.Balance).IsEqualTo(_initialBalance - _design.Price);
+    await Assert.That(WalletBalance).IsEqualTo(_initialBalance - _design.Price);
   }
 
   [Then("the design is owned and selected for its room")]
@@ -311,18 +331,19 @@ public sealed class HouseShopSteps
 
     if (requirement != "owned house theme")
     {
-      _shop.PurchaseTheme(_theme, true);
-      _shop.Restore(requirement == "available balance" ? 0 : 100, requirement == "minimum house level" ? 0 : 4);
+      TryPurchaseTheme();
+      SetWalletBalance(requirement == "available balance" ? 0 : 100);
+      _shop.Restore(requirement == "minimum house level" ? 0 : 4);
       _design = new RoomDesign("extra-design", _theme.Id, "kitchen", 20, 2);
     }
 
-    _initialBalance = _shop.Balance;
+    _initialBalance = WalletBalance;
   }
 
   [When("the child attempts to purchase the room design")]
   public void AttemptDesignPurchase()
   {
-    _result = _shop.PurchaseDesign(_design, _theme, true);
+    _result = TryPurchaseDesign();
   }
 
   [Then("ownership, selection and balance remain unchanged")]
@@ -330,14 +351,14 @@ public sealed class HouseShopSteps
   {
     await Assert.That(_result).IsFalse();
     await Assert.That(_design.Owned).IsFalse();
-    await Assert.That(_shop.Balance).IsEqualTo(_initialBalance);
+    await Assert.That(WalletBalance).IsEqualTo(_initialBalance);
   }
 
   [Given("a room design is not owned or requires a higher house level")]
   public void IneligibleDesign()
   {
     _design = new RoomDesign("design", "theme", "living room", 20, 4);
-    _shop.Restore(100, 2);
+    _shop.Restore(2);
   }
 
   [When("a family member attempts to select the room design")]
@@ -358,7 +379,7 @@ public sealed class HouseShopSteps
   public void OwnedMovableItem()
   {
     AffordableAccessory();
-    _shop.PurchaseAccessory(_item, true);
+    TryPurchaseAccessory(true);
     _shop.UnlockArea("living room");
   }
 
@@ -385,8 +406,9 @@ public sealed class HouseShopSteps
   public void OwnedFixedItem()
   {
     _item = NewItem(HouseItemMobility.Fixed);
-    _shop.Restore(100, 4);
-    _shop.PurchaseAccessory(_item, true);
+    InitializeEconomy(100);
+    _shop.Restore(4);
+    TryPurchaseAccessory(true);
     _shop.UnlockArea("living room");
   }
 
@@ -454,8 +476,9 @@ public sealed class HouseShopSteps
   public void ItemIntendedUse(string placement)
   {
     _item = new HouseItem("item", 10, HouseItemCategory.Furniture, HouseItemMobility.Movable, placement, new("living room", 50, 50, 1));
-    _shop.Restore(100, 4);
-    _shop.PurchaseAccessory(_item, true);
+    InitializeEconomy(100);
+    _shop.Restore(4);
+    TryPurchaseAccessory(true);
     _shop.UnlockArea("living room");
     _shop.UnlockArea("garden");
   }
@@ -496,7 +519,7 @@ public sealed class HouseShopSteps
   public void OwnEverySetItem()
   {
     AffordableSet();
-    _shop.PurchaseSet(_set, true);
+    TryPurchaseSet();
   }
 
   [When("ownership of the furniture set is determined")]
@@ -577,6 +600,82 @@ public sealed class HouseShopSteps
     await Assert.That(_item.Placement.Y).IsEqualTo(y);
   }
 
+  [Given("a family member is moved to x {float} and y {float}")]
+  public void MoveFamilyMember(decimal x, decimal y)
+  {
+    _layoutEntity = new HouseLayoutEntity(
+      "member-placement",
+      "member",
+      "child",
+      new HousePlacement("living-room", x, y, 1m),
+      true
+    );
+  }
+
+  [Given("the Ladi is moved inside the living-room perch area")]
+  public void MoveLadiToPerch()
+  {
+    _layoutEntity = new HouseLayoutEntity(
+      "ladi-placement",
+      "ladi",
+      "family-ladi",
+      new HousePlacement("living-room", 20m, 35m, 1m),
+      true
+    );
+  }
+
+  [When("the authoritative house layout is calculated")]
+  public void CalculateHouseLayout()
+  {
+    var placement = _layoutEntity.Placement;
+    _normalizedPlacement = _layoutPolicy.Normalize(
+      _layoutEntity.EntityType,
+      _layoutEntity.EntityId,
+      placement.Area,
+      placement.X,
+      placement.Y,
+      placement.Scale
+    );
+  }
+
+  [Then("the normalized house position is x {float} and y {float}")]
+  public async Task NormalizedHousePosition(decimal x, decimal y)
+  {
+    await Assert.That(_normalizedPlacement.X).IsEqualTo(x);
+    await Assert.That(_normalizedPlacement.Y).IsEqualTo(y);
+  }
+
+  [Given("an equipped sofa occupies the requested family-member position")]
+  public void OccupiedFamilyMemberPosition()
+  {
+    _layoutEntity = new HouseLayoutEntity(
+      "member-placement",
+      "member",
+      "child",
+      new HousePlacement("living-room", 50m, 70m, 1m),
+      true
+    );
+  }
+
+  [When("the authoritative house layout is validated")]
+  public void ValidateHouseLayout()
+  {
+    var sofa = new HouseLayoutEntity(
+      "sofa-placement",
+      "furniture",
+      "cozy-sofa",
+      new HousePlacement("living-room", 50m, 70m, 1m),
+      true
+    );
+    _layoutPlacementRejected = _layoutPolicy.CollidesWithFurniture(_layoutEntity, [sofa]);
+  }
+
+  [Then("the house placement is rejected")]
+  public async Task HousePlacementRejected()
+  {
+    await Assert.That(_layoutPlacementRejected).IsTrue();
+  }
+
   [Given("a house item has a New-badge schedule from {string} through {string}")]
   public void NewBadgeSchedule(string start, string end)
   {
@@ -617,7 +716,7 @@ public sealed class HouseShopSteps
 
   private static HouseItem NewItem(HouseItemMobility mobility)
   {
-    return new HouseItem("item", 20, HouseItemCategory.Furniture, mobility, "inside", new HousePlacement("living room", 40, 40, 1));
+    return new HouseItem("item", 20, HouseItemCategory.Furniture, mobility, "inside", new HousePlacement("living room", 40, 52, 1));
   }
 
   private void CreateSet()
@@ -629,5 +728,98 @@ public sealed class HouseShopSteps
   {
     _design = new RoomDesign("design", "theme", "living room", 20, 2);
     _theme = new HouseTheme("theme", 40, [_design]);
+  }
+
+  private decimal WalletBalance
+  {
+    get
+    {
+      return _economy.WalletFor(_childId).Balance;
+    }
+  }
+
+  private void InitializeEconomy(decimal balance)
+  {
+    var family = new FamilyAggregate(
+      new FamilyId(Guid.NewGuid()),
+      _administratorId,
+      "Administrator",
+      new IanaTimeZone("Europe/Zurich")
+    );
+    family.AddMember(
+      _administratorId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      DateTimeOffset.UnixEpoch
+    );
+    _economy = new FamilyEconomy(family);
+    SetWalletBalance(balance);
+  }
+
+  private void SetWalletBalance(decimal balance)
+  {
+    _economy.RestoreWallet(_childId, balance, 0);
+  }
+
+  private bool TryPurchaseAccessory(bool actorIsChild)
+  {
+    var accepted = _shop.PurchaseAccessory(_item, actorIsChild, WalletBalance);
+
+    if (accepted)
+    {
+      DebitWallet(_item.Price, _item.Id);
+    }
+
+    return accepted;
+  }
+
+  private bool TryPurchaseSet()
+  {
+    var accepted = _shop.PurchaseSet(_set, true, WalletBalance);
+
+    if (accepted)
+    {
+      DebitWallet(_set.Price, _set.Id);
+    }
+
+    return accepted;
+  }
+
+  private bool TryPurchaseTheme()
+  {
+    var accepted = _shop.PurchaseTheme(_theme, true, WalletBalance);
+
+    if (accepted)
+    {
+      DebitWallet(_theme.Price, _theme.Id);
+    }
+
+    return accepted;
+  }
+
+  private bool TryPurchaseDesign()
+  {
+    var accepted = _shop.PurchaseDesign(_design, _theme, true, WalletBalance);
+
+    if (accepted)
+    {
+      DebitWallet(_design.Price, _design.Id);
+    }
+
+    return accepted;
+  }
+
+  private void DebitWallet(decimal price, string contentId)
+  {
+    _economy.PurchaseHouseContent(
+      _childId,
+      new LadirchenAmount(price),
+      new HouseContentId(contentId),
+      new TransactionId($"house-purchase-{++_purchaseSequence}"),
+      DateTimeOffset.UnixEpoch
+    );
   }
 }

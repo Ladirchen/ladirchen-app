@@ -136,7 +136,7 @@ function formatRate(value: number) {
 function resetSimulation(): void {
   simulatedCompletion.value = store.dailyEnergy;
   simulatedRating.value = store.averageTaskRating;
-  simulatedStreak.value = store.currentDailyStreak;
+  simulatedStreak.value = store.currentParticipationStreakDays;
   payoutVisible.value = false;
 }
 async function refreshSimulation(): Promise<void> {

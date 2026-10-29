@@ -118,7 +118,7 @@ public sealed partial class EconomySteps
     LocalTime($"2026-10-10T{hour:00}:{minute:00}:00");
   }
 
-  [When("an administrator attempts to approve the request")]
+  [When("a guardian administrator attempts to approve the request")]
   public void AdministratorAttemptsApproval()
   {
     Try(ApproveReward);
@@ -166,7 +166,7 @@ public sealed partial class EconomySteps
     CreateReward(10, stock);
   }
 
-  [When("a content manager approves the request before the local cutoff")]
+  [When("a family member who can manage content approves the request before the local cutoff")]
   public void ApproveBeforeCutoff()
   {
     ApproveReward();
@@ -185,7 +185,7 @@ public sealed partial class EconomySteps
     _shopViewer = role switch
     {
       "child" => _child,
-      "guardian admin" => _admin,
+      "guardian administrator" => _admin,
       _ => _supporter,
     };
   }
@@ -225,7 +225,7 @@ public sealed partial class EconomySteps
     await Assert.That(_displayedRewardCount).IsEqualTo(1);
   }
 
-  [When("a content manager views the family reward shop")]
+  [When("a family member who can manage content views the family reward shop")]
   public void ManagerViewsRewardShop()
   {
     _displayedRewardCount = _economy.ShopRewards.Count;
@@ -237,7 +237,7 @@ public sealed partial class EconomySteps
     await Assert.That(_displayedRewardCount).IsEqualTo(4);
   }
 
-  [When("a content manager hides the reward")]
+  [When("a family member who can manage content hides the reward")]
   public void HideReward()
   {
     _economy.SetShopRewardVisibility(_admin, _rewardId, false, _now);
@@ -255,14 +255,14 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.WalletFor(_child).Reserved).IsEqualTo(80);
   }
 
-  [Given("a content manager enters reward data with {string}")]
+  [Given("a family member who can manage content enters reward data with {string}")]
   public void InvalidRewardData(string invalidData)
   {
     CreateEconomy();
     _invalidRewardData = invalidData;
   }
 
-  [When("the content manager attempts to add the reward")]
+  [When("the family member who can manage content attempts to add the reward")]
   public void AttemptAddInvalidReward()
   {
     var icon = _invalidRewardData == "a blank icon" ? "" : "gift";
@@ -311,7 +311,7 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.ShopRewards).IsEmpty();
   }
 
-  [Given("a content manager creates a valid reward in category {string}")]
+  [Given("a family member who can manage content creates a valid reward in category {string}")]
   public void ValidRewardCategory(string category)
   {
     CreateEconomy();

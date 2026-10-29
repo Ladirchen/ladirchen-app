@@ -26,7 +26,7 @@ public sealed class FamilyPermissionSteps
     var adminId = new FamilyMemberId("admin");
     _family = new FamilyAggregate(new FamilyId(Guid.NewGuid()), adminId, "Admin", new IanaTimeZone("Europe/Zurich"));
 
-    if (role == "guardian admin")
+    if (role == "guardian administrator")
     {
       _member = _family.ActiveMember(adminId);
 

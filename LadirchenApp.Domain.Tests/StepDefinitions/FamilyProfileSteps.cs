@@ -91,7 +91,7 @@ public sealed class FamilyProfileSteps
     await Assert.That(_family.ActiveMember(_child).DisplayName).IsEqualTo("Sam");
   }
 
-  [Given("a family administrator enters a valid name and email address")]
+  [Given("a guardian administrator enters a valid name and email address")]
   public void ValidInvitation()
   {
     CreateFamily();
@@ -106,7 +106,7 @@ public sealed class FamilyProfileSteps
     _invitationAccess = access == "admin" ? GuardianAccess.Admin : GuardianAccess.Supporter;
   }
 
-  [When("the administrator invites the guardian")]
+  [When("the guardian administrator invites the guardian")]
   public void InviteGuardian()
   {
     _family.InviteGuardian(
@@ -130,6 +130,13 @@ public sealed class FamilyProfileSteps
   public async Task InvitationPending()
   {
     await Assert.That(_family.Members.Single(item => item.Id == _guardian).InvitationPending).IsTrue();
+  }
+
+  [Then("the guardian does not participate in the weekly family goal")]
+  public async Task InvitedGuardianDoesNotParticipate()
+  {
+    await Assert.That(_family.Members.Single(item => item.Id == _guardian).ParticipatesInWeeklyGoal)
+      .IsFalse();
   }
 
   [Given("a family member attempts a guardian invitation with {string}")]
@@ -179,13 +186,13 @@ public sealed class FamilyProfileSteps
     _family.AddMember(_admin, _otherGuardian, "Other", MemberRole.Guardian, GuardianAccess.Supporter, false, _now);
   }
 
-  [When("the administrator changes that guardian from supporter to administrator")]
+  [When("the guardian administrator changes that guardian from supporter to guardian administrator")]
   public void PromoteOtherGuardian()
   {
     _family.ChangeGuardianAccess(_actor, _otherGuardian, GuardianAccess.Admin, _now);
   }
 
-  [Then("the other guardian has administrator access")]
+  [Then("the other guardian has guardian administrator access")]
   public async Task OtherGuardianIsAdmin()
   {
     await Assert.That(_family.ActiveMember(_otherGuardian).Access).IsEqualTo(GuardianAccess.Admin);
@@ -249,7 +256,7 @@ public sealed class FamilyProfileSteps
   [Given("the actor is {string}")]
   public void UnauthorizedParticipationActor(string actor)
   {
-    _actor = actor == "family administrator" ? _admin : _guardian;
+    _actor = actor == "guardian administrator" ? _admin : _guardian;
   }
 
   [When("participation is changed")]

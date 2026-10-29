@@ -453,17 +453,17 @@
           {{ t("contributions.team.description", { title: teamContribution?.title }) }}
         </v-card-subtitle>
         <v-select
-          v-model="selectedSiblingIds"
+          v-model="selectedPartnerIds"
           chips
           closable-chips
-          :items="siblingOptions"
+          :items="partnerOptions"
           item-title="title"
           item-value="value"
-          :label="t('contributions.team.selectChildren')"
+          :label="t('contributions.team.selectPartners')"
           multiple
           variant="outlined"
         />
-        <div class="sibling-rule mb-4">
+        <div class="partner-rule mb-4">
           <v-icon color="info" size="18">i-mdi:shield-check-outline</v-icon>
           <span>{{ t("contributions.team.rule") }}</span>
         </div>
@@ -605,8 +605,8 @@ const {
   saveTeamInvite,
   scopeFilter,
   selectedPromotion,
-  selectedSiblingIds,
-  siblingOptions,
+  selectedPartnerIds,
+  partnerOptions,
   statusFilter,
   store,
   teamContribution,
@@ -778,7 +778,7 @@ function managedContributionDescription(contribution: Contribution) {
   font-size: rem(30);
 }
 
-.sibling-rule {
+.partner-rule {
   padding: 10px 12px;
   --uno: d-flex align-start ga-2;
   color: var(--lad-muted);

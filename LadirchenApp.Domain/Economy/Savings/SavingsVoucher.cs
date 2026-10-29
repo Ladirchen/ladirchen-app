@@ -6,7 +6,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.Economy;
 
-public sealed class SavingsVoucher
+internal sealed class SavingsVoucher
 {
   private readonly HashSet<FamilyMemberId> _participants;
   private readonly HashSet<FamilyMemberId> _consents = new();
@@ -39,7 +39,8 @@ public sealed class SavingsVoucher
   {
     get
     {
-      return OwnerId is not null || _participants.Count > 0 && _participants.All(_consents.Contains);
+      return RedemptionCount == 0
+        && (OwnerId is not null || _participants.Count > 0 && _participants.All(_consents.Contains));
     }
   }
   public int RedemptionCount { get; private set; }

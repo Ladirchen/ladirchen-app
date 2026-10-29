@@ -13,7 +13,7 @@ namespace LadirchenApp.Domain.Tests.StepDefinitions;
 [Binding]
 public sealed class LadiInterestSettlementSteps
 {
-  private readonly WeeklyLadiInterestPolicy _policy = new();
+  private readonly SavingsInterestPolicy _policy = new(new Percentage(8));
   private readonly FamilyMemberId _child = new("child");
   private PersonalLadiEvaluation _closedEvaluation = null!;
   private LadiStage _currentStage = LadiStage.FromId("idle-ladi");
@@ -43,7 +43,7 @@ public sealed class LadiInterestSettlementSteps
   [When("interest for that week is settled")]
   public void SettleEvaluatedStage()
   {
-    _settledRate = _policy.RateFor(_closedEvaluation, new Percentage(8)).Value;
+    _settledRate = _policy.RateFor(_closedEvaluation).Value;
     _goalRates.Clear();
 
     for (var index = 0; index < _eligibleGoalCount; index++)

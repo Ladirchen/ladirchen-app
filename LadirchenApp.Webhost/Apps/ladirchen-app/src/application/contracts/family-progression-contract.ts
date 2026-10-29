@@ -1,10 +1,9 @@
-import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
+import type { FamilyReadModel } from "./family-read-model-contract";
 import type { HouseAtmosphere, HouseEnergyVisualLevel, HouseStageLevel } from "@/domain/house";
 import type { LadiStageId } from "@/domain/ladi";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 
-export const FAMILY_PROGRESSION_SCHEMA_VERSION = 4;
-export const FAMILY_PROGRESSION_AGGREGATE_TYPE = "family-progression";
+export const FAMILY_PROGRESSION_READ_MODEL_TYPE = "family-progression";
 
 export interface MemberProgression {
   readonly approvedDates: ReadonlyArray<string>;
@@ -31,8 +30,7 @@ export interface FamilyProgressionState {
   readonly memberProgressions: Readonly<Partial<Record<FamilyMemberId, MemberProgression>>>;
 }
 
-export type FamilyProgressionSnapshot = VersionedAggregateSnapshot<
-  typeof FAMILY_PROGRESSION_AGGREGATE_TYPE,
-  typeof FAMILY_PROGRESSION_SCHEMA_VERSION,
+export type FamilyProgressionReadModel = FamilyReadModel<
+  typeof FAMILY_PROGRESSION_READ_MODEL_TYPE,
   FamilyProgressionState
 >;

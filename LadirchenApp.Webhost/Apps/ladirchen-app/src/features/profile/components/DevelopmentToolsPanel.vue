@@ -16,7 +16,7 @@
             <v-icon icon="i-mdi:account-switch-outline" />
             <span>
               <strong>{{ t("profile.development.session.title") }}</strong>
-              <small>{{ t("profile.development.session.current", { name: store.signedInMember.name }) }}</small>
+              <small>{{ t("profile.development.session.current", { name: store.signedInMember?.name ?? "" }) }}</small>
             </span>
           </div>
         </v-expansion-panel-title>

@@ -1,8 +1,7 @@
-import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
+import type { FamilyReadModel } from "./family-read-model-contract";
 import type { FamilyMember, FamilyPet, IanaTimeZone, SubscriptionTier, ViewerRole } from "@/domain/family/types";
 
-export const FAMILY_PROFILE_SCHEMA_VERSION = 2;
-export const FAMILY_PROFILE_AGGREGATE_TYPE = "family-profile";
+export const FAMILY_PROFILE_READ_MODEL_TYPE = "family-profile";
 
 export interface AvatarProfileCatalog {
   readonly accessoryIds: ReadonlyArray<string>;
@@ -27,8 +26,4 @@ export interface FamilyProfileState {
   readonly timeZone: IanaTimeZone;
 }
 
-export type FamilyProfileSnapshot = VersionedAggregateSnapshot<
-  typeof FAMILY_PROFILE_AGGREGATE_TYPE,
-  typeof FAMILY_PROFILE_SCHEMA_VERSION,
-  FamilyProfileState
->;
+export type FamilyProfileReadModel = FamilyReadModel<typeof FAMILY_PROFILE_READ_MODEL_TYPE, FamilyProfileState>;

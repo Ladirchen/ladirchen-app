@@ -2,7 +2,23 @@ import type {
   SavingsInterestSimulation,
   SavingsInterestSimulationGateway,
 } from "@/application/ports/savings-interest-simulation-gateway";
+import { isFiniteNumber, isInteger, isRecord } from "@/application/contracts/validation/runtime-validation";
+import { LADI_STAGES, type LadiStageId } from "@/domain/ladi";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
+
+function isLadiStageId(value: unknown): value is LadiStageId {
+  return typeof value === "string" && LADI_STAGES.some((stage) => stage.id === value);
+}
+
+function isSavingsInterestSimulation(value: unknown): value is SavingsInterestSimulation {
+  return (
+    isRecord(value) &&
+    isFiniteNumber(value.interestRate) &&
+    isLadiStageId(value.ladiStageId) &&
+    isInteger(value.ladiStagePosition) &&
+    isFiniteNumber(value.projectedCredit)
+  );
+}
 
 export class HttpSavingsInterestSimulationGateway implements SavingsInterestSimulationGateway {
   readonly #baseUrl: string;
@@ -29,6 +45,12 @@ export class HttpSavingsInterestSimulationGateway implements SavingsInterestSimu
       throw new Error(`Savings-interest simulation failed with status ${response.status}.`);
     }
 
-    return (await response.json()) as SavingsInterestSimulation;
+    const value: unknown = await response.json();
+
+    if (!isSavingsInterestSimulation(value)) {
+      throw new TypeError("The savings-interest simulation response is invalid.");
+    }
+
+    return value;
   }
 }

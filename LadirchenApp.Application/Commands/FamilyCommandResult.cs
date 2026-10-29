@@ -4,4 +4,4 @@ using LadirchenApp.Application.Aggregates;
 
 namespace LadirchenApp.Application.Commands;
 
-public sealed record FamilyCommandResult(IReadOnlyList<FamilyAggregateSnapshot> ChangedAggregates);
+public sealed record FamilyCommandResult(IReadOnlyList<FamilyAggregateChange> ChangedAggregates);

@@ -355,8 +355,26 @@ export function createPromotions(): Promotion[] {
   ];
 }
 export function createShopRewards(): ShopReward[] {
+  const publishedRewardDefaults = {
+    approvableByMemberIds: [],
+    cancellableByMemberIds: [],
+    isVisible: true,
+    publicationStatus: "visible",
+    published: true,
+    requestableByMemberIds: [],
+  } satisfies Pick<
+    ShopReward,
+    | "approvableByMemberIds"
+    | "cancellableByMemberIds"
+    | "isVisible"
+    | "publicationStatus"
+    | "published"
+    | "requestableByMemberIds"
+  >;
+
   return [
     {
+      ...publishedRewardDefaults,
       id: createDomainId.shopReward("allowance"),
       translationKey: "seed.rewards.allowance",
       title: "",
@@ -369,6 +387,7 @@ export function createShopRewards(): ShopReward[] {
       status: "available",
     },
     {
+      ...publishedRewardDefaults,
       id: createDomainId.shopReward("gaming-time"),
       translationKey: "seed.rewards.gamingTime",
       title: "",
@@ -381,6 +400,7 @@ export function createShopRewards(): ShopReward[] {
       status: "available",
     },
     {
+      ...publishedRewardDefaults,
       id: createDomainId.shopReward("mueller-trip"),
       translationKey: "seed.rewards.muellerTrip",
       title: "",
@@ -393,6 +413,7 @@ export function createShopRewards(): ShopReward[] {
       status: "available",
     },
     {
+      ...publishedRewardDefaults,
       id: createDomainId.shopReward("movie-night"),
       translationKey: "seed.rewards.movieNight",
       title: "",
@@ -405,6 +426,7 @@ export function createShopRewards(): ShopReward[] {
       status: "available",
     },
     {
+      ...publishedRewardDefaults,
       id: createDomainId.shopReward("bedtime"),
       translationKey: "seed.rewards.bedtime",
       title: "",

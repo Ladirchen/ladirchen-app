@@ -9,12 +9,11 @@ public sealed record LedgerEntry(TransactionId OperationId, FamilyMemberId Membe
   LedgerKind Kind, decimal Amount, DomainIdentifier SourceId, string Reason, DateTimeOffset OccurredAtUtc,
   FamilyMemberId? InitiatorId = null)
 {
-  public Guid EntryId { get; } = Guid.NewGuid();
+  public Guid EntryId { get; init; } = Guid.NewGuid();
   public FamilyMemberId ActorId
   {
     get
     {
-
       return InitiatorId ?? MemberId;
     }
   }

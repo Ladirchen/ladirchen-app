@@ -169,7 +169,7 @@ import type { FamilyMember, GuardianAccessLevel } from "@/domain/family/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
-import { isGuardianAccessLevel } from "@/application/contracts/family-aggregate-validation";
+import { isGuardianAccessLevel } from "@/application/contracts/family-read-model-validation";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
@@ -229,11 +229,9 @@ const memberCards = computed(() =>
   }),
 );
 function appearanceFor(member: FamilyMember): AvatarAppearance {
-
   return resolveFamilyMemberAvatarAppearance(member, store.members);
 }
 function accessLabel(access?: GuardianAccessLevel) {
-
   return t(access === "admin" ? "family.permissions.admin" : "family.permissions.supporter");
 }
 function goalTitle(memberId: FamilyMemberId) {
@@ -242,31 +240,24 @@ function goalTitle(memberId: FamilyMemberId) {
   return goal ? localize.goal(goal).title : t("family.roster.noGoal");
 }
 function memberSubtitle(member: FamilyMember) {
-
   return member.role === "guardian" ? t("family.roles.guardian") : goalTitle(member.id);
 }
 function guardianAccessColor(access?: GuardianAccessLevel): "info" | "primary" {
-
   return access === "admin" ? "info" : "primary";
 }
 function participationLabel(member: FamilyMember) {
-
   return t(member.participatesInWeeklyGoal ? "family.weekly.active" : "family.weekly.inactive");
 }
 function progressLabel(member: FamilyMember) {
-
   return t(member.role === "guardian" ? "family.weekly.familyProgress" : "family.weekly.personalProgress");
 }
 function ratingColorFor(memberId: FamilyMemberId): "primary" | "warning" {
-
   return store.averageTaskRatingFor(memberId) >= CONTRIBUTION_RATING.perfect ? "primary" : "warning";
 }
 function setGuardianAccess(memberId: FamilyMemberId, value: unknown) {
-
   if (isGuardianAccessLevel(value)) {
     store.setGuardianAccess(memberId, value);
   }
-
 }
 function inviteGuardian() {
   store.inviteGuardian(invite.name.trim(), invite.email.trim(), invite.guardianAccess);
@@ -276,9 +267,7 @@ function inviteGuardian() {
   inviteDialog.value = false;
 }
 onMounted(function callback() {
-
   if (store.viewerRole !== "child") {
-
     return;
   }
 
@@ -293,11 +282,9 @@ onMounted(function callback() {
   );
 });
 onUnmounted(function callback() {
-
   if (timer !== undefined) {
     window.clearTimeout(timer);
   }
-
 });
 </script>
 

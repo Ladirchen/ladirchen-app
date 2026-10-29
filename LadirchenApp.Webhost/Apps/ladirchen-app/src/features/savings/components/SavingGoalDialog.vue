@@ -228,7 +228,7 @@ export interface Emits {
 const iconOptions = ["✨", "🚲", "📷", "🎨", "🧱", "🦒", "🎮", "🎵"];
 const props = withDefaults(defineProps<Props>(), {
   initialGoal: null,
-  minimumTarget: 10,
+  minimumTarget: 1,
   familyGoal: false,
   familyMembers: () => [],
 });
@@ -274,7 +274,7 @@ const participantOptions = computed(() =>
     .map((member) => ({ title: member.nickname?.trim() || member.name, value: member.id })),
 );
 const isEditing = computed(() => props.initialGoal !== null);
-const showSavedHint = computed(() => isEditing.value && props.minimumTarget > 10);
+const showSavedHint = computed(() => isEditing.value && props.minimumTarget > 1);
 const showRemoveButton = computed(() => isEditing.value && !removeConfirmation.value);
 const isValid = computed(
   () =>

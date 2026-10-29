@@ -102,12 +102,12 @@ export const contributionsActions = {
       () => this.notify("notifications.contributions.promotionDeleted", { title }),
     );
   },
-  async setContributionPartners(this: FamilyWorldStoreContext, id: ContributionId, childIds: FamilyMemberId[]) {
-    const names = this.members.filter((member) => childIds.includes(member.id)).map((member) => member.name);
+  async setContributionPartners(this: FamilyWorldStoreContext, id: ContributionId, partnerIds: FamilyMemberId[]) {
+    const names = this.members.filter((member) => partnerIds.includes(member.id)).map((member) => member.name);
     await executeBackendFamilyCommand(
       this,
       "contributions.set-partners",
-      { id, partnerIds: childIds },
+      { id, partnerIds },
       "notifications.save.contributions",
       () =>
         this.notify(
