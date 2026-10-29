@@ -100,6 +100,56 @@ To run the Ladirchen App locally, follow these steps:
 
 1. Access the app in your browser at the port specified by your Tilt configuration.
 
+## Vercel beta deployment
+
+The root `Dockerfile` publishes the Vue application and ASP.NET host into one
+container. The browser therefore uses the same origin for static assets, API
+requests, the authentication cookie and SignalR. `vercel.json` deploys the HTTP
+application with the Container preset and keeps one production daemon running
+in `fra1` for durable outbox delivery and weekly interest settlement.
+
+Configure these Production environment variables in the Vercel project:
+
+| Variable                               | Required | Purpose                                                                                                  |
+| -------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL` or `POSTGRES_URL`       | Yes      | Pooled PostgreSQL connection for accounts, aggregates, outbox messages and Data Protection keys.         |
+| `REDIS_URL`                            | Yes      | Shared SignalR backplane. Use a TLS `rediss://` URL in production.                                       |
+| `PORT`                                 | Yes      | HTTP port for the web container; use `8080` to match the image default.                                  |
+| `DATA_PROTECTION_CERTIFICATE_BASE64`   | Yes      | Base64-encoded PKCS#12 certificate with its private key, used to encrypt persisted Data Protection keys. |
+| `DATA_PROTECTION_CERTIFICATE_PASSWORD` | Yes      | Password of the PKCS#12 certificate. Store it as a Vercel secret.                                        |
+
+Keep the same Data Protection certificate available across deployments and
+instances. Replacing it without a controlled key migration makes existing key
+ring entries unreadable and invalidates authentication cookies. The daemon's
+internal health endpoint uses the fixed port `8081`, matching `vercel.json`.
+
+Place PostgreSQL and Redis in, or as close as possible to, Vercel region
+`fra1`. If another data region is selected, update the daemon instance region
+in `vercel.json` before deployment. For the beta, both web and daemon startup
+apply pending database migrations; PostgreSQL serializes concurrent migration
+attempts. The separate `--migrate` process role is available when deployment
+migrations move to an explicit release job. The daemon exposes `/health/live`
+only inside its container, while the scale-to-zero web process does not run
+background workers.
+
+The daemon feature is production-only. Preview deployments can exercise the
+HTTP application but do not settle interest or dispatch outbox messages. SignalR
+uses WebSockets directly and Redis distributes notifications across web
+instances. Clients reconnect and reload their read models after an interrupted
+connection. Preview deployments need their own `DATABASE_URL` or `POSTGRES_URL`;
+configure Redis and the Data Protection certificate there as well when a
+production-like preview is required. During daemon shutdown, new settlement and
+outbox cycles stop immediately while current operations receive up to 50 seconds
+to finish inside the 60-second platform grace period.
+
+Deploy from the repository root with the Vercel framework preset set to
+**Container**. The checked-in `vercel.json` selects the preset as well, so no
+custom build command, output directory or route rewrite is required. See the
+[Vercel Container runtime](https://vercel.com/docs/functions/runtimes/container),
+[Vercel Daemons](https://vercel.com/docs/daemons) and
+[WebSocket support](https://vercel.com/changelog/websocket-support-is-now-generally-available)
+documentation for the platform lifecycle and limits.
+
 ## Build
 
 To build the Ladirchen App, follow these steps:

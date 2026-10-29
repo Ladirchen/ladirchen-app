@@ -1442,6 +1442,25 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.ToTable("ShopRewardPresentations", (string)null);
                 });
 
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataProtectionKeys");
+                });
+
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyAggregateOutboxMessageEntity", b =>
                 {
                     b.HasOne("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyCommandReceiptEntity", null)

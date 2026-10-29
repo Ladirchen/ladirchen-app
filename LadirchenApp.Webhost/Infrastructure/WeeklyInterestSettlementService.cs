@@ -12,7 +12,7 @@ namespace LadirchenApp.Webhost.Infrastructure;
 
 public sealed class WeeklyInterestSettlementService : BackgroundService
 {
-  private static readonly TimeSpan SettlementInterval = TimeSpan.FromHours(1);
+  private static readonly TimeSpan _settlementInterval = TimeSpan.FromHours(1);
   private readonly ILogger<WeeklyInterestSettlementService> _logger;
   private readonly IServiceScopeFactory _scopeFactory;
 
@@ -27,13 +27,17 @@ public sealed class WeeklyInterestSettlementService : BackgroundService
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    await SettleAvailablePeriodsAsync(stoppingToken);
-    using var timer = new PeriodicTimer(SettlementInterval);
-
-    while (await timer.WaitForNextTickAsync(stoppingToken))
+    try
     {
-      await SettleAvailablePeriodsAsync(stoppingToken);
+      await GracefulShutdownOperation.RunAsync(SettleAvailablePeriodsAsync, stoppingToken);
+      using var timer = new PeriodicTimer(_settlementInterval);
+
+      while (await timer.WaitForNextTickAsync(stoppingToken))
+      {
+        await GracefulShutdownOperation.RunAsync(SettleAvailablePeriodsAsync, stoppingToken);
+      }
     }
+    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
   }
 
   private async Task SettleAvailablePeriodsAsync(CancellationToken cancellationToken)

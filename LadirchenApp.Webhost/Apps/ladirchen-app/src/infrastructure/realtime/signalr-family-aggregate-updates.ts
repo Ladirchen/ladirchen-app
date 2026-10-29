@@ -1,4 +1,4 @@
-import { HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
+import { HttpTransportType, HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
 import type { HubConnection } from "@microsoft/signalr";
 import type {
   FamilyAggregateChanged,
@@ -49,7 +49,11 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
 
   public constructor(apiBaseUrl: string) {
     this.connection = new HubConnectionBuilder()
-      .withUrl(`${apiBaseUrl}/hubs/family-updates`, { withCredentials: true })
+      .withUrl(`${apiBaseUrl}/hubs/family-updates`, {
+        skipNegotiation: true,
+        transport: HttpTransportType.WebSockets,
+        withCredentials: true,
+      })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();

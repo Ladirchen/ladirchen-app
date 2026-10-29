@@ -17,7 +17,7 @@ namespace LadirchenApp.Webhost.Infrastructure;
 
 public sealed class FamilyAggregateOutboxDispatcher : BackgroundService
 {
-  private static readonly TimeSpan DispatchInterval = TimeSpan.FromSeconds(1);
+  private static readonly TimeSpan _dispatchInterval = TimeSpan.FromSeconds(1);
   private const int BatchSize = 50;
   private readonly ILogger<FamilyAggregateOutboxDispatcher> _logger;
   private readonly IServiceScopeFactory _scopeFactory;
@@ -36,13 +36,17 @@ public sealed class FamilyAggregateOutboxDispatcher : BackgroundService
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    await DispatchSafelyAsync(stoppingToken);
-    using var timer = new PeriodicTimer(DispatchInterval);
-
-    while (await timer.WaitForNextTickAsync(stoppingToken))
+    try
     {
-      await DispatchSafelyAsync(stoppingToken);
+      await GracefulShutdownOperation.RunAsync(DispatchSafelyAsync, stoppingToken);
+      using var timer = new PeriodicTimer(_dispatchInterval);
+
+      while (await timer.WaitForNextTickAsync(stoppingToken))
+      {
+        await GracefulShutdownOperation.RunAsync(DispatchSafelyAsync, stoppingToken);
+      }
     }
+    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
   }
 
   private async Task DispatchSafelyAsync(CancellationToken cancellationToken)
