@@ -1,86 +1,85 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-internal sealed class ProgressionFamilyCommandHandler : FamilyCommandAreaHandler
+internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
+  private readonly IFamilyEconomyRepository _economyRepository;
+  private readonly IFamilyProgressionRepository _progressionRepository;
+
   public ProgressionFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
+    IFamilyEconomyRepository economyRepository,
+    IFamilyProgressionRepository progressionRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
     TimeProvider timeProvider
   )
-    : base(repository, timeProvider, "progression.")
+    : base(unitOfWork, timeProvider, "progression.")
   {
+    _economyRepository = economyRepository
+      ?? throw new ArgumentNullException(nameof(economyRepository));
+    _progressionRepository = progressionRepository
+      ?? throw new ArgumentNullException(nameof(progressionRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
     FamilyCommand command,
-    FamilyAggregateSnapshot profile,
-    JsonObject profileState,
-    JsonObject payload,
+    LoadedAggregate<Family> loadedFamily,
     CancellationToken cancellationToken
   )
   {
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
+    ArgumentNullException.ThrowIfNull(command);
+    ArgumentNullException.ThrowIfNull(loadedFamily);
+    var family = loadedFamily.Root;
     _ = family.ActiveMember(command.ActorId);
-    var contributions = await RequireSnapshotAsync(command.FamilyId, "contributions", cancellationToken);
-    var contributionState = RequireObject(contributions.State);
-    var economy = FamilyEconomySnapshotMapper.RehydrateContributions(family, contributionState);
-    var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
-    var storedProgression = RequireObject(progression.State);
-    var house = FamilyProgressionApplicationService.RestoreHouse(
+    var loadedEconomy = await _economyRepository.LoadAsync(family, cancellationToken)
+      ?? throw new FamilyCommandException(
+        "The family-economy aggregate has not been initialized."
+      );
+    var loadedProgression = await _progressionRepository.LoadAsync(family, cancellationToken)
+      ?? throw new FamilyCommandException(
+        "The family-progression aggregate has not been initialized."
+      );
+    var house = loadedProgression.Root;
+    var currentPeriod = IsoWeekPeriod.For(
+      family.TimeZone.LocalDate(TimeProvider.GetUtcNow())
+    );
+    var evaluation = FamilyProgressionEvaluator.Evaluate(
       family,
-      profileState,
-      storedProgression
+      loadedEconomy.Root,
+      house,
+      currentPeriod
     );
-    var zone = family.TimeZone;
-    var currentPeriod = IsoWeekPeriod.For(zone.LocalDate(_timeProvider.GetUtcNow()));
-    var maximumRate = FamilyProgressionSnapshotMapper.ReadMaximumSavingsInterestRate(storedProgression);
-    var evaluation = FamilyProgressionApplicationService.Evaluate(
-      family,
-      economy,
-      profileState,
-      storedProgression,
-      currentPeriod,
-      maximumRate
-    );
-    var progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
-      storedProgression,
-      evaluation,
-      house
-    );
-    var saves = new List<PendingFamilyAggregateSave>();
-    var profileIsWritten = false;
+    IReadOnlyList<string> changedReadModels;
 
     switch (command.CommandType)
     {
       case "progression.refresh":
+        changedReadModels =
+        [
+          "family-progression",
+          "savings",
+          "home-customization",
+        ];
         break;
       case "progression.set-maximum-savings-rate":
         family.RequireAdministrator(command.ActorId);
-        var requestedMaximum = Round(RequiredDecimal(payload, "percent"));
-        maximumRate = new SavingsInterestPolicy(new Percentage(requestedMaximum)).MaximumRate;
-        evaluation = FamilyProgressionApplicationService.Evaluate(
-          family,
-          economy,
-          profileState,
-          storedProgression,
-          currentPeriod,
-          maximumRate
+        house.SetMaximumSavingsInterestRate(
+          new Percentage(Round(RequiredDecimal(RequiredObject(command.Payload), "percent")))
         );
-        progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
-          storedProgression,
-          evaluation,
-          house
-        );
+        changedReadModels =
+        [
+          "family-progression",
+          "savings",
+        ];
         break;
       case "progression.complete-week":
         family.RequireAdministrator(command.ActorId);
@@ -89,18 +88,17 @@ internal sealed class ProgressionFamilyCommandHandler : FamilyCommandAreaHandler
             currentPeriod,
             evaluation.FamilyEnergy,
             evaluation.Members.Select(item => item.LadiEvaluation),
-            _timeProvider.GetUtcNow()
+            TimeProvider.GetUtcNow()
           ),
           "Family energy is too low to complete the week."
         );
-        FamilyProgressionSnapshotMapper.WriteParticipantStreaks(profileState, family, house);
-        progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
-          progressionState,
-          evaluation,
-          house
-        );
-        saves.Add(CreateSave(profile, profileState, command.ActorId));
-        profileIsWritten = true;
+        changedReadModels =
+        [
+          "family-profile",
+          "family-progression",
+          "savings",
+          "home-customization",
+        ];
         break;
       case "progression.fail-week":
         family.RequireAdministrator(command.ActorId);
@@ -108,41 +106,49 @@ internal sealed class ProgressionFamilyCommandHandler : FamilyCommandAreaHandler
           currentPeriod,
           evaluation.FamilyEnergy,
           evaluation.Members.Select(item => item.LadiEvaluation),
-          _timeProvider.GetUtcNow()
+          TimeProvider.GetUtcNow()
         );
-        FamilyProgressionSnapshotMapper.WriteParticipantStreaks(profileState, family, house);
-        progressionState = FamilyProgressionSnapshotMapper.WriteEvaluation(
-          progressionState,
-          evaluation,
-          house
-        );
-        saves.Add(CreateSave(profile, profileState, command.ActorId));
-        profileIsWritten = true;
+        changedReadModels =
+        [
+          "family-profile",
+          "family-progression",
+          "savings",
+          "home-customization",
+        ];
         break;
       default:
         throw new FamilyCommandException("The progression command is not supported.");
     }
 
-    saves.Add(
-      FamilyProgressionApplicationService.CreateSave(
-        progression,
-        progressionState,
-        command.ActorId
-      )
+    var result = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        family.Id,
+        command.ActorId,
+        familyProgression: new PendingFamilyProgressionSave(
+          house,
+          loadedProgression.Revision
+        ),
+        revisionGuards:
+        [
+          new TypedAggregateRevisionGuard(
+            TypedAggregateKind.Family,
+            loadedFamily.Revision
+          ),
+          new TypedAggregateRevisionGuard(
+            TypedAggregateKind.FamilyEconomy,
+            loadedEconomy.Revision
+          ),
+        ]
+      ),
+      cancellationToken
     );
-    var revisionGuards = new List<FamilyAggregateRevisionGuard>
-    {
-      FamilyAggregateRevisionGuard.FromSnapshot(contributions),
-    };
+    var saved = result.FamilyProgression
+      ?? throw new InvalidOperationException("The family progression was not saved.");
 
-    if (!profileIsWritten)
-    {
-      revisionGuards.Add(FamilyAggregateRevisionGuard.FromSnapshot(profile));
-    }
-
-    var changed = await _repository.SaveBatchAsync(saves, revisionGuards, cancellationToken);
-
-    return new FamilyCommandResult(changed);
+    return new FamilyCommandResult(
+      changedReadModels
+        .Select(readModel => Change(family.Id, readModel, saved.Revision, saved.Audit))
+        .ToArray()
+    );
   }
-
 }

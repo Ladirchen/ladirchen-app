@@ -24,7 +24,7 @@ public sealed partial class FamilyEconomy
     }
   }
 
-  public void RestoreSavingGoal(
+  internal void RestoreSavingGoal(
     SavingGoalId id,
     SavingGoalDefinition definition,
     DateTimeOffset createdAt,
@@ -37,7 +37,8 @@ public sealed partial class FamilyEconomy
     bool cheered,
     bool cancelled,
     IsoWeekPeriod? lastInterestPeriod,
-    Percentage? lastInterestRate
+    Percentage? lastInterestRate,
+    bool requireActiveReferences = true
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -47,7 +48,7 @@ public sealed partial class FamilyEconomy
     Rules.Require(_goals.All(item => item.Id != id), DomainError.Duplicate, "This savings goal was already restored.");
     var owner = definition.Owner;
 
-    if (!owner.IsFamily)
+    if (requireActiveReferences && !owner.IsFamily)
     {
       ActiveMember(owner.MemberId!);
     }
@@ -64,14 +65,17 @@ public sealed partial class FamilyEconomy
       "A restored personal savings goal cannot define family participants."
     );
 
-    foreach (var participant in participants)
+    if (requireActiveReferences)
     {
-      ActiveMember(participant);
-    }
+      foreach (var participant in participants)
+      {
+        ActiveMember(participant);
+      }
 
-    foreach (var contributor in refundableContributions.Keys)
-    {
-      ActiveMember(contributor);
+      foreach (var contributor in refundableContributions.Keys)
+      {
+        ActiveMember(contributor);
+      }
     }
 
     var goal = new SavingGoal(
@@ -113,7 +117,7 @@ public sealed partial class FamilyEconomy
     _goals.Add(goal);
   }
 
-  public void RestoreSavingsVoucher(
+  internal void RestoreSavingsVoucher(
     SavingGoalId goalId,
     decimal amount,
     FamilyMemberId? ownerId,
@@ -144,7 +148,7 @@ public sealed partial class FamilyEconomy
     _savingsVouchers.Add(voucher);
   }
 
-  public void RestorePendingGuardianGift(
+  internal void RestorePendingGuardianGift(
     GuardianGiftId id,
     FamilyMemberId recipientId,
     FamilyMemberId? senderId,
@@ -174,7 +178,7 @@ public sealed partial class FamilyEconomy
     _guardianGifts.Add(new GuardianGoalGift(id, recipientId, senderId, amount, goalId, destination));
   }
 
-  public void RestoreSettledInterestPeriod(IsoWeekPeriod period)
+  internal void RestoreSettledInterestPeriod(IsoWeekPeriod period)
   {
     ArgumentNullException.ThrowIfNull(period);
     Rules.Require(

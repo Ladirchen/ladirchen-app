@@ -123,4 +123,32 @@ public sealed class ShopReward : Entity<ShopRewardId>
     Window = window;
     Release();
   }
+
+  internal void Restore(ShopRewardStatus status, bool deleted)
+  {
+    Rules.Defined(status);
+
+    switch (status)
+    {
+      case ShopRewardStatus.Available:
+        Rules.Require(Quantity > 0, DomainError.InvalidState, "An available reward requires positive stock.");
+        break;
+      case ShopRewardStatus.Requested:
+        Rules.Require(Quantity > 0, DomainError.InvalidState, "A requested reward requires positive stock.");
+        Reserve();
+        break;
+      case ShopRewardStatus.Redeemed:
+        Rules.Require(Quantity == 0, DomainError.InvalidState, "A redeemed reward must have no remaining stock.");
+        break;
+      default:
+        throw new ArgumentOutOfRangeException(nameof(status));
+    }
+
+    Rules.Require(
+      !deleted || status != ShopRewardStatus.Requested,
+      DomainError.InvalidState,
+      "A deleted reward cannot retain a pending request."
+    );
+    Deleted = deleted;
+  }
 }

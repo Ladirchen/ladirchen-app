@@ -4,34 +4,61 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 
 namespace LadirchenApp.Application.Commands;
 
 public sealed class ExecuteFamilyCommandHandler
   : ICommandHandler<FamilyCommand, FamilyCommandResult>
 {
-  private readonly IReadOnlyList<IFamilyCommandAreaHandler> _areaHandlers;
+  private readonly IReadOnlyList<ITypedFamilyCommandAreaHandler> _typedAreaHandlers;
   private readonly IFamilyCommandExecutionCoordinator _executionCoordinator;
-  private readonly IFamilyAggregateSnapshotRepository _repository;
+  private readonly IFamilyRepository _familyRepository;
 
   public ExecuteFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
+    IFamilyRepository familyRepository,
+    IFamilyEconomyRepository economyRepository,
+    IFamilyProgressionRepository progressionRepository,
+    IHouseCustomizationRepository houseRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
     IFamilyCommandExecutionCoordinator executionCoordinator,
     TimeProvider timeProvider
   )
   {
-    _repository = repository;
-    _executionCoordinator = executionCoordinator;
-    var progression = new FamilyProgressionApplicationService(repository, timeProvider);
-    _areaHandlers =
+    _familyRepository = familyRepository
+      ?? throw new ArgumentNullException(nameof(familyRepository));
+    _executionCoordinator = executionCoordinator
+      ?? throw new ArgumentNullException(nameof(executionCoordinator));
+    _typedAreaHandlers =
     [
-      new ProfileFamilyCommandHandler(repository, timeProvider, progression),
-      new HomeFamilyCommandHandler(repository, timeProvider),
-      new SavingsFamilyCommandHandler(repository, timeProvider),
-      new RewardShopFamilyCommandHandler(repository, timeProvider),
-      new ProgressionFamilyCommandHandler(repository, timeProvider),
-      new ContributionsFamilyCommandHandler(repository, timeProvider, progression),
+      new ProfileFamilyCommandHandler(
+        economyRepository,
+        progressionRepository,
+        houseRepository,
+        unitOfWork,
+        timeProvider
+      ),
+      new HomeFamilyCommandHandler(
+        economyRepository,
+        progressionRepository,
+        houseRepository,
+        unitOfWork,
+        timeProvider
+      ),
+      new ProgressionFamilyCommandHandler(
+        economyRepository,
+        progressionRepository,
+        unitOfWork,
+        timeProvider
+      ),
+      new SavingsFamilyCommandHandler(
+        economyRepository,
+        progressionRepository,
+        unitOfWork,
+        timeProvider
+      ),
+      new RewardShopFamilyCommandHandler(economyRepository, unitOfWork, timeProvider),
+      new ContributionsFamilyCommandHandler(economyRepository, unitOfWork, timeProvider),
     ];
   }
 
@@ -59,29 +86,19 @@ public sealed class ExecuteFamilyCommandHandler
     CancellationToken cancellationToken
   )
   {
-    var profile = await _repository.GetAsync(
+    var loadedFamily = await _familyRepository.LoadAsync(
       command.FamilyId,
-      "family-profile",
       cancellationToken
     ) ?? throw new FamilyCommandException(
-      "The family-profile aggregate has not been initialized."
+      "The family aggregate has not been initialized."
     );
-    var profileState = FamilyCommandAreaHandler.RequireObject(profile.State);
-    var payload = FamilyCommandAreaHandler.RequireObject(command.Payload);
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
-    family.RequireActorAccess(
+    loadedFamily.Root.RequireActorAccess(
       command.AuthenticatedMemberId ?? command.ActorId,
       command.ActorId
     );
-    var handler = _areaHandlers.FirstOrDefault(candidate => candidate.CanHandle(command))
+    var handler = _typedAreaHandlers.FirstOrDefault(candidate => candidate.CanHandle(command))
       ?? throw new FamilyCommandException("The family command is not supported.");
 
-    return await handler.HandleAsync(
-      command,
-      profile,
-      profileState,
-      payload,
-      cancellationToken
-    );
+    return await handler.HandleAsync(command, loadedFamily, cancellationToken);
   }
 }

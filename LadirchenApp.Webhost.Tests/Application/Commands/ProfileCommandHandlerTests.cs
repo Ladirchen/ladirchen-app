@@ -4,8 +4,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Webhost.Tests.Application.Commands;
@@ -17,16 +21,12 @@ public sealed class ProfileCommandHandlerTests
   private static readonly FamilyMemberId _childId = new("child");
 
   [Test]
-  public async Task CompleteSetupKeepsServerStreaksAndPersistsOnlyAllowedPresentationFields()
+  public async Task CompleteSetupKeepsServerStreaksAndPersistsOnlyTypedMemberData()
   {
-    var repository = CreateRepository();
-    var handler = new ExecuteFamilyCommandHandler(
-      repository,
-      new ImmediateFamilyCommandExecutionCoordinator(),
-      new FixedTimeProvider(new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero))
-    );
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
 
-    await handler.HandleAsync(
+    var result = await handler.HandleAsync(
       new FamilyCommand(
         Guid.NewGuid(),
         _familyId,
@@ -47,7 +47,6 @@ public sealed class ProfileCommandHandlerTests
               participatesInWeeklyGoal = false,
               weeklyStreak = 999,
               unknownMemberField = "must-not-be-stored",
-              permissions = new { canManageFamily = true },
               appearance = new
               {
                 age = "adult",
@@ -74,7 +73,6 @@ public sealed class ProfileCommandHandlerTests
               participatesInWeeklyGoal = true,
               weeklyStreak = 888,
               unknownMemberField = "must-not-be-stored",
-              permissions = new { canManageFamily = true },
               appearance = new
               {
                 age = "child",
@@ -109,101 +107,290 @@ public sealed class ProfileCommandHandlerTests
       CancellationToken.None
     );
 
-    var profile = repository.Required(_familyId, "family-profile").State;
-    var members = profile.GetProperty("members")
-      .EnumerateArray()
-      .ToDictionary(item => item.GetProperty("id").GetString() ?? string.Empty);
-    var guardian = members[_guardianId.Value];
-    var child = members[_childId.Value];
-    var pet = profile.GetProperty("pets").EnumerateArray().Single();
-
-    await Assert.That(guardian.GetProperty("weeklyStreak").GetInt32()).IsEqualTo(6);
-    await Assert.That(child.GetProperty("weeklyStreak").GetInt32()).IsEqualTo(0);
-    await Assert.That(guardian.GetProperty("avatar").GetString()).IsEqualTo("guardian-avatar");
-    await Assert.That(child.GetProperty("color").GetString()).IsEqualTo("#abcdef");
-    await Assert.That(guardian.TryGetProperty("unknownMemberField", out _)).IsFalse();
-    await Assert.That(guardian.TryGetProperty("permissions", out _)).IsFalse();
-    await Assert.That(child.TryGetProperty("unknownMemberField", out _)).IsFalse();
-    await Assert.That(child.TryGetProperty("permissions", out _)).IsFalse();
-    await Assert.That(
-      guardian.GetProperty("appearance").TryGetProperty("unknownAppearanceField", out _)
-    ).IsFalse();
-    await Assert.That(
-      child.GetProperty("appearance").TryGetProperty("unknownAppearanceField", out _)
-    ).IsFalse();
-    await Assert.That(pet.GetProperty("avatar").GetString()).IsEqualTo("pet-avatar");
-    await Assert.That(pet.GetProperty("color").GetString()).IsEqualTo("#fedcba");
-    await Assert.That(pet.TryGetProperty("unknownPetField", out _)).IsFalse();
-    await Assert.That(profile.GetProperty("onboardingCompleted").GetBoolean()).IsTrue();
+    var family = store.RequiredFamily();
+    var progression = store.RequiredProgression();
+    var economy = store.RequiredEconomy();
+    var house = store.RequiredHouse();
+    var members = family.Members.ToDictionary(item => item.Id);
+    var guardian = members[_guardianId];
+    var child = members[_childId];
+    var pet = family.Pets.Single();
+    await Assert.That(progression.StoredWeeklyStreakFor(_guardianId)).IsEqualTo(6);
+    await Assert.That(progression.StoredWeeklyStreakFor(_childId)).IsEqualTo(0);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(0);
+    await Assert.That(house.Placements.Any(item => item.EntityType == "member" && item.EntityId == _childId.Value)).IsTrue();
+    await Assert.That(house.Placements.Any(item => item.EntityType == "pet" && item.EntityId == "pet")).IsTrue();
+    await Assert.That(guardian.Avatar).IsEqualTo("guardian-avatar");
+    await Assert.That(child.Color).IsEqualTo("#abcdef");
+    await Assert.That(guardian.Appearance?.Hair).IsEqualTo("short");
+    await Assert.That(child.Appearance?.Outfit).IsEqualTo("hoodie");
+    await Assert.That(pet.Avatar).IsEqualTo("pet-avatar");
+    await Assert.That(pet.Color).IsEqualTo("#fedcba");
+    await Assert.That(family.OnboardingCompleted).IsTrue();
+    var changedAggregateTypes = result.ChangedAggregates
+      .Select(item => item.AggregateType)
+      .ToArray();
+    await Assert.That(changedAggregateTypes).Contains("family-profile");
+    await Assert.That(changedAggregateTypes).Contains("contributions");
+    await Assert.That(changedAggregateTypes).Contains("family-progression");
+    await Assert.That(changedAggregateTypes).Contains("savings");
+    await Assert.That(changedAggregateTypes).Contains("reward-shop");
+    await Assert.That(changedAggregateTypes).Contains("home-customization");
+    await Assert.That(store.Revision(TypedAggregateKind.Family)).IsEqualTo(2);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(2);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyProgression)).IsEqualTo(2);
+    await Assert.That(store.Revision(TypedAggregateKind.HouseCustomization)).IsEqualTo(2);
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository()
+  [Test]
+  public async Task CompleteSetupCannotRemoveAMemberWithWalletFundsAndDoesNotPartiallySave()
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    repository.Seed(Snapshot("family-profile", 2, new
-    {
-      timeZone = "Europe/Zurich",
-      onboardingCompleted = false,
-      subscriptionTier = "free",
-      pets = Array.Empty<object>(),
-      members = new object[]
-      {
-        new
-        {
-          id = _guardianId.Value,
-          name = "Guardian",
-          avatar = "stored-avatar",
-          color = "#000000",
-          role = "guardian",
-          guardianAccess = "admin",
-          invitationPending = false,
-          participatesInWeeklyGoal = false,
-          weeklyStreak = 6,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("contributions", 1, new
-    {
-      contributions = Array.Empty<object>(),
-      perfectRatingBonusPercent = 5,
-      promotions = Array.Empty<object>(),
-    }));
-    repository.Seed(Snapshot("family-progression", 4, new
-    {
-      completedWeeklyStreak = 0,
-      closedWeekOutcomes = new
-      {
-      },
-      currentWeekTarget = 7,
-      familyEnergy = 0,
-      houseLevel = 0,
-      houseVisualLevel = 0,
-      maximumSavingsInterestRate = 8,
-      memberProgressions = new
-      {
-      },
-      weeklyEvaluations = new
-      {
-      },
-    }));
+    var timeProvider = new FixedTimeProvider(
+      new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero)
+    );
+    var siblingId = new FamilyMemberId("sibling");
+    var family = new Family(
+      _familyId,
+      _guardianId,
+      "Guardian",
+      new IanaTimeZone("Europe/Zurich")
+    );
+    family.AddMember(
+      _guardianId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      timeProvider.GetUtcNow()
+    );
+    family.AddMember(
+      _guardianId,
+      siblingId,
+      "Sibling",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      timeProvider.GetUtcNow()
+    );
+    var economy = new FamilyEconomy(family);
+    economy.GiveSpecialGift(
+      _guardianId,
+      _childId,
+      new LadirchenAmount(10),
+      "Existing funds",
+      new TransactionId("existing-funds"),
+      timeProvider.GetUtcNow()
+    );
+    var progression = FamilyHouse.CreateInitial(family);
+    var house = FamilyHouseShop.CreateInitial(
+      family,
+      progression.StoredLevel,
+      HouseSubscriptionTier.Pro
+    );
+    var store = new TestTypedAggregateStore(timeProvider);
+    store.Seed(
+      family,
+      economy,
+      progression: progression,
+      house: house,
+      updatedBy: _guardianId
+    );
+    var handler = store.CreateCommandHandler();
 
-    return repository;
+    await Assert.That(async () =>
+      await handler.HandleAsync(
+        CompleteSetupCommand(_guardianId, siblingId),
+        CancellationToken.None
+      )
+    ).Throws<DomainRuleException>();
+
+    await Assert.That(store.RequiredFamily().Members.Select(item => item.Id)).Contains(_childId);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(10);
+    await Assert.That(store.Revision(TypedAggregateKind.Family)).IsEqualTo(1);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(1);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyProgression)).IsEqualTo(1);
+    await Assert.That(store.Revision(TypedAggregateKind.HouseCustomization)).IsEqualTo(1);
   }
 
-  private static FamilyAggregateSnapshot Snapshot(
-    string aggregateType,
-    int schemaVersion,
-    object state
+  [Test]
+  public async Task WeeklyParticipationInvalidatesEveryStageDependentReadModel()
+  {
+    var supporterId = new FamilyMemberId("supporter");
+    var store = CreateEstablishedStore(supporterId);
+    var result = await store.CreateCommandHandler().HandleAsync(
+      new FamilyCommand(
+        Guid.NewGuid(),
+        _familyId,
+        _guardianId,
+        "profile.set-weekly-participation",
+        JsonSerializer.SerializeToElement(new
+        {
+          memberId = supporterId.Value,
+          participates = true,
+        })
+      ),
+      CancellationToken.None
+    );
+    var changedReadModels = result.ChangedAggregates
+      .Select(item => item.AggregateType)
+      .ToArray();
+
+    await Assert.That(changedReadModels).IsEquivalentTo(
+    [
+      "family-profile",
+      "family-progression",
+      "savings",
+      "home-customization",
+    ]);
+  }
+
+  [Test]
+  public async Task GuardianAccessInvalidatesPermissionDependentReadModels()
+  {
+    var supporterId = new FamilyMemberId("supporter");
+    var store = CreateEstablishedStore(supporterId);
+    var result = await store.CreateCommandHandler().HandleAsync(
+      new FamilyCommand(
+        Guid.NewGuid(),
+        _familyId,
+        _guardianId,
+        "profile.set-guardian-access",
+        JsonSerializer.SerializeToElement(new
+        {
+          memberId = supporterId.Value,
+          guardianAccess = "admin",
+        })
+      ),
+      CancellationToken.None
+    );
+    var changedReadModels = result.ChangedAggregates
+      .Select(item => item.AggregateType)
+      .ToArray();
+
+    await Assert.That(changedReadModels).IsEquivalentTo(
+    [
+      "family-profile",
+      "savings",
+      "reward-shop",
+    ]);
+  }
+
+  private static TestTypedAggregateStore CreateStore()
+  {
+    var timeProvider = new FixedTimeProvider(
+      new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero)
+    );
+    var family = new Family(
+      _familyId,
+      _guardianId,
+      "Guardian",
+      new IanaTimeZone("Europe/Zurich")
+    );
+    var economy = new FamilyEconomy(family);
+    var progression = FamilyHouse.CreateInitial(family);
+    progression.RegisterParticipant(_guardianId, false, 6);
+    var house = FamilyHouseShop.CreateInitial(
+      family,
+      progression.StoredLevel,
+      HouseSubscriptionTier.Pro
+    );
+    var store = new TestTypedAggregateStore(timeProvider);
+    store.Seed(
+      family,
+      economy,
+      progression: progression,
+      house: house,
+      updatedBy: _guardianId
+    );
+
+    return store;
+  }
+
+  private static TestTypedAggregateStore CreateEstablishedStore(FamilyMemberId supporterId)
+  {
+    var timeProvider = new FixedTimeProvider(
+      new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero)
+    );
+    var family = new Family(
+      _familyId,
+      _guardianId,
+      "Guardian",
+      new IanaTimeZone("Europe/Zurich")
+    );
+    family.AddMember(
+      _guardianId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      timeProvider.GetUtcNow()
+    );
+    family.AddMember(
+      _guardianId,
+      supporterId,
+      "Supporter",
+      MemberRole.Guardian,
+      GuardianAccess.Supporter,
+      false,
+      timeProvider.GetUtcNow()
+    );
+    var economy = new FamilyEconomy(family);
+    var progression = FamilyHouse.CreateInitial(family);
+    var house = FamilyHouseShop.CreateInitial(
+      family,
+      progression.StoredLevel,
+      HouseSubscriptionTier.Pro
+    );
+    var store = new TestTypedAggregateStore(timeProvider);
+    store.Seed(
+      family,
+      economy,
+      progression: progression,
+      house: house,
+      updatedBy: _guardianId
+    );
+
+    return store;
+  }
+
+  private static FamilyCommand CompleteSetupCommand(
+    FamilyMemberId guardianId,
+    FamilyMemberId childId
   )
   {
-    return new FamilyAggregateSnapshot(
+    return new FamilyCommand(
+      Guid.NewGuid(),
       _familyId,
-      aggregateType,
-      schemaVersion,
-      1,
-      JsonSerializer.SerializeToElement(state),
-      _guardianId,
-      DateTimeOffset.UnixEpoch
+      guardianId,
+      "profile.complete-setup",
+      JsonSerializer.SerializeToElement(new
+      {
+        members = new object[]
+        {
+          new
+          {
+            id = guardianId.Value,
+            name = "Guardian",
+            avatar = "guardian-avatar",
+            color = "#123456",
+            role = "guardian",
+            guardianAccess = "admin",
+            participatesInWeeklyGoal = false,
+          },
+          new
+          {
+            id = childId.Value,
+            name = "Child",
+            avatar = "child-avatar",
+            color = "#abcdef",
+            role = "child",
+            participatesInWeeklyGoal = true,
+          },
+        },
+        pets = Array.Empty<object>(),
+      })
     );
   }
 }

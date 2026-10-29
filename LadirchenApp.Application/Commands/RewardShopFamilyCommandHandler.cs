@@ -1,51 +1,46 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-internal sealed class RewardShopFamilyCommandHandler : FamilyCommandAreaHandler
+internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
+  private readonly IFamilyEconomyRepository _economyRepository;
+
   public RewardShopFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
+    IFamilyEconomyRepository economyRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
     TimeProvider timeProvider
   )
-    : base(repository, timeProvider, "reward-shop.")
+    : base(unitOfWork, timeProvider, "reward-shop.")
   {
+    _economyRepository = economyRepository ?? throw new ArgumentNullException(nameof(economyRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
     FamilyCommand command,
-    FamilyAggregateSnapshot profileSnapshot,
-    JsonObject profileState,
-    JsonObject payload,
+    LoadedAggregate<Family> family,
     CancellationToken cancellationToken
   )
   {
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
-    var shop = await RequireSnapshotAsync(command.FamilyId, "reward-shop", cancellationToken);
-    var shopState = RequireObject(shop.State);
-    FamilyAggregateSnapshot? savings = null;
-    JsonObject? savingsState = null;
-
-    if (RequiresWalletState(command.CommandType))
-    {
-      savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
-      savingsState = RequireObject(savings.State);
-    }
-
-    var economy = FamilyEconomySnapshotMapper.RehydrateRewardShop(family, shopState, savingsState);
-    var now = _timeProvider.GetUtcNow();
-    var operationId = new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture));
-    ShopRewardPresentation? addedReward = null;
+    ArgumentNullException.ThrowIfNull(command);
+    ArgumentNullException.ThrowIfNull(family);
+    var loadedEconomy = await _economyRepository.LoadAsync(family.Root, cancellationToken)
+      ?? throw new FamilyCommandException("The family economy has not been initialized.");
+    var economy = loadedEconomy.Root;
+    var payload = RequiredObject(command.Payload);
+    var now = TimeProvider.GetUtcNow();
+    var operationId = OperationId(command);
+    ShopRewardPresentationState? addedReward = null;
 
     switch (command.CommandType)
     {
@@ -87,38 +82,42 @@ internal sealed class RewardShopFamilyCommandHandler : FamilyCommandAreaHandler
         throw new FamilyCommandException("The reward-shop command is not supported.");
     }
 
-    var updatedShopState = FamilyEconomySnapshotMapper.WriteRewardShop(
-      shopState,
+    var presentation = UpdatePresentation(
+      loadedEconomy.Presentation,
       economy,
       addedReward
     );
-    var saves = new List<PendingFamilyAggregateSave>
-    {
-      CreateSave(shop, updatedShopState, command.ActorId),
-    };
+    var saved = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        command.FamilyId,
+        command.ActorId,
+        familyEconomy: new PendingFamilyEconomySave(
+          economy,
+          presentation,
+          loadedEconomy.Revision
+        ),
+        revisionGuards:
+        [
+          new TypedAggregateRevisionGuard(TypedAggregateKind.Family, family.Revision),
+        ]
+      ),
+      cancellationToken
+    );
+    var changedEconomy = saved.FamilyEconomy
+      ?? throw new InvalidOperationException("The family economy was not saved.");
 
-    if (savings is not null && savingsState is not null)
-    {
-      var updatedSavingsState = FamilyEconomySnapshotMapper.WriteWalletBalances(
-        savingsState,
-        economy
-      );
-      saves.Add(CreateSave(savings, updatedSavingsState, command.ActorId));
-    }
-
-    var revisionGuards = new[]
-    {
-      FamilyAggregateRevisionGuard.FromSnapshot(profileSnapshot),
-    };
-    var changed = await _repository.SaveBatchAsync(saves, revisionGuards, cancellationToken);
-
-    return new FamilyCommandResult(changed);
+    return new FamilyCommandResult(
+    [
+      Change(command.FamilyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
+      Change(command.FamilyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
+      Change(command.FamilyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
+    ]);
   }
 
-  private static ShopRewardPresentation AddShopReward(
+  private static ShopRewardPresentationState AddShopReward(
     FamilyEconomy economy,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     DateTimeOffset now
   )
   {
@@ -157,19 +156,19 @@ internal sealed class RewardShopFamilyCommandHandler : FamilyCommandAreaHandler
         ParseShopRewardCategory(RequiredString(payload, "category")),
         new LadirchenAmount(price),
         quantity,
-        BoolValueOrDefault(payload, "isVisible", true),
+        OptionalBool(payload, "isVisible") ?? true,
         new AvailabilityWindow(from, until)
       ),
       now
     );
 
-    return new ShopRewardPresentation(id, description, icon, conditions);
+    return new ShopRewardPresentationState(id, description, icon, conditions);
   }
 
   private static void DecideShopReward(
     FamilyEconomy economy,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now
   )
@@ -186,6 +185,39 @@ internal sealed class RewardShopFamilyCommandHandler : FamilyCommandAreaHandler
     }
   }
 
+  private static FamilyEconomyPresentationState UpdatePresentation(
+    FamilyEconomyPresentationState presentation,
+    FamilyEconomy economy,
+    ShopRewardPresentationState? addedReward
+  )
+  {
+    var liveRewardIds = economy.ShopRewards.Select(item => item.Id).ToHashSet();
+    var rewards = presentation.ShopRewards
+      .Where(item => liveRewardIds.Contains(item.RewardId))
+      .ToList();
+
+    if (addedReward is not null)
+    {
+      Require(
+        rewards.All(item => item.RewardId != addedReward.RewardId),
+        "Presentation data for the shop reward already exists."
+      );
+      rewards.Add(addedReward);
+    }
+
+    Require(
+      liveRewardIds.All(id => rewards.Any(item => item.RewardId == id)),
+      "Presentation data for a shop reward is missing."
+    );
+
+    return new FamilyEconomyPresentationState(
+      presentation.Contributions,
+      presentation.SavingGoals,
+      rewards,
+      presentation.GuardianGifts
+    );
+  }
+
   private static RedemptionRequestId PendingRequestId(
     FamilyEconomy economy,
     ShopRewardId rewardId
@@ -199,9 +231,14 @@ internal sealed class RewardShopFamilyCommandHandler : FamilyCommandAreaHandler
       ?? throw new FamilyCommandException("A pending reward request is required.");
   }
 
-  private static ShopRewardId RewardId(JsonObject payload)
+  private static ShopRewardId RewardId(JsonElement payload)
   {
     return new ShopRewardId(RequiredString(payload, "id"));
+  }
+
+  private static TransactionId OperationId(FamilyCommand command)
+  {
+    return new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture));
   }
 
   private static ShopRewardCategory ParseShopRewardCategory(string value)
@@ -218,28 +255,26 @@ internal sealed class RewardShopFamilyCommandHandler : FamilyCommandAreaHandler
     };
   }
 
-  private static DateOnly? OptionalCalendarDate(JsonObject source, string property)
+  private static DateOnly? OptionalCalendarDate(JsonElement source, string property)
   {
-    var value = StringValue(source, property);
+    var value = OptionalString(source, property);
 
     if (string.IsNullOrWhiteSpace(value))
     {
       return null;
     }
 
-    if (!DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+    if (!DateOnly.TryParseExact(
+      value,
+      "yyyy-MM-dd",
+      CultureInfo.InvariantCulture,
+      DateTimeStyles.None,
+      out var result
+    ))
     {
       throw new FamilyCommandException("The shop date is invalid.");
     }
 
     return result;
-  }
-
-  private static bool RequiresWalletState(string commandType)
-  {
-    return commandType is "reward-shop.delete"
-      or "reward-shop.request"
-      or "reward-shop.cancel"
-      or "reward-shop.decide";
   }
 }

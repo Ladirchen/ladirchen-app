@@ -3,14 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 
 using LadirchenApp.Domain.Shared;
+using LadirchenApp.Prototypes;
 
 namespace LadirchenApp.Domain.House.Shop;
 
-public sealed partial class FamilyHouseShop
+public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
 {
   private readonly HouseShopPolicy _policy = new();
   private readonly HouseLayoutPolicy _layoutPolicy = new();
   private readonly HashSet<string> _unlockedAreas = new(StringComparer.OrdinalIgnoreCase);
+
+  internal FamilyHouseShop()
+    : this(new FamilyId(Guid.NewGuid()))
+  {
+  }
+
+  private FamilyHouseShop(FamilyId id)
+    : base(id)
+  {
+  }
 
   public int HouseLevel
   {
@@ -18,7 +29,12 @@ public sealed partial class FamilyHouseShop
   }
   public string SelectedThemeId { get; private set; } = "default";
 
-  public void Restore(int houseLevel)
+  internal void Restore(int houseLevel)
+  {
+    SetCurrentHouseLevel(houseLevel);
+  }
+
+  private void SetCurrentHouseLevel(int houseLevel)
   {
     Rules.Require(houseLevel >= 0, DomainError.InvalidValue, "Invalid house-shop state.");
     HouseLevel = houseLevel;
@@ -30,7 +46,7 @@ public sealed partial class FamilyHouseShop
     }
   }
 
-  public void UnlockArea(string area)
+  internal void UnlockArea(string area)
   {
     _unlockedAreas.Add(area);
   }
@@ -42,12 +58,22 @@ public sealed partial class FamilyHouseShop
     return minimumLevel <= HouseLevel;
   }
 
-  public bool CanArrange(HouseSubscriptionTier subscriptionTier)
+  internal bool CanArrange(HouseSubscriptionTier subscriptionTier)
   {
     return _policy.CanArrange(subscriptionTier);
   }
 
-  public bool CanPurchaseAccessory(
+  public bool CanArrange()
+  {
+    return _policy.CanArrange(SubscriptionTier);
+  }
+
+  public void ChangeSubscriptionTier(HouseSubscriptionTier subscriptionTier)
+  {
+    SubscriptionTier = Rules.Defined(subscriptionTier);
+  }
+
+  internal bool CanPurchaseAccessory(
     HouseItem item,
     bool actorIsChild,
     decimal availableBalance
@@ -62,7 +88,7 @@ public sealed partial class FamilyHouseShop
       && item.Price <= availableBalance;
   }
 
-  public bool CanPurchaseSet(
+  internal bool CanPurchaseSet(
     FurnitureSet set,
     bool actorIsChild,
     decimal availableBalance
@@ -77,7 +103,7 @@ public sealed partial class FamilyHouseShop
       && set.Price <= availableBalance;
   }
 
-  public bool CanPurchaseTheme(
+  internal bool CanPurchaseTheme(
     HouseTheme theme,
     bool actorIsChild,
     decimal availableBalance
@@ -89,7 +115,7 @@ public sealed partial class FamilyHouseShop
     return actorIsChild && !theme.Owned && theme.Price <= availableBalance;
   }
 
-  public bool CanPurchaseDesign(
+  internal bool CanPurchaseDesign(
     RoomDesign design,
     HouseTheme theme,
     bool actorIsChild,
@@ -108,7 +134,7 @@ public sealed partial class FamilyHouseShop
       && design.Price <= availableBalance;
   }
 
-  public bool PurchaseAccessory(HouseItem item, bool actorIsChild, decimal availableBalance)
+  internal bool PurchaseAccessory(HouseItem item, bool actorIsChild, decimal availableBalance)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -122,7 +148,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool PurchaseSet(FurnitureSet set, bool actorIsChild, decimal availableBalance)
+  internal bool PurchaseSet(FurnitureSet set, bool actorIsChild, decimal availableBalance)
   {
     ArgumentNullException.ThrowIfNull(set);
 
@@ -139,14 +165,14 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool PurchaseTheme(HouseTheme theme, bool actorIsChild, decimal availableBalance)
+  internal bool PurchaseTheme(HouseTheme theme, bool actorIsChild, decimal availableBalance)
   {
     ArgumentNullException.ThrowIfNull(theme);
 
     return PurchaseTheme(theme, theme.Designs, actorIsChild, availableBalance);
   }
 
-  public bool PurchaseTheme(
+  internal bool PurchaseTheme(
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns,
     bool actorIsChild,
@@ -167,14 +193,14 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool SelectTheme(HouseTheme theme)
+  internal bool SelectTheme(HouseTheme theme)
   {
     ArgumentNullException.ThrowIfNull(theme);
 
     return SelectTheme(theme, theme.Designs);
   }
 
-  public bool SelectTheme(HouseTheme theme, IEnumerable<RoomDesign> catalogDesigns)
+  internal bool SelectTheme(HouseTheme theme, IEnumerable<RoomDesign> catalogDesigns)
   {
     ArgumentNullException.ThrowIfNull(theme);
     ArgumentNullException.ThrowIfNull(catalogDesigns);
@@ -189,7 +215,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool PurchaseDesign(
+  internal bool PurchaseDesign(
     RoomDesign design,
     HouseTheme theme,
     bool actorIsChild,
@@ -199,7 +225,7 @@ public sealed partial class FamilyHouseShop
     return PurchaseDesign(design, theme, [design], actorIsChild, availableBalance);
   }
 
-  public bool PurchaseDesign(
+  internal bool PurchaseDesign(
     RoomDesign design,
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns,
@@ -223,12 +249,12 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool SelectDesign(RoomDesign design)
+  internal bool SelectDesign(RoomDesign design)
   {
     return SelectDesign(design, [design]);
   }
 
-  public bool SelectDesign(RoomDesign design, IEnumerable<RoomDesign> catalogDesigns)
+  internal bool SelectDesign(RoomDesign design, IEnumerable<RoomDesign> catalogDesigns)
   {
     ArgumentNullException.ThrowIfNull(design);
     ArgumentNullException.ThrowIfNull(catalogDesigns);
@@ -244,7 +270,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool SelectDesign(
+  internal bool SelectDesign(
     RoomDesign design,
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns
@@ -262,7 +288,7 @@ public sealed partial class FamilyHouseShop
     return SelectDesign(design, catalogDesigns);
   }
 
-  public bool Move(HouseItem item, string area, decimal x, decimal y)
+  internal bool Move(HouseItem item, string area, decimal x, decimal y)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -283,7 +309,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool Store(HouseItem item)
+  internal bool Store(HouseItem item)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -297,7 +323,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool Place(HouseItem item, string area)
+  internal bool Place(HouseItem item, string area)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -328,7 +354,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool Toggle(HouseItem item)
+  internal bool Toggle(HouseItem item)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -342,7 +368,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool Reset(HouseItem item)
+  internal bool Reset(HouseItem item)
   {
     ArgumentNullException.ThrowIfNull(item);
 
@@ -370,7 +396,7 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public HousePlacement? ArrangeEntity(
+  internal HousePlacement? ArrangeEntity(
     HouseLayoutEntity entity,
     string area,
     decimal x,
@@ -434,7 +460,7 @@ public sealed partial class FamilyHouseShop
     return normalized;
   }
 
-  public HousePlacement? ResetEntity(
+  internal HousePlacement? ResetEntity(
     HouseLayoutEntity entity,
     HousePlacement initialPlacement,
     HouseSubscriptionTier subscriptionTier,

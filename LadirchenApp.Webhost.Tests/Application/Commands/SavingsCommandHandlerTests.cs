@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.Ladi;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Webhost.Tests.Application.Commands;
@@ -16,31 +20,13 @@ public sealed class SavingsCommandHandlerTests
   private static readonly FamilyId _familyId = new(Guid.Parse("92e1f86d-7009-4c5f-9309-2d5d43cfdfb1"));
   private static readonly FamilyMemberId _guardianId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
+  private static readonly DateTimeOffset _now = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
   [Test]
-  public async Task DepositUsesReservedFundsAndIssuesPersonalVoucher()
+  public async Task DepositUsesAvailableFundsAndIssuesPersonalVoucher()
   {
-    var repository = CreateRepository(
-      SavingsState(balance: 100),
-      new
-      {
-        rewards = new object[]
-        {
-          new
-          {
-            id = "reserved-reward",
-            title = "Reserved reward",
-            status = "requested",
-            requesterId = _childId.Value,
-            price = 80,
-            category = "gift",
-            quantity = 1,
-            isVisible = true,
-          },
-        },
-      }
-    );
-    var handler = CreateHandler(repository);
+    var store = CreateStoreWithReservation(100, 80);
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _childId, "savings.add-goal", new
     {
@@ -57,15 +43,17 @@ public sealed class SavingsCommandHandlerTests
       amount = 15,
     });
 
-    var state = repository.Required(_familyId, "savings").State;
-    var goal = state.GetProperty("goals").EnumerateArray().Single();
-    var voucher = state.GetProperty("vouchers").EnumerateArray().Single();
-    await Assert.That(state.GetProperty("balances").GetProperty(_childId.Value).GetDecimal()).IsEqualTo(85);
-    await Assert.That(goal.GetProperty("saved").GetDecimal()).IsEqualTo(20);
-    await Assert.That(goal.GetProperty("icon").GetString()).IsEqualTo("bike-icon");
-    await Assert.That(voucher.GetProperty("amount").GetDecimal()).IsEqualTo(20);
-    await Assert.That(voucher.GetProperty("ownerId").GetString()).IsEqualTo(_childId.Value);
-    await Assert.That(voucher.GetProperty("status").GetString()).IsEqualTo("redeemable");
+    var economy = store.RequiredEconomy();
+    var goal = economy.SavingsGoals.Single(item => item.Id == new SavingGoalId("bike"));
+    var voucher = economy.SavingsVouchers.Single();
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(85);
+    await Assert.That(economy.WalletFor(_childId).Available).IsEqualTo(5);
+    await Assert.That(goal.Saved).IsEqualTo(20);
+    await Assert.That(store.EconomyPresentation.SavingGoals.Single().Icon)
+      .IsEqualTo("bike-icon");
+    await Assert.That(voucher.Amount).IsEqualTo(20);
+    await Assert.That(voucher.OwnerId).IsEqualTo(_childId);
+    await Assert.That(voucher.Redeemable).IsTrue();
 
     await ExecuteAsync(handler, _childId, "savings.add-goal", new
     {
@@ -83,22 +71,14 @@ public sealed class SavingsCommandHandlerTests
         amount = 6,
       })
     ).Throws<DomainRuleException>();
-    await Assert.That(
-      repository.Required(_familyId, "savings")
-        .State
-        .GetProperty("balances")
-        .GetProperty(_childId.Value)
-        .GetDecimal()
-    ).IsEqualTo(85);
-    await Assert.That(repository.LastRevisionGuards.Select(item => item.AggregateType))
-      .IsEquivalentTo(["family-profile", "reward-shop"]);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(85);
   }
 
   [Test]
   public async Task GuardianCannotExecuteOwnerPrivateSavingsCommandAsChild()
   {
-    var repository = CreateRepository(SavingsState(balance: 20), new { rewards = Array.Empty<object>() });
-    var handler = CreateHandler(repository);
+    var store = CreateStore(20);
+    var handler = store.CreateCommandHandler();
     await ExecuteAsync(handler, _childId, "savings.add-goal", new
     {
       id = "private-bike",
@@ -119,18 +99,16 @@ public sealed class SavingsCommandHandlerTests
       )
     ).Throws<DomainRuleException>();
 
-    var state = repository.Required(_familyId, "savings").State;
-    await Assert.That(state.GetProperty("balances").GetProperty(_childId.Value).GetDecimal())
-      .IsEqualTo(20);
-    await Assert.That(state.GetProperty("goals").EnumerateArray().Single().GetProperty("saved").GetDecimal())
-      .IsEqualTo(5);
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(20);
+    await Assert.That(economy.SavingsGoals.Single().Saved).IsEqualTo(5);
   }
 
   [Test]
   public async Task FamilyVoucherRequiresEverySelectedParticipantAndCanBeRedeemedOnce()
   {
-    var repository = CreateRepository(SavingsState(balance: 0), new { rewards = Array.Empty<object>() });
-    var handler = CreateHandler(repository);
+    var store = CreateStore(0);
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "savings.add-goal", new
     {
@@ -153,17 +131,21 @@ public sealed class SavingsCommandHandlerTests
       id = "family-trip",
     });
 
-    await Assert.That(VoucherStatus(repository)).IsEqualTo("pending");
+    var voucher = store.RequiredEconomy().SavingsVouchers.Single();
+    await Assert.That(voucher.Redeemable).IsFalse();
     await ExecuteAsync(handler, _guardianId, "savings.consent-voucher", new
     {
       id = "family-trip",
     });
-    await Assert.That(VoucherStatus(repository)).IsEqualTo("redeemable");
+    voucher = store.RequiredEconomy().SavingsVouchers.Single();
+    await Assert.That(voucher.Redeemable).IsTrue();
     await ExecuteAsync(handler, _childId, "savings.redeem-voucher", new
     {
       id = "family-trip",
     });
-    await Assert.That(VoucherStatus(repository)).IsEqualTo("redeemed");
+    voucher = store.RequiredEconomy().SavingsVouchers.Single();
+    await Assert.That(voucher.RedemptionCount).IsEqualTo(1);
+    await Assert.That(voucher.RedeemedAt).IsNotNull();
 
     await Assert.That(async () =>
       await ExecuteAsync(handler, _childId, "savings.redeem-voucher", new
@@ -176,59 +158,8 @@ public sealed class SavingsCommandHandlerTests
   [Test]
   public async Task WeeklySettlementUsesStoredLadiStageAndConfiguredMaximumRate()
   {
-    var savings = SavingsState(
-      balance: 0,
-      goals:
-      [
-        new
-        {
-          id = "bicycle",
-          title = "Bicycle",
-          icon = "bike-icon",
-          ownerId = _childId.Value,
-          target = 100,
-          saved = 50,
-          starterBonus = 5,
-          interestEarned = 0,
-          shared = false,
-          visibility = "private",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = Array.Empty<string>(),
-          refundableContributions = new[]
-          {
-            new { memberId = _childId.Value, amount = 45 },
-          },
-        },
-      ]
-    );
-    var repository = CreateRepository(savings, new { rewards = Array.Empty<object>() });
-    repository.Seed(Snapshot("family-progression", 4, JsonSerializer.Deserialize<object>(
-      $$"""
-      {
-        "maximumSavingsInterestRate": 8,
-        "closedWeekOutcomes": {
-          "2026-W41": "completed"
-        },
-        "weeklyEvaluations": {
-          "2026-W41": {
-            "evaluatedAt": "2026-10-12T10:00:00+00:00",
-            "members": {
-              "{{_childId.Value}}": {
-                "streakDays": 0,
-                "completionPercent": 0,
-                "averageBasicRating": 0,
-                "participationValue": 1,
-                "ladiStageId": "sun-ladi",
-                "ladiStagePosition": 4
-              }
-            }
-          }
-        }
-      }
-      """
-    )!));
-    var handler = CreateHandler(repository);
+    var store = CreateWeeklyInterestStore();
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "savings.settle-weekly-interest", new
     {
@@ -236,130 +167,19 @@ public sealed class SavingsCommandHandlerTests
       week = 41,
     });
 
-    var goal = repository.Required(_familyId, "savings")
-      .State
-      .GetProperty("goals")
-      .EnumerateArray()
-      .Single();
-    await Assert.That(goal.GetProperty("saved").GetDecimal()).IsEqualTo(53);
-    await Assert.That(goal.GetProperty("lastInterestRate").GetDecimal()).IsEqualTo(5.33m);
-    await Assert.That(goal.GetProperty("lastInterestPeriod").GetString()).IsEqualTo("2026-W41");
-    await Assert.That(repository.LastRevisionGuards.Select(item => item.AggregateType))
-      .IsEquivalentTo(["family-profile", "reward-shop", "family-progression"]);
-  }
-
-  [Test]
-  public async Task FamilyGoalSnapshotWithoutParticipantsIsRejected()
-  {
-    var repository = CreateRepository(
-      SavingsState(
-        balance: 0,
-        goals:
-        [
-          new
-          {
-            id = "legacy-family-goal",
-            title = "Legacy family goal",
-            ownerId = "family",
-            target = 100,
-            saved = 10,
-            starterBonus = 10,
-            interestEarned = 0,
-            visibility = "family",
-            cheered = false,
-            createdAt = "2026-10-01T10:00:00+00:00",
-          },
-        ]
-      ),
-      new { rewards = Array.Empty<object>() }
-    );
-    var handler = CreateHandler(repository);
-
-    await Assert.That(async () =>
-      await ExecuteAsync(handler, _guardianId, "savings.toggle-cheer", new
-      {
-        id = "legacy-family-goal",
-      })
-    ).Throws<FamilyCommandException>();
-  }
-
-  [Test]
-  public async Task FamilyGoalSnapshotWithoutStoredStarterBonusIsRejected()
-  {
-    var repository = CreateRepository(
-      SavingsState(
-        balance: 0,
-        goals:
-        [
-          new
-          {
-            id = "legacy-family-goal",
-            title = "Legacy family goal",
-            ownerId = "family",
-            target = 100,
-            saved = 10,
-            interestEarned = 0,
-            visibility = "family",
-            cheered = false,
-            createdAt = "2026-10-01T10:00:00+00:00",
-            participantIds = new[] { _childId.Value, _guardianId.Value },
-          },
-        ]
-      ),
-      new { rewards = Array.Empty<object>() }
-    );
-    var handler = CreateHandler(repository);
-
-    await Assert.That(async () =>
-      await ExecuteAsync(handler, _guardianId, "savings.toggle-cheer", new
-      {
-        id = "legacy-family-goal",
-      })
-    ).Throws<FamilyCommandException>();
-  }
-
-  [Test]
-  public async Task StoredGoalWithUnattributedNonBonusSavingsIsRejected()
-  {
-    var repository = CreateRepository(
-      SavingsState(
-        balance: 20,
-        goals:
-        [
-          new
-          {
-            id = "unattributed-goal",
-            title = "Unattributed goal",
-            ownerId = _childId.Value,
-            target = 100,
-            saved = 15,
-            starterBonus = 5,
-            interestEarned = 0,
-            shared = false,
-            visibility = "private",
-            cheered = false,
-            createdAt = "2026-10-01T10:00:00+00:00",
-            participantIds = Array.Empty<string>(),
-          },
-        ]
-      ),
-      new { rewards = Array.Empty<object>() }
-    );
-    var handler = CreateHandler(repository);
-
-    await Assert.That(async () =>
-      await ExecuteAsync(handler, _childId, "savings.toggle-cheer", new
-      {
-        id = "unattributed-goal",
-      })
-    ).Throws<FamilyCommandException>();
+    var goal = store.RequiredEconomy().SavingsGoals.Single();
+    await Assert.That(goal.Saved).IsEqualTo(53);
+    await Assert.That(goal.LastInterestRate?.Value).IsEqualTo(5.33m);
+    await Assert.That(goal.LastInterestPeriod).IsEqualTo(new IsoWeekPeriod(2026, 41));
+    await Assert.That(store.LastRevisionGuards.Select(item => item.AggregateKind))
+      .IsEquivalentTo([TypedAggregateKind.Family, TypedAggregateKind.FamilyProgression]);
   }
 
   [Test]
   public async Task RefundableDepositProvenanceSurvivesReloadAndCancellation()
   {
-    var repository = CreateRepository(SavingsState(balance: 100), new { rewards = Array.Empty<object>() });
-    var handler = CreateHandler(repository);
+    var store = CreateStore(100);
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _childId, "savings.add-goal", new
     {
@@ -376,43 +196,30 @@ public sealed class SavingsCommandHandlerTests
       amount = 30,
     });
 
-    var afterDeposit = repository.Required(_familyId, "savings");
-    var storedContribution = afterDeposit.State
-      .GetProperty("goals")
-      .EnumerateArray()
-      .Single()
-      .GetProperty("refundableContributions")
-      .EnumerateArray()
-      .Single();
-    await Assert.That(afterDeposit.SchemaVersion).IsEqualTo(4);
-    await Assert.That(storedContribution.GetProperty("memberId").GetString()).IsEqualTo(_childId.Value);
-    await Assert.That(storedContribution.GetProperty("amount").GetDecimal()).IsEqualTo(30);
+    var goal = store.RequiredEconomy().SavingsGoals.Single();
+    await Assert.That(goal.RefundableContributions[_childId]).IsEqualTo(30);
 
     await ExecuteAsync(handler, _childId, "savings.cancel-goal", new
     {
       id = "refundable-goal",
     });
 
-    var afterCancellation = repository.Required(_familyId, "savings").State;
-    var refund = afterCancellation.GetProperty("ledger")
-      .EnumerateArray()
-      .Single(item => item.GetProperty("reason").GetString() == "Goal cancellation refund");
-    var forfeited = afterCancellation.GetProperty("ledger")
-      .EnumerateArray()
-      .Single(item => item.GetProperty("kind").GetString() == nameof(LedgerKind.BonusForfeited));
-    await Assert.That(afterCancellation.GetProperty("balances").GetProperty(_childId.Value).GetDecimal())
-      .IsEqualTo(100);
-    await Assert.That(afterCancellation.GetProperty("goals").GetArrayLength()).IsEqualTo(0);
-    await Assert.That(refund.GetProperty("memberId").GetString()).IsEqualTo(_childId.Value);
-    await Assert.That(refund.GetProperty("amount").GetDecimal()).IsEqualTo(30);
-    await Assert.That(forfeited.GetProperty("amount").GetDecimal()).IsEqualTo(5);
+    var economy = store.RequiredEconomy();
+    var refund = economy.Ledger.Single(item => item.Reason == "Goal cancellation refund");
+    var forfeited = economy.Ledger.Single(item => item.Kind == LedgerKind.BonusForfeited);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(100);
+    await Assert.That(economy.SavingsGoals.Single().Cancelled).IsTrue();
+    await Assert.That(store.EconomyPresentation.SavingGoals).IsEmpty();
+    await Assert.That(refund.MemberId).IsEqualTo(_childId);
+    await Assert.That(refund.Amount).IsEqualTo(30);
+    await Assert.That(forfeited.Amount).IsEqualTo(5);
   }
 
   [Test]
   public async Task FamilyGoalCancellationRequestPersistsAndRequiresUnanimousApproval()
   {
-    var repository = CreateRepository(SavingsState(balance: 100), new { rewards = Array.Empty<object>() });
-    var handler = CreateHandler(repository);
+    var store = CreateStore(100);
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "savings.add-goal", new
     {
@@ -443,16 +250,11 @@ public sealed class SavingsCommandHandlerTests
       id = "family-goal",
     });
 
-    var requestedGoal = repository.Required(_familyId, "savings")
-      .State
-      .GetProperty("goals")
-      .EnumerateArray()
-      .Single();
-    var request = requestedGoal.GetProperty("cancellationRequest");
-    await Assert.That(request.GetProperty("requestedByMemberId").GetString()).IsEqualTo(_childId.Value);
-    await Assert.That(
-      request.GetProperty("consentedMemberIds").EnumerateArray().Select(item => item.GetString()!)
-    ).IsEquivalentTo([_childId.Value]);
+    var requestedGoal = store.RequiredEconomy().SavingsGoals.Single();
+    await Assert.That(requestedGoal.CancellationRequest?.RequestedByMemberId)
+      .IsEqualTo(_childId);
+    await Assert.That(requestedGoal.CancellationRequest?.ConsentedMemberIds)
+      .IsEquivalentTo([_childId]);
 
     await ExecuteAsync(handler, _guardianId, "savings.decide-goal-cancellation", new
     {
@@ -460,13 +262,9 @@ public sealed class SavingsCommandHandlerTests
       approved = false,
     });
 
-    var rejectedGoal = repository.Required(_familyId, "savings")
-      .State
-      .GetProperty("goals")
-      .EnumerateArray()
-      .Single();
-    await Assert.That(rejectedGoal.TryGetProperty("cancellationRequest", out _)).IsFalse();
-    await Assert.That(rejectedGoal.GetProperty("saved").GetDecimal()).IsEqualTo(40);
+    var rejectedGoal = store.RequiredEconomy().SavingsGoals.Single();
+    await Assert.That(rejectedGoal.CancellationRequest).IsNull();
+    await Assert.That(rejectedGoal.Saved).IsEqualTo(40);
 
     await ExecuteAsync(handler, _childId, "savings.request-goal-cancellation", new
     {
@@ -478,26 +276,23 @@ public sealed class SavingsCommandHandlerTests
       approved = true,
     });
 
-    var cancelled = repository.Required(_familyId, "savings").State;
-    var refund = cancelled.GetProperty("ledger")
-      .EnumerateArray()
-      .Single(item => item.GetProperty("reason").GetString() == "Goal cancellation refund");
-    var forfeited = cancelled.GetProperty("ledger")
-      .EnumerateArray()
-      .Single(item => item.GetProperty("kind").GetString() == nameof(LedgerKind.BonusForfeited));
-    await Assert.That(cancelled.GetProperty("goals").GetArrayLength()).IsEqualTo(0);
-    await Assert.That(cancelled.GetProperty("balances").GetProperty(_childId.Value).GetDecimal())
-      .IsEqualTo(100);
-    await Assert.That(refund.GetProperty("memberId").GetString()).IsEqualTo(_childId.Value);
-    await Assert.That(refund.GetProperty("amount").GetDecimal()).IsEqualTo(30);
-    await Assert.That(forfeited.GetProperty("amount").GetDecimal()).IsEqualTo(10);
+    var economy = store.RequiredEconomy();
+    var cancelledGoal = economy.SavingsGoals.Single();
+    var refund = economy.Ledger.Single(item => item.Reason == "Goal cancellation refund");
+    var forfeited = economy.Ledger.Single(item => item.Kind == LedgerKind.BonusForfeited);
+    await Assert.That(cancelledGoal.Cancelled).IsTrue();
+    await Assert.That(store.EconomyPresentation.SavingGoals).IsEmpty();
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(100);
+    await Assert.That(refund.MemberId).IsEqualTo(_childId);
+    await Assert.That(refund.Amount).IsEqualTo(30);
+    await Assert.That(forfeited.Amount).IsEqualTo(10);
   }
 
   [Test]
   public async Task LedgerAndAppliedOperationsSurviveReloadAndRejectAReplayedCommand()
   {
-    var repository = CreateRepository(SavingsState(balance: 100), new { rewards = Array.Empty<object>() });
-    var handler = CreateHandler(repository);
+    var store = CreateStore(100);
+    var handler = store.CreateCommandHandler();
     var addGoalCommandId = Guid.Parse("d2993c54-2f08-46dc-97d4-2f37ce32d99c");
     var depositCommandId = Guid.Parse("a3285dcb-967b-40ca-a798-79182e8854a2");
 
@@ -516,20 +311,11 @@ public sealed class SavingsCommandHandlerTests
       amount = 10,
     }, commandId: depositCommandId);
 
-    var afterDeposit = repository.Required(_familyId, "savings");
-    var entryIds = afterDeposit.State.GetProperty("ledger")
-      .EnumerateArray()
-      .Select(item => item.GetProperty("entryId").GetString()
-        ?? throw new InvalidOperationException("A ledger-entry ID is required."))
-      .ToArray();
-    var operationIds = afterDeposit.State.GetProperty("appliedOperationIds")
-      .EnumerateArray()
-      .Select(item => item.GetString() ?? throw new InvalidOperationException("An operation ID is required."))
-      .ToArray();
-    await Assert.That(afterDeposit.SchemaVersion)
-      .IsEqualTo(FamilyAggregateSchema.GetVersion("savings"));
+    var economyAfterDeposit = store.RequiredEconomy();
+    var entryIds = economyAfterDeposit.Ledger.Select(item => item.EntryId).ToArray();
+    var operationIds = economyAfterDeposit.AppliedOperationIds.Select(item => item.Value).ToArray();
     await Assert.That(entryIds.Length).IsEqualTo(3);
-    await Assert.That(entryIds.Distinct(StringComparer.Ordinal).Count()).IsEqualTo(3);
+    await Assert.That(entryIds.Distinct().Count()).IsEqualTo(3);
     await Assert.That(operationIds).IsEquivalentTo(
       [addGoalCommandId.ToString("N"), depositCommandId.ToString("N")]
     );
@@ -539,20 +325,12 @@ public sealed class SavingsCommandHandlerTests
       id = "durable-goal",
     });
 
-    var afterSecondReload = repository.Required(_familyId, "savings");
-    var reloadedEntryIds = afterSecondReload.State.GetProperty("ledger")
-      .EnumerateArray()
-      .Select(item => item.GetProperty("entryId").GetString()
-        ?? throw new InvalidOperationException("A ledger-entry ID is required."))
-      .ToArray();
-    await Assert.That(reloadedEntryIds).IsEquivalentTo(entryIds);
-    await Assert.That(
-      afterSecondReload.State.GetProperty("appliedOperationIds")
-        .EnumerateArray()
-        .Select(item => item.GetString()
-          ?? throw new InvalidOperationException("An operation ID is required."))
-        .ToArray()
-    ).IsEquivalentTo(operationIds);
+    var reloadedEconomy = store.RequiredEconomy();
+    await Assert.That(reloadedEconomy.Ledger.Select(item => item.EntryId))
+      .IsEquivalentTo(entryIds);
+    await Assert.That(reloadedEconomy.AppliedOperationIds.Select(item => item.Value))
+      .IsEquivalentTo(operationIds);
+    var revisionBeforeReplay = store.Revision(TypedAggregateKind.FamilyEconomy);
 
     await Assert.That(async () =>
       await ExecuteAsync(handler, _childId, "savings.deposit", new
@@ -562,163 +340,223 @@ public sealed class SavingsCommandHandlerTests
       }, commandId: depositCommandId)
     ).Throws<DomainRuleException>();
 
-    var afterReplay = repository.Required(_familyId, "savings");
-    await Assert.That(afterReplay.Revision).IsEqualTo(afterSecondReload.Revision);
-    await Assert.That(afterReplay.State.GetProperty("ledger").GetArrayLength()).IsEqualTo(3);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy))
+      .IsEqualTo(revisionBeforeReplay);
+    await Assert.That(store.RequiredEconomy().Ledger.Count).IsEqualTo(3);
   }
 
   [Test]
   public async Task SupportedLedgerSourceIdentifiersRoundTripWithoutChangingTheirTypes()
   {
-    var sources = new[]
-    {
-      new { sourceType = "contribution", sourceId = "daily-basic" },
-      new { sourceType = "family-member", sourceId = _guardianId.Value },
-      new { sourceType = "house-content", sourceId = "cozy-sofa" },
-      new { sourceType = "redemption-request", sourceId = "request-1" },
-      new { sourceType = "saving-goal", sourceId = "stored-goal" },
-    };
-    var ledger = sources.Select((source, index) => new
-    {
-      entryId = Guid.Parse($"10000000-0000-0000-0000-{index + 1:D12}"),
-      operationId = $"operation-{index + 1}",
-      memberId = _childId.Value,
-      goalId = (string?)null,
-      kind = "Credit",
-      amount = index + 1,
-      source.sourceType,
-      source.sourceId,
-      reason = "Stored history",
-      occurredAtUtc = "2026-10-12T10:00:00.0000000+00:00",
-      initiatorId = (string?)null,
-    }).ToArray();
-    var savings = new
-    {
-      balances = new { guardian = 0, child = 20 },
-      familyCurrencyCode = "CHF",
-      ladirchenPerCurrencyUnit = 10,
-      goals = new object[]
-      {
-        new
-        {
-          id = "stored-goal",
-          title = "Stored goal",
-          icon = "goal-icon",
-          ownerId = _childId.Value,
-          target = 100,
-          saved = 5,
-          starterBonus = 5,
-          interestEarned = 0,
-          shared = false,
-          visibility = "private",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = Array.Empty<string>(),
-          refundableContributions = Array.Empty<object>(),
-        },
-      },
-      ledger,
-      appliedOperationIds = ledger.Select(item => item.operationId).ToArray(),
-      pendingGuardianGifts = Array.Empty<object>(),
-      settledInterestPeriods = Array.Empty<string>(),
-      vouchers = Array.Empty<object>(),
-    };
-    var repository = CreateRepository(savings, new { rewards = Array.Empty<object>() });
-    var handler = CreateHandler(repository);
+    var store = CreateLedgerSourceStore();
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _childId, "savings.toggle-cheer", new
     {
       id = "stored-goal",
     });
 
-    var storedSources = repository.Required(_familyId, "savings")
-      .State
-      .GetProperty("ledger")
-      .EnumerateArray()
-      .ToDictionary(
-        item => item.GetProperty("sourceType").GetString()
-          ?? throw new InvalidOperationException("A ledger source type is required."),
-        item => item.GetProperty("sourceId").GetString(),
-        StringComparer.Ordinal
-      );
-    await Assert.That(storedSources.Count).IsEqualTo(sources.Length);
-
-    foreach (var source in sources)
-    {
-      await Assert.That(storedSources[source.sourceType]).IsEqualTo(source.sourceId);
-    }
+    var sourceTypes = store.RequiredEconomy().Ledger
+      .ToDictionary(item => item.SourceId.Value, item => item.SourceId.GetType());
+    await Assert.That(sourceTypes["daily-basic"]).IsEqualTo(typeof(ContributionId));
+    await Assert.That(sourceTypes[_guardianId.Value]).IsEqualTo(typeof(FamilyMemberId));
+    await Assert.That(sourceTypes["cozy-sofa"]).IsEqualTo(typeof(HouseContentId));
+    await Assert.That(sourceTypes["request-1"]).IsEqualTo(typeof(RedemptionRequestId));
+    await Assert.That(sourceTypes["stored-goal"]).IsEqualTo(typeof(SavingGoalId));
   }
 
-  private static ExecuteFamilyCommandHandler CreateHandler(TestFamilyAggregateSnapshotRepository repository)
+  private static TestTypedAggregateStore CreateStore(decimal childBalance)
   {
-    return new ExecuteFamilyCommandHandler(
-      repository,
-      new ImmediateFamilyCommandExecutionCoordinator(),
-      new FixedTimeProvider(new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero))
-    );
+    var family = CreateFamily();
+    var economy = new FamilyEconomy(family);
+    economy.RestoreWallet(_childId, childBalance, 0);
+
+    return CreateStore(family, economy, FamilyEconomyPresentationState.Empty, FamilyHouse.CreateInitial(family));
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository(object savings, object rewardShop)
+  private static TestTypedAggregateStore CreateStoreWithReservation(
+    decimal childBalance,
+    decimal reserved
+  )
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    repository.Seed(Snapshot("family-profile", 2, new
-    {
-      timeZone = "Europe/Zurich",
-      pets = Array.Empty<object>(),
-      members = new object[]
-      {
-        new
-        {
-          id = _guardianId.Value,
-          name = "Guardian",
-          role = "guardian",
-          guardianAccess = "admin",
-          participatesInWeeklyGoal = false,
-        },
-        new
-        {
-          id = _childId.Value,
-          name = "Child",
-          role = "child",
-          participatesInWeeklyGoal = true,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("savings", 2, savings));
-    repository.Seed(Snapshot("reward-shop", 1, rewardShop));
-
-    return repository;
-  }
-
-  private static object SavingsState(decimal balance, object[]? goals = null)
-  {
-    return new
-    {
-      balances = new
-      {
-        guardian = 0,
-        child = balance,
-      },
-      familyCurrencyCode = "CHF",
-      ladirchenPerCurrencyUnit = 10,
-      goals = goals ?? Array.Empty<object>(),
-      pendingGuardianGifts = Array.Empty<object>(),
-      settledInterestPeriods = Array.Empty<string>(),
-      vouchers = Array.Empty<object>(),
-    };
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(string aggregateType, int schemaVersion, object state)
-  {
-    return new FamilyAggregateSnapshot(
-      _familyId,
-      aggregateType,
-      schemaVersion,
-      1,
-      JsonSerializer.SerializeToElement(state),
+    var family = CreateFamily();
+    var economy = new FamilyEconomy(family);
+    economy.RestoreWallet(_childId, childBalance, 0);
+    var rewardId = new ShopRewardId("reserved-reward");
+    economy.AddShopReward(
       _guardianId,
-      DateTimeOffset.UnixEpoch
+      rewardId,
+      new ShopRewardDefinition(
+        "Reserved reward",
+        ShopRewardCategory.Gift,
+        new LadirchenAmount(reserved),
+        1,
+        true,
+        new AvailabilityWindow()
+      ),
+      _now
     );
+    economy.RequestShopReward(
+      _childId,
+      rewardId,
+      new RedemptionRequestId("reserved-request"),
+      new TransactionId("reserved-operation"),
+      _now
+    );
+    var presentation = new FamilyEconomyPresentationState(
+      [],
+      [],
+      [new ShopRewardPresentationState(rewardId, "Description", "gift", "Conditions")],
+      []
+    );
+
+    return CreateStore(family, economy, presentation, FamilyHouse.CreateInitial(family));
+  }
+
+  private static TestTypedAggregateStore CreateWeeklyInterestStore()
+  {
+    var family = CreateFamily();
+    var economy = new FamilyEconomy(family);
+    var goalId = new SavingGoalId("bicycle");
+    economy.RestoreSavingGoal(
+      goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Member(_childId),
+        "Bicycle",
+        new LadirchenAmount(100),
+        GoalVisibility.Private,
+        []
+      ),
+      new DateTimeOffset(2026, 10, 1, 10, 0, 0, TimeSpan.Zero),
+      50,
+      5,
+      0,
+      new Dictionary<FamilyMemberId, decimal> { [_childId] = 45 },
+      null,
+      [],
+      false,
+      false,
+      null,
+      null
+    );
+    var progression = FamilyHouse.CreateInitial(family);
+    var period = new IsoWeekPeriod(2026, 41);
+    var evaluation = new PersonalLadiEvaluation(
+      _childId,
+      period.Year,
+      period.Week,
+      new PersonalParticipation(0, 0, 0),
+      new ParticipationValue(1, 1),
+      LadiStage.AtPosition(4)
+    );
+    _ = progression.CloseSuccessfulWeek(
+      period,
+      HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+      [evaluation],
+      _now
+    );
+    var presentation = new FamilyEconomyPresentationState(
+      [],
+      [new SavingGoalPresentationState(goalId, "bike-icon")],
+      [],
+      []
+    );
+
+    return CreateStore(family, economy, presentation, progression);
+  }
+
+  private static TestTypedAggregateStore CreateLedgerSourceStore()
+  {
+    var family = CreateFamily();
+    var economy = new FamilyEconomy(family);
+    economy.RestoreWallet(_childId, 20, 0);
+    var goalId = new SavingGoalId("stored-goal");
+    economy.RestoreSavingGoal(
+      goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Member(_childId),
+        "Stored goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Private,
+        []
+      ),
+      new DateTimeOffset(2026, 10, 1, 10, 0, 0, TimeSpan.Zero),
+      5,
+      5,
+      0,
+      new Dictionary<FamilyMemberId, decimal>(),
+      null,
+      [],
+      false,
+      false,
+      null,
+      null
+    );
+    DomainIdentifier[] sources =
+    [
+      new ContributionId("daily-basic"),
+      _guardianId,
+      new HouseContentId("cozy-sofa"),
+      new RedemptionRequestId("request-1"),
+      goalId,
+    ];
+
+    for (var index = 0; index < sources.Length; index++)
+    {
+      economy.RestoreLedgerEntry(new LedgerEntry(
+        new TransactionId($"operation-{index + 1}"),
+        _childId,
+        null,
+        LedgerKind.Credit,
+        index + 1,
+        sources[index],
+        "Stored history",
+        _now
+      ));
+    }
+
+    var presentation = new FamilyEconomyPresentationState(
+      [],
+      [new SavingGoalPresentationState(goalId, "goal-icon")],
+      [],
+      []
+    );
+
+    return CreateStore(
+      family,
+      economy,
+      presentation,
+      FamilyHouse.CreateInitial(family)
+    );
+  }
+
+  private static TestTypedAggregateStore CreateStore(
+    Family family,
+    FamilyEconomy economy,
+    FamilyEconomyPresentationState presentation,
+    FamilyHouse progression
+  )
+  {
+    var store = new TestTypedAggregateStore(new FixedTimeProvider(_now));
+    store.Seed(family, economy, presentation, progression);
+
+    return store;
+  }
+
+  private static Family CreateFamily()
+  {
+    var family = new Family(_familyId, _guardianId, "Guardian", new IanaTimeZone("Europe/Zurich"));
+    family.AddMember(
+      _guardianId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+
+    return family;
   }
 
   private static async Task ExecuteAsync(
@@ -741,16 +579,5 @@ public sealed class SavingsCommandHandlerTests
       ),
       CancellationToken.None
     );
-  }
-
-  private static string? VoucherStatus(TestFamilyAggregateSnapshotRepository repository)
-  {
-    return repository.Required(_familyId, "savings")
-      .State
-      .GetProperty("vouchers")
-      .EnumerateArray()
-      .Single()
-      .GetProperty("status")
-      .GetString();
   }
 }

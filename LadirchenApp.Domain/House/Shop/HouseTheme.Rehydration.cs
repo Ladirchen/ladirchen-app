@@ -6,7 +6,7 @@ namespace LadirchenApp.Domain.House.Shop;
 
 public sealed partial class HouseTheme
 {
-  public void Restore(bool owned)
+  internal void Restore(bool owned)
   {
     Rules.Require(
       owned || Designs.All(item => !item.Owned),

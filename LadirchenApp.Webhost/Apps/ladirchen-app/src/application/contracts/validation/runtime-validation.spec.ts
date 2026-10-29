@@ -4,6 +4,7 @@ import { isContributionsState } from "./contributions-validation";
 import { isFamilyPetKindId } from "./family-profile-validation";
 import { isFamilyProgressionState } from "./family-progression-validation";
 import { isHomeCustomizationState, isHouseAccessoryId, isHouseThemeId } from "./home-customization-validation";
+import { isRewardShopState } from "./reward-shop-validation";
 import { isFamilyCurrency, isSavingsState } from "./savings-validation";
 
 describe("family aggregate runtime validation", () => {
@@ -65,6 +66,37 @@ describe("family aggregate runtime validation", () => {
         editions: [{ id: "sunny-dollhouse", owned: false }],
         placements: [],
         selectedEditionId: "sunny-dollhouse",
+      }),
+    ).toBe(false);
+  });
+
+  it("requires a complete, typed backend house catalog", () => {
+    const home = {
+      accessories: [],
+      capabilities: { canArrangeHouse: true },
+      catalog: {
+        accessories: [],
+        areas: [],
+        furnitureSets: [],
+        houseStages: [{ active: true, id: "starter-home", level: 0, roomCount: 2 }],
+        roomDesigns: [],
+        themes: [],
+      },
+      editions: [{ id: "sunny-dollhouse", owned: true }],
+      placements: [],
+      roomDesigns: [],
+      selectedEditionId: "sunny-dollhouse",
+      selectedRoomDesigns: [],
+    };
+
+    expect(isHomeCustomizationState(home)).toBe(true);
+    expect(
+      isHomeCustomizationState({
+        ...home,
+        catalog: {
+          ...home.catalog,
+          houseStages: [{ active: true, id: "starter-home", level: 0 }],
+        },
       }),
     ).toBe(false);
   });
@@ -165,6 +197,9 @@ describe("family aggregate runtime validation", () => {
     expect(
       isContributionsState({
         contributions: [],
+        currentWeekApprovedContributionCountByMember: {},
+        currentWeekEarnedByMember: {},
+        perfectRatingBonusPercent: 15,
         promotions: [
           {
             id: "promotion-1",
@@ -176,6 +211,7 @@ describe("family aggregate runtime validation", () => {
             active: true,
           },
         ],
+        todayEarnedByMember: {},
       }),
     ).toBe(false);
   });
@@ -198,6 +234,8 @@ describe("family aggregate runtime validation", () => {
     const currentWeekReadModel = {
       currentWeekApprovedContributionCountByMember: { "child-2": 2 },
       currentWeekEarnedByMember: { "child-2": 25 },
+      perfectRatingBonusPercent: 15,
+      todayEarnedByMember: { "child-2": 25 },
     };
 
     expect(isContributionsState({ contributions: [contribution], ...currentWeekReadModel, promotions: [] })).toBe(true);
@@ -214,6 +252,51 @@ describe("family aggregate runtime validation", () => {
         ...currentWeekReadModel,
         currentWeekApprovedContributionCountByMember: { "child-2": 1.5 },
         promotions: [],
+      }),
+    ).toBe(false);
+  });
+
+  it("requires contribution calculations projected by the backend", () => {
+    const contributions = {
+      contributions: [],
+      currentWeekApprovedContributionCountByMember: {},
+      currentWeekEarnedByMember: {},
+      perfectRatingBonusPercent: 15,
+      promotions: [],
+      todayEarnedByMember: {},
+    };
+
+    expect(isContributionsState(contributions)).toBe(true);
+    expect(isContributionsState({ ...contributions, perfectRatingBonusPercent: undefined })).toBe(false);
+    expect(isContributionsState({ ...contributions, todayEarnedByMember: undefined })).toBe(false);
+  });
+
+  it("requires reward-shop publication and command capabilities from the backend", () => {
+    const reward = {
+      approvableByMemberIds: [],
+      cancellableByMemberIds: [],
+      category: "privilege",
+      conditions: "",
+      description: "Choose the movie",
+      icon: "🎬",
+      id: "movie-night",
+      isVisible: true,
+      price: 20,
+      publicationStatus: "visible",
+      published: true,
+      quantity: 1,
+      requestableByMemberIds: ["member-1"],
+      status: "available",
+      title: "Movie night",
+    };
+    const rewardShop = { redemptionOpen: true, rewards: [reward] };
+
+    expect(isRewardShopState(rewardShop)).toBe(true);
+    expect(isRewardShopState({ ...rewardShop, redemptionOpen: undefined })).toBe(false);
+    expect(
+      isRewardShopState({
+        ...rewardShop,
+        rewards: [{ ...reward, requestableByMemberIds: undefined }],
       }),
     ).toBe(false);
   });

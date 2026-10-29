@@ -130,13 +130,12 @@ export function isContributionsState(value: unknown): value is ContributionsStat
     !hasUniqueIds(value.contributions) ||
     !isNonNegativeIntegerMap(value.currentWeekApprovedContributionCountByMember) ||
     !isNonNegativeAmountMap(value.currentWeekEarnedByMember) ||
-    (value.perfectRatingBonusPercent !== undefined &&
-      (!isFiniteNumber(value.perfectRatingBonusPercent) ||
-        value.perfectRatingBonusPercent < 0 ||
-        value.perfectRatingBonusPercent > 100)) ||
+    !isFiniteNumber(value.perfectRatingBonusPercent) ||
+    value.perfectRatingBonusPercent < 0 ||
+    value.perfectRatingBonusPercent > 100 ||
     !isArrayOf(value.promotions, isPromotion) ||
     !hasUniqueIds(value.promotions) ||
-    (value.todayEarnedByMember !== undefined && !isNonNegativeAmountMap(value.todayEarnedByMember))
+    !isNonNegativeAmountMap(value.todayEarnedByMember)
   ) {
     return false;
   }

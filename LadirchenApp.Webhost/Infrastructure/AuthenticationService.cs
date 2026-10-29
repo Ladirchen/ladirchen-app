@@ -1,41 +1,34 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Infrastructure.Persistence;
 using LadirchenApp.Webhost.Models;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace LadirchenApp.Webhost.Infrastructure;
 
 public sealed class AuthenticationService
 {
   private readonly LadirchenDbContext _database;
-  private readonly ILogger<AuthenticationService> _logger;
-  private readonly IFamilyAggregateChangePublisher _publisher;
-  private readonly IFamilyAggregateSnapshotRepository _repository;
   private readonly TimeProvider _timeProvider;
+  private readonly ITypedAggregateUnitOfWork _unitOfWork;
 
   public AuthenticationService(
     LadirchenDbContext database,
-    IFamilyAggregateSnapshotRepository repository,
-    IFamilyAggregateChangePublisher publisher,
-    TimeProvider timeProvider,
-    ILogger<AuthenticationService> logger
+    ITypedAggregateUnitOfWork unitOfWork,
+    TimeProvider timeProvider
   )
   {
     _database = database;
-    _repository = repository;
-    _publisher = publisher;
+    _unitOfWork = unitOfWork;
     _timeProvider = timeProvider;
-    _logger = logger;
   }
 
   public async Task<AuthenticationSessionResponse?> AuthenticateAsync(
@@ -101,7 +94,10 @@ public sealed class AuthenticationService
     ArgumentNullException.ThrowIfNull(request);
     ValidateRegistration(request);
     var username = NormalizeUsername(request.Username);
-    await using var transaction = await _database.Database.BeginTransactionAsync(cancellationToken);
+    await using var transaction = await _database.Database.BeginTransactionAsync(
+      IsolationLevel.Serializable,
+      cancellationToken
+    );
 
     try
     {
@@ -112,7 +108,7 @@ public sealed class AuthenticationService
 
       var actorId = new FamilyMemberId(request.MemberId);
       var familyId = new FamilyId(request.FamilyId);
-      var saves = InitialFamilyAggregateFactory.Create(familyId, actorId, request.GuardianName.Trim());
+      var batch = InitialFamilyAggregateFactory.Create(familyId, actorId, request.GuardianName.Trim());
       var salt = RandomNumberGenerator.GetBytes(16);
       var account = new AuthenticationAccountEntity
       {
@@ -128,12 +124,12 @@ public sealed class AuthenticationService
         PasswordSalt = salt,
         PasswordIterations = AuthenticationSecurityPolicy.PasswordIterations,
       };
-      IReadOnlyList<FamilyAggregateSnapshot> snapshots;
 
       try
       {
-        snapshots = await _repository.SaveBatchAsync(saves, cancellationToken);
+        var result = await _unitOfWork.SaveAsync(batch, cancellationToken);
         _database.AuthenticationAccounts.Add(account);
+        AddInitialReadModelMessages(result, familyId);
         await _database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
       }
@@ -146,8 +142,6 @@ public sealed class AuthenticationService
         throw new InvalidOperationException("The account or family has already been registered.", exception);
       }
 
-      await PublishBestEffortAsync(snapshots);
-
       return ToSession(account);
     }
     catch
@@ -157,23 +151,56 @@ public sealed class AuthenticationService
     }
   }
 
-  private async Task PublishBestEffortAsync(IEnumerable<FamilyAggregateSnapshot> snapshots)
+  private void AddInitialReadModelMessages(
+    TypedAggregateSaveResult result,
+    FamilyId familyId
+  )
   {
-    foreach (var snapshot in snapshots)
-    {
-      try
+    var family = result.Family
+      ?? throw new InvalidOperationException("The initial family was not persisted.");
+    var economy = result.FamilyEconomy
+      ?? throw new InvalidOperationException("The initial family economy was not persisted.");
+    var progression = result.FamilyProgression
+      ?? throw new InvalidOperationException("The initial family progression was not persisted.");
+    var house = result.HouseCustomization
+      ?? throw new InvalidOperationException("The initial house customization was not persisted.");
+    AddOutboxMessage(familyId, "family-profile", family.Revision, family.Audit);
+    AddOutboxMessage(familyId, "contributions", economy.Revision, economy.Audit);
+    AddOutboxMessage(familyId, "savings", economy.Revision, economy.Audit);
+    AddOutboxMessage(familyId, "reward-shop", economy.Revision, economy.Audit);
+    AddOutboxMessage(
+      familyId,
+      "family-progression",
+      progression.Revision,
+      progression.Audit
+    );
+    AddOutboxMessage(
+      familyId,
+      "home-customization",
+      house.Revision,
+      house.Audit
+    );
+  }
+
+  private void AddOutboxMessage(
+    FamilyId familyId,
+    string aggregateType,
+    long revision,
+    AggregateAudit audit
+  )
+  {
+    _database.FamilyAggregateOutboxMessages.Add(
+      new FamilyAggregateOutboxMessageEntity
       {
-        await _publisher.PublishAsync(snapshot, CancellationToken.None);
+        AggregateType = aggregateType,
+        FamilyId = familyId.Value,
+        MessageId = Guid.NewGuid(),
+        OccurredAt = _timeProvider.GetUtcNow(),
+        Revision = revision,
+        UpdatedAt = audit.UpdatedAt,
+        UpdatedBy = audit.UpdatedBy.Value,
       }
-      catch (Exception exception)
-      {
-        _logger.LogWarning(
-          exception,
-          "Family aggregate {AggregateType} was committed but its realtime notification failed.",
-          snapshot.AggregateType
-        );
-      }
-    }
+    );
   }
 
   private static AuthenticationSessionResponse ToSession(AuthenticationAccountEntity account)

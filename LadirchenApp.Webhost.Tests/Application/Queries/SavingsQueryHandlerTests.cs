@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Application.Queries;
+using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Tests.Application.Commands;
 
@@ -13,104 +15,76 @@ namespace LadirchenApp.Webhost.Tests.Application.Queries;
 
 public sealed class SavingsQueryHandlerTests
 {
-  private static readonly FamilyId _familyId = new(Guid.Parse("9f210fed-fbc0-40a7-9764-ceaefc304485"));
+  private static readonly FamilyId _familyId = new(
+    Guid.Parse("9f210fed-fbc0-40a7-9764-ceaefc304485")
+  );
   private static readonly FamilyMemberId _guardianId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
+  private static readonly DateTimeOffset _now = new(2026, 10, 29, 10, 0, 0, TimeSpan.Zero);
 
   [Test]
   public async Task SavingsReadModelUsesTypedDomainStateAndLadiStage()
   {
-    var repository = CreateRepository();
-    var handler = new GetFamilyAggregateQueryHandler(repository, TimeProvider.System);
-
-    var result = await handler.HandleAsync(
-      new GetFamilyAggregateQuery(_familyId, "savings", _childId),
-      CancellationToken.None
+    var store = CreateStore();
+    var result = await QueryAsync(store, _childId);
+    var personalGoal = result.Economy.SavingsGoals.Single(goal => goal.Id.Value == "bicycle");
+    var cancellingGoal = result.Economy.SavingsGoals.Single(
+      goal => goal.Id.Value == "family-cancellation"
     );
+    var personal = result.CalculatedState.Goals[personalGoal.Id];
+    var cancellation = result.CalculatedState.Goals[cancellingGoal.Id];
+    var voucher = result.CalculatedState.Vouchers[new SavingGoalId("family-trip")];
 
-    var state = result?.State ?? throw new InvalidOperationException("The savings read model is missing.");
-    var personalGoal = state.GetProperty("goals").EnumerateArray()
-      .Single(goal => goal.GetProperty("id").GetString() == "bicycle");
-    var cancellingFamilyGoal = state.GetProperty("goals").EnumerateArray()
-      .Single(goal => goal.GetProperty("id").GetString() == "family-cancellation");
-    var limits = personalGoal.GetProperty("commandLimits");
-    var cancellationRequest = cancellingFamilyGoal.GetProperty("cancellationRequest");
-    var cancellationLimits = cancellingFamilyGoal.GetProperty("commandLimits").GetProperty(_childId.Value);
-    var voucher = state.GetProperty("vouchers").EnumerateArray().Single();
-    await Assert.That(state.GetProperty("availableBalances").GetProperty(_childId.Value).GetDecimal())
-      .IsEqualTo(20);
-    await Assert.That(personalGoal.GetProperty("projectedInterestCredit").GetDecimal())
-      .IsEqualTo(3);
-    await Assert.That(personalGoal.GetProperty("remainingAmount").GetDecimal())
-      .IsEqualTo(50);
-    await Assert.That(personalGoal.GetProperty("withdrawableBalance").GetDecimal())
-      .IsEqualTo(45);
-    await Assert.That(
-      personalGoal.GetProperty("visibleToMemberIds").EnumerateArray().Select(item => item.GetString()!)
-    ).IsEquivalentTo([_childId.Value]);
-    await Assert.That(limits.GetProperty(_childId.Value).GetProperty("maximumDepositAmount").GetDecimal())
-      .IsEqualTo(20);
-    await Assert.That(limits.TryGetProperty(_guardianId.Value, out _)).IsFalse();
-    await Assert.That(state.GetProperty("balances").TryGetProperty(_guardianId.Value, out _)).IsFalse();
-    await Assert.That(state.GetProperty("availableBalances").TryGetProperty(_guardianId.Value, out _)).IsFalse();
-    await Assert.That(state.GetProperty("goals").EnumerateArray()
-      .Any(goal => goal.GetProperty("id").GetString() == "guardian-private"))
+    await Assert.That(result.CalculatedState.AvailableBalances[_childId]).IsEqualTo(20);
+    await Assert.That(personal.ProjectedInterestCredit).IsEqualTo(3);
+    await Assert.That(personal.RemainingAmount).IsEqualTo(50);
+    await Assert.That(personal.WithdrawableBalance).IsEqualTo(45);
+    await Assert.That(personal.VisibleToMemberIds).IsEquivalentTo([_childId]);
+    await Assert.That(personal.CommandLimits[_childId].MaximumDepositAmount).IsEqualTo(20);
+    await Assert.That(personal.CommandLimits.ContainsKey(_guardianId)).IsFalse();
+    await Assert.That(result.CalculatedState.Balances.ContainsKey(_guardianId)).IsFalse();
+    await Assert.That(result.CalculatedState.Goals.Keys.Any(id => id.Value == "guardian-private"))
       .IsFalse();
-    await Assert.That(state.GetProperty("vouchers").EnumerateArray()
-      .Any(item => item.GetProperty("goalId").GetString() == "guardian-private"))
-      .IsFalse();
-    await Assert.That(state.GetProperty("sharedSavedBalances").GetProperty(_childId.Value).GetDecimal())
-      .IsEqualTo(50);
-    await Assert.That(
-      voucher.GetProperty("consentableByMemberIds").EnumerateArray().Select(item => item.GetString()!)
-    ).IsEmpty();
-    await Assert.That(voucher.GetProperty("redeemableByMemberIds").GetArrayLength())
-      .IsEqualTo(0);
-    await Assert.That(state.TryGetProperty("appliedOperationIds", out _)).IsFalse();
-    await Assert.That(state.TryGetProperty("ledger", out _)).IsFalse();
-    await Assert.That(personalGoal.TryGetProperty("refundableContributions", out _)).IsFalse();
-    await Assert.That(cancellingFamilyGoal.TryGetProperty("refundableContributions", out _)).IsFalse();
-    await Assert.That(cancellationRequest.GetProperty("requestedByMemberId").GetString())
-      .IsEqualTo(_childId.Value);
-    await Assert.That(
-      cancellationRequest.GetProperty("consentedMemberIds").EnumerateArray().Select(item => item.GetString()!)
-    ).IsEquivalentTo([_childId.Value]);
-    await Assert.That(
-      cancellationRequest.GetProperty("pendingMemberIds").EnumerateArray().Select(item => item.GetString()!)
-    ).IsEquivalentTo([_guardianId.Value]);
-    await Assert.That(cancellationLimits.GetProperty("canRequestCancellation").GetBoolean()).IsFalse();
-    await Assert.That(cancellationLimits.GetProperty("canApproveCancellation").GetBoolean()).IsFalse();
-    await Assert.That(cancellationLimits.GetProperty("canRejectCancellation").GetBoolean()).IsFalse();
+    await Assert.That(result.CalculatedState.SharedSavedBalances[_childId]).IsEqualTo(50);
+    await Assert.That(voucher.ConsentableByMemberIds).IsEmpty();
+    await Assert.That(voucher.RedeemableByMemberIds).IsEmpty();
+    await Assert.That(cancellation.CancellationRequest).IsNotNull();
+    await Assert.That(cancellation.CancellationRequest!.RequestedByMemberId).IsEqualTo(_childId);
+    await Assert.That(cancellation.CancellationRequest.ConsentedMemberIds)
+      .IsEquivalentTo([_childId]);
+    await Assert.That(cancellation.CancellationRequest.PendingMemberIds)
+      .IsEquivalentTo([_guardianId]);
+    await Assert.That(cancellation.CommandLimits[_childId].CanRequestCancellation).IsFalse();
+    await Assert.That(cancellation.CommandLimits[_childId].CanApproveCancellation).IsFalse();
+    await Assert.That(cancellation.CommandLimits[_childId].CanRejectCancellation).IsFalse();
   }
 
   [Test]
   public async Task GuardianAdministratorCannotReadChildPrivateGoalThroughViewerSelection()
   {
-    var handler = new GetFamilyAggregateQueryHandler(CreateRepository(), TimeProvider.System);
+    var store = CreateStore();
+    var handler = CreateHandler(store);
     var result = await handler.HandleAsync(
       new GetFamilyAggregateQuery(_familyId, "savings", _guardianId, _childId),
       CancellationToken.None
-    );
-    var state = result?.State ?? throw new InvalidOperationException("The savings read model is missing.");
+    ) as SavingsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The savings read model is missing.");
 
-    await Assert.That(state.GetProperty("goals").EnumerateArray()
-      .Any(goal => goal.GetProperty("id").GetString() == "child-private"))
+    await Assert.That(result.CalculatedState.Goals.Keys.Any(id => id.Value == "child-private"))
       .IsFalse();
-    await Assert.That(state.GetProperty("goals").EnumerateArray()
-      .Any(goal => goal.GetProperty("id").GetString() == "guardian-private"))
+    await Assert.That(result.CalculatedState.Goals.Keys.Any(id => id.Value == "guardian-private"))
       .IsTrue();
-    var cancellingFamilyGoal = state.GetProperty("goals").EnumerateArray()
-      .Single(goal => goal.GetProperty("id").GetString() == "family-cancellation");
-    var limits = cancellingFamilyGoal.GetProperty("commandLimits").GetProperty(_guardianId.Value);
-    await Assert.That(limits.GetProperty("canRequestCancellation").GetBoolean()).IsFalse();
-    await Assert.That(limits.GetProperty("canApproveCancellation").GetBoolean()).IsTrue();
-    await Assert.That(limits.GetProperty("canRejectCancellation").GetBoolean()).IsTrue();
+    var familyGoal = result.CalculatedState.Goals[new SavingGoalId("family-cancellation")];
+    var limits = familyGoal.CommandLimits[_guardianId];
+    await Assert.That(limits.CanRequestCancellation).IsFalse();
+    await Assert.That(limits.CanApproveCancellation).IsTrue();
+    await Assert.That(limits.CanRejectCancellation).IsTrue();
   }
 
   [Test]
   public async Task ChildCannotSelectGuardianAsReadModelViewer()
   {
-    var handler = new GetFamilyAggregateQueryHandler(CreateRepository(), TimeProvider.System);
+    var handler = CreateHandler(CreateStore());
 
     await Assert.That(async () =>
       await handler.HandleAsync(
@@ -121,14 +95,17 @@ public sealed class SavingsQueryHandlerTests
   }
 
   [Test]
-  public async Task MissingProjectionDependencyNeverReturnsRawSavingsState()
+  public async Task MissingProjectionDependencyNeverReturnsPartialSavingsState()
   {
-    var completeRepository = CreateRepository();
-    var incompleteRepository = new TestFamilyAggregateSnapshotRepository();
-    incompleteRepository.Seed(completeRepository.Required(_familyId, "family-profile"));
-    incompleteRepository.Seed(completeRepository.Required(_familyId, "reward-shop"));
-    incompleteRepository.Seed(completeRepository.Required(_familyId, "savings"));
-    var handler = new GetFamilyAggregateQueryHandler(incompleteRepository, TimeProvider.System);
+    var complete = CreateStore();
+    var family = complete.RequiredFamily();
+    var incomplete = new TestTypedAggregateStore(new FixedTimeProvider(_now));
+    incomplete.Seed(
+      family,
+      complete.RequiredEconomy(),
+      complete.EconomyPresentation
+    );
+    var handler = CreateHandler(incomplete);
 
     await Assert.That(async () =>
       await handler.HandleAsync(
@@ -138,228 +115,229 @@ public sealed class SavingsQueryHandlerTests
     ).Throws<InvalidOperationException>();
   }
 
-  [Test]
-  public async Task SavingsInterestSimulationUsesTypedGoalsAndConfiguredMaximumRate()
+  private static async Task<SavingsFamilyReadModelProjection> QueryAsync(
+    TestTypedAggregateStore store,
+    FamilyMemberId actorId
+  )
   {
-    var repository = CreateRepository();
-    var handler = new SimulateSavingsInterestQueryHandler(repository);
-
-    var result = await handler.HandleAsync(
-      new SimulateSavingsInterestQuery(_familyId, _childId, 7, 100, 5),
+    return await CreateHandler(store).HandleAsync(
+      new GetFamilyAggregateQuery(_familyId, "savings", actorId),
       CancellationToken.None
+    ) as SavingsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The savings read model is missing.");
+  }
+
+  private static GetFamilyAggregateQueryHandler CreateHandler(TestTypedAggregateStore store)
+  {
+    return new GetFamilyAggregateQueryHandler(
+      store,
+      store,
+      store,
+      store,
+      new FixedTimeProvider(_now)
     );
-
-    await Assert.That(result.LadiStageId).IsEqualTo("super-ladi");
-    await Assert.That(result.LadiStagePosition).IsEqualTo(6);
-    await Assert.That(result.InterestRate).IsEqualTo(8);
-    await Assert.That(result.ProjectedCredit).IsEqualTo(5);
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository()
+  private static TestTypedAggregateStore CreateStore()
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    repository.Seed(Snapshot("family-profile", 2, new
-    {
-      timeZone = "Europe/Zurich",
-      pets = Array.Empty<object>(),
-      members = new object[]
-      {
-        new
-        {
-          id = _guardianId.Value,
-          name = "Guardian",
-          role = "guardian",
-          guardianAccess = "admin",
-          participatesInWeeklyGoal = false,
-        },
-        new
-        {
-          id = _childId.Value,
-          name = "Child",
-          role = "child",
-          participatesInWeeklyGoal = true,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("family-progression", 4, new
-    {
-      maximumSavingsInterestRate = 8,
-      memberProgressions = new
-      {
-        child = new
-        {
-          ladiStageId = "sun-ladi",
-          ladiStagePosition = 4,
-          savingsInterestRate = 100,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("savings", 2, new
-    {
-      balances = new
-      {
-        guardian = 0,
-        child = 100,
-      },
-      familyCurrencyCode = "CHF",
-      ladirchenPerCurrencyUnit = 10,
-      goals = new object[]
-      {
-        new
-        {
-          id = "bicycle",
-          title = "Bicycle",
-          icon = "bicycle-icon",
-          ownerId = _childId.Value,
-          target = 100,
-          saved = 50,
-          starterBonus = 5,
-          interestEarned = 0,
-          shared = false,
-          visibility = "family",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = Array.Empty<string>(),
-          refundableContributions = new[]
-          {
-            new { memberId = _childId.Value, amount = 45 },
-          },
-        },
-        new
-        {
-          id = "child-private",
-          title = "Private child goal",
-          icon = "private-icon",
-          ownerId = _childId.Value,
-          target = 10,
-          saved = 5,
-          starterBonus = 5,
-          interestEarned = 0,
-          shared = false,
-          visibility = "private",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = Array.Empty<string>(),
-          refundableContributions = Array.Empty<object>(),
-        },
-        new
-        {
-          id = "guardian-private",
-          title = "Private guardian goal",
-          icon = "private-icon",
-          ownerId = _guardianId.Value,
-          target = 5,
-          saved = 5,
-          starterBonus = 5,
-          interestEarned = 0,
-          shared = false,
-          visibility = "private",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = Array.Empty<string>(),
-          refundableContributions = Array.Empty<object>(),
-          voucherId = "guardian-private",
-        },
-        new
-        {
-          id = "family-cancellation",
-          title = "Family cancellation",
-          icon = "goal-icon",
-          ownerId = "family",
-          target = 100,
-          saved = 10,
-          starterBonus = 10,
-          interestEarned = 0,
-          shared = true,
-          visibility = "family",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = new[] { _childId.Value, _guardianId.Value },
-          refundableContributions = Array.Empty<object>(),
-          cancellationRequest = new
-          {
-            requestedByMemberId = _childId.Value,
-            consentedMemberIds = new[] { _childId.Value },
-          },
-        },
-        new
-        {
-          id = "family-trip",
-          title = "Family trip",
-          icon = "trip-icon",
-          ownerId = "family",
-          target = 20,
-          saved = 20,
-          starterBonus = 10,
-          interestEarned = 0,
-          shared = true,
-          visibility = "family",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = new[] { _childId.Value, _guardianId.Value },
-          refundableContributions = Array.Empty<object>(),
-          voucherId = "family-trip",
-        },
-      },
-      pendingGuardianGifts = Array.Empty<object>(),
-      appliedOperationIds = Array.Empty<string>(),
-      ledger = Array.Empty<object>(),
-      settledInterestPeriods = Array.Empty<string>(),
-      vouchers = new object[]
-      {
-        new
-        {
-          id = "family-trip",
-          goalId = "family-trip",
-          amount = 20,
-          ownerId = (string?)null,
-          participantIds = new[] { _childId.Value, _guardianId.Value },
-          consentedMemberIds = new[] { _childId.Value },
-          status = "pending",
-        },
-        new
-        {
-          id = "guardian-private",
-          goalId = "guardian-private",
-          amount = 5,
-          ownerId = _guardianId.Value,
-          participantIds = Array.Empty<string>(),
-          consentedMemberIds = Array.Empty<string>(),
-          status = "redeemable",
-        },
-      },
-    }));
-    repository.Seed(Snapshot("reward-shop", 1, new
-    {
-      rewards = new object[]
-      {
-        new
-        {
-          id = "reserved-reward",
-          title = "Reserved reward",
-          status = "requested",
-          requesterId = _childId.Value,
-          price = 80,
-          category = "gift",
-          quantity = 1,
-          isVisible = true,
-        },
-      },
-    }));
-
-    return repository;
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(string aggregateType, int schemaVersion, object state)
-  {
-    return new FamilyAggregateSnapshot(
+    var family = Family.Reconstitute(new FamilyState(
       _familyId,
-      aggregateType,
-      schemaVersion,
-      1,
-      JsonSerializer.SerializeToElement(state),
-      _guardianId,
-      DateTimeOffset.UnixEpoch
+      new IanaTimeZone("Europe/Zurich"),
+      FamilyCurrency.CHF,
+      new ExchangeRate(10),
+      _childId,
+      false,
+      [
+        Member(_guardianId, "Guardian", MemberRole.Guardian, GuardianAccess.Admin),
+        Member(_childId, "Child", MemberRole.Child, GuardianAccess.Supporter),
+      ],
+      []
+    ));
+    var contributionId = new ContributionId("completed-basic");
+    var goals = Goals();
+    var rewardId = new ShopRewardId("reserved-reward");
+    var economy = FamilyEconomy.Reconstitute(family, new FamilyEconomyState(
+      _familyId,
+      ContributionSettings.Default,
+      [
+        new MemberWalletState(_guardianId, 0, 0),
+        new MemberWalletState(_childId, 100, 80),
+      ],
+      [
+        new ContributionState(
+          contributionId,
+          "Completed basic",
+          ContributionKind.Basic,
+          new LadirchenAmount(1),
+          new Percentage(10),
+          _childId,
+          ContributionStatus.Approved,
+          new StarRating(1),
+          new ContributionRewardBreakdown(1, 0, 1),
+          new DateTimeOffset(2026, 9, 1, 10, 0, 0, TimeSpan.Zero),
+          []
+        ),
+      ],
+      [contributionId],
+      [],
+      [],
+      [],
+      goals,
+      [
+        new SavingsVoucherState(
+          new SavingGoalId("family-trip"),
+          20,
+          null,
+          [_childId, _guardianId],
+          [_childId],
+          null
+        ),
+        new SavingsVoucherState(
+          new SavingGoalId("guardian-private"),
+          5,
+          _guardianId,
+          [],
+          [],
+          null
+        ),
+      ],
+      [],
+      [],
+      [
+        new ShopRewardState(
+          rewardId,
+          "Reserved reward",
+          ShopRewardCategory.Gift,
+          new LadirchenAmount(80),
+          1,
+          true,
+          new AvailabilityWindow(null, null),
+          ShopRewardStatus.Requested,
+          false
+        ),
+      ],
+      [
+        new RedemptionRequestState(
+          new RedemptionRequestId("reserved-request"),
+          rewardId,
+          _childId,
+          new LadirchenAmount(80),
+          _now.AddDays(-1),
+          RedemptionStatus.Pending,
+          null
+        ),
+      ]
+    ));
+    var presentation = new FamilyEconomyPresentationState(
+      [new ContributionPresentationState(contributionId, "", "", false)],
+      goals.Select(goal => new SavingGoalPresentationState(goal.Id, $"{goal.Id.Value}-icon")),
+      [new ShopRewardPresentationState(rewardId, "", "", "")],
+      []
+    );
+    var progression = FamilyHouse.Reconstitute(
+      family,
+      new FamilyHouseState(
+        _familyId,
+        0,
+        0,
+        7,
+        new Percentage(8),
+        [new ParticipantProgressState(_childId, 0)],
+        []
+      )
+    );
+    var store = new TestTypedAggregateStore(new FixedTimeProvider(_now));
+    store.Seed(family, economy, presentation, progression);
+
+    return store;
+  }
+
+  private static SavingGoalState[] Goals()
+  {
+    var createdAt = new DateTimeOffset(2026, 10, 1, 10, 0, 0, TimeSpan.Zero);
+
+    return
+    [
+      Goal("bicycle", _childId, "Bicycle", 100, 50, GoalVisibility.Family, createdAt,
+        refundable: [new RefundableContributionState(_childId, 45)]),
+      Goal("child-private", _childId, "Private child goal", 10, 5, GoalVisibility.Private, createdAt),
+      Goal("guardian-private", _guardianId, "Private guardian goal", 5, 5, GoalVisibility.Private, createdAt),
+      Goal(
+        "family-cancellation",
+        null,
+        "Family cancellation",
+        100,
+        10,
+        GoalVisibility.Family,
+        createdAt,
+        [_childId, _guardianId],
+        new GoalCancellationRequestState(_childId, [_childId])
+      ),
+      Goal(
+        "family-trip",
+        null,
+        "Family trip",
+        20,
+        20,
+        GoalVisibility.Family,
+        createdAt,
+        [_childId, _guardianId]
+      ),
+    ];
+  }
+
+  private static SavingGoalState Goal(
+    string id,
+    FamilyMemberId? ownerId,
+    string title,
+    decimal target,
+    decimal saved,
+    GoalVisibility visibility,
+    DateTimeOffset createdAt,
+    FamilyMemberId[]? participants = null,
+    GoalCancellationRequestState? cancellation = null,
+    RefundableContributionState[]? refundable = null
+  )
+  {
+    var participantIds = participants ?? [];
+    var starterBonus = ownerId is null ? participantIds.Length * 5 : 5;
+
+    return new SavingGoalState(
+      new SavingGoalId(id),
+      ownerId,
+      title,
+      target,
+      visibility,
+      createdAt,
+      participantIds,
+      saved,
+      starterBonus,
+      0,
+      refundable ?? [],
+      cancellation,
+      false,
+      false,
+      null,
+      null
+    );
+  }
+
+  private static FamilyMemberState Member(
+    FamilyMemberId id,
+    string name,
+    MemberRole role,
+    GuardianAccess access
+  )
+  {
+    return new FamilyMemberState(
+      id,
+      name,
+      role,
+      access,
+      false,
+      null,
+      null,
+      role == MemberRole.Child
     );
   }
 }

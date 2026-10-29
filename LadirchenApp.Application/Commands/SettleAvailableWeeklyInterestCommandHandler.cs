@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Application.Queries;
 using LadirchenApp.Domain.Shared;
 
@@ -16,10 +17,10 @@ public sealed class SettleAvailableWeeklyInterestCommandHandler
 {
   private readonly ExecuteFamilyCommandHandler _familyCommands;
   private readonly GetWeeklyInterestSettlementPlanQueryHandler _planner;
-  private readonly IFamilyAggregateSnapshotRepository _repository;
+  private readonly IFamilyRepository _repository;
 
   public SettleAvailableWeeklyInterestCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
+    IFamilyRepository repository,
     GetWeeklyInterestSettlementPlanQueryHandler planner,
     ExecuteFamilyCommandHandler familyCommands
   )
@@ -39,7 +40,7 @@ public sealed class SettleAvailableWeeklyInterestCommandHandler
     var settledPeriods = 0;
     var deferredPeriods = 0;
     var failedFamilies = 0;
-    var familyIds = await _repository.ListFamilyIdsAsync(cancellationToken);
+    var familyIds = await _repository.ListIdsAsync(cancellationToken);
 
     foreach (var familyId in familyIds)
     {

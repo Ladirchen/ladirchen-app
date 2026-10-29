@@ -98,19 +98,19 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
       receipt.ResultJson = Serialize(result);
       receipt.CompletedAt = _timeProvider.GetUtcNow();
 
-      foreach (var snapshot in result.ChangedAggregates)
+      foreach (var change in result.ChangedAggregates)
       {
         _database.FamilyAggregateOutboxMessages.Add(
           new FamilyAggregateOutboxMessageEntity
           {
-            AggregateType = snapshot.AggregateType,
+            AggregateType = change.AggregateType,
             CommandId = command.CommandId,
-            FamilyId = snapshot.FamilyId.Value,
+            FamilyId = change.FamilyId.Value,
             MessageId = Guid.NewGuid(),
             OccurredAt = receipt.CompletedAt.Value,
-            Revision = snapshot.Revision,
-            UpdatedAt = snapshot.UpdatedAt,
-            UpdatedBy = snapshot.UpdatedBy.Value,
+            Revision = change.Revision,
+            UpdatedAt = change.UpdatedAt,
+            UpdatedBy = change.UpdatedBy.Value,
           }
         );
       }
@@ -196,14 +196,12 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
   {
     var stored = new StoredFamilyCommandResult(
       result.ChangedAggregates
-        .Select(snapshot => new StoredFamilyAggregateSnapshot(
-          snapshot.AggregateType,
-          snapshot.FamilyId.Value,
-          snapshot.Revision,
-          snapshot.SchemaVersion,
-          snapshot.State,
-          snapshot.UpdatedAt,
-          snapshot.UpdatedBy.Value
+        .Select(change => new StoredFamilyAggregateChange(
+          change.AggregateType,
+          change.FamilyId.Value,
+          change.Revision,
+          change.UpdatedAt,
+          change.UpdatedBy.Value
         ))
         .ToArray()
     );
@@ -215,19 +213,17 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
   {
     var stored = JsonSerializer.Deserialize<StoredFamilyCommandResult>(json)
       ?? throw new InvalidOperationException("The stored command result is invalid.");
-    IReadOnlyList<FamilyAggregateSnapshot> snapshots = stored.ChangedAggregates
-      .Select(snapshot => new FamilyAggregateSnapshot(
-        new FamilyId(snapshot.FamilyId),
-        snapshot.AggregateType,
-        snapshot.SchemaVersion,
-        snapshot.Revision,
-        snapshot.State.Clone(),
-        new FamilyMemberId(snapshot.UpdatedBy),
-        snapshot.UpdatedAt
+    IReadOnlyList<FamilyAggregateChange> changes = stored.ChangedAggregates
+      .Select(change => new FamilyAggregateChange(
+        new FamilyId(change.FamilyId),
+        change.AggregateType,
+        change.Revision,
+        new FamilyMemberId(change.UpdatedBy),
+        change.UpdatedAt
       ))
       .ToArray();
 
-    return new FamilyCommandResult(snapshots);
+    return new FamilyCommandResult(changes);
   }
 
   private static bool IsUniqueConstraintViolation(DbUpdateException exception)
@@ -248,15 +244,13 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
   }
 
   private sealed record StoredFamilyCommandResult(
-    IReadOnlyList<StoredFamilyAggregateSnapshot> ChangedAggregates
+    IReadOnlyList<StoredFamilyAggregateChange> ChangedAggregates
   );
 
-  private sealed record StoredFamilyAggregateSnapshot(
+  private sealed record StoredFamilyAggregateChange(
     string AggregateType,
     Guid FamilyId,
     long Revision,
-    int SchemaVersion,
-    JsonElement State,
     DateTimeOffset UpdatedAt,
     string UpdatedBy
   );

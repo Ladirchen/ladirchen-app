@@ -4,8 +4,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Webhost.Tests.Application.Commands;
@@ -16,62 +19,32 @@ public sealed class ProgressionAndContributionCommandHandlerTests
   private static readonly FamilyMemberId _guardianId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
   private static readonly FamilyMemberId _supporterId = new("supporter");
+  private static readonly DateTimeOffset _now = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
   [Test]
-  public async Task RefreshWithAnUncompletedAssignedBasicContributionUsesIdleLadiInterest()
+  public async Task RefreshKeepsBusinessStateAndGuardsItsDecisionInputs()
   {
-    var repository = CreateRepository(
-      [
-        Contribution(
-          "daily-basic",
-          "basic",
-          _childId,
-          Array.Empty<string>()
-        ),
-      ]
-    );
-    var handler = CreateHandler(repository);
+    var store = CreateStore(Contribution("daily-basic", ContributionKind.Basic, _childId));
+    var handler = store.CreateCommandHandler();
 
-    await ExecuteAsync(handler, _guardianId, "progression.refresh", new
-    {
-    });
+    await ExecuteAsync(handler, _guardianId, "progression.refresh", new { });
 
-    var progression = repository.Required(_familyId, "family-progression").State;
-    var childProgression = progression
-      .GetProperty("memberProgressions")
-      .GetProperty(_childId.Value);
-    await Assert.That(childProgression.GetProperty("completionPercent").GetDecimal())
-      .IsEqualTo(0);
-    await Assert.That(childProgression.GetProperty("participationValue").GetDecimal())
-      .IsEqualTo(1);
-    await Assert.That(childProgression.GetProperty("ladiStageId").GetString())
-      .IsEqualTo("idle-ladi");
-    await Assert.That(childProgression.GetProperty("ladiStagePosition").GetInt32())
-      .IsEqualTo(1);
-    await Assert.That(childProgression.GetProperty("savingsInterestRate").GetDecimal())
-      .IsEqualTo(1.33m);
-    await Assert.That(progression.GetProperty("maximumSavingsInterestRate").GetDecimal())
-      .IsEqualTo(8);
-    await Assert.That(repository.Required(_familyId, "family-profile").Revision).IsEqualTo(1);
-    await Assert.That(repository.Required(_familyId, "contributions").Revision).IsEqualTo(1);
-    await Assert.That(repository.LastRevisionGuards.Select(item => item.AggregateType))
-      .IsEquivalentTo(["contributions", "family-profile"]);
+    var progression = store.RequiredProgression();
+    await Assert.That(progression.MaximumSavingsInterestRate.Value).IsEqualTo(8);
+    await Assert.That(progression.StoredLevel).IsEqualTo(0);
+    await Assert.That(progression.CompletedWeeklyStreak).IsEqualTo(0);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyProgression)).IsEqualTo(2);
+    await Assert.That(store.Revision(TypedAggregateKind.Family)).IsEqualTo(1);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(1);
+    await Assert.That(store.LastRevisionGuards.Select(item => item.AggregateKind))
+      .IsEquivalentTo([TypedAggregateKind.Family, TypedAggregateKind.FamilyEconomy]);
   }
 
   [Test]
   public async Task SetPartnersPersistsAnActiveGuardianAndChildTeamThroughTheDomainModel()
   {
-    var repository = CreateRepository(
-      [
-        Contribution(
-          "family-project",
-          "extra",
-          _guardianId,
-          Array.Empty<string>()
-        ),
-      ]
-    );
-    var handler = CreateHandler(repository);
+    var store = CreateStore(Contribution("family-project", ContributionKind.Extra, _guardianId));
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "contributions.set-partners", new
     {
@@ -79,31 +52,21 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       partnerIds = new[] { _childId.Value },
     });
 
-    var contribution = repository.Required(_familyId, "contributions")
-      .State
-      .GetProperty("contributions")
-      .EnumerateArray()
-      .Single();
-    var partnerIds = contribution.GetProperty("invitedChildIds")
-      .EnumerateArray()
-      .Select(item => item.GetString() ?? throw new InvalidOperationException("A partner ID is required."))
-      .ToArray();
-    await Assert.That(contribution.GetProperty("assigneeId").GetString())
-      .IsEqualTo(_guardianId.Value);
-    await Assert.That(partnerIds).IsEquivalentTo([_childId.Value]);
-    await Assert.That(contribution.GetProperty("description").GetString())
-      .IsEqualTo("Stored presentation");
-    await Assert.That(repository.Required(_familyId, "family-progression").Revision)
-      .IsEqualTo(2);
-    await Assert.That(repository.LastRevisionGuards.Select(item => item.AggregateType))
-      .IsEquivalentTo(["family-profile"]);
+    var contribution = store.RequiredEconomy().Contributions.Single();
+    var presentation = store.EconomyPresentation.Contributions.Single();
+    await Assert.That(contribution.AssigneeId).IsEqualTo(_guardianId);
+    await Assert.That(contribution.InvitedPartners).IsEquivalentTo([_childId]);
+    await Assert.That(presentation.Description).IsEqualTo("Stored presentation");
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(2);
+    await Assert.That(store.LastRevisionGuards.Select(item => item.AggregateKind))
+      .IsEquivalentTo([TypedAggregateKind.Family]);
   }
 
   [Test]
   public async Task SupporterCannotActAsAChildInsideTheCommandUnitOfWork()
   {
-    var repository = CreateRepository([]);
-    var handler = CreateHandler(repository);
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
 
     await Assert.That(async () =>
       await ExecuteAsync(
@@ -114,65 +77,33 @@ public sealed class ProgressionAndContributionCommandHandlerTests
         _supporterId
       )
     ).Throws<DomainRuleException>();
-    await Assert.That(repository.Required(_familyId, "family-profile").Revision).IsEqualTo(1);
-    await Assert.That(repository.Required(_familyId, "family-progression").Revision).IsEqualTo(1);
+    await Assert.That(store.Revision(TypedAggregateKind.Family)).IsEqualTo(1);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyProgression)).IsEqualTo(1);
   }
 
   [Test]
   public async Task AClosedFamilyWeekCannotBeClosedAgain()
   {
-    var repository = CreateRepository(
-      [
-        new
-        {
-          id = "approved-basic",
-          title = "Approved contribution",
-          description = "Stored presentation",
-          icon = "approved-icon",
-          kind = "basic",
-          status = "approved",
-          reward = 10,
-          energy = 100,
-          assigneeId = _childId.Value,
-          invitedChildIds = Array.Empty<string>(),
-          stars = 5,
-          earnedReward = 10,
-          earnedRatingBonus = 1,
-          earnedPromotionMultiplier = 1,
-          approvedAt = "2026-10-12T08:00:00Z",
-        },
-      ]
-    );
-    var handler = CreateHandler(repository);
+    var store = CreateStore(ApprovedContribution());
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "progression.complete-week", new { });
-    var revisionAfterFirstClosure = repository.Required(_familyId, "family-progression").Revision;
+    var revisionAfterFirstClosure = store.Revision(TypedAggregateKind.FamilyProgression);
     await Assert.That(async () =>
       await ExecuteAsync(handler, _guardianId, "progression.complete-week", new { })
     ).Throws<DomainRuleException>();
 
-    var progression = repository.Required(_familyId, "family-progression");
-    await Assert.That(progression.Revision).IsEqualTo(revisionAfterFirstClosure);
-    await Assert.That(progression.State.GetProperty("closedWeekOutcomes").EnumerateObject().Count())
-      .IsEqualTo(1);
-    await Assert.That(progression.State.GetProperty("weeklyEvaluations").EnumerateObject().Count())
-      .IsEqualTo(1);
+    var progression = store.RequiredProgression();
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyProgression))
+      .IsEqualTo(revisionAfterFirstClosure);
+    await Assert.That(progression.ClosedWeeks.Count).IsEqualTo(1);
   }
 
   [Test]
   public async Task ConfiguredPerfectRatingBonusIsRestoredAndUsedByContributionApproval()
   {
-    var repository = CreateRepository(
-      [
-        Contribution(
-          "daily-basic",
-          "basic",
-          _childId,
-          Array.Empty<string>()
-        ),
-      ]
-    );
-    var handler = CreateHandler(repository);
+    var store = CreateStore(Contribution("daily-basic", ContributionKind.Basic, _childId));
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "contributions.set-perfect-rating-bonus", new
     {
@@ -188,43 +119,28 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       stars = 5,
     });
 
-    var contributions = repository.Required(_familyId, "contributions").State;
-    var savings = repository.Required(_familyId, "savings").State;
-    await Assert.That(contributions.GetProperty("perfectRatingBonusPercent").GetDecimal())
-      .IsEqualTo(25);
-    await Assert.That(savings.GetProperty("balances").GetProperty(_childId.Value).GetDecimal())
-      .IsEqualTo(13);
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.ContributionSettings.PerfectRatingBonus.Value).IsEqualTo(25);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(13);
   }
 
   [Test]
-  public async Task DeletedContributionIdentityRemainsUsedAfterTheNextReload()
+  public async Task DeletedContributionIdentityAndPresentationStayDeletedAfterReload()
   {
-    var repository = CreateRepository(
-      [
-        Contribution(
-          "daily-basic",
-          "basic",
-          _childId,
-          Array.Empty<string>()
-        ),
-      ]
-    );
-    var handler = CreateHandler(repository);
+    var store = CreateStore(Contribution("daily-basic", ContributionKind.Basic, _childId));
+    var handler = store.CreateCommandHandler();
 
     await ExecuteAsync(handler, _guardianId, "contributions.delete", new
     {
       id = "daily-basic",
     });
 
-    var contributionsAfterDelete = repository.Required(_familyId, "contributions");
-    var usedIds = contributionsAfterDelete.State
-      .GetProperty("usedContributionIds")
-      .EnumerateArray()
-      .Select(item => item.GetString())
-      .ToArray();
-    await Assert.That(contributionsAfterDelete.SchemaVersion)
-      .IsEqualTo(FamilyAggregateSchema.GetVersion("contributions"));
-    await Assert.That(usedIds).Contains("daily-basic");
+    var economyAfterDelete = store.RequiredEconomy();
+    await Assert.That(economyAfterDelete.UsedContributionIds)
+      .Contains(new ContributionId("daily-basic"));
+    await Assert.That(economyAfterDelete.Contributions).IsEmpty();
+    await Assert.That(store.EconomyPresentation.Contributions).IsEmpty();
+    var revisionAfterDelete = store.Revision(TypedAggregateKind.FamilyEconomy);
 
     await Assert.That(async () =>
       await ExecuteAsync(handler, _guardianId, "contributions.add", new
@@ -240,37 +156,20 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       })
     ).Throws<DomainRuleException>();
 
-    var contributionsAfterRetry = repository.Required(_familyId, "contributions");
-    await Assert.That(contributionsAfterRetry.Revision).IsEqualTo(contributionsAfterDelete.Revision);
-    await Assert.That(contributionsAfterRetry.State.GetProperty("contributions").GetArrayLength())
-      .IsEqualTo(0);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy))
+      .IsEqualTo(revisionAfterDelete);
+    await Assert.That(store.RequiredEconomy().Contributions).IsEmpty();
   }
 
   [Test]
-  public async Task ContributionApprovalRestoresAppliedOperationsFromSavings()
+  public async Task ContributionApprovalRestoresAppliedOperationsFromTheEconomy()
   {
     var replayedCommandId = Guid.Parse("cc34726e-dda7-4427-9c1f-2461b0cdb7bf");
-    var repository = CreateRepository(
-      [
-        Contribution(
-          "daily-basic",
-          "basic",
-          _childId,
-          Array.Empty<string>()
-        ),
-      ]
+    var store = CreateStore(
+      [Contribution("daily-basic", ContributionKind.Basic, _childId)],
+      [new TransactionId(replayedCommandId.ToString("N"))]
     );
-    repository.Seed(Snapshot("savings", 3, new
-    {
-      balances = new
-      {
-        guardian = 0,
-        child = 0,
-      },
-      appliedOperationIds = new[] { replayedCommandId.ToString("N") },
-      ledger = Array.Empty<object>(),
-    }));
-    var handler = CreateHandler(repository);
+    var handler = store.CreateCommandHandler();
     await ExecuteAsync(handler, _childId, "contributions.submit", new
     {
       id = "daily-basic",
@@ -284,146 +183,118 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       }, commandId: replayedCommandId)
     ).Throws<DomainRuleException>();
 
-    var contribution = repository.Required(_familyId, "contributions")
-      .State
-      .GetProperty("contributions")
-      .EnumerateArray()
-      .Single();
-    await Assert.That(contribution.GetProperty("status").GetString()).IsEqualTo("pending");
-    await Assert.That(
-      repository.Required(_familyId, "savings")
-        .State
-        .GetProperty("balances")
-        .GetProperty(_childId.Value)
-        .GetDecimal()
-    ).IsEqualTo(0);
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.Contributions.Single().Status)
+      .IsEqualTo(ContributionStatus.Pending);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(0);
   }
 
-  private static ExecuteFamilyCommandHandler CreateHandler(
-    TestFamilyAggregateSnapshotRepository repository
+  private static TestTypedAggregateStore CreateStore(params ContributionSeed[] contributions)
+  {
+    return CreateStore(contributions, []);
+  }
+
+  private static TestTypedAggregateStore CreateStore(
+    ContributionSeed[] contributions,
+    TransactionId[] appliedOperations
   )
   {
-    return new ExecuteFamilyCommandHandler(
-      repository,
-      new ImmediateFamilyCommandExecutionCoordinator(),
-      new FixedTimeProvider(new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero))
+    var family = new Family(_familyId, _guardianId, "Guardian", new IanaTimeZone("Europe/Zurich"));
+    family.AddMember(
+      _guardianId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    family.AddMember(
+      _guardianId,
+      _supporterId,
+      "Supporter",
+      MemberRole.Guardian,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    var economy = new FamilyEconomy(family);
+
+    foreach (var contribution in contributions)
+    {
+      economy.RestoreContribution(
+        contribution.Id,
+        new ContributionDefinition(
+          "Family contribution",
+          contribution.Kind,
+          new LadirchenAmount(10),
+          new Percentage(100),
+          contribution.AssigneeId
+        ),
+        contribution.Status,
+        contribution.Rating,
+        contribution.EarnedReward,
+        contribution.ApprovedAt,
+        contribution.PartnerIds
+      );
+    }
+
+    foreach (var operationId in appliedOperations)
+    {
+      economy.RestoreAppliedOperation(operationId);
+    }
+
+    var presentation = new FamilyEconomyPresentationState(
+      contributions.Select(item => new ContributionPresentationState(
+        item.Id,
+        "Stored presentation",
+        "team-icon",
+        false
+      )),
+      [],
+      [],
+      []
+    );
+    var store = new TestTypedAggregateStore(new FixedTimeProvider(_now));
+    store.Seed(
+      family,
+      economy,
+      presentation,
+      FamilyHouse.CreateInitial(family)
+    );
+
+    return store;
+  }
+
+  private static ContributionSeed Contribution(
+    string id,
+    ContributionKind kind,
+    FamilyMemberId assigneeId
+  )
+  {
+    return new ContributionSeed(
+      new ContributionId(id),
+      kind,
+      assigneeId,
+      [],
+      ContributionStatus.Available,
+      null,
+      null,
+      null
     );
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository(
-    object[] contributions
-  )
+  private static ContributionSeed ApprovedContribution()
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    repository.Seed(Snapshot("family-profile", 2, new
-    {
-      timeZone = "Europe/Zurich",
-      pets = Array.Empty<object>(),
-      members = new object[]
-      {
-        new
-        {
-          id = _guardianId.Value,
-          name = "Guardian",
-          role = "guardian",
-          guardianAccess = "admin",
-          invitationPending = false,
-          participatesInWeeklyGoal = false,
-          weeklyStreak = 0,
-        },
-        new
-        {
-          id = _childId.Value,
-          name = "Child",
-          role = "child",
-          invitationPending = false,
-          participatesInWeeklyGoal = true,
-          weeklyStreak = 0,
-        },
-        new
-        {
-          id = _supporterId.Value,
-          name = "Supporter",
-          role = "guardian",
-          guardianAccess = "supporter",
-          invitationPending = false,
-          participatesInWeeklyGoal = false,
-          weeklyStreak = 0,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("contributions", 1, new
-    {
-      contributions,
-      perfectRatingBonusPercent = 5,
-      promotions = Array.Empty<object>(),
-    }));
-    repository.Seed(Snapshot("family-progression", 4, new
-    {
-      completedWeeklyStreak = 0,
-      closedWeekOutcomes = new
-      {
-      },
-      currentWeekTarget = 7,
-      familyEnergy = 0,
-      houseLevel = 0,
-      houseVisualLevel = 0,
-      maximumSavingsInterestRate = 8,
-      memberProgressions = new
-      {
-      },
-      weeklyEvaluations = new
-      {
-      },
-    }));
-    repository.Seed(Snapshot("savings", 2, new
-    {
-      balances = new
-      {
-        guardian = 0,
-        child = 0,
-      },
-    }));
-
-    return repository;
-  }
-
-  private static object Contribution(
-    string id,
-    string kind,
-    FamilyMemberId assigneeId,
-    string[] partnerIds
-  )
-  {
-    return new
-    {
-      id,
-      title = "Family contribution",
-      description = "Stored presentation",
-      icon = "team-icon",
-      kind,
-      status = "available",
-      reward = 10,
-      energy = 100,
-      assigneeId = assigneeId.Value,
-      invitedChildIds = partnerIds,
-    };
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(
-    string aggregateType,
-    int schemaVersion,
-    object state
-  )
-  {
-    return new FamilyAggregateSnapshot(
-      _familyId,
-      aggregateType,
-      schemaVersion,
-      1,
-      JsonSerializer.SerializeToElement(state),
-      _guardianId,
-      DateTimeOffset.UnixEpoch
+    return new ContributionSeed(
+      new ContributionId("approved-basic"),
+      ContributionKind.Basic,
+      _childId,
+      [],
+      ContributionStatus.Approved,
+      new StarRating(5),
+      new ContributionRewardBreakdown(10, 1, 1),
+      new DateTimeOffset(2026, 10, 12, 8, 0, 0, TimeSpan.Zero)
     );
   }
 
@@ -448,4 +319,15 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       CancellationToken.None
     );
   }
+
+  private sealed record ContributionSeed(
+    ContributionId Id,
+    ContributionKind Kind,
+    FamilyMemberId AssigneeId,
+    FamilyMemberId[] PartnerIds,
+    ContributionStatus Status,
+    StarRating? Rating,
+    ContributionRewardBreakdown? EarnedReward,
+    DateTimeOffset? ApprovedAt
+  );
 }

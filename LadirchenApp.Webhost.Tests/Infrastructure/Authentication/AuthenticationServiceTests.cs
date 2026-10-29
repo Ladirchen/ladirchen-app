@@ -4,14 +4,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Infrastructure.Persistence;
 using LadirchenApp.Webhost.Models;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Testcontainers.PostgreSql;
 
@@ -26,13 +24,15 @@ public sealed class AuthenticationServiceTests
     var options = CreateOptions(postgres.GetConnectionString());
     await using var database = new LadirchenDbContext(options);
     await database.Database.MigrateAsync();
-    var repository = new DatabaseFamilyAggregateSnapshotRepository(database, TimeProvider.System);
+    var unitOfWork = new DatabaseTypedAggregateUnitOfWork(database, TimeProvider.System);
+    var familyRepository = new DatabaseFamilyRepository(database, unitOfWork);
+    var economyRepository = new DatabaseFamilyEconomyRepository(database, unitOfWork);
+    var progressionRepository = new DatabaseFamilyProgressionRepository(database, unitOfWork);
+    var houseRepository = new DatabaseHouseCustomizationRepository(database, unitOfWork);
     var service = new AuthenticationService(
       database,
-      repository,
-      new NoOpFamilyAggregateChangePublisher(),
-      TimeProvider.System,
-      NullLogger<AuthenticationService>.Instance
+      unitOfWork,
+      TimeProvider.System
     );
     var familyId = Guid.NewGuid();
     const string memberId = "guardian-1";
@@ -47,19 +47,22 @@ public sealed class AuthenticationServiceTests
     );
 
     var registeredSession = await service.RegisterAsync(registration, CancellationToken.None);
-    var initializedSnapshots = await repository.GetManyAsync(
-      new FamilyId(familyId),
-      [
-        "contributions",
-        "family-profile",
-        "family-progression",
-        "home-customization",
-        "reward-shop",
-        "savings",
-      ],
+    var typedFamilyId = new FamilyId(familyId);
+    var family = await familyRepository.LoadAsync(typedFamilyId, CancellationToken.None)
+      ?? throw new InvalidOperationException();
+    var economy = await economyRepository.LoadAsync(family.Root, CancellationToken.None)
+      ?? throw new InvalidOperationException();
+    var progression = await progressionRepository.LoadAsync(family.Root, CancellationToken.None)
+      ?? throw new InvalidOperationException();
+    var house = await houseRepository.LoadAsync(
+      family.Root,
+      progression.Root.StoredLevel,
       CancellationToken.None
-    );
+    ) ?? throw new InvalidOperationException();
     var account = await database.AuthenticationAccounts.AsNoTracking().SingleAsync();
+    var outboxMessages = await database.FamilyAggregateOutboxMessages
+      .AsNoTracking()
+      .ToArrayAsync();
     var rejectedSession = await service.AuthenticateAsync(
       new AuthenticateAccountRequest("incorrect password", "alex"),
       CancellationToken.None
@@ -71,16 +74,21 @@ public sealed class AuthenticationServiceTests
 
     await Assert.That(registeredSession.FamilyId).IsEqualTo(familyId);
     await Assert.That(registeredSession.MemberId).IsEqualTo(memberId);
-    await Assert.That(initializedSnapshots.Count).IsEqualTo(6);
-    await Assert.That(initializedSnapshots["contributions"].SchemaVersion).IsEqualTo(2);
-    await Assert.That(initializedSnapshots["savings"].SchemaVersion).IsEqualTo(4);
-    await Assert.That(initializedSnapshots["family-progression"].SchemaVersion).IsEqualTo(4);
-
-    foreach (var snapshot in initializedSnapshots.Values)
-    {
-      await Assert.That(snapshot.SchemaVersion)
-        .IsEqualTo(FamilyAggregateSchema.GetVersion(snapshot.AggregateType));
-    }
+    await Assert.That(family.Revision).IsEqualTo(1);
+    await Assert.That(economy.Revision).IsEqualTo(1);
+    await Assert.That(progression.Revision).IsEqualTo(1);
+    await Assert.That(house.Revision).IsEqualTo(1);
+    await Assert.That(outboxMessages.Select(item => item.AggregateType)).IsEquivalentTo(
+      [
+        "contributions",
+        "family-profile",
+        "family-progression",
+        "home-customization",
+        "reward-shop",
+        "savings",
+      ]
+    );
+    await Assert.That(outboxMessages.All(item => item.CommandId is null)).IsTrue();
 
     await Assert.That(account.Username).IsEqualTo("alex");
     await Assert.That(account.PasswordHash.SequenceEqual(Encoding.UTF8.GetBytes(password))).IsFalse();

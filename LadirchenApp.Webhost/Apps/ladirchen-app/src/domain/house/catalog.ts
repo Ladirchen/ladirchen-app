@@ -456,7 +456,7 @@ export function createHouseAccessories(
   states: ReadonlyArray<Pick<HouseAccessory, "equipped" | "id" | "owned">> = [],
   catalogEntries: ReadonlyArray<{
     readonly id: string;
-    readonly minimumHouseLevel?: number;
+    readonly minimumHouseLevel?: HouseStageLevel;
     readonly price?: number;
     readonly purchasableByMemberIds?: ReadonlyArray<string>;
   }> = [],
@@ -471,7 +471,7 @@ export function createHouseAccessories(
     return {
       ...definition,
       equipped: state?.equipped ?? false,
-      minimumHouseLevel: catalogEntry?.minimumHouseLevel as HouseStageLevel | undefined,
+      minimumHouseLevel: catalogEntry?.minimumHouseLevel,
       owned: state?.owned ?? false,
       price: catalogEntry?.price ?? 0,
       purchasableByMemberIds: catalogEntry?.purchasableByMemberIds ?? [],

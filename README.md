@@ -75,7 +75,7 @@ Failed tests still fail the job and prevent build/release publication.
 
 ## Run
 
-The web host stores authentication accounts and family aggregate snapshots in
+The web host stores authentication accounts and normalized, typed family aggregate state in
 PostgreSQL. For local development, create the `ladirchen` database and user
 configured in `LadirchenApp.Webhost/appsettings.json`, or override the connection:
 

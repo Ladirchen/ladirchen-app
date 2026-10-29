@@ -1,36 +1,46 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
+internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
+  private readonly IFamilyEconomyRepository _economyRepository;
+  private readonly IFamilyProgressionRepository _progressionRepository;
+
   public SavingsFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
+    IFamilyEconomyRepository economyRepository,
+    IFamilyProgressionRepository progressionRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
     TimeProvider timeProvider
   )
-    : base(repository, timeProvider, "savings.")
+    : base(unitOfWork, timeProvider, "savings.")
   {
+    _economyRepository = economyRepository ?? throw new ArgumentNullException(nameof(economyRepository));
+    _progressionRepository = progressionRepository
+      ?? throw new ArgumentNullException(nameof(progressionRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
     FamilyCommand command,
-    FamilyAggregateSnapshot profileSnapshot,
-    JsonObject profileState,
-    JsonObject payload,
+    LoadedAggregate<Family> family,
     CancellationToken cancellationToken
   )
   {
+    ArgumentNullException.ThrowIfNull(command);
+    ArgumentNullException.ThrowIfNull(family);
+
     if (
       command.AuthenticatedMemberId is not null
       && command.AuthenticatedMemberId != command.ActorId
@@ -42,58 +52,85 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
       );
     }
 
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
-    var savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
-    var savingsState = RequireObject(savings.State);
-    var rewardShop = await RequireSnapshotAsync(command.FamilyId, "reward-shop", cancellationToken);
-    var rewardShopState = RequireObject(rewardShop.State);
-    var economy = FamilyEconomySnapshotMapper.RehydrateSavings(family, savingsState, rewardShopState);
-    var now = _timeProvider.GetUtcNow();
-    var operationId = new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture));
-    SavingGoalPresentation? goalPresentation = null;
-    GuardianGiftPresentation? giftPresentation = null;
-    FamilyAggregateSnapshot? progression = null;
+    var payload = RequiredObject(command.Payload);
+    var now = TimeProvider.GetUtcNow();
+
+    if (command.CommandType is "savings.set-currency" or "savings.set-exchange-rate")
+    {
+      return await UpdateFamilySettingsAsync(
+        command,
+        family,
+        payload,
+        now,
+        cancellationToken
+      );
+    }
+
+    var loadedEconomy = await _economyRepository.LoadAsync(family.Root, cancellationToken)
+      ?? throw new FamilyCommandException("The family economy has not been initialized.");
+    var economy = loadedEconomy.Root;
+    var operationId = OperationId(command);
+    SavingGoalPresentationState? goalPresentation = null;
+    GuardianGiftPresentationState? giftPresentation = null;
+    LoadedAggregate<FamilyHouse>? progression = null;
 
     switch (command.CommandType)
     {
-      case "savings.set-currency":
-        family.UpdateSettings(
-          command.ActorId,
-          family.TimeZone,
-          ParseSavingsCurrency(RequiredString(payload, "currency")),
-          family.ExchangeRate,
-          now
-        );
-        break;
-      case "savings.set-exchange-rate":
-        family.UpdateSettings(
-          command.ActorId,
-          family.TimeZone,
-          family.Currency,
-          ParseSavingsExchangeRate(RequiredDecimal(payload, "rate")),
-          now
-        );
-        break;
       case "savings.toggle-cheer":
         economy.ToggleGoalCheer(command.ActorId, GoalId(payload), now);
         break;
       case "savings.add-goal":
-        goalPresentation = AddSavingsGoal(economy, family, command.ActorId, payload, operationId, now);
+        goalPresentation = AddSavingsGoal(
+          economy,
+          family.Root,
+          command.ActorId,
+          payload,
+          operationId,
+          now
+        );
         break;
       case "savings.update-goal":
         goalPresentation = UpdateSavingsGoal(economy, command.ActorId, payload, now);
         break;
       case "savings.support-goal":
-        giftPresentation = SupportSavingsGoal(economy, family, command.ActorId, payload, operationId, now);
+        giftPresentation = SupportSavingsGoal(
+          economy,
+          family.Root,
+          command.ActorId,
+          payload,
+          operationId,
+          now
+        );
         break;
       case "savings.gift-to-goal":
-        giftPresentation = GiftToSavingsGoal(economy, family, command.ActorId, payload, operationId, now);
+        giftPresentation = GiftToSavingsGoal(
+          economy,
+          family.Root,
+          command.ActorId,
+          payload,
+          operationId,
+          now
+        );
         break;
       case "savings.gift-to-member":
-        giftPresentation = GiftToFamilyMember(economy, family, command.ActorId, payload, operationId, now);
+        giftPresentation = GiftToFamilyMember(
+          economy,
+          family.Root,
+          command.ActorId,
+          payload,
+          operationId,
+          now
+        );
         break;
       case "savings.special-gift":
-        giftPresentation = GiveSpecialSavingsGift(economy, family, command.ActorId, payload, operationId, now);
+        giftPresentation = GiveSpecialSavingsGift(
+          economy,
+          family.Root,
+          command.ActorId,
+          payload,
+          operationId,
+          now
+        );
         break;
       case "savings.consume-guardian-gift":
         economy.ConsumeGuardianGift(command.ActorId, GiftId(payload));
@@ -140,7 +177,7 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
       case "savings.settle-weekly-interest":
         progression = await SettleWeeklyInterestAsync(
           command,
-          family,
+          family.Root,
           economy,
           payload,
           operationId,
@@ -150,7 +187,7 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
 
         if (progression is null)
         {
-          return new FamilyCommandResult([]);
+          return new FamilyCommandResult(Array.Empty<FamilyAggregateChange>());
         }
 
         break;
@@ -158,38 +195,96 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
         throw new FamilyCommandException("The savings command is not supported.");
     }
 
-    var updatedState = FamilyEconomySnapshotMapper.WriteSavings(
-      savingsState,
-      family,
+    var presentation = UpdatePresentation(
+      loadedEconomy.Presentation,
       economy,
       goalPresentation,
       giftPresentation
     );
-    var guards = new List<FamilyAggregateRevisionGuard>
-    {
-      FamilyAggregateRevisionGuard.FromSnapshot(profileSnapshot),
-      FamilyAggregateRevisionGuard.FromSnapshot(rewardShop),
-    };
-
-    if (progression is not null)
-    {
-      guards.Add(FamilyAggregateRevisionGuard.FromSnapshot(progression));
-    }
-
-    var changed = await _repository.SaveBatchAsync(
-      [CreateSave(savings, updatedState, command.ActorId)],
-      guards,
+    var guards = progression is null
+      ? new[]
+      {
+        new TypedAggregateRevisionGuard(TypedAggregateKind.Family, family.Revision),
+      }
+      :
+      [
+        new TypedAggregateRevisionGuard(TypedAggregateKind.Family, family.Revision),
+        new TypedAggregateRevisionGuard(
+          TypedAggregateKind.FamilyProgression,
+          progression.Revision
+        ),
+      ];
+    var saved = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        command.FamilyId,
+        command.ActorId,
+        familyEconomy: new PendingFamilyEconomySave(
+          economy,
+          presentation,
+          loadedEconomy.Revision
+        ),
+        revisionGuards: guards
+      ),
       cancellationToken
     );
+    var changedEconomy = saved.FamilyEconomy
+      ?? throw new InvalidOperationException("The family economy was not saved.");
 
-    return new FamilyCommandResult(changed);
+    return EconomyResult(command.FamilyId, changedEconomy);
   }
 
-  private static SavingGoalPresentation AddSavingsGoal(
+  private async Task<FamilyCommandResult> UpdateFamilySettingsAsync(
+    FamilyCommand command,
+    LoadedAggregate<Family> family,
+    JsonElement payload,
+    DateTimeOffset now,
+    CancellationToken cancellationToken
+  )
+  {
+    if (command.CommandType == "savings.set-currency")
+    {
+      family.Root.UpdateSettings(
+        command.ActorId,
+        family.Root.TimeZone,
+        ParseSavingsCurrency(RequiredString(payload, "currency")),
+        family.Root.ExchangeRate,
+        now
+      );
+    }
+    else
+    {
+      family.Root.UpdateSettings(
+        command.ActorId,
+        family.Root.TimeZone,
+        family.Root.Currency,
+        ParseSavingsExchangeRate(RequiredDecimal(payload, "rate")),
+        now
+      );
+    }
+
+    var saved = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        command.FamilyId,
+        command.ActorId,
+        family: new PendingFamilySave(family.Root, family.Revision)
+      ),
+      cancellationToken
+    );
+    var changedFamily = saved.Family
+      ?? throw new InvalidOperationException("The family was not saved.");
+
+    return new FamilyCommandResult(
+    [
+      Change(command.FamilyId, "family-profile", changedFamily.Revision, changedFamily.Audit),
+      Change(command.FamilyId, "savings", changedFamily.Revision, changedFamily.Audit),
+    ]);
+  }
+
+  private static SavingGoalPresentationState AddSavingsGoal(
     FamilyEconomy economy,
     Family family,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now
   )
@@ -209,20 +304,22 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
         owner,
         RequiredString(payload, "title"),
         new LadirchenAmount(RequiredDecimal(payload, "target")),
-        owner.IsFamily ? GoalVisibility.Family : ParseGoalVisibility(RequiredString(payload, "visibility")),
+        owner.IsFamily
+          ? GoalVisibility.Family
+          : ParseGoalVisibility(RequiredString(payload, "visibility")),
         participants
       ),
       operationId,
       now
     );
 
-    return new SavingGoalPresentation(id, RequiredString(payload, "icon"));
+    return new SavingGoalPresentationState(id, RequiredString(payload, "icon"));
   }
 
-  private static SavingGoalPresentation UpdateSavingsGoal(
+  private static SavingGoalPresentationState UpdateSavingsGoal(
     FamilyEconomy economy,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     DateTimeOffset now
   )
   {
@@ -239,14 +336,14 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
       now
     );
 
-    return new SavingGoalPresentation(id, RequiredString(payload, "icon"));
+    return new SavingGoalPresentationState(id, RequiredString(payload, "icon"));
   }
 
-  private static GuardianGiftPresentation? SupportSavingsGoal(
+  private static GuardianGiftPresentationState? SupportSavingsGoal(
     FamilyEconomy economy,
     Family family,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now
   )
@@ -264,14 +361,18 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
 
     return giftId is null
       ? null
-      : new GuardianGiftPresentation(giftId, family.ActiveMember(actorId).Name, goal.Title);
+      : new GuardianGiftPresentationState(
+        giftId,
+        family.ActiveMember(actorId).Name,
+        goal.Title
+      );
   }
 
-  private static GuardianGiftPresentation? GiftToSavingsGoal(
+  private static GuardianGiftPresentationState? GiftToSavingsGoal(
     FamilyEconomy economy,
     Family family,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now
   )
@@ -289,14 +390,18 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
 
     return giftId is null
       ? null
-      : new GuardianGiftPresentation(giftId, family.ActiveMember(actorId).Name, goal.Title);
+      : new GuardianGiftPresentationState(
+        giftId,
+        family.ActiveMember(actorId).Name,
+        goal.Title
+      );
   }
 
-  private static GuardianGiftPresentation GiftToFamilyMember(
+  private static GuardianGiftPresentationState GiftToFamilyMember(
     FamilyEconomy economy,
     Family family,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now
   )
@@ -311,14 +416,18 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
       giftId
     );
 
-    return new GuardianGiftPresentation(giftId, family.ActiveMember(actorId).Name, string.Empty);
+    return new GuardianGiftPresentationState(
+      giftId,
+      family.ActiveMember(actorId).Name,
+      string.Empty
+    );
   }
 
-  private static GuardianGiftPresentation GiveSpecialSavingsGift(
+  private static GuardianGiftPresentationState GiveSpecialSavingsGift(
     FamilyEconomy economy,
     Family family,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now
   )
@@ -335,35 +444,41 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
       giftId
     );
 
-    return new GuardianGiftPresentation(giftId, family.ActiveMember(actorId).Name, reason);
+    return new GuardianGiftPresentationState(
+      giftId,
+      family.ActiveMember(actorId).Name,
+      reason
+    );
   }
 
-  private async Task<FamilyAggregateSnapshot?> SettleWeeklyInterestAsync(
+  private async Task<LoadedAggregate<FamilyHouse>?> SettleWeeklyInterestAsync(
     FamilyCommand command,
     Family family,
     FamilyEconomy economy,
-    JsonObject payload,
+    JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now,
     CancellationToken cancellationToken
   )
   {
-    var period = new IsoWeekPeriod(RequiredInt(payload, "year"), RequiredInt(payload, "week"));
+    var period = new IsoWeekPeriod(
+      RequiredInt(payload, "year"),
+      RequiredInt(payload, "week")
+    );
 
     if (economy.SettledInterestPeriods.Contains(period))
     {
       return null;
     }
 
-    var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
-    var progressionState = RequireObject(progression.State);
-    var closedWeek = FamilyProgressionSnapshotMapper.ReadClosedWeek(progressionState, period);
-    var maximumRate = FamilyProgressionSnapshotMapper.ReadMaximumSavingsInterestRate(progressionState);
+    var progression = await _progressionRepository.LoadAsync(family, cancellationToken)
+      ?? throw new FamilyCommandException("The family progression has not been initialized.");
+    var closedWeek = progression.Root.ClosedWeekFor(period);
     _ = economy.ApplyWeeklyInterest(
       command.ActorId,
       period,
       closedWeek.MemberEvaluations,
-      new SavingsInterestPolicy(maximumRate),
+      new SavingsInterestPolicy(progression.Root.MaximumSavingsInterestRate),
       operationId,
       now
     );
@@ -371,9 +486,80 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
     return progression;
   }
 
-  private static FamilyMemberId[] ResolveFamilyGoalParticipants(Family family, JsonObject payload)
+  private static FamilyEconomyPresentationState UpdatePresentation(
+    FamilyEconomyPresentationState presentation,
+    FamilyEconomy economy,
+    SavingGoalPresentationState? changedGoal,
+    GuardianGiftPresentationState? addedGift
+  )
   {
-    var scope = StringValue(payload, "participantScope") ?? "family";
+    var liveGoalIds = economy.SavingsGoals
+      .Where(item => !item.Cancelled)
+      .Select(item => item.Id)
+      .ToHashSet();
+    var goals = presentation.SavingGoals
+      .Where(item => liveGoalIds.Contains(item.GoalId))
+      .Where(item => item.GoalId != changedGoal?.GoalId)
+      .ToList();
+
+    if (changedGoal is not null)
+    {
+      goals.Add(changedGoal);
+    }
+
+    Require(
+      liveGoalIds.All(id => goals.Any(item => item.GoalId == id)),
+      "Presentation data for a savings goal is missing."
+    );
+    var liveGiftIds = economy.GuardianGoalGifts
+      .Select(item => item.Id)
+      .OfType<GuardianGiftId>()
+      .ToHashSet();
+    var gifts = presentation.GuardianGifts
+      .Where(item => liveGiftIds.Contains(item.GiftId))
+      .ToList();
+
+    if (addedGift is not null)
+    {
+      Require(
+        gifts.All(item => item.GiftId != addedGift.GiftId),
+        "Presentation data for the guardian gift already exists."
+      );
+      gifts.Add(addedGift);
+    }
+
+    Require(
+      liveGiftIds.All(id => gifts.Any(item => item.GiftId == id)),
+      "Presentation data for a guardian gift is missing."
+    );
+
+    return new FamilyEconomyPresentationState(
+      presentation.Contributions,
+      goals,
+      presentation.ShopRewards,
+      gifts
+    );
+  }
+
+  private static FamilyCommandResult EconomyResult(
+    FamilyId familyId,
+    LoadedFamilyEconomy changedEconomy
+  )
+  {
+    return new FamilyCommandResult(
+    [
+      Change(familyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
+      Change(familyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
+      Change(familyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
+    ]);
+  }
+
+  private static FamilyMemberId[] ResolveFamilyGoalParticipants(
+    Family family,
+    JsonElement payload
+  )
+  {
+    var scope = OptionalString(payload, "participantScope") ?? "family";
     var selection = scope switch
     {
       "family" => FamilyGoalParticipation.EntireFamily,
@@ -382,8 +568,7 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
       _ => throw new FamilyCommandException("The family-goal participant scope is invalid."),
     };
     var selected = selection == FamilyGoalParticipation.SelectedMembers
-      ? (payload["participantIds"] as JsonArray
-          ?? throw new FamilyCommandException("Selected family goals require participant identifiers."))
+      ? RequiredArray(payload, "participantIds")
         .Select(RequiredString)
         .Select(value => new FamilyMemberId(value))
       : null;
@@ -391,14 +576,19 @@ internal sealed class SavingsFamilyCommandHandler : FamilyCommandAreaHandler
     return new FamilyGoalParticipantPolicy().Select(family.Members, selection, selected).ToArray();
   }
 
-  private static SavingGoalId GoalId(JsonObject payload)
+  private static SavingGoalId GoalId(JsonElement payload)
   {
     return new SavingGoalId(RequiredString(payload, "id"));
   }
 
-  private static GuardianGiftId GiftId(JsonObject payload)
+  private static GuardianGiftId GiftId(JsonElement payload)
   {
     return new GuardianGiftId(RequiredString(payload, "giftId"));
+  }
+
+  private static TransactionId OperationId(FamilyCommand command)
+  {
+    return new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture));
   }
 
   private static GoalVisibility ParseGoalVisibility(string value)

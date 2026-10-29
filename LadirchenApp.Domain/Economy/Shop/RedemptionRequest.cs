@@ -44,4 +44,16 @@ public sealed class RedemptionRequest : Entity<RedemptionRequestId>
     Status = status;
     DecidedAt = now.ToUniversalTime();
   }
+
+  internal void Restore(RedemptionStatus status, DateTimeOffset? decidedAt)
+  {
+    Rules.Defined(status);
+    Rules.Require(
+      status == RedemptionStatus.Pending ? decidedAt is null : decidedAt is not null,
+      DomainError.InvalidState,
+      "A request decision time must match its status."
+    );
+    Status = status;
+    DecidedAt = decidedAt?.ToUniversalTime();
+  }
 }

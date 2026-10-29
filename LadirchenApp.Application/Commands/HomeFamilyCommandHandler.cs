@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House.Shop;
@@ -13,112 +14,155 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-internal sealed class HomeFamilyCommandHandler : FamilyCommandAreaHandler
+internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
+  private readonly IFamilyEconomyRepository _economyRepository;
+  private readonly IFamilyProgressionRepository _progressionRepository;
+  private readonly IHouseCustomizationRepository _houseRepository;
+
   public HomeFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
+    IFamilyEconomyRepository economyRepository,
+    IFamilyProgressionRepository progressionRepository,
+    IHouseCustomizationRepository houseRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
     TimeProvider timeProvider
   )
-    : base(repository, timeProvider, "home.")
+    : base(unitOfWork, timeProvider, "home.")
   {
+    _economyRepository = economyRepository
+      ?? throw new ArgumentNullException(nameof(economyRepository));
+    _progressionRepository = progressionRepository
+      ?? throw new ArgumentNullException(nameof(progressionRepository));
+    _houseRepository = houseRepository
+      ?? throw new ArgumentNullException(nameof(houseRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
     FamilyCommand command,
-    FamilyAggregateSnapshot profileSnapshot,
-    JsonObject profile,
-    JsonObject payload,
+    LoadedAggregate<Family> loadedFamily,
     CancellationToken cancellationToken
   )
   {
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profile);
-    var home = await RequireSnapshotAsync(command.FamilyId, "home-customization", cancellationToken);
-    var homeState = RequireObject(home.State);
-    var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
-    var houseLevel = FamilyProgressionSnapshotMapper.ReadHouseLevel(RequireObject(progression.State));
+    ArgumentNullException.ThrowIfNull(command);
+    ArgumentNullException.ThrowIfNull(loadedFamily);
+    var family = loadedFamily.Root;
+    var progression = await _progressionRepository.LoadAsync(family, cancellationToken)
+      ?? throw new FamilyCommandException(
+        "The family-progression aggregate has not been initialized."
+      );
+    var loadedHouse = await _houseRepository.LoadAsync(
+      family,
+      progression.Root.StoredLevel,
+      cancellationToken
+    ) ?? throw new FamilyCommandException(
+      "The home-customization aggregate has not been initialized."
+    );
     var isPurchase = IsHomePurchase(command.CommandType);
-    FamilyAggregateSnapshot? savings = null;
-    FamilyAggregateSnapshot? rewardShop = null;
-    JsonObject? savingsState = null;
-    FamilyEconomy? economy = null;
+    LoadedFamilyEconomy? loadedEconomy = null;
     var availableBalance = 0m;
 
     if (isPurchase)
     {
-      savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
-      savingsState = RequireObject(savings.State);
-      rewardShop = await RequireSnapshotAsync(command.FamilyId, "reward-shop", cancellationToken);
-      var rewardShopState = RequireObject(rewardShop.State);
-      economy = FamilyEconomySnapshotMapper.RehydrateRewardShop(
-        family,
-        rewardShopState,
-        savingsState
-      );
-      availableBalance = economy.WalletFor(command.ActorId).Available;
+      loadedEconomy = await _economyRepository.LoadAsync(family, cancellationToken)
+        ?? throw new FamilyCommandException(
+          "The family-economy aggregate has not been initialized."
+        );
+      availableBalance = loadedEconomy.Root.WalletFor(command.ActorId).Available;
     }
 
-    var state = HomeCustomizationSnapshotMapper.Rehydrate(
-      homeState,
-      profile,
-      houseLevel
-    );
-    var purchasePrice = ExecuteHomeCommand(
-      state,
+    var purchase = ExecuteHomeCommand(
+      loadedHouse.Root,
       family,
       command,
-      payload,
+      RequiredObject(command.Payload),
       availableBalance
     );
 
     if (isPurchase)
     {
-      economy!.PurchaseHouseContent(
+      if (purchase is null || loadedEconomy is null)
+      {
+        throw new InvalidOperationException("A house purchase must return its purchased content.");
+      }
+
+      loadedEconomy.Root.PurchaseHouseContent(
         command.ActorId,
-        new LadirchenAmount(purchasePrice),
-        new HouseContentId($"{command.CommandType}:{RequiredString(payload, "id")}"),
+        new LadirchenAmount(purchase.Price),
+        new HouseContentId($"{command.CommandType}:{purchase.ContentId}"),
         new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture)),
-        _timeProvider.GetUtcNow()
+        TimeProvider.GetUtcNow()
       );
     }
 
-    var updatedHomeState = HomeCustomizationSnapshotMapper.Write(state);
-    var saves = new List<PendingFamilyAggregateSave>
+    var result = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        family.Id,
+        command.ActorId,
+        familyEconomy: loadedEconomy is null
+          ? null
+          : new PendingFamilyEconomySave(
+            loadedEconomy.Root,
+            loadedEconomy.Presentation,
+            loadedEconomy.Revision
+          ),
+        houseCustomization: new PendingHouseCustomizationSave(
+          loadedHouse.Root,
+          loadedHouse.Revision
+        ),
+        revisionGuards:
+        [
+          new TypedAggregateRevisionGuard(
+            TypedAggregateKind.Family,
+            loadedFamily.Revision
+          ),
+          new TypedAggregateRevisionGuard(
+            TypedAggregateKind.FamilyProgression,
+            progression.Revision
+          ),
+        ]
+      ),
+      cancellationToken
+    );
+    var savedHouse = result.HouseCustomization
+      ?? throw new InvalidOperationException("The house customization was not saved.");
+    var changes = new List<FamilyAggregateChange>
     {
-      CreateSave(home, updatedHomeState, command.ActorId),
+      Change(
+        family.Id,
+        "home-customization",
+        savedHouse.Revision,
+        savedHouse.Audit
+      ),
     };
 
-    if (savings is not null && savingsState is not null)
+    if (result.FamilyEconomy is not null)
     {
-      saves.Add(
-        CreateSave(
-          savings,
-          FamilyEconomySnapshotMapper.WriteWalletBalances(savingsState, economy!),
-          command.ActorId
+      changes.Add(
+        Change(
+          family.Id,
+          "savings",
+          result.FamilyEconomy.Revision,
+          result.FamilyEconomy.Audit
+        )
+      );
+      changes.Add(
+        Change(
+          family.Id,
+          "reward-shop",
+          result.FamilyEconomy.Revision,
+          result.FamilyEconomy.Audit
         )
       );
     }
 
-    var revisionGuards = new List<FamilyAggregateRevisionGuard>
-    {
-      FamilyAggregateRevisionGuard.FromSnapshot(profileSnapshot),
-      FamilyAggregateRevisionGuard.FromSnapshot(progression),
-    };
-
-    if (rewardShop is not null)
-    {
-      revisionGuards.Add(FamilyAggregateRevisionGuard.FromSnapshot(rewardShop));
-    }
-
-    var changed = await _repository.SaveBatchAsync(saves, revisionGuards, cancellationToken);
-
-    return new FamilyCommandResult(changed);
+    return new FamilyCommandResult(changes);
   }
 
-  private static decimal ExecuteHomeCommand(
-    HomeCustomizationState state,
+  private static HousePurchase? ExecuteHomeCommand(
+    FamilyHouseShop house,
     Family family,
     FamilyCommand command,
-    JsonObject payload,
+    JsonElement payload,
     decimal availableBalance
   )
   {
@@ -127,161 +171,101 @@ internal sealed class HomeFamilyCommandHandler : FamilyCommandAreaHandler
     switch (command.CommandType)
     {
       case "home.purchase-accessory":
-        var accessory = state.Accessory(RequiredString(payload, "id"));
-        RequireHomeAction(
-          state.Shop.PurchaseAccessory(accessory, actorIsChild, availableBalance),
+        return RequirePurchase(
+          house.PurchaseAccessoryContent(
+            RequiredString(payload, "id"),
+            actorIsChild,
+            availableBalance
+          ),
           "The house accessory cannot be purchased."
         );
-
-        return accessory.Price;
       case "home.purchase-furniture-set":
-        var furnitureSet = state.FurnitureSet(RequiredString(payload, "id"));
-        RequireHomeAction(
-          state.Shop.PurchaseSet(furnitureSet, actorIsChild, availableBalance),
+        return RequirePurchase(
+          house.PurchaseFurnitureSetContent(
+            RequiredString(payload, "id"),
+            actorIsChild,
+            availableBalance
+          ),
           "The furniture set cannot be purchased."
         );
-
-        return furnitureSet.Price;
       case "home.toggle-accessory":
-        ToggleAccessory(state, payload);
+        Require(
+          house.ToggleAccessory(RequiredString(payload, "id")),
+          "The house accessory cannot be toggled."
+        );
         break;
       case "home.store-accessory":
-        StoreAccessory(state, payload);
+        Require(
+          house.StoreAccessory(RequiredString(payload, "id")),
+          "The house accessory cannot be stored."
+        );
         break;
       case "home.place-accessory":
-        PlaceAccessory(state, payload);
+        Require(
+          house.PlaceAccessory(
+            RequiredString(payload, "id"),
+            RequiredString(payload, "zoneId")
+          ),
+          "The house accessory cannot be placed."
+        );
         break;
       case "home.purchase-theme":
-        return PurchaseTheme(state, payload, actorIsChild, availableBalance);
+        return RequirePurchase(
+          house.PurchaseThemeContent(
+            RequiredString(payload, "id"),
+            actorIsChild,
+            availableBalance
+          ),
+          "The house theme cannot be purchased."
+        );
       case "home.select-theme":
-        SelectTheme(state, payload);
+        Require(
+          house.SelectTheme(RequiredString(payload, "id")),
+          "The house theme cannot be selected."
+        );
         break;
       case "home.purchase-room-design":
-        return PurchaseRoomDesign(state, payload, actorIsChild, availableBalance);
+        return RequirePurchase(
+          house.PurchaseRoomDesignContent(
+            RequiredString(payload, "id"),
+            actorIsChild,
+            availableBalance
+          ),
+          "The room design cannot be purchased."
+        );
       case "home.select-room-design":
-        SelectRoomDesign(state, payload);
+        Require(
+          house.SelectRoomDesign(RequiredString(payload, "id")),
+          "The room design cannot be selected."
+        );
         break;
       case "home.move-entity":
-        MoveHouseEntity(state, payload);
+        Require(
+          house.ArrangeEntity(
+            RequiredString(payload, "placementId"),
+            RequiredString(payload, "zoneId"),
+            RequiredDecimal(payload, "x"),
+            RequiredDecimal(payload, "y")
+          ) is not null,
+          "The house entity cannot be moved."
+        );
         break;
       case "home.reset-entity":
-        ResetHouseEntity(state, payload);
+        Require(
+          house.ResetEntity(RequiredString(payload, "placementId")) is not null,
+          "The house entity cannot be reset."
+        );
         break;
       default:
         throw new FamilyCommandException("The home-customization command is not supported.");
     }
 
-    return 0;
+    return null;
   }
 
-  private static void ToggleAccessory(HomeCustomizationState state, JsonObject payload)
+  private static HousePurchase RequirePurchase(HousePurchase? purchase, string message)
   {
-    var item = state.Accessory(RequiredString(payload, "id"));
-    RequireHomeAction(state.Shop.Toggle(item), "The house accessory cannot be toggled.");
-    state.UpdateFurniturePlacement(item);
-  }
-
-  private static void StoreAccessory(HomeCustomizationState state, JsonObject payload)
-  {
-    var item = state.Accessory(RequiredString(payload, "id"));
-    RequireHomeAction(state.Shop.Store(item), "The house accessory cannot be stored.");
-    state.UpdateFurniturePlacement(item);
-  }
-
-  private static void PlaceAccessory(HomeCustomizationState state, JsonObject payload)
-  {
-    var item = state.Accessory(RequiredString(payload, "id"));
-    RequireHomeAction(
-      state.Shop.Place(item, RequiredString(payload, "zoneId")),
-      "The house accessory cannot be placed."
-    );
-    state.UpdateFurniturePlacement(item);
-  }
-
-  private static decimal PurchaseTheme(
-    HomeCustomizationState state,
-    JsonObject payload,
-    bool actorIsChild,
-    decimal availableBalance
-  )
-  {
-    var theme = state.Theme(RequiredString(payload, "id"));
-    RequireHomeAction(
-      state.Shop.PurchaseTheme(theme, state.RoomDesigns, actorIsChild, availableBalance),
-      "The house theme cannot be purchased."
-    );
-
-    return theme.Price;
-  }
-
-  private static void SelectTheme(HomeCustomizationState state, JsonObject payload)
-  {
-    var theme = state.Theme(RequiredString(payload, "id"));
-    RequireHomeAction(
-      state.Shop.SelectTheme(theme, state.RoomDesigns),
-      "The house theme cannot be selected."
-    );
-  }
-
-  private static decimal PurchaseRoomDesign(
-    HomeCustomizationState state,
-    JsonObject payload,
-    bool actorIsChild,
-    decimal availableBalance
-  )
-  {
-    var design = state.RoomDesign(RequiredString(payload, "id"));
-    RequireHomeAction(
-      state.Shop.PurchaseDesign(
-        design,
-        state.ThemeFor(design),
-        state.RoomDesigns,
-        actorIsChild,
-        availableBalance
-      ),
-      "The room design cannot be purchased."
-    );
-
-    return design.Price;
-  }
-
-  private static void SelectRoomDesign(HomeCustomizationState state, JsonObject payload)
-  {
-    var design = state.RoomDesign(RequiredString(payload, "id"));
-    RequireHomeAction(
-      state.Shop.SelectDesign(design, state.ThemeFor(design), state.RoomDesigns),
-      "The room design cannot be selected."
-    );
-  }
-
-  private static void MoveHouseEntity(HomeCustomizationState state, JsonObject payload)
-  {
-    var entity = state.Placement(RequiredString(payload, "placementId"));
-    var placement = state.Shop.ArrangeEntity(
-      entity,
-      RequiredString(payload, "zoneId"),
-      RequiredDecimal(payload, "x"),
-      RequiredDecimal(payload, "y"),
-      state.SubscriptionTier,
-      state.FurnitureFor(entity),
-      state.Placements
-    );
-    RequireHomeAction(placement is not null, "The house entity cannot be moved.");
-    state.UpdatePlacement(entity, placement!);
-  }
-
-  private static void ResetHouseEntity(HomeCustomizationState state, JsonObject payload)
-  {
-    var entity = state.Placement(RequiredString(payload, "placementId"));
-    var placement = state.Shop.ResetEntity(
-      entity,
-      state.InitialPlacement(entity.Id),
-      state.SubscriptionTier,
-      state.FurnitureFor(entity),
-      state.Placements
-    );
-    RequireHomeAction(placement is not null, "The house entity cannot be reset.");
-    state.UpdatePlacement(entity, placement!);
+    return purchase ?? throw new FamilyCommandException(message);
   }
 
   private static bool IsHomePurchase(string commandType)
@@ -291,13 +275,5 @@ internal sealed class HomeFamilyCommandHandler : FamilyCommandAreaHandler
       or "home.purchase-furniture-set"
       or "home.purchase-theme"
       or "home.purchase-room-design";
-  }
-
-  private static void RequireHomeAction(bool accepted, string message)
-  {
-    if (!accepted)
-    {
-      throw new FamilyCommandException(message);
-    }
   }
 }

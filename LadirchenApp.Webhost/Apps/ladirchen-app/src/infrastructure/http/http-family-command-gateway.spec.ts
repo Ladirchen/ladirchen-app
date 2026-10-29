@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
+import { isRecord } from "@/application/contracts/validation/runtime-validation";
+import { createDomainId } from "@/domain/shared/identifiers";
 import type { FamilyCommandHttpError } from "./http-family-command-gateway";
 import { HttpFamilyCommandGateway } from "./http-family-command-gateway";
 
-const familyId = "c776a9b6-c37d-4a51-91ba-269a67274478" as FamilyId;
-const actorId = "member-1" as FamilyMemberId;
+const familyId = createDomainId.family("c776a9b6-c37d-4a51-91ba-269a67274478");
+const actorId = createDomainId.familyMember("member-1");
+const goalId = createDomainId.savingGoal("goal-1");
 
 describe("HttpFamilyCommandGateway", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -28,7 +30,9 @@ describe("HttpFamilyCommandGateway", () => {
     vi.stubGlobal("fetch", fetchMock);
     const gateway = new HttpFamilyCommandGateway("");
 
-    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).resolves.toEqual(["savings"]);
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10, id: goalId })).resolves.toEqual([
+      "savings",
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const firstRequest = fetchMock.mock.calls[0]?.[1];
     const secondRequest = fetchMock.mock.calls[1]?.[1];
@@ -40,12 +44,17 @@ describe("HttpFamilyCommandGateway", () => {
       throw new TypeError("The command request body must be serialized JSON.");
     }
 
-    const command = JSON.parse(firstBody) as Record<string, unknown>;
+    const command: unknown = JSON.parse(firstBody);
     expect(command).toMatchObject({
       actorId,
       commandType: "savings.deposit",
-      payload: { amount: 10 },
+      payload: { amount: 10, id: goalId },
     });
+
+    if (!isRecord(command)) {
+      throw new TypeError("The command request must be a JSON object.");
+    }
+
     expect(command.commandId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   });
 
@@ -62,7 +71,9 @@ describe("HttpFamilyCommandGateway", () => {
     vi.stubGlobal("fetch", fetchMock);
     const gateway = new HttpFamilyCommandGateway("");
 
-    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).resolves.toEqual(["savings"]);
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10, id: goalId })).resolves.toEqual([
+      "savings",
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(fetchMock.mock.calls[1]?.[1]?.body);
   });
@@ -80,11 +91,31 @@ describe("HttpFamilyCommandGateway", () => {
     );
     const gateway = new HttpFamilyCommandGateway("");
 
-    const execution = gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 });
+    const execution = gateway.execute(familyId, actorId, "savings.deposit", { amount: 10, id: goalId });
 
     await expect(execution).rejects.toMatchObject<Partial<FamilyCommandHttpError>>({
       message: "Revision conflict",
       status: 409,
+    });
+  });
+
+  it("does not trust malformed problem details", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ detail: 42, title: ["invalid"] }), {
+          headers: { "Content-Type": "application/problem+json" },
+          status: 400,
+        }),
+      ),
+    );
+    const gateway = new HttpFamilyCommandGateway("");
+
+    const execution = gateway.execute(familyId, actorId, "savings.deposit", { amount: 10, id: goalId });
+
+    await expect(execution).rejects.toMatchObject<Partial<FamilyCommandHttpError>>({
+      message: "Family command failed with HTTP 400.",
+      status: 400,
     });
   });
 
@@ -100,7 +131,7 @@ describe("HttpFamilyCommandGateway", () => {
     );
     const gateway = new HttpFamilyCommandGateway("");
 
-    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).rejects.toThrow(
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10, id: goalId })).rejects.toThrow(
       "The family command response contains invalid read-model types.",
     );
   });
@@ -117,6 +148,8 @@ describe("HttpFamilyCommandGateway", () => {
     );
     const gateway = new HttpFamilyCommandGateway("");
 
-    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).resolves.toEqual(["savings"]);
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10, id: goalId })).resolves.toEqual([
+      "savings",
+    ]);
   });
 });

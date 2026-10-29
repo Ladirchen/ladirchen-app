@@ -1,28 +1,62 @@
-using System;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
 public sealed partial class GetFamilyAggregateQueryHandler
 {
-  private static FamilyAggregateSnapshot ProjectProgressionCapabilities(FamilyAggregateSnapshot progression)
+  private async Task<FamilyProgressionReadModelProjection?> ProjectFamilyProgressionAsync(
+    Family family,
+    CancellationToken cancellationToken
+  )
   {
-    var state = JsonNode.Parse(progression.State.GetRawText()) as JsonObject
-      ?? throw new InvalidOperationException("The family progression state must be an object.");
-    var energy = FamilyProgressionSnapshotMapper.ReadFamilyEnergy(state);
+    var loadedProgression = await _progressionRepository.LoadAsync(family, cancellationToken);
+
+    if (loadedProgression is null)
+    {
+      return null;
+    }
+
+    var loadedEconomy = RequiredDependency(
+      await _economyRepository.LoadAsync(family, cancellationToken),
+      "family economy"
+    );
+    var period = IsoWeekPeriod.For(family.TimeZone.LocalDate(_timeProvider.GetUtcNow()));
+    var evaluation = FamilyProgressionEvaluator.Evaluate(
+      family,
+      loadedEconomy.Root,
+      loadedProgression.Root,
+      period
+    );
     var energyPolicy = new HouseEnergyPolicy();
-    state["minimumSuccessfulWeekEnergy"] = HouseEnergyPolicy.MinimumSuccessfulWeekEnergy;
-    state["canCloseWeekSuccessfully"] = energy >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy;
-    state["houseAtmosphere"] = energyPolicy.Atmosphere(energy);
-    state["houseVisualLevel"] = energyPolicy.VisualLevel(energy);
+    var memberProgressions = evaluation.Members.ToDictionary(
+      member => member.LadiEvaluation.MemberId,
+      member => new MemberProgressionReadProjection(
+        member.ApprovedDates,
+        member.LadiEvaluation,
+        member.EnergyContribution,
+        member.SavingsInterestRate
+      )
+    );
 
-    using var document = JsonDocument.Parse(state.ToJsonString());
-
-    return progression with { State = document.RootElement.Clone() };
+    return new FamilyProgressionReadModelProjection(
+      loadedProgression.Revision,
+      evaluation.FamilyEnergy >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+      loadedProgression.Root.CompletedWeeklyStreak,
+      loadedProgression.Root.CurrentWeekTarget,
+      evaluation.FamilyEnergy,
+      energyPolicy.Atmosphere(evaluation.FamilyEnergy),
+      loadedProgression.Root.StoredLevel,
+      evaluation.HouseVisualLevel,
+      evaluation.MaximumSavingsInterestRate,
+      HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+      memberProgressions
+    );
   }
-
 }

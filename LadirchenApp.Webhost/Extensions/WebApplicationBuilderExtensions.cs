@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Application.Queries;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Infrastructure.Persistence;
-using LadirchenApp.Webhost.Realtime;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -91,12 +91,15 @@ public static class WebApplicationBuilderExtensions
       );
     });
     webApplicationBuilder.Services.AddSingleton(TimeProvider.System);
-    webApplicationBuilder.Services.AddScoped<IFamilyAggregateSnapshotRepository, DatabaseFamilyAggregateSnapshotRepository>();
+    webApplicationBuilder.Services.AddScoped<ITypedAggregateUnitOfWork, DatabaseTypedAggregateUnitOfWork>();
+    webApplicationBuilder.Services.AddScoped<IFamilyRepository, DatabaseFamilyRepository>();
+    webApplicationBuilder.Services.AddScoped<IFamilyEconomyRepository, DatabaseFamilyEconomyRepository>();
+    webApplicationBuilder.Services.AddScoped<IFamilyProgressionRepository, DatabaseFamilyProgressionRepository>();
+    webApplicationBuilder.Services.AddScoped<IHouseCustomizationRepository, DatabaseHouseCustomizationRepository>();
     webApplicationBuilder.Services.AddScoped<
       IFamilyCommandExecutionCoordinator,
       PostgreSqlFamilyCommandExecutionCoordinator
     >();
-    webApplicationBuilder.Services.AddSingleton<IFamilyAggregateChangePublisher, SignalRFamilyAggregateChangePublisher>();
     webApplicationBuilder.Services.AddScoped<AuthenticationService>();
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
     webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();

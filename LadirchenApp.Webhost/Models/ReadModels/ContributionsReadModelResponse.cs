@@ -10,12 +10,10 @@ public sealed record ContributionsReadModelResponse(
   [property: JsonRequired] ContributionsReadModelState State
 )
 {
-  public static ContributionsReadModelResponse FromSnapshot(FamilyAggregateSnapshot snapshot)
+  public static ContributionsReadModelResponse FromProjection(
+    ContributionsFamilyReadModelProjection projection
+  )
   {
-    return new ContributionsReadModelResponse(
-      snapshot.AggregateType,
-      snapshot.Revision,
-      FamilyReadModelState.Deserialize<ContributionsReadModelState>(snapshot)
-    );
+    return FamilyReadModelResponseMapper.Map(projection);
   }
 }

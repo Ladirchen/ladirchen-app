@@ -10,12 +10,8 @@ public sealed record SavingsReadModelResponse(
   [property: JsonRequired] SavingsReadModelState State
 )
 {
-  public static SavingsReadModelResponse FromSnapshot(FamilyAggregateSnapshot snapshot)
+  public static SavingsReadModelResponse FromProjection(SavingsFamilyReadModelProjection projection)
   {
-    return new SavingsReadModelResponse(
-      snapshot.AggregateType,
-      snapshot.Revision,
-      FamilyReadModelState.Deserialize<SavingsReadModelState>(snapshot)
-    );
+    return FamilyReadModelResponseMapper.Map(projection);
   }
 }

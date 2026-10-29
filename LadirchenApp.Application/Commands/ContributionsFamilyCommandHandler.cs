@@ -1,60 +1,47 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandler
+internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
-  private readonly FamilyProgressionApplicationService _progression;
+  private readonly IFamilyEconomyRepository _economyRepository;
 
   public ContributionsFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
-    TimeProvider timeProvider,
-    FamilyProgressionApplicationService progression
+    IFamilyEconomyRepository economyRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
+    TimeProvider timeProvider
   )
-    : base(repository, timeProvider, "contributions.")
+    : base(unitOfWork, timeProvider, "contributions.")
   {
-    _progression = progression;
+    _economyRepository = economyRepository ?? throw new ArgumentNullException(nameof(economyRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
     FamilyCommand command,
-    FamilyAggregateSnapshot profile,
-    JsonObject profileState,
-    JsonObject payload,
+    LoadedAggregate<Family> family,
     CancellationToken cancellationToken
   )
   {
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
-    _ = family.ActiveMember(command.ActorId);
-    var contributions = await RequireSnapshotAsync(command.FamilyId, "contributions", cancellationToken);
-    var contributionState = RequireObject(contributions.State);
-    FamilyAggregateSnapshot? savings = null;
-    JsonObject? savingsState = null;
-
-    if (command.CommandType == "contributions.approve")
-    {
-      savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
-      savingsState = RequireObject(savings.State);
-    }
-
-    var economy = FamilyEconomySnapshotMapper.RehydrateContributions(
-      family,
-      contributionState,
-      savingsState
-    );
-    var now = _timeProvider.GetUtcNow();
-    var operationId = new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture));
-    ContributionPresentation? addedContribution = null;
+    ArgumentNullException.ThrowIfNull(command);
+    ArgumentNullException.ThrowIfNull(family);
+    _ = family.Root.ActiveMember(command.ActorId);
+    var loadedEconomy = await _economyRepository.LoadAsync(family.Root, cancellationToken)
+      ?? throw new FamilyCommandException("The family economy has not been initialized.");
+    var economy = loadedEconomy.Root;
+    var payload = RequiredObject(command.Payload);
+    var now = TimeProvider.GetUtcNow();
+    var operationId = OperationId(command);
+    ContributionPresentationState? addedContribution = null;
     ContributionId? celebratedContributionId = null;
 
     switch (command.CommandType)
@@ -67,52 +54,36 @@ internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandl
         );
         break;
       case "contributions.submit":
-        economy.SubmitContribution(
-          command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
-          now
-        );
+        economy.SubmitContribution(command.ActorId, ContributionId(payload), now);
         break;
       case "contributions.claim":
-        economy.ClaimContribution(
-          command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
-          now
-        );
+        economy.ClaimContribution(command.ActorId, ContributionId(payload), now);
         break;
       case "contributions.assign":
         economy.AssignContribution(
           command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
-          CreateOptionalMemberId(StringValue(payload, "memberId")),
+          ContributionId(payload),
+          CreateOptionalMemberId(OptionalString(payload, "memberId")),
           now
         );
         break;
       case "contributions.approve":
         _ = economy.ApproveContribution(
           command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
+          ContributionId(payload),
           new StarRating(RequiredInt(payload, "stars")),
           operationId,
           now
         );
         break;
       case "contributions.return":
-        economy.ReturnContribution(
-          command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
-          now
-        );
+        economy.ReturnContribution(command.ActorId, ContributionId(payload), now);
         break;
       case "contributions.add":
         addedContribution = AddContribution(economy, command.ActorId, payload, now);
         break;
       case "contributions.delete":
-        economy.DeleteContribution(
-          command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
-          now
-        );
+        economy.DeleteContribution(command.ActorId, ContributionId(payload), now);
         break;
       case "contributions.delete-promotion":
         economy.DeletePromotion(
@@ -124,8 +95,8 @@ internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandl
       case "contributions.set-partners":
         economy.SetContributionPartners(
           command.ActorId,
-          new ContributionId(RequiredString(payload, "id")),
-          RequireArray(payload, "partnerIds")
+          ContributionId(payload),
+          RequiredArray(payload, "partnerIds")
             .Select(RequiredString)
             .Select(value => new FamilyMemberId(value)),
           now
@@ -135,62 +106,59 @@ internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandl
         AddPromotion(economy, command.ActorId, payload, now);
         break;
       case "contributions.acknowledge-reward":
-        celebratedContributionId = ValidateRewardAcknowledgement(economy, command.ActorId, payload);
+        celebratedContributionId = ValidateRewardAcknowledgement(
+          economy,
+          command.ActorId,
+          payload
+        );
         break;
       default:
         throw new FamilyCommandException("The family command is not supported.");
     }
 
-    var updatedContributionState = FamilyEconomySnapshotMapper.WriteContributions(
-      contributionState,
+    var presentation = UpdatePresentation(
+      loadedEconomy.Presentation,
       economy,
-      addedContribution
+      addedContribution,
+      celebratedContributionId
     );
-    if (celebratedContributionId is not null)
-    {
-      FamilyEconomySnapshotMapper.MarkContributionRewardCelebrated(
-        updatedContributionState,
-        celebratedContributionId
-      );
-    }
-
-    var pendingSaves = new List<PendingFamilyAggregateSave>
-    {
-      CreateSave(contributions, updatedContributionState, command.ActorId),
-    };
-
-    if (savings is not null && savingsState is not null)
-    {
-      var updatedSavingsState = FamilyEconomySnapshotMapper.WriteWalletBalances(savingsState, economy);
-      pendingSaves.Add(CreateSave(savings, updatedSavingsState, command.ActorId));
-    }
-
-    pendingSaves.Add(
-      await _progression.CreateSaveAsync(
+    var saved = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
         command.FamilyId,
-        profileState,
-        updatedContributionState,
         command.ActorId,
-        cancellationToken
-      )
+        familyEconomy: new PendingFamilyEconomySave(
+          economy,
+          presentation,
+          loadedEconomy.Revision
+        ),
+        revisionGuards:
+        [
+          new TypedAggregateRevisionGuard(TypedAggregateKind.Family, family.Revision),
+        ]
+      ),
+      cancellationToken
     );
-    var guards = new[]
-    {
-      new FamilyAggregateRevisionGuard(profile.FamilyId, profile.AggregateType, profile.Revision),
-    };
-    var changed = await _repository.SaveBatchAsync(pendingSaves, guards, cancellationToken);
+    var changedEconomy = saved.FamilyEconomy
+      ?? throw new InvalidOperationException("The family economy was not saved.");
 
-    return new FamilyCommandResult(changed);
+    return new FamilyCommandResult(
+    [
+      Change(command.FamilyId, "contributions", changedEconomy.Revision, changedEconomy.Audit),
+      Change(command.FamilyId, "family-progression", changedEconomy.Revision, changedEconomy.Audit),
+      Change(command.FamilyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
+      Change(command.FamilyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
+      Change(command.FamilyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
+    ]);
   }
 
-  private static ContributionPresentation AddContribution(
+  private static ContributionPresentationState AddContribution(
     FamilyEconomy economy,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     DateTimeOffset now
   )
   {
-    var id = new ContributionId(RequiredString(payload, "id"));
+    var id = ContributionId(payload);
     var kind = RequiredString(payload, "kind") switch
     {
       "basic" => ContributionKind.Basic,
@@ -205,22 +173,23 @@ internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandl
         kind,
         new LadirchenAmount(RequiredDecimal(payload, "reward")),
         new Percentage(RequiredDecimal(payload, "energy")),
-        CreateOptionalMemberId(StringValue(payload, "assigneeId"))
+        CreateOptionalMemberId(OptionalString(payload, "assigneeId"))
       ),
       now
     );
 
-    return new ContributionPresentation(
+    return new ContributionPresentationState(
       id,
       RequiredString(payload, "description"),
-      RequiredString(payload, "icon")
+      RequiredString(payload, "icon"),
+      false
     );
   }
 
   private static void AddPromotion(
     FamilyEconomy economy,
     FamilyMemberId actorId,
-    JsonObject payload,
+    JsonElement payload,
     DateTimeOffset now
   )
   {
@@ -243,10 +212,10 @@ internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandl
   private static ContributionId ValidateRewardAcknowledgement(
     FamilyEconomy economy,
     FamilyMemberId actorId,
-    JsonObject payload
+    JsonElement payload
   )
   {
-    var id = new ContributionId(RequiredString(payload, "id"));
+    var id = ContributionId(payload);
     var contribution = economy.Contributions.SingleOrDefault(item => item.Id == id)
       ?? throw new FamilyCommandException("The contribution does not exist.");
     Require(
@@ -255,6 +224,53 @@ internal sealed class ContributionsFamilyCommandHandler : FamilyCommandAreaHandl
     );
 
     return id;
+  }
+
+  private static FamilyEconomyPresentationState UpdatePresentation(
+    FamilyEconomyPresentationState presentation,
+    FamilyEconomy economy,
+    ContributionPresentationState? addedContribution,
+    ContributionId? celebratedContributionId
+  )
+  {
+    var liveIds = economy.Contributions.Select(item => item.Id).ToHashSet();
+    var contributions = presentation.Contributions
+      .Where(item => liveIds.Contains(item.ContributionId))
+      .Select(item => item.ContributionId == celebratedContributionId
+        ? item with { RewardCelebrated = true }
+        : item)
+      .ToList();
+
+    if (addedContribution is not null)
+    {
+      Require(
+        contributions.All(item => item.ContributionId != addedContribution.ContributionId),
+        "Presentation data for the contribution already exists."
+      );
+      contributions.Add(addedContribution);
+    }
+
+    Require(
+      liveIds.All(id => contributions.Any(item => item.ContributionId == id)),
+      "Presentation data for a contribution is missing."
+    );
+
+    return new FamilyEconomyPresentationState(
+      contributions,
+      presentation.SavingGoals,
+      presentation.ShopRewards,
+      presentation.GuardianGifts
+    );
+  }
+
+  private static ContributionId ContributionId(JsonElement payload)
+  {
+    return new ContributionId(RequiredString(payload, "id"));
+  }
+
+  private static TransactionId OperationId(FamilyCommand command)
+  {
+    return new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture));
   }
 
   private static FamilyMemberId? CreateOptionalMemberId(string? value)

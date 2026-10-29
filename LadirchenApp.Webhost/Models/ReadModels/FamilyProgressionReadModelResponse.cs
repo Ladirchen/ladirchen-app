@@ -10,12 +10,10 @@ public sealed record FamilyProgressionReadModelResponse(
   [property: JsonRequired] FamilyProgressionReadModelState State
 )
 {
-  public static FamilyProgressionReadModelResponse FromSnapshot(FamilyAggregateSnapshot snapshot)
+  public static FamilyProgressionReadModelResponse FromProjection(
+    FamilyProgressionReadModelProjection projection
+  )
   {
-    return new FamilyProgressionReadModelResponse(
-      snapshot.AggregateType,
-      snapshot.Revision,
-      FamilyReadModelState.Deserialize<FamilyProgressionReadModelState>(snapshot)
-    );
+    return FamilyReadModelResponseMapper.Map(projection);
   }
 }

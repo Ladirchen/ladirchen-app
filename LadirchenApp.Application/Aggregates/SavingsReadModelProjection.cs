@@ -4,7 +4,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
-internal sealed record SavingsReadModelProjection(
+public sealed record SavingsReadModelProjection(
   IReadOnlyDictionary<FamilyMemberId, decimal> Balances,
   IReadOnlyDictionary<FamilyMemberId, decimal> AvailableBalances,
   IReadOnlyDictionary<SavingGoalId, SavingsGoalReadProjection> Goals,

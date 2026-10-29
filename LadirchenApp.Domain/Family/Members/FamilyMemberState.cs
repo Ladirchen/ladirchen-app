@@ -1,5 +1,6 @@
 using System;
 
+using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.Family;
@@ -14,7 +15,10 @@ public sealed record FamilyMemberState
     bool invitationPending,
     string? nickname,
     string? emailAddress,
-    bool participatesInWeeklyGoal
+    bool participatesInWeeklyGoal,
+    string? avatar = null,
+    string? color = null,
+    AvatarAppearance? appearance = null
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -36,6 +40,18 @@ public sealed record FamilyMemberState
     Nickname = NormalizeNickname(nickname);
     EmailAddress = emailAddress is null ? null : Family.NormalizeEmailAddress(emailAddress);
     ParticipatesInWeeklyGoal = participatesInWeeklyGoal;
+    Avatar = NormalizeOptionalText(avatar);
+    Color = NormalizeOptionalText(color);
+
+    if (appearance is not null)
+    {
+      new AvatarCatalog().Validate(
+        appearance,
+        role == MemberRole.Child ? AvatarProfile.Child : AvatarProfile.Guardian
+      );
+    }
+
+    Appearance = appearance;
   }
 
   public FamilyMemberId Id { get; }
@@ -46,6 +62,9 @@ public sealed record FamilyMemberState
   public string? Nickname { get; }
   public string? EmailAddress { get; }
   public bool ParticipatesInWeeklyGoal { get; }
+  public string? Avatar { get; }
+  public string? Color { get; }
+  public AvatarAppearance? Appearance { get; }
 
   private static string? NormalizeNickname(string? nickname)
   {
@@ -63,5 +82,12 @@ public sealed record FamilyMemberState
     );
 
     return normalized;
+  }
+
+  private static string? NormalizeOptionalText(string? value)
+  {
+    var normalized = value?.Trim();
+
+    return string.IsNullOrEmpty(normalized) ? null : normalized;
   }
 }

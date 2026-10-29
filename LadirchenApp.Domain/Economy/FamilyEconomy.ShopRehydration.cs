@@ -7,7 +7,7 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed partial class FamilyEconomy
 {
-  public void RestoreShopReward(
+  internal void RestoreShopReward(
     ShopRewardId id,
     ShopRewardDefinition definition,
     ShopRewardStatus status
@@ -21,39 +21,11 @@ public sealed partial class FamilyEconomy
       "This reward identity was already restored."
     );
     var reward = new ShopReward(id, definition);
-
-    switch (status)
-    {
-      case ShopRewardStatus.Available:
-        Rules.Require(
-          reward.Quantity > 0,
-          DomainError.InvalidState,
-          "An available reward requires positive stock."
-        );
-        break;
-      case ShopRewardStatus.Requested:
-        Rules.Require(
-          reward.Quantity > 0,
-          DomainError.InvalidState,
-          "A requested reward requires positive stock."
-        );
-        reward.Reserve();
-        break;
-      case ShopRewardStatus.Redeemed:
-        Rules.Require(
-          reward.Quantity == 0,
-          DomainError.InvalidState,
-          "A redeemed reward must have no remaining stock."
-        );
-        break;
-      default:
-        throw new ArgumentOutOfRangeException(nameof(status));
-    }
-
+    reward.Restore(status, false);
     _shopRewards.Add(reward);
   }
 
-  public void RestorePendingShopRewardRequest(
+  internal void RestorePendingShopRewardRequest(
     RedemptionRequestId id,
     ShopRewardId rewardId,
     FamilyMemberId requesterId,

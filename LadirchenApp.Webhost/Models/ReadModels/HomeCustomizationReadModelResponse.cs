@@ -10,12 +10,10 @@ public sealed record HomeCustomizationReadModelResponse(
   [property: JsonRequired] HomeCustomizationReadModelState State
 )
 {
-  public static HomeCustomizationReadModelResponse FromSnapshot(FamilyAggregateSnapshot snapshot)
+  public static HomeCustomizationReadModelResponse FromProjection(
+    HomeCustomizationReadModelProjection projection
+  )
   {
-    return new HomeCustomizationReadModelResponse(
-      snapshot.AggregateType,
-      snapshot.Revision,
-      FamilyReadModelState.Deserialize<HomeCustomizationReadModelState>(snapshot)
-    );
+    return FamilyReadModelResponseMapper.Map(projection);
   }
 }

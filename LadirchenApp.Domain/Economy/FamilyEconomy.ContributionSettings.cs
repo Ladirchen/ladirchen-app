@@ -30,7 +30,7 @@ public sealed partial class FamilyEconomy
     );
   }
 
-  public void RestoreContributionSettings(ContributionSettings settings)
+  internal void RestoreContributionSettings(ContributionSettings settings)
   {
     ArgumentNullException.ThrowIfNull(settings);
     _contributionSettings = settings;

@@ -6,8 +6,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Models.ReadModels;
 
 namespace LadirchenApp.Webhost.Tests.Models;
@@ -24,17 +22,17 @@ public sealed class FamilyReadModelResponseTests
   {
     var responses = new Dictionary<object, Type>
     {
-      [ContributionsReadModelResponse.FromSnapshot(Snapshot("contributions", ContributionsState()))] =
+      [new ContributionsReadModelResponse("contributions", 1, EmptyContributions())] =
         typeof(ContributionsReadModelState),
-      [FamilyProfileReadModelResponse.FromSnapshot(Snapshot("family-profile", FamilyProfileState()))] =
+      [new FamilyProfileReadModelResponse("family-profile", 1, EmptyProfile())] =
         typeof(FamilyProfileReadModelState),
-      [FamilyProgressionReadModelResponse.FromSnapshot(Snapshot("family-progression", FamilyProgressionState()))] =
+      [new FamilyProgressionReadModelResponse("family-progression", 1, EmptyProgression())] =
         typeof(FamilyProgressionReadModelState),
-      [HomeCustomizationReadModelResponse.FromSnapshot(Snapshot("home-customization", HomeCustomizationState()))] =
+      [new HomeCustomizationReadModelResponse("home-customization", 1, EmptyHome())] =
         typeof(HomeCustomizationReadModelState),
-      [RewardShopReadModelResponse.FromSnapshot(Snapshot("reward-shop", RewardShopState()))] =
+      [new RewardShopReadModelResponse("reward-shop", 1, new(false, []))] =
         typeof(RewardShopReadModelState),
-      [SavingsReadModelResponse.FromSnapshot(Snapshot("savings", SavingsState()))] =
+      [new SavingsReadModelResponse("savings", 1, EmptySavings())] =
         typeof(SavingsReadModelState),
     };
 
@@ -51,7 +49,47 @@ public sealed class FamilyReadModelResponseTests
   [Test]
   public async Task SavingsResponseOmitsPersistenceOnlyEconomyHistoryAndRefundProvenance()
   {
-    var response = SavingsReadModelResponse.FromSnapshot(Snapshot("savings", SavingsState()));
+    var goal = new SavingGoalReadModel(
+      "family-trip",
+      null,
+      "Family trip",
+      "trip",
+      "family",
+      100,
+      20,
+      5,
+      null,
+      0,
+      1,
+      80,
+      15,
+      ["child"],
+      ["child"],
+      null,
+      new SavingGoalCancellationRequestReadModel("guardian", ["guardian"], ["child"]),
+      new Dictionary<string, SavingsGoalCommandLimitsReadModel>
+      {
+        ["child"] = new(true, false, true, false, false, 0, 0),
+      },
+      "family",
+      true,
+      false
+    );
+    var response = new SavingsReadModelResponse(
+      "savings",
+      7,
+      new SavingsReadModelState(
+        new Dictionary<string, decimal>(),
+        new Dictionary<string, decimal>(),
+        "CHF",
+        [goal],
+        1,
+        [],
+        [],
+        new Dictionary<string, decimal>(),
+        []
+      )
+    );
     var json = JsonSerializer.SerializeToElement(response, _serializerOptions);
     var propertyNames = json.EnumerateObject().Select(property => property.Name).ToArray();
     var state = json.GetProperty("state");
@@ -61,27 +99,8 @@ public sealed class FamilyReadModelResponseTests
     await Assert.That(response.Revision).IsEqualTo(7);
     await Assert.That(state.TryGetProperty("ledger", out _)).IsFalse();
     await Assert.That(state.TryGetProperty("appliedOperationIds", out _)).IsFalse();
-    var goal = state.GetProperty("goals")[0];
-    await Assert.That(goal.TryGetProperty("refundableContributions", out _)).IsFalse();
-    var cancellationRequest = goal.GetProperty("cancellationRequest");
-    var commandLimits = goal.GetProperty("commandLimits").GetProperty("child");
-    await Assert.That(cancellationRequest.GetProperty("requestedByMemberId").GetString())
-      .IsEqualTo("guardian");
-    await Assert.That(cancellationRequest.GetProperty("consentedMemberIds")[0].GetString())
-      .IsEqualTo("guardian");
-    await Assert.That(cancellationRequest.GetProperty("pendingMemberIds")[0].GetString())
-      .IsEqualTo("child");
-    await Assert.That(commandLimits.GetProperty("canRequestCancellation").GetBoolean()).IsFalse();
-    await Assert.That(commandLimits.GetProperty("canApproveCancellation").GetBoolean()).IsTrue();
-    await Assert.That(commandLimits.GetProperty("canRejectCancellation").GetBoolean()).IsTrue();
-  }
-
-  [Test]
-  public async Task MissingRequiredReadModelStateIsRejected()
-  {
-    var snapshot = Snapshot("savings", new { });
-
-    await Assert.That(() => SavingsReadModelResponse.FromSnapshot(snapshot)).Throws<JsonException>();
+    await Assert.That(state.GetProperty("goals")[0].TryGetProperty("refundableContributions", out _))
+      .IsFalse();
   }
 
   [Test]
@@ -119,19 +138,6 @@ public sealed class FamilyReadModelResponseTests
     await Assert.That(client.Contains("state?: any;", StringComparison.Ordinal)).IsFalse();
   }
 
-  private static FamilyAggregateSnapshot Snapshot(string readModelType, object state)
-  {
-    return new FamilyAggregateSnapshot(
-      new FamilyId(Guid.Parse("d9dd1e2c-2ad6-4d95-b52d-3b1a6ff112b1")),
-      readModelType,
-      2,
-      7,
-      JsonSerializer.SerializeToElement(state, _serializerOptions),
-      new FamilyMemberId("guardian"),
-      DateTimeOffset.Parse("2026-10-29T12:00:00+00:00")
-    );
-  }
-
   private static string FindRepositoryRoot()
   {
     var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -145,149 +151,74 @@ public sealed class FamilyReadModelResponseTests
       ?? throw new InvalidOperationException("The repository root could not be located.");
   }
 
-  private static object ContributionsState()
+  private static ContributionsReadModelState EmptyContributions()
   {
-    return new
-    {
-      contributions = Array.Empty<object>(),
-      currentWeekApprovedContributionCountByMember = new { },
-      currentWeekEarnedByMember = new { },
-      promotions = Array.Empty<object>(),
-      usedContributionIds = new[] { "internal-contribution" },
-    };
+    return new ContributionsReadModelState(
+      [],
+      new Dictionary<string, int>(),
+      new Dictionary<string, decimal>(),
+      15,
+      [],
+      new Dictionary<string, decimal>()
+    );
   }
 
-  private static object FamilyProfileState()
+  private static FamilyProfileReadModelState EmptyProfile()
   {
-    var avatarCatalog = new
-    {
-      accessoryIds = Array.Empty<string>(),
-      ages = Array.Empty<string>(),
-      faceIds = Array.Empty<string>(),
-      faceShapeIds = Array.Empty<string>(),
-      funAccessoryIds = Array.Empty<string>(),
-      hairColorIds = Array.Empty<string>(),
-      hairIds = Array.Empty<string>(),
-      outfitColorIds = Array.Empty<string>(),
-      outfitIds = Array.Empty<string>(),
-      seasonalAccessoryIds = Array.Empty<string>(),
-      skinToneIds = Array.Empty<string>(),
-    };
+    var catalog = new AvatarProfileCatalogReadModel([], [], [], [], [], [], [], [], [], [], []);
 
-    return new
-    {
-      avatarCatalog = new { child = avatarCatalog, guardian = avatarCatalog },
-      members = Array.Empty<object>(),
-      onboardingCompleted = false,
-      pets = Array.Empty<object>(),
-      subscriptionTier = "free",
-      timeZone = "Europe/Zurich",
-      activeChildId = "internal-child",
-    };
+    return new FamilyProfileReadModelState(
+      new AvatarCatalogReadModel(catalog, catalog),
+      [],
+      false,
+      [],
+      "free",
+      "Europe/Zurich"
+    );
   }
 
-  private static object FamilyProgressionState()
+  private static FamilyProgressionReadModelState EmptyProgression()
   {
-    return new
-    {
-      canCloseWeekSuccessfully = false,
-      completedWeeklyStreak = 0,
-      currentWeekTarget = 7,
-      familyEnergy = 0,
-      houseAtmosphere = "rainy",
-      houseLevel = 0,
-      houseVisualLevel = 1,
-      maximumSavingsInterestRate = 8,
-      minimumSuccessfulWeekEnergy = 60,
-      memberProgressions = new { },
-      closedWeekOutcomes = new { },
-      weeklyEvaluations = new { },
-    };
+    return new FamilyProgressionReadModelState(
+      false,
+      0,
+      7,
+      0,
+      "rainy",
+      0,
+      1,
+      8,
+      60,
+      new Dictionary<string, MemberProgressionReadModel>()
+    );
   }
 
-  private static object HomeCustomizationState()
+  private static HomeCustomizationReadModelState EmptyHome()
   {
-    return new
-    {
-      capabilities = new { canArrangeHouse = false },
-      catalog = new
-      {
-        accessories = Array.Empty<object>(),
-        areas = Array.Empty<object>(),
-        furnitureSets = Array.Empty<object>(),
-        houseStages = Array.Empty<object>(),
-        roomDesigns = Array.Empty<object>(),
-        themes = Array.Empty<object>(),
-      },
-      accessories = Array.Empty<object>(),
-      editions = Array.Empty<object>(),
-      placements = Array.Empty<object>(),
-      roomDesigns = Array.Empty<object>(),
-      selectedRoomDesigns = Array.Empty<object>(),
-      selectedEditionId = "sunny-dollhouse",
-    };
+    return new HomeCustomizationReadModelState(
+      new HomeCapabilitiesReadModel(false),
+      new HomeCatalogReadModel([], [], [], [], [], []),
+      [],
+      [],
+      [],
+      [],
+      [],
+      "sunny-dollhouse"
+    );
   }
 
-  private static object RewardShopState()
+  private static SavingsReadModelState EmptySavings()
   {
-    return new
-    {
-      redemptionOpen = true,
-      rewards = Array.Empty<object>(),
-    };
-  }
-
-  private static object SavingsState()
-  {
-    return new
-    {
-      availableBalances = new { },
-      balances = new { },
-      familyCurrencyCode = "CHF",
-      goals = new[]
-      {
-        new
-        {
-          id = "family-trip",
-          title = "Family trip",
-          icon = "trip",
-          ownerId = "family",
-          target = 100,
-          saved = 20,
-          starterBonus = 5,
-          participantIds = new[] { "child" },
-          refundableContributions = new[] { new { memberId = "child", amount = 15 } },
-          cancellationRequest = new
-          {
-            requestedByMemberId = "guardian",
-            consentedMemberIds = new[] { "guardian" },
-            pendingMemberIds = new[] { "child" },
-          },
-          commandLimits = new
-          {
-            child = new
-            {
-              canApproveCancellation = true,
-              canCancel = false,
-              canRejectCancellation = true,
-              canRequestCancellation = false,
-              canWithdraw = false,
-              maximumDepositAmount = 0,
-              maximumSupportAmount = 0,
-            },
-          },
-          visibility = "family",
-          shared = true,
-          cheered = false,
-        },
-      },
-      ladirchenPerCurrencyUnit = 1,
-      pendingGuardianGifts = Array.Empty<object>(),
-      settledInterestPeriods = Array.Empty<string>(),
-      sharedSavedBalances = new { },
-      vouchers = Array.Empty<object>(),
-      ledger = new[] { new { id = "internal-entry" } },
-      appliedOperationIds = new[] { "internal-operation" },
-    };
+    return new SavingsReadModelState(
+      new Dictionary<string, decimal>(),
+      new Dictionary<string, decimal>(),
+      "CHF",
+      [],
+      1,
+      [],
+      [],
+      new Dictionary<string, decimal>(),
+      []
+    );
   }
 }

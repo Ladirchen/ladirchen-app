@@ -1,13 +1,16 @@
 import type {
   FurnitureSetId,
   HouseAccessoryId,
+  HouseRoomCount,
   HouseStageId,
+  HouseStageLevel,
   HouseThemeId,
   HouseZoneId,
   RoomDesignId,
   SelectedRoomDesignState,
 } from "@/domain/house";
 import type { HouseLayoutPlacement } from "@/domain/house/entities";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import type { FamilyReadModel } from "./family-read-model-contract";
 
 export const HOME_CUSTOMIZATION_READ_MODEL_TYPE = "home-customization";
@@ -28,37 +31,47 @@ export interface RoomDesignState {
   readonly owned: boolean;
 }
 
-export interface HouseCatalogEntryState {
+export interface PurchasableHouseCatalogEntryState<TId extends string> {
   readonly available: boolean;
-  readonly id: string;
-  readonly minimumHouseLevel?: number;
-  readonly owned?: boolean;
-  readonly price?: number;
-  readonly purchasableByMemberIds: ReadonlyArray<string>;
+  readonly id: TId;
+  readonly owned: boolean;
+  readonly price: number;
+  readonly purchasableByMemberIds: ReadonlyArray<FamilyMemberId>;
 }
 
 export interface HouseCatalogState {
   readonly accessories: ReadonlyArray<
-    HouseCatalogEntryState & { readonly catalogArea: "inside" | "outside" | "special" }
+    PurchasableHouseCatalogEntryState<HouseAccessoryId> & {
+      readonly catalogArea: "inside" | "outside" | "special";
+      readonly minimumHouseLevel: HouseStageLevel;
+    }
   >;
-  readonly areas: ReadonlyArray<HouseCatalogEntryState & { readonly id: HouseZoneId }>;
+  readonly areas: ReadonlyArray<{
+    readonly available: boolean;
+    readonly id: HouseZoneId;
+    readonly minimumHouseLevel: HouseStageLevel;
+  }>;
   readonly furnitureSets: ReadonlyArray<
-    HouseCatalogEntryState & {
+    PurchasableHouseCatalogEntryState<FurnitureSetId> & {
       readonly accessoryIds: ReadonlyArray<HouseAccessoryId>;
       readonly catalogArea: "inside" | "outside";
-      readonly id: FurnitureSetId;
+      readonly minimumHouseLevel: HouseStageLevel;
     }
   >;
   readonly houseStages: ReadonlyArray<{
     readonly active: boolean;
     readonly id: HouseStageId;
-    readonly level: number;
-    readonly roomCount: number;
+    readonly level: HouseStageLevel;
+    readonly roomCount: HouseRoomCount;
   }>;
   readonly roomDesigns: ReadonlyArray<
-    HouseCatalogEntryState & { readonly areaId: HouseZoneId; readonly id: RoomDesignId; readonly themeId: HouseThemeId }
+    PurchasableHouseCatalogEntryState<RoomDesignId> & {
+      readonly areaId: HouseZoneId;
+      readonly minimumHouseLevel: HouseStageLevel;
+      readonly themeId: HouseThemeId;
+    }
   >;
-  readonly themes: ReadonlyArray<HouseCatalogEntryState & { readonly id: HouseThemeId }>;
+  readonly themes: ReadonlyArray<PurchasableHouseCatalogEntryState<HouseThemeId>>;
 }
 
 export interface HomeCustomizationState {

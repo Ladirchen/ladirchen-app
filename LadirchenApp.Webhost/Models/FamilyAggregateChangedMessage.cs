@@ -12,14 +12,14 @@ public sealed record FamilyAggregateChangedMessage(
   DateTimeOffset UpdatedAt
 )
 {
-  public static FamilyAggregateChangedMessage FromSnapshot(FamilyAggregateSnapshot snapshot)
+  public static FamilyAggregateChangedMessage FromChange(FamilyAggregateChange change)
   {
     return new FamilyAggregateChangedMessage(
-      snapshot.FamilyId.Value.ToString(),
-      snapshot.AggregateType,
-      snapshot.Revision,
-      snapshot.UpdatedBy.Value,
-      snapshot.UpdatedAt
+      change.FamilyId.Value.ToString(),
+      change.AggregateType,
+      change.Revision,
+      change.UpdatedBy.Value,
+      change.UpdatedAt
     );
   }
 }

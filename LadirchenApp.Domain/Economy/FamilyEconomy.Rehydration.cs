@@ -9,7 +9,7 @@ namespace LadirchenApp.Domain.Economy;
 
 public sealed partial class FamilyEconomy
 {
-  public void RestoreWallet(FamilyMemberId memberId, decimal balance, decimal reserved)
+  internal void RestoreWallet(FamilyMemberId memberId, decimal balance, decimal reserved)
   {
     ActiveMember(memberId);
     Rules.Require(balance >= 0, DomainError.InvalidValue, "A restored wallet balance cannot be negative.");
@@ -24,14 +24,15 @@ public sealed partial class FamilyEconomy
     wallet.Set(balance, reserved);
   }
 
-  public void RestoreContribution(
+  internal void RestoreContribution(
     ContributionId id,
     ContributionDefinition definition,
     ContributionStatus status,
     StarRating? rating,
     ContributionRewardBreakdown? earnedReward,
     DateTimeOffset? approvedAt,
-    IReadOnlyCollection<FamilyMemberId> invitedPartners
+    IReadOnlyCollection<FamilyMemberId> invitedPartners,
+    bool requireActiveReferences = true
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -51,14 +52,18 @@ public sealed partial class FamilyEconomy
       definition.AssigneeId
     );
 
-    if (definition.AssigneeId is not null)
+    if (requireActiveReferences && definition.AssigneeId is not null)
     {
       ActiveMember(definition.AssigneeId);
     }
 
     foreach (var partner in invitedPartners)
     {
-      ActiveMember(partner);
+      if (requireActiveReferences)
+      {
+        ActiveMember(partner);
+      }
+
       Rules.Require(
         partner != definition.AssigneeId,
         DomainError.InvalidValue,
@@ -90,13 +95,13 @@ public sealed partial class FamilyEconomy
     _contributions.Add(contribution);
   }
 
-  public void RestoreUsedContributionId(ContributionId id)
+  internal void RestoreUsedContributionId(ContributionId id)
   {
     ArgumentNullException.ThrowIfNull(id);
     _usedContributionIds.Add(id);
   }
 
-  public void RestoreAppliedOperation(TransactionId operationId)
+  internal void RestoreAppliedOperation(TransactionId operationId)
   {
     ArgumentNullException.ThrowIfNull(operationId);
     Rules.Require(
@@ -106,7 +111,7 @@ public sealed partial class FamilyEconomy
     );
   }
 
-  public void RestoreLedgerEntry(LedgerEntry entry)
+  internal void RestoreLedgerEntry(LedgerEntry entry)
   {
     ArgumentNullException.ThrowIfNull(entry);
     Rules.Require(
@@ -118,7 +123,7 @@ public sealed partial class FamilyEconomy
     _ledger.Add(entry);
   }
 
-  public void RestorePromotion(
+  internal void RestorePromotion(
     PromotionId id,
     ContributionId contributionId,
     RewardMultiplier multiplier,

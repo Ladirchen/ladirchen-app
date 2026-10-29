@@ -1,129 +1,92 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
 
-using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Family.Permissions;
+using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
 public sealed partial class GetFamilyAggregateQueryHandler
 {
-  private static FamilyAggregateSnapshot ProjectFamilyPermissions(
-    FamilyAggregateSnapshot profile,
+  private async Task<FamilyProfileReadModelProjection> ProjectFamilyProfileAsync(
+    LoadedAggregate<Domain.Family.Family> loadedFamily,
     FamilyMemberId authenticatedMemberId,
-    FamilyMemberId viewerId
+    FamilyMemberId viewerId,
+    CancellationToken cancellationToken
   )
   {
-    var state = ReadProfileState(profile);
-    var members = state["members"] as JsonArray
-      ?? throw new InvalidOperationException("The family member collection is required.");
-    var family = FamilyProfileSnapshotMapper.Rehydrate(profile.FamilyId, state);
+    var family = loadedFamily.Root;
+    var loadedProgression = RequiredDependency(
+      await _progressionRepository.LoadAsync(family, cancellationToken),
+      "family progression"
+    );
+    var loadedCustomization = RequiredDependency(
+      await _houseCustomizationRepository.LoadAsync(
+        family,
+        loadedProgression.Root.StoredLevel,
+        cancellationToken
+      ),
+      "home customization"
+    );
     var permissionPolicy = new FamilyPermissionPolicy();
-    var authenticatedPermissions = permissionPolicy.Resolve(family.ActiveMember(authenticatedMemberId));
+    var authenticatedPermissions = permissionPolicy.Resolve(
+      family.ActiveMember(authenticatedMemberId)
+    );
     var viewerPermissions = permissionPolicy.Resolve(family.ActiveMember(viewerId));
     var canManageInvitations = (
       authenticatedPermissions.InviteMembers && viewerPermissions.InviteMembers
     ) || (
       authenticatedPermissions.ManageFamily && viewerPermissions.ManageFamily
     );
+    var members = family.Members
+      .Where(member => canManageInvitations || !member.InvitationPending)
+      .ToArray();
+    var emailVisibleMemberIds = canManageInvitations
+      ? members.Select(member => member.Id).ToHashSet()
+      : new[] { viewerId }.ToHashSet();
+    var permissions = new FamilyPermissions(
+      viewerPermissions.InviteMembers && authenticatedPermissions.InviteMembers,
+      viewerPermissions.ManageGoals && authenticatedPermissions.ManageGoals,
+      viewerPermissions.ManageContent && authenticatedPermissions.ManageContent,
+      viewerPermissions.ManageFamily && authenticatedPermissions.ManageFamily,
+      viewerPermissions.SupportGoals && authenticatedPermissions.SupportGoals,
+      viewerPermissions.ViewFamilyGoals && authenticatedPermissions.ViewFamilyGoals,
+      viewerPermissions.ViewGuardianGoals && authenticatedPermissions.ViewGuardianGoals
+    );
+    var weeklyStreaks = members.ToDictionary(
+      member => member.Id,
+      member => loadedProgression.Root.StoredWeeklyStreakFor(member.Id)
+    );
 
-    if (!canManageInvitations)
-    {
-      foreach (var pendingInvitation in members
-        .OfType<JsonObject>()
-        .Where(member => member["invitationPending"]?.GetValue<bool>() == true)
-        .ToArray())
+    return new FamilyProfileReadModelProjection(
+      loadedFamily.Revision,
+      members,
+      family.Pets,
+      weeklyStreaks,
+      emailVisibleMemberIds,
+      new System.Collections.Generic.Dictionary<FamilyMemberId, FamilyPermissions>
       {
-        members.Remove(pendingInvitation);
-      }
-    }
-
-    var presentations = members
-      .OfType<JsonObject>()
-      .ToDictionary(
-        member => member["id"]?.GetValue<string>()
-          ?? throw new InvalidOperationException("A family member identity is required."),
-        StringComparer.Ordinal
-      );
-    foreach (var member in family.Members.Where(member => presentations.ContainsKey(member.Id.Value)))
-    {
-      var presentation = presentations[member.Id.Value];
-
-      if (!canManageInvitations && member.Id != viewerId)
-      {
-        presentation.Remove("email");
-      }
-
-      if (member.Id != viewerId)
-      {
-        presentation.Remove("permissions");
-
-        continue;
-      }
-
-      var permissions = permissionPolicy.Resolve(member);
-      presentation["permissions"] = new JsonObject
-      {
-        ["canInviteMembers"] = permissions.InviteMembers && authenticatedPermissions.InviteMembers,
-        ["canManageContent"] = permissions.ManageContent && authenticatedPermissions.ManageContent,
-        ["canManageFamily"] = permissions.ManageFamily && authenticatedPermissions.ManageFamily,
-        ["canManageGoals"] = permissions.ManageGoals && authenticatedPermissions.ManageGoals,
-        ["canSupportChildGoals"] = permissions.SupportGoals && authenticatedPermissions.SupportGoals,
-        ["canViewFamilyGoals"] = permissions.ViewFamilyGoals && authenticatedPermissions.ViewFamilyGoals,
-        ["canViewGuardianGoals"] = permissions.ViewGuardianGoals && authenticatedPermissions.ViewGuardianGoals,
-      };
-    }
-
-    state["avatarCatalog"] = ProjectAvatarCatalog();
-
-    using var document = JsonDocument.Parse(state.ToJsonString());
-
-    return profile with { State = document.RootElement.Clone() };
+        [viewerId] = permissions,
+      },
+      new AvatarCatalog(),
+      family.OnboardingCompleted,
+      FormatSubscriptionTier(loadedCustomization.Root.SubscriptionTier),
+      family.TimeZone
+    );
   }
 
-  private static JsonObject ReadProfileState(FamilyAggregateSnapshot profile)
+  private static string FormatSubscriptionTier(HouseSubscriptionTier tier)
   {
-    return JsonNode.Parse(profile.State.GetRawText()) as JsonObject
-      ?? throw new InvalidOperationException("The family profile state must be an object.");
-  }
-
-  private static JsonObject ProjectAvatarCatalog()
-  {
-    var catalog = new AvatarCatalog();
-
-    return new JsonObject
+    return tier switch
     {
-      ["child"] = AvatarOptions(catalog, AvatarProfile.Child),
-      ["guardian"] = AvatarOptions(catalog, AvatarProfile.Guardian),
+      HouseSubscriptionTier.Free => "free",
+      HouseSubscriptionTier.Pro => "pro",
+      _ => throw new ArgumentOutOfRangeException(nameof(tier)),
     };
   }
-
-  private static JsonObject AvatarOptions(AvatarCatalog catalog, AvatarProfile profile)
-  {
-    return new JsonObject
-    {
-      ["accessoryIds"] = StringArray(catalog.Options("accessory", profile)),
-      ["ages"] = StringArray(catalog.Options("age", profile)),
-      ["faceIds"] = StringArray(catalog.Options("face", profile)),
-      ["faceShapeIds"] = StringArray(catalog.Options("face shape", profile)),
-      ["funAccessoryIds"] = StringArray(catalog.Options("fun accessory", profile)),
-      ["hairColorIds"] = StringArray(catalog.Options("hair color", profile)),
-      ["hairIds"] = StringArray(catalog.Options("hair", profile)),
-      ["outfitColorIds"] = StringArray(catalog.Options("outfit color", profile)),
-      ["outfitIds"] = StringArray(catalog.Options("outfit", profile)),
-      ["seasonalAccessoryIds"] = StringArray(catalog.Options("seasonal accessory", profile)),
-      ["skinToneIds"] = StringArray(catalog.Options("skin tone", profile)),
-    };
-  }
-
-  private static JsonArray StringArray(IEnumerable<string> values)
-  {
-    return new JsonArray(values.Select(value => JsonValue.Create(value)).ToArray<JsonNode?>());
-  }
-
 }

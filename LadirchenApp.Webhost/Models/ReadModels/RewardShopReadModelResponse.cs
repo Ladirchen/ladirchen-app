@@ -10,12 +10,8 @@ public sealed record RewardShopReadModelResponse(
   [property: JsonRequired] RewardShopReadModelState State
 )
 {
-  public static RewardShopReadModelResponse FromSnapshot(FamilyAggregateSnapshot snapshot)
+  public static RewardShopReadModelResponse FromProjection(RewardShopReadModelProjection projection)
   {
-    return new RewardShopReadModelResponse(
-      snapshot.AggregateType,
-      snapshot.Revision,
-      FamilyReadModelState.Deserialize<RewardShopReadModelState>(snapshot)
-    );
+    return FamilyReadModelResponseMapper.Map(projection);
   }
 }

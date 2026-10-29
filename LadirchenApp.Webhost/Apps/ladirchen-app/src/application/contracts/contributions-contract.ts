@@ -8,9 +8,9 @@ export interface ContributionsState {
   readonly contributions: ReadonlyArray<Contribution>;
   readonly currentWeekApprovedContributionCountByMember: Readonly<Record<FamilyMemberId, number>>;
   readonly currentWeekEarnedByMember: Readonly<Record<FamilyMemberId, number>>;
-  readonly perfectRatingBonusPercent?: number;
+  readonly perfectRatingBonusPercent: number;
   readonly promotions: ReadonlyArray<Promotion>;
-  readonly todayEarnedByMember?: Readonly<Record<FamilyMemberId, number>>;
+  readonly todayEarnedByMember: Readonly<Record<FamilyMemberId, number>>;
 }
 
 export type ContributionsReadModel = FamilyReadModel<typeof CONTRIBUTIONS_READ_MODEL_TYPE, ContributionsState>;

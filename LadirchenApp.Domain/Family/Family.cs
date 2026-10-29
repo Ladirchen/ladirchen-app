@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
 
+using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Family.Setup;
 using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.Shared;
@@ -57,11 +58,42 @@ public sealed class Family : AggregateRoot<FamilyId>
     ActiveChildId = ResolveActiveChild(state.ActiveChildId, members);
   }
 
-  public static Family Restore(FamilyState state)
+  internal static Family Reconstitute(FamilyState state)
   {
     ArgumentNullException.ThrowIfNull(state);
 
     return new Family(state);
+  }
+
+  internal FamilyState CaptureState()
+  {
+    return new FamilyState(
+      Id,
+      TimeZone,
+      Currency,
+      ExchangeRate,
+      ActiveChildId,
+      OnboardingCompleted,
+      _members.Select(item => new FamilyMemberState(
+        item.Id,
+        item.Name,
+        item.Role,
+        item.Access,
+        item.InvitationPending,
+        item.Nickname,
+        item.EmailAddress,
+        item.ParticipatesInWeeklyGoal,
+        item.Avatar,
+        item.Color,
+        item.Appearance
+      )),
+      _pets
+    );
+  }
+
+  internal static Family Restore(FamilyState state)
+  {
+    return Reconstitute(state);
   }
 
   public IReadOnlyList<FamilyMember> Members
@@ -70,6 +102,19 @@ public sealed class Family : AggregateRoot<FamilyId>
     {
 
       return _members.AsReadOnly();
+    }
+  }
+
+  public IReadOnlyList<FamilyMember> WeeklyGoalParticipants
+  {
+    get
+    {
+      return _members
+        .Where(member =>
+          !member.InvitationPending
+          && (member.Role == MemberRole.Child || member.ParticipatesInWeeklyGoal)
+        )
+        .ToArray();
     }
   }
 
@@ -187,6 +232,20 @@ public sealed class Family : AggregateRoot<FamilyId>
 
     member.SetNickname(normalized.Length == 0 ? null : normalized);
     AddDomainEvent(new FamilyMemberChanged(Id, actor, "NicknameChanged", now));
+  }
+
+  public void SaveOwnAppearance(
+    FamilyMemberId actor,
+    AvatarAppearance appearance,
+    DateTimeOffset now
+  )
+  {
+    ArgumentNullException.ThrowIfNull(appearance);
+    var member = ActiveMember(actor);
+    var profile = member.Role == MemberRole.Child ? AvatarProfile.Child : AvatarProfile.Guardian;
+    new AvatarCatalog().Validate(appearance, profile);
+    member.SetAppearance(appearance);
+    AddDomainEvent(new FamilyMemberChanged(Id, actor, "AppearanceChanged", now));
   }
 
   public void SetGuardianWeeklyGoalParticipation(
@@ -328,7 +387,7 @@ public sealed class Family : AggregateRoot<FamilyId>
     AddDomainEvent(new FamilySettingsChanged(Id, now));
   }
 
-  public void RestoreEconomySettings(FamilyCurrency currency, ExchangeRate rate)
+  internal void RestoreEconomySettings(FamilyCurrency currency, ExchangeRate rate)
   {
     Rules.Defined(currency);
     ArgumentNullException.ThrowIfNull(rate);

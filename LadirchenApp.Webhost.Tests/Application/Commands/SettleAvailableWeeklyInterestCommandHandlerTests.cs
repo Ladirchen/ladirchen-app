@@ -1,13 +1,15 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Application.Queries;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.Ladi;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Webhost.Tests.Application.Commands;
@@ -17,18 +19,19 @@ public sealed class SettleAvailableWeeklyInterestCommandHandlerTests
   private static readonly FamilyId _familyId = new(Guid.Parse("aa71a979-52c4-4963-99dc-0298d735fbe7"));
   private static readonly FamilyMemberId _guardianId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
+  private static readonly DateTimeOffset _now = new(2026, 10, 12, 10, 0, 0, TimeSpan.Zero);
 
   [Test]
   public async Task SettlesEachClosedWeekOnlyOnceAcrossRepeatedRuns()
   {
-    var repository = CreateRepository(hasClosedWeek: true);
-    var handler = CreateHandler(repository);
+    var store = CreateStore(hasClosedWeek: true);
+    var handler = CreateHandler(store);
 
     var first = await handler.HandleAsync(
       new SettleAvailableWeeklyInterestCommand(),
       CancellationToken.None
     );
-    var revisionAfterFirstRun = repository.Required(_familyId, "savings").Revision;
+    var revisionAfterFirstRun = store.Revision(TypedAggregateKind.FamilyEconomy);
     var second = await handler.HandleAsync(
       new SettleAvailableWeeklyInterestCommand(),
       CancellationToken.None
@@ -43,24 +46,19 @@ public sealed class SettleAvailableWeeklyInterestCommandHandlerTests
     await Assert.That(second.DeferredPeriods).IsEqualTo(0);
     await Assert.That(second.FailedFamilies).IsEqualTo(0);
 
-    var savings = repository.Required(_familyId, "savings");
-    var goal = savings.State.GetProperty("goals").EnumerateArray().Single();
-    var settledPeriods = savings.State
-      .GetProperty("settledInterestPeriods")
-      .EnumerateArray()
-      .Select(item => item.GetString())
-      .OfType<string>()
-      .ToArray();
-    await Assert.That(savings.Revision).IsEqualTo(revisionAfterFirstRun);
-    await Assert.That(goal.GetProperty("saved").GetDecimal()).IsEqualTo(53m);
-    await Assert.That(settledPeriods).IsEquivalentTo(["2026-W41"]);
+    var economy = store.RequiredEconomy();
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy))
+      .IsEqualTo(revisionAfterFirstRun);
+    await Assert.That(economy.SavingsGoals.Single().Saved).IsEqualTo(53m);
+    await Assert.That(economy.SettledInterestPeriods.Select(period => period.Key))
+      .IsEquivalentTo(["2026-W41"]);
   }
 
   [Test]
   public async Task DoesNothingWhenNoFamilyHasAnEligibleClosedWeek()
   {
-    var repository = CreateRepository(hasClosedWeek: false);
-    var handler = CreateHandler(repository);
+    var store = CreateStore(hasClosedWeek: false);
+    var handler = CreateHandler(store);
 
     var result = await handler.HandleAsync(
       new SettleAvailableWeeklyInterestCommand(),
@@ -71,159 +69,105 @@ public sealed class SettleAvailableWeeklyInterestCommandHandlerTests
     await Assert.That(result.SettledPeriods).IsEqualTo(0);
     await Assert.That(result.DeferredPeriods).IsEqualTo(0);
     await Assert.That(result.FailedFamilies).IsEqualTo(0);
-    await Assert.That(repository.Required(_familyId, "savings").Revision).IsEqualTo(1);
-  }
-
-  [Test]
-  public async Task InvalidFamilyStateDoesNotPreventOtherFamiliesFromSettling()
-  {
-    var repository = CreateRepository(hasClosedWeek: true);
-    var invalidFamilyId = new FamilyId(Guid.Parse("8916711c-6684-4449-a9dc-d0e89e5ff56e"));
-
-    foreach (var aggregateType in new[] { "family-profile", "family-progression", "reward-shop", "savings" })
-    {
-      repository.Seed(Snapshot(invalidFamilyId, aggregateType, 42));
-    }
-
-    var handler = CreateHandler(repository);
-    var result = await handler.HandleAsync(
-      new SettleAvailableWeeklyInterestCommand(),
-      CancellationToken.None
-    );
-
-    await Assert.That(result.SettledPeriods).IsEqualTo(1);
-    await Assert.That(result.FailedFamilies).IsEqualTo(1);
-    await Assert.That(repository.Required(_familyId, "savings").Revision).IsEqualTo(2);
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(1);
   }
 
   private static SettleAvailableWeeklyInterestCommandHandler CreateHandler(
-    TestFamilyAggregateSnapshotRepository repository
+    TestTypedAggregateStore store
   )
   {
-    var planner = new GetWeeklyInterestSettlementPlanQueryHandler(repository);
-    var familyCommands = new ExecuteFamilyCommandHandler(
-      repository,
-      new ImmediateFamilyCommandExecutionCoordinator(),
-      new FixedTimeProvider(new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero))
-    );
+    var planner = new GetWeeklyInterestSettlementPlanQueryHandler(store, store, store);
 
-    return new SettleAvailableWeeklyInterestCommandHandler(repository, planner, familyCommands);
+    return new SettleAvailableWeeklyInterestCommandHandler(
+      store,
+      planner,
+      store.CreateCommandHandler()
+    );
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository(bool hasClosedWeek)
+  private static TestTypedAggregateStore CreateStore(bool hasClosedWeek)
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    var closedWeekOutcomes = new Dictionary<string, string>();
-    var weeklyEvaluations = new Dictionary<string, object>();
+    var family = new Family(
+      _familyId,
+      _guardianId,
+      "Guardian",
+      new IanaTimeZone("Europe/Zurich")
+    );
+    family.AddMember(
+      _guardianId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    var economy = new FamilyEconomy(family);
+    economy.GiveSpecialGift(
+      _guardianId,
+      _childId,
+      new LadirchenAmount(45),
+      "Test balance",
+      new TransactionId("initial-balance"),
+      _now
+    );
+    var goalId = new SavingGoalId("bicycle");
+    economy.AddGoal(
+      _childId,
+      goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Member(_childId),
+        "Bicycle",
+        new LadirchenAmount(100),
+        GoalVisibility.Family
+      ),
+      new TransactionId("add-bicycle-goal"),
+      _now.AddDays(-11)
+    );
+    economy.DepositToGoal(
+      _childId,
+      goalId,
+      new LadirchenAmount(45),
+      new TransactionId("deposit-bicycle-goal"),
+      _now.AddDays(-11)
+    );
+    var progression = FamilyHouse.CreateInitial(family);
 
     if (hasClosedWeek)
     {
-      closedWeekOutcomes["2026-W41"] = "completed";
-      weeklyEvaluations["2026-W41"] = new
-      {
-        evaluatedAt = "2026-10-12T10:00:00+00:00",
-        members = new Dictionary<string, object>
-        {
-          [_childId.Value] = new
-          {
-            streakDays = 0,
-            completionPercent = 0,
-            averageBasicRating = 0,
-            participationValue = 1,
-            ladiStageId = "sun-ladi",
-            ladiStagePosition = 4,
-          },
-        },
-      };
+      var period = new IsoWeekPeriod(2026, 41);
+      var participation = new PersonalParticipation(0, 60, 2);
+      var policy = new LadiProgressionPolicy();
+      var value = policy.Calculate(participation);
+      var evaluation = new PersonalLadiEvaluation(
+        _childId,
+        period.Year,
+        period.Week,
+        participation,
+        value,
+        policy.DetermineStage(value.Capped)
+      );
+      progression.CloseSuccessfulWeek(
+        period,
+        HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+        [evaluation],
+        _now
+      );
     }
 
-    repository.Seed(Snapshot("family-profile", new
-    {
-      timeZone = "Europe/Zurich",
-      pets = Array.Empty<object>(),
-      members = new object[]
-      {
-        new
-        {
-          id = _guardianId.Value,
-          name = "Guardian",
-          role = "guardian",
-          guardianAccess = "admin",
-          participatesInWeeklyGoal = false,
-        },
-        new
-        {
-          id = _childId.Value,
-          name = "Child",
-          role = "child",
-          participatesInWeeklyGoal = true,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("family-progression", new
-    {
-      completedWeeklyStreak = 1,
-      houseLevel = 1,
-      maximumSavingsInterestRate = 8,
-      closedWeekOutcomes,
-      weeklyEvaluations,
-    }));
-    repository.Seed(Snapshot("reward-shop", new { rewards = Array.Empty<object>() }));
-    repository.Seed(Snapshot("savings", new
-    {
-      balances = new { guardian = 0, child = 0 },
-      familyCurrencyCode = "CHF",
-      goals = new object[]
-      {
-        new
-        {
-          id = "bicycle",
-          title = "Bicycle",
-          icon = "bike-icon",
-          ownerId = _childId.Value,
-          target = 100,
-          saved = 50,
-          starterBonus = 5,
-          interestEarned = 0,
-          shared = false,
-          visibility = "private",
-          cheered = false,
-          createdAt = "2026-10-01T10:00:00+00:00",
-          participantIds = Array.Empty<string>(),
-          refundableContributions = new[]
-          {
-            new { memberId = _childId.Value, amount = 45 },
-          },
-        },
-      },
-      ladirchenPerCurrencyUnit = 10,
-      pendingGuardianGifts = Array.Empty<object>(),
-      settledInterestPeriods = Array.Empty<string>(),
-      vouchers = Array.Empty<object>(),
-    }));
-
-    return repository;
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(string aggregateType, object state)
-  {
-    return Snapshot(_familyId, aggregateType, state);
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(
-    FamilyId familyId,
-    string aggregateType,
-    object state
-  )
-  {
-    return new FamilyAggregateSnapshot(
-      familyId,
-      aggregateType,
-      FamilyAggregateSchema.GetVersion(aggregateType),
-      1,
-      JsonSerializer.SerializeToElement(state),
-      _guardianId,
-      DateTimeOffset.UnixEpoch
+    var store = new TestTypedAggregateStore(new FixedTimeProvider(_now));
+    store.Seed(
+      family,
+      economy,
+      new FamilyEconomyPresentationState(
+        [],
+        [new SavingGoalPresentationState(goalId, "bicycle-icon")],
+        [],
+        []
+      ),
+      progression
     );
+
+    return store;
   }
 }

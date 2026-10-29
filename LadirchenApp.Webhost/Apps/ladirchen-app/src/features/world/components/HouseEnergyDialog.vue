@@ -138,7 +138,7 @@ const energyState = computed(function callback() {
     return { title: t("world.energy.states.full.title"), copy: t("world.energy.states.full.description") };
   }
 
-  if (store.familyEnergy >= store.minimumSuccessfulWeekEnergy) {
+  if (store.houseMeetsMinimumEnergy) {
     return { title: t("world.energy.states.good.title"), copy: t("world.energy.states.good.description") };
   }
 

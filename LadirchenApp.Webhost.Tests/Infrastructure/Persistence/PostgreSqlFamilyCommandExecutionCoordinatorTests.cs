@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Infrastructure.Persistence;
 
@@ -55,7 +58,9 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
         {
           executions++;
 
-          return Task.FromResult(new FamilyCommandResult([]));
+          return Task.FromResult(
+            new FamilyCommandResult(Array.Empty<FamilyAggregateChange>())
+          );
         },
         CancellationToken.None
       );
@@ -64,11 +69,15 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
       await Assert.That(replayedResult.ChangedAggregates[0].Revision).IsEqualTo(
         firstResult.ChangedAggregates[0].Revision
       );
-      await Assert.That(replayedResult.ChangedAggregates[0].State.GetProperty("balance").GetInt32())
-        .IsEqualTo(10);
+      await Assert.That(replayedResult.ChangedAggregates[0].AggregateType).IsEqualTo("savings");
+      await Assert.That(replayedResult.ChangedAggregates[0].UpdatedBy).IsEqualTo(command.ActorId);
       await Assert.That(executions).IsEqualTo(1);
       await Assert.That(await restartedDatabase.FamilyCommandReceipts.CountAsync()).IsEqualTo(1);
       await Assert.That(await restartedDatabase.FamilyAggregateOutboxMessages.CountAsync()).IsEqualTo(1);
+      var outboxMessage = await restartedDatabase.FamilyAggregateOutboxMessages
+        .AsNoTracking()
+        .SingleAsync();
+      await Assert.That(outboxMessage.CommandId).IsEqualTo(command.CommandId);
     }
   }
 
@@ -139,23 +148,19 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
     {
       await database.Database.MigrateAsync();
       var coordinator = new PostgreSqlFamilyCommandExecutionCoordinator(database, TimeProvider.System);
-      var repository = new DatabaseFamilyAggregateSnapshotRepository(database, TimeProvider.System);
-      using var state = JsonDocument.Parse("""{"balance":10}""");
+      var unitOfWork = new DatabaseTypedAggregateUnitOfWork(database, TimeProvider.System);
 
       await Assert.That(async () =>
         await coordinator.ExecuteOnceAsync(
           command,
           async cancellationToken =>
           {
-            await repository.SaveAsync(
-              new SaveFamilyAggregateCommand(
+            await unitOfWork.SaveAsync(
+              InitialFamilyAggregateFactory.Create(
                 command.FamilyId,
-                "savings",
-                0,
-                state.RootElement,
-                command.ActorId
+                command.ActorId,
+                "Guardian"
               ),
-              1,
               cancellationToken
             );
 
@@ -172,31 +177,32 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
         restartedDatabase,
         TimeProvider.System
       );
-      var repository = new DatabaseFamilyAggregateSnapshotRepository(
+      var unitOfWork = new DatabaseTypedAggregateUnitOfWork(
         restartedDatabase,
         TimeProvider.System
       );
+      var familyRepository = new DatabaseFamilyRepository(restartedDatabase, unitOfWork);
       await Assert.That(
-        await repository.GetAsync(command.FamilyId, "savings", CancellationToken.None)
+        await familyRepository.LoadAsync(command.FamilyId, CancellationToken.None)
       ).IsNull();
-      using var state = JsonDocument.Parse("""{"balance":10}""");
       var result = await coordinator.ExecuteOnceAsync(
         command,
         async cancellationToken =>
         {
-          var snapshot = await repository.SaveAsync(
-            new SaveFamilyAggregateCommand(
+          var saved = await unitOfWork.SaveAsync(
+            InitialFamilyAggregateFactory.Create(
               command.FamilyId,
-              "savings",
-              0,
-              state.RootElement,
-              command.ActorId
+              command.ActorId,
+              "Guardian"
             ),
-            1,
             cancellationToken
           );
+          var family = saved.Family
+            ?? throw new InvalidOperationException("The family aggregate was not saved.");
 
-          return new FamilyCommandResult([snapshot]);
+          return new FamilyCommandResult(
+            [CreateChange(command, "family-profile", family)]
+          );
         },
         CancellationToken.None
       );
@@ -239,7 +245,9 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
     await Assert.That(async () =>
       await restartedCoordinator.ExecuteOnceAsync(
         conflictingCommand,
-        _ => Task.FromResult(new FamilyCommandResult([])),
+        _ => Task.FromResult(
+          new FamilyCommandResult(Array.Empty<FamilyAggregateChange>())
+        ),
         CancellationToken.None
       )
     ).Throws<FamilyCommandException>();
@@ -256,35 +264,12 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
     await using (var setupDatabase = new LadirchenDbContext(options))
     {
       await setupDatabase.Database.MigrateAsync();
-      var repository = new DatabaseFamilyAggregateSnapshotRepository(
+      var unitOfWork = new DatabaseTypedAggregateUnitOfWork(
         setupDatabase,
         TimeProvider.System
       );
-      using var leftState = JsonDocument.Parse("""{"value":1}""");
-      using var rightState = JsonDocument.Parse("""{"value":1}""");
-      await repository.SaveBatchAsync(
-        [
-          new PendingFamilyAggregateSave(
-            new SaveFamilyAggregateCommand(
-              familyId,
-              "left",
-              0,
-              leftState.RootElement,
-              memberId
-            ),
-            1
-          ),
-          new PendingFamilyAggregateSave(
-            new SaveFamilyAggregateCommand(
-              familyId,
-              "right",
-              0,
-              rightState.RootElement,
-              memberId
-            ),
-            1
-          ),
-        ],
+      await unitOfWork.SaveAsync(
+        InitialFamilyAggregateFactory.Create(familyId, memberId, "Guardian"),
         CancellationToken.None
       );
     }
@@ -310,14 +295,12 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
     );
     await using var firstDatabase = new LadirchenDbContext(options);
     await using var secondDatabase = new LadirchenDbContext(options);
-    var firstRepository = new DatabaseFamilyAggregateSnapshotRepository(
-      firstDatabase,
-      TimeProvider.System
-    );
-    var secondRepository = new DatabaseFamilyAggregateSnapshotRepository(
-      secondDatabase,
-      TimeProvider.System
-    );
+    var firstUnitOfWork = new DatabaseTypedAggregateUnitOfWork(firstDatabase, TimeProvider.System);
+    var secondUnitOfWork = new DatabaseTypedAggregateUnitOfWork(secondDatabase, TimeProvider.System);
+    var firstFamilyRepository = new DatabaseFamilyRepository(firstDatabase, firstUnitOfWork);
+    var secondFamilyRepository = new DatabaseFamilyRepository(secondDatabase, secondUnitOfWork);
+    var firstEconomyRepository = new DatabaseFamilyEconomyRepository(firstDatabase, firstUnitOfWork);
+    var secondEconomyRepository = new DatabaseFamilyEconomyRepository(secondDatabase, secondUnitOfWork);
     var firstCoordinator = new PostgreSqlFamilyCommandExecutionCoordinator(
       firstDatabase,
       TimeProvider.System
@@ -330,24 +313,28 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
       firstCommand,
       async cancellationToken =>
       {
-        _ = await firstRepository.GetAsync(familyId, "left", cancellationToken);
-        _ = await firstRepository.GetAsync(familyId, "right", cancellationToken);
+        var family = await firstFamilyRepository.LoadAsync(familyId, cancellationToken)
+          ?? throw new InvalidOperationException("The family aggregate was not found.");
+        var economy = await firstEconomyRepository.LoadAsync(family.Root, cancellationToken)
+          ?? throw new InvalidOperationException("The family economy was not found.");
         firstReadCompleted.SetResult();
         await secondReadCompleted.Task.WaitAsync(cancellationToken);
-        using var changedState = JsonDocument.Parse("""{"value":2}""");
-        var changed = await firstRepository.SaveAsync(
-          new SaveFamilyAggregateCommand(
-            familyId,
-            "right",
-            1,
-            changedState.RootElement,
-            memberId
-          ),
-          1,
+        economy.Root.UpdateContributionSettings(
+          memberId,
+          new ContributionSettings(new Percentage(15)),
+          DateTimeOffset.Parse("2026-10-29T12:00:00Z")
+        );
+        var changed = await firstEconomyRepository.SaveAsync(
+          economy.Root,
+          economy.Presentation,
+          economy.Revision,
+          memberId,
           cancellationToken
         );
 
-        return new FamilyCommandResult([changed]);
+        return new FamilyCommandResult(
+          [CreateChange(firstCommand, "contributions", changed)]
+        );
       },
       CancellationToken.None
     );
@@ -355,24 +342,28 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
       secondCommand,
       async cancellationToken =>
       {
-        _ = await secondRepository.GetAsync(familyId, "left", cancellationToken);
-        _ = await secondRepository.GetAsync(familyId, "right", cancellationToken);
+        var family = await secondFamilyRepository.LoadAsync(familyId, cancellationToken)
+          ?? throw new InvalidOperationException("The family aggregate was not found.");
+        _ = await secondEconomyRepository.LoadAsync(family.Root, cancellationToken)
+          ?? throw new InvalidOperationException("The family economy was not found.");
         secondReadCompleted.SetResult();
         await firstReadCompleted.Task.WaitAsync(cancellationToken);
-        using var changedState = JsonDocument.Parse("""{"value":2}""");
-        var changed = await secondRepository.SaveAsync(
-          new SaveFamilyAggregateCommand(
-            familyId,
-            "left",
-            1,
-            changedState.RootElement,
-            memberId
-          ),
-          1,
+        family.Root.RenameMember(
+          memberId,
+          memberId,
+          "Renamed guardian",
+          DateTimeOffset.Parse("2026-10-29T12:00:00Z")
+        );
+        var changed = await secondFamilyRepository.SaveAsync(
+          family.Root,
+          family.Revision,
+          memberId,
           cancellationToken
         );
 
-        return new FamilyCommandResult([changed]);
+        return new FamilyCommandResult(
+          [CreateChange(secondCommand, "family-profile", changed)]
+        );
       },
       CancellationToken.None
     );
@@ -437,20 +428,46 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
 
   private static FamilyCommandResult CreateResult(FamilyCommand command)
   {
-    using var state = JsonDocument.Parse("""{"balance":10}""");
-
     return new FamilyCommandResult(
       [
-        new FamilyAggregateSnapshot(
+        new FamilyAggregateChange(
           command.FamilyId,
           "savings",
-          1,
           2,
-          state.RootElement.Clone(),
           command.ActorId,
           DateTimeOffset.Parse("2026-10-29T12:00:00Z")
         ),
       ]
+    );
+  }
+
+  private static FamilyAggregateChange CreateChange<TAggregate>(
+    FamilyCommand command,
+    string aggregateType,
+    LoadedAggregate<TAggregate> saved
+  )
+  {
+    return new FamilyAggregateChange(
+      command.FamilyId,
+      aggregateType,
+      saved.Revision,
+      saved.Audit.UpdatedBy,
+      saved.Audit.UpdatedAt
+    );
+  }
+
+  private static FamilyAggregateChange CreateChange(
+    FamilyCommand command,
+    string aggregateType,
+    LoadedFamilyEconomy saved
+  )
+  {
+    return new FamilyAggregateChange(
+      command.FamilyId,
+      aggregateType,
+      saved.Revision,
+      saved.Audit.UpdatedBy,
+      saved.Audit.UpdatedAt
     );
   }
 

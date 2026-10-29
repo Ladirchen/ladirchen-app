@@ -67,8 +67,7 @@ export const lifecycleActions = {
     const contributionsLoaded = applySettledLoad(contributionsResult, (contributions) => {
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
-        this.perfectRatingBonusPercent =
-          contributions.state.perfectRatingBonusPercent ?? this.perfectRatingBonusPercent;
+        this.perfectRatingBonusPercent = contributions.state.perfectRatingBonusPercent;
         this.promotions = [...contributions.state.promotions];
         this.todayEarnedByMember = { ...contributions.state.todayEarnedByMember };
         this.currentWeekEarnedByMember = { ...contributions.state.currentWeekEarnedByMember };
@@ -92,7 +91,7 @@ export const lifecycleActions = {
     const rewardShopLoaded = applySettledLoad(rewardShopResult, (rewardShop) => {
       if (rewardShop) {
         this.shopRewards = [...rewardShop.state.rewards];
-        this.rewardShopRedemptionOpen = rewardShop.state.redemptionOpen ?? false;
+        this.rewardShopRedemptionOpen = rewardShop.state.redemptionOpen;
       }
     });
     const progressionLoaded = applySettledLoad(progressionResult, (progression) => {
@@ -186,7 +185,7 @@ export const lifecycleActions = {
 
         if (snapshot) {
           this.contributions = [...snapshot.state.contributions];
-          this.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent ?? this.perfectRatingBonusPercent;
+          this.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent;
           this.promotions = [...snapshot.state.promotions];
           this.todayEarnedByMember = { ...snapshot.state.todayEarnedByMember };
           this.currentWeekEarnedByMember = { ...snapshot.state.currentWeekEarnedByMember };
@@ -223,7 +222,7 @@ export const lifecycleActions = {
 
         if (snapshot) {
           this.shopRewards = [...snapshot.state.rewards];
-          this.rewardShopRedemptionOpen = snapshot.state.redemptionOpen ?? false;
+          this.rewardShopRedemptionOpen = snapshot.state.redemptionOpen;
         }
 
         if (savingsSnapshot) {

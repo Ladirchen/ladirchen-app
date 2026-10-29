@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
+using LadirchenApp.Webhost.Infrastructure.Persistence.Typed;
+using LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities;
+
 namespace LadirchenApp.Webhost.Infrastructure.Persistence;
 
 public sealed class LadirchenDbContext : DbContext
@@ -12,14 +15,6 @@ public sealed class LadirchenDbContext : DbContext
     get
     {
       return Set<AuthenticationAccountEntity>();
-    }
-  }
-
-  public DbSet<FamilyAggregateSnapshotEntity> FamilyAggregateSnapshots
-  {
-    get
-    {
-      return Set<FamilyAggregateSnapshotEntity>();
     }
   }
 
@@ -39,6 +34,38 @@ public sealed class LadirchenDbContext : DbContext
     }
   }
 
+  public DbSet<FamilyRootEntity> Families
+  {
+    get
+    {
+      return Set<FamilyRootEntity>();
+    }
+  }
+
+  public DbSet<FamilyEconomyRootEntity> FamilyEconomies
+  {
+    get
+    {
+      return Set<FamilyEconomyRootEntity>();
+    }
+  }
+
+  public DbSet<FamilyProgressionRootEntity> FamilyProgressions
+  {
+    get
+    {
+      return Set<FamilyProgressionRootEntity>();
+    }
+  }
+
+  public DbSet<HouseCustomizationRootEntity> HouseCustomizations
+  {
+    get
+    {
+      return Set<HouseCustomizationRootEntity>();
+    }
+  }
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     var account = modelBuilder.Entity<AuthenticationAccountEntity>();
@@ -50,14 +77,6 @@ public sealed class LadirchenDbContext : DbContext
     account.Property(item => item.PasswordHash).IsRequired();
     account.Property(item => item.PasswordSalt).IsRequired();
     account.HasIndex(item => item.FamilyId);
-
-    var aggregate = modelBuilder.Entity<FamilyAggregateSnapshotEntity>();
-    aggregate.ToTable("FamilyAggregateSnapshots");
-    aggregate.HasKey(item => new { item.FamilyId, item.AggregateType });
-    aggregate.Property(item => item.AggregateType).HasMaxLength(100);
-    aggregate.Property(item => item.Revision).IsConcurrencyToken();
-    aggregate.Property(item => item.StateJson).IsRequired();
-    aggregate.Property(item => item.UpdatedBy).HasMaxLength(100);
 
     var receipt = modelBuilder.Entity<FamilyCommandReceiptEntity>();
     receipt.ToTable("FamilyCommandReceipts");
@@ -81,5 +100,7 @@ public sealed class LadirchenDbContext : DbContext
       .WithMany()
       .HasForeignKey(item => item.CommandId)
       .OnDelete(DeleteBehavior.Cascade);
+
+    TypedAggregatePersistenceModel.Configure(modelBuilder);
   }
 }

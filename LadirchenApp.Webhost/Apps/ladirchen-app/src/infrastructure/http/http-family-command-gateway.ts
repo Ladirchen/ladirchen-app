@@ -1,6 +1,11 @@
-import type { FamilyCommandGateway, FamilyCommandPayload } from "@/application/ports/family-command-gateway";
+import type {
+  FamilyCommandGateway,
+  FamilyCommandPayload,
+  FamilyCommandType,
+} from "@/application/ports/family-command-gateway";
 import { isFamilyReadModelType, type FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
+import { isRecord } from "@/application/contracts/validation/runtime-validation";
 
 interface ProblemResponse {
   readonly detail?: string;
@@ -8,17 +13,28 @@ interface ProblemResponse {
 }
 
 function parseCommandResponse(value: unknown): ReadonlyArray<FamilyReadModelType> {
-  if (typeof value !== "object" || value === null) {
+  if (!isRecord(value)) {
     throw new TypeError("The family command response must be an object.");
   }
 
-  const changedReadModelTypes = (value as Record<string, unknown>).changedReadModelTypes;
+  const changedReadModelTypes = value.changedReadModelTypes;
 
   if (!Array.isArray(changedReadModelTypes) || !changedReadModelTypes.every(isFamilyReadModelType)) {
     throw new TypeError("The family command response contains invalid read-model types.");
   }
 
   return [...new Set(changedReadModelTypes)];
+}
+
+function parseProblemResponse(value: unknown): ProblemResponse {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return {
+    detail: typeof value.detail === "string" ? value.detail : undefined,
+    title: typeof value.title === "string" ? value.title : undefined,
+  };
 }
 
 export class FamilyCommandHttpError extends Error {
@@ -34,11 +50,11 @@ export class FamilyCommandHttpError extends Error {
 export class HttpFamilyCommandGateway implements FamilyCommandGateway {
   public constructor(private readonly apiBaseUrl: string) {}
 
-  public async execute(
+  public async execute<TCommandType extends FamilyCommandType>(
     familyId: FamilyId,
     actorId: FamilyMemberId,
-    commandType: string,
-    payload: FamilyCommandPayload,
+    commandType: TCommandType,
+    payload: FamilyCommandPayload<NoInfer<TCommandType>>,
   ): Promise<ReadonlyArray<FamilyReadModelType>> {
     const url = `${this.apiBaseUrl}/api/families/${encodeURIComponent(familyId)}/commands`;
     const commandId = crypto.randomUUID();
@@ -76,7 +92,9 @@ export class HttpFamilyCommandGateway implements FamilyCommandGateway {
 
   private async readProblem(response: Response): Promise<ProblemResponse> {
     try {
-      return (await response.json()) as ProblemResponse;
+      const value: unknown = await response.json();
+
+      return parseProblemResponse(value);
     } catch {
       return {};
     }

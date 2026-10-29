@@ -1,15 +1,34 @@
+using System.Threading;
+using System.Threading.Tasks;
+
+using LadirchenApp.Domain.Family;
+
 namespace LadirchenApp.Application.Aggregates;
 
 public sealed partial class GetFamilyAggregateQueryHandler
 {
-  private FamilyAggregateSnapshot ProjectContributionRewards(
-    FamilyAggregateSnapshot contributions,
-    FamilyAggregateSnapshot profile
+  private async Task<ContributionsFamilyReadModelProjection?> ProjectContributionsAsync(
+    Family family,
+    CancellationToken cancellationToken
   )
   {
-    var state = ContributionReadModelSnapshotMapper.Read(contributions, profile);
-    var projection = ContributionReadModelProjector.Project(state, _timeProvider.GetUtcNow());
+    var loadedEconomy = await _economyRepository.LoadAsync(family, cancellationToken);
 
-    return ContributionReadModelSnapshotMapper.Write(contributions, projection);
+    if (loadedEconomy is null)
+    {
+      return null;
+    }
+
+    var calculatedState = ContributionReadModelProjector.Project(
+      new ContributionReadModelState(family, loadedEconomy.Root),
+      _timeProvider.GetUtcNow()
+    );
+
+    return new ContributionsFamilyReadModelProjection(
+      loadedEconomy.Revision,
+      loadedEconomy.Root,
+      loadedEconomy.Presentation,
+      calculatedState
+    );
   }
 }

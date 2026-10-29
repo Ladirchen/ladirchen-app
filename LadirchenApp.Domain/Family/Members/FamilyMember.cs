@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Prototypes;
 
@@ -29,6 +30,9 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
     Nickname = state.Nickname;
     EmailAddress = state.EmailAddress;
     ParticipatesInWeeklyGoal = state.ParticipatesInWeeklyGoal;
+    Avatar = state.Avatar;
+    Color = state.Color;
+    Appearance = state.Appearance;
   }
 
   public string Name
@@ -50,6 +54,9 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
   public string? Nickname { get; private set; }
   public string? EmailAddress { get; private set; }
   public bool ParticipatesInWeeklyGoal { get; private set; }
+  public string? Avatar { get; private set; }
+  public string? Color { get; private set; }
+  public AvatarAppearance? Appearance { get; private set; }
   public string DisplayName
   {
     get
@@ -94,5 +101,10 @@ public sealed class FamilyMember : Entity<FamilyMemberId>
   internal void SetWeeklyGoalParticipation(bool participates)
   {
     ParticipatesInWeeklyGoal = participates;
+  }
+
+  internal void SetAppearance(AvatarAppearance appearance)
+  {
+    Appearance = appearance;
   }
 }

@@ -4,7 +4,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
-internal sealed record ContributionReadModelProjection(
+public sealed record ContributionReadModelProjection(
   decimal PerfectRatingBonusPercent,
   IReadOnlyDictionary<ContributionId, ContributionReadProjection> Contributions,
   IReadOnlyDictionary<PromotionId, bool> PromotionAvailability,

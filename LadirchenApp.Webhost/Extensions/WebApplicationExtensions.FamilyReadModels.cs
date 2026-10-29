@@ -70,13 +70,16 @@ public static partial class WebApplicationExtensions
     CancellationToken cancellationToken
   )
   {
-    return GetFamilyReadModelAsync(
+    return GetFamilyReadModelAsync<
+      ContributionsFamilyReadModelProjection,
+      ContributionsReadModelResponse
+    >(
       familyId,
       "contributions",
       viewerMemberId,
       handler,
       context,
-      ContributionsReadModelResponse.FromSnapshot,
+      ContributionsReadModelResponse.FromProjection,
       cancellationToken
     );
   }
@@ -89,13 +92,16 @@ public static partial class WebApplicationExtensions
     CancellationToken cancellationToken
   )
   {
-    return GetFamilyReadModelAsync(
+    return GetFamilyReadModelAsync<
+      FamilyProfileReadModelProjection,
+      FamilyProfileReadModelResponse
+    >(
       familyId,
       "family-profile",
       viewerMemberId,
       handler,
       context,
-      FamilyProfileReadModelResponse.FromSnapshot,
+      FamilyProfileReadModelResponse.FromProjection,
       cancellationToken
     );
   }
@@ -108,13 +114,16 @@ public static partial class WebApplicationExtensions
     CancellationToken cancellationToken
   )
   {
-    return GetFamilyReadModelAsync(
+    return GetFamilyReadModelAsync<
+      FamilyProgressionReadModelProjection,
+      FamilyProgressionReadModelResponse
+    >(
       familyId,
       "family-progression",
       viewerMemberId,
       handler,
       context,
-      FamilyProgressionReadModelResponse.FromSnapshot,
+      FamilyProgressionReadModelResponse.FromProjection,
       cancellationToken
     );
   }
@@ -127,13 +136,16 @@ public static partial class WebApplicationExtensions
     CancellationToken cancellationToken
   )
   {
-    return GetFamilyReadModelAsync(
+    return GetFamilyReadModelAsync<
+      HomeCustomizationReadModelProjection,
+      HomeCustomizationReadModelResponse
+    >(
       familyId,
       "home-customization",
       viewerMemberId,
       handler,
       context,
-      HomeCustomizationReadModelResponse.FromSnapshot,
+      HomeCustomizationReadModelResponse.FromProjection,
       cancellationToken
     );
   }
@@ -146,13 +158,16 @@ public static partial class WebApplicationExtensions
     CancellationToken cancellationToken
   )
   {
-    return GetFamilyReadModelAsync(
+    return GetFamilyReadModelAsync<
+      RewardShopReadModelProjection,
+      RewardShopReadModelResponse
+    >(
       familyId,
       "reward-shop",
       viewerMemberId,
       handler,
       context,
-      RewardShopReadModelResponse.FromSnapshot,
+      RewardShopReadModelResponse.FromProjection,
       cancellationToken
     );
   }
@@ -165,26 +180,30 @@ public static partial class WebApplicationExtensions
     CancellationToken cancellationToken
   )
   {
-    return GetFamilyReadModelAsync(
+    return GetFamilyReadModelAsync<
+      SavingsFamilyReadModelProjection,
+      SavingsReadModelResponse
+    >(
       familyId,
       "savings",
       viewerMemberId,
       handler,
       context,
-      SavingsReadModelResponse.FromSnapshot,
+      SavingsReadModelResponse.FromProjection,
       cancellationToken
     );
   }
 
-  private static async Task<IResult> GetFamilyReadModelAsync<TResponse>(
+  private static async Task<IResult> GetFamilyReadModelAsync<TProjection, TResponse>(
     Guid familyId,
     string readModelType,
     string? viewerMemberId,
     GetFamilyAggregateQueryHandler handler,
     HttpContext context,
-    Func<FamilyAggregateSnapshot, TResponse> createResponse,
+    Func<TProjection, TResponse> createResponse,
     CancellationToken cancellationToken
   )
+    where TProjection : class, IFamilyReadModelProjection
   {
     if (!FamilySessionIdentity.BelongsToFamily(context.User, familyId))
     {
@@ -210,14 +229,24 @@ public static partial class WebApplicationExtensions
         authenticatedMemberId,
         requestedViewerId
       );
-      var snapshot = await handler.HandleAsync(query, cancellationToken);
+      var projection = await handler.HandleAsync(query, cancellationToken);
 
-      return snapshot is null
-        ? Results.NotFound()
-        : Results.Json(
-          createResponse(snapshot),
-          FamilyReadModelState.GetSerializerOptions()
+      if (projection is null)
+      {
+        return Results.NotFound();
+      }
+
+      if (projection is not TProjection typedProjection)
+      {
+        throw new InvalidOperationException(
+          $"The {readModelType} query returned an incompatible projection."
         );
+      }
+
+      return Results.Json(
+        createResponse(typedProjection),
+        FamilyReadModelState.GetSerializerOptions()
+      );
     }
     catch (DomainRuleException exception) when (exception.Code == DomainError.Forbidden)
     {

@@ -4,8 +4,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Webhost.Tests.Application.Commands;
@@ -15,17 +18,14 @@ public sealed class RewardShopCommandHandlerTests
   private static readonly FamilyId _familyId = new(Guid.Parse("a01156a8-dd90-4bf4-beb5-527ff0b29040"));
   private static readonly FamilyMemberId _administratorId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
+  private static readonly DateTimeOffset _now = new(2026, 10, 10, 15, 0, 0, TimeSpan.Zero);
 
   [Test]
   public async Task CommandsUseDomainReservationsAndPreservePresentationFields()
   {
-    var repository = CreateRepository();
-    var handler = new ExecuteFamilyCommandHandler(
-      repository,
-      new ImmediateFamilyCommandExecutionCoordinator(),
-      new FixedTimeProvider(new DateTimeOffset(2026, 10, 10, 15, 0, 0, TimeSpan.Zero))
-    );
-    var firstRewardId = "movie-night";
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var firstRewardId = new ShopRewardId("movie-night");
     var firstRequestCommandId = Guid.Parse("fb5bddc7-1efe-4daa-b73f-8cb3e57a7868");
 
     await ExecuteAsync(
@@ -34,7 +34,7 @@ public sealed class RewardShopCommandHandlerTests
       "reward-shop.add",
       new
       {
-        id = firstRewardId,
+        id = firstRewardId.Value,
         title = "Movie night",
         description = "Choose a family movie",
         icon = "🎬",
@@ -49,18 +49,18 @@ public sealed class RewardShopCommandHandlerTests
       handler,
       _childId,
       "reward-shop.request",
-      new
-      {
-        id = firstRewardId
-      },
+      new { id = firstRewardId.Value },
       firstRequestCommandId
     );
 
-    var requestedReward = Reward(repository, firstRewardId);
-    await Assert.That(requestedReward.GetProperty("status").GetString()).IsEqualTo("requested");
-    await Assert.That(requestedReward.GetProperty("requesterId").GetString()).IsEqualTo(_childId.Value);
-    await Assert.That(requestedReward.GetProperty("requestId").GetString()).IsEqualTo(firstRequestCommandId.ToString("N"));
-    await Assert.That(Balance(repository, _childId)).IsEqualTo(100);
+    var economy = store.RequiredEconomy();
+    var requestedReward = economy.ShopRewards.Single(item => item.Id == firstRewardId);
+    var request = economy.RedemptionRequests.Single();
+    await Assert.That(requestedReward.Status).IsEqualTo(ShopRewardStatus.Requested);
+    await Assert.That(request.RequesterId).IsEqualTo(_childId);
+    await Assert.That(request.Id.Value).IsEqualTo(firstRequestCommandId.ToString("N"));
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(100);
+    await Assert.That(economy.WalletFor(_childId).Reserved).IsEqualTo(80);
 
     await ExecuteAsync(
       handler,
@@ -79,20 +79,17 @@ public sealed class RewardShopCommandHandlerTests
         isVisible = true,
       }
     );
-    var revisionBeforeRejectedRequest = repository.Required(_familyId, "reward-shop").Revision;
+    var revisionBeforeRejectedRequest = store.Revision(TypedAggregateKind.FamilyEconomy);
 
     await Assert.That(async () =>
       await ExecuteAsync(
         handler,
         _childId,
         "reward-shop.request",
-        new
-        {
-          id = "small-gift"
-        }
+        new { id = "small-gift" }
       )
     ).Throws<DomainRuleException>();
-    await Assert.That(repository.Required(_familyId, "reward-shop").Revision)
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy))
       .IsEqualTo(revisionBeforeRejectedRequest);
 
     await ExecuteAsync(
@@ -101,33 +98,32 @@ public sealed class RewardShopCommandHandlerTests
       "reward-shop.decide",
       new
       {
-        id = firstRewardId,
-        approved = true
+        id = firstRewardId.Value,
+        approved = true,
       }
     );
 
-    var approvedReward = Reward(repository, firstRewardId);
-    await Assert.That(approvedReward.GetProperty("status").GetString()).IsEqualTo("available");
-    await Assert.That(approvedReward.GetProperty("quantity").GetInt32()).IsEqualTo(1);
-    await Assert.That(approvedReward.TryGetProperty("requesterId", out _)).IsFalse();
-    await Assert.That(approvedReward.GetProperty("description").GetString())
-      .IsEqualTo("Choose a family movie");
-    await Assert.That(approvedReward.GetProperty("icon").GetString()).IsEqualTo("🎬");
-    await Assert.That(approvedReward.GetProperty("conditions").GetString())
-      .IsEqualTo("Homework is complete");
-    await Assert.That(Balance(repository, _childId)).IsEqualTo(20);
+    economy = store.RequiredEconomy();
+    var approvedReward = economy.ShopRewards.Single(item => item.Id == firstRewardId);
+    request = economy.RedemptionRequests.Single(item => item.Id == request.Id);
+    var presentation = store.EconomyPresentation.ShopRewards
+      .Single(item => item.RewardId == firstRewardId);
+    await Assert.That(approvedReward.Status).IsEqualTo(ShopRewardStatus.Available);
+    await Assert.That(approvedReward.Quantity).IsEqualTo(1);
+    await Assert.That(request.Status).IsEqualTo(RedemptionStatus.Approved);
+    await Assert.That(presentation.Description).IsEqualTo("Choose a family movie");
+    await Assert.That(presentation.Icon).IsEqualTo("🎬");
+    await Assert.That(presentation.Conditions).IsEqualTo("Homework is complete");
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(20);
+    await Assert.That(economy.WalletFor(_childId).Reserved).IsEqualTo(0);
   }
 
   [Test]
   public async Task VisibilityCancellationRejectionAndDeletionUseTheDomainModel()
   {
-    var repository = CreateRepository();
-    var handler = new ExecuteFamilyCommandHandler(
-      repository,
-      new ImmediateFamilyCommandExecutionCoordinator(),
-      new FixedTimeProvider(new DateTimeOffset(2026, 10, 10, 15, 0, 0, TimeSpan.Zero))
-    );
-    var rewardId = "family-activity";
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var rewardId = new ShopRewardId("family-activity");
 
     await ExecuteAsync(
       handler,
@@ -135,7 +131,7 @@ public sealed class RewardShopCommandHandlerTests
       "reward-shop.add",
       new
       {
-        id = rewardId,
+        id = rewardId.Value,
         title = "Family activity",
         description = "Choose an activity",
         icon = "🎲",
@@ -146,142 +142,90 @@ public sealed class RewardShopCommandHandlerTests
         isVisible = true,
       }
     );
-    await ExecuteAsync(
-      handler,
-      _administratorId,
-      "reward-shop.set-visibility",
-      new
-      {
-        id = rewardId,
-        isVisible = false
-      }
-    );
-    await Assert.That(Reward(repository, rewardId).GetProperty("isVisible").GetBoolean())
-      .IsFalse();
-    await ExecuteAsync(
-      handler,
-      _administratorId,
-      "reward-shop.set-visibility",
-      new
-      {
-        id = rewardId,
-        isVisible = true
-      }
-    );
+    await ExecuteAsync(handler, _administratorId, "reward-shop.set-visibility", new
+    {
+      id = rewardId.Value,
+      isVisible = false,
+    });
+    await Assert.That(Reward(store, rewardId).IsVisible).IsFalse();
+    await ExecuteAsync(handler, _administratorId, "reward-shop.set-visibility", new
+    {
+      id = rewardId.Value,
+      isVisible = true,
+    });
 
     await ExecuteAsync(handler, _childId, "reward-shop.request", new
     {
-      id = rewardId
+      id = rewardId.Value,
     });
     await ExecuteAsync(handler, _childId, "reward-shop.cancel", new
     {
-      id = rewardId
+      id = rewardId.Value,
     });
-    await Assert.That(Reward(repository, rewardId).GetProperty("status").GetString())
-      .IsEqualTo("available");
-    await Assert.That(Balance(repository, _childId)).IsEqualTo(100);
+    await Assert.That(Reward(store, rewardId).Status).IsEqualTo(ShopRewardStatus.Available);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Available).IsEqualTo(100);
 
     await ExecuteAsync(handler, _childId, "reward-shop.request", new
     {
-      id = rewardId
+      id = rewardId.Value,
     });
-    await ExecuteAsync(
-      handler,
-      _administratorId,
-      "reward-shop.decide",
-      new
-      {
-        id = rewardId,
-        approved = false
-      }
-    );
-    await Assert.That(Reward(repository, rewardId).GetProperty("status").GetString())
-      .IsEqualTo("available");
-    await Assert.That(Balance(repository, _childId)).IsEqualTo(100);
+    await ExecuteAsync(handler, _administratorId, "reward-shop.decide", new
+    {
+      id = rewardId.Value,
+      approved = false,
+    });
+    await Assert.That(Reward(store, rewardId).Status).IsEqualTo(ShopRewardStatus.Available);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Available).IsEqualTo(100);
 
     await ExecuteAsync(handler, _childId, "reward-shop.request", new
     {
-      id = rewardId
+      id = rewardId.Value,
     });
     await ExecuteAsync(handler, _administratorId, "reward-shop.delete", new
     {
-      id = rewardId
+      id = rewardId.Value,
     });
-    await Assert.That(
-      repository.Required(_familyId, "reward-shop")
-        .State
-        .GetProperty("rewards")
-        .EnumerateArray()
-        .Any(item => item.GetProperty("id").GetString() == rewardId)
-    ).IsFalse();
-    await Assert.That(Balance(repository, _childId)).IsEqualTo(100);
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.ShopRewards.Any(item => item.Id == rewardId)).IsFalse();
+    await Assert.That(store.EconomyPresentation.ShopRewards.Any(item => item.RewardId == rewardId))
+      .IsFalse();
+    await Assert.That(economy.WalletFor(_childId).Available).IsEqualTo(100);
+    await Assert.That(economy.WalletFor(_childId).Reserved).IsEqualTo(0);
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository()
+  private static TestTypedAggregateStore CreateStore()
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    repository.Seed(
-      Snapshot(
-        "family-profile",
-        2,
-        new
-        {
-          timeZone = "Europe/Zurich",
-          pets = Array.Empty<object>(),
-          members = new object[]
-          {
-            new
-            {
-              id = _administratorId.Value,
-              name = "Guardian",
-              role = "guardian",
-              guardianAccess = "admin",
-              participatesInWeeklyGoal = false,
-            },
-            new
-            {
-              id = _childId.Value,
-              name = "Child",
-              role = "child",
-              participatesInWeeklyGoal = true,
-            },
-          },
-        }
-      )
-    );
-    repository.Seed(Snapshot("reward-shop", 1, new
-    {
-      rewards = Array.Empty<object>()
-    }));
-    repository.Seed(
-      Snapshot(
-        "savings",
-        2,
-        new
-        {
-          balances = new
-          {
-            guardian = 0,
-            child = 100,
-          },
-        }
-      )
-    );
-
-    return repository;
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(string aggregateType, int schemaVersion, object state)
-  {
-    return new FamilyAggregateSnapshot(
+    var family = new Family(
       _familyId,
-      aggregateType,
-      schemaVersion,
-      1,
-      JsonSerializer.SerializeToElement(state),
       _administratorId,
-      DateTimeOffset.UnixEpoch
+      "Guardian",
+      new IanaTimeZone("Europe/Zurich")
     );
+    family.AddMember(
+      _administratorId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    var economy = new FamilyEconomy(family);
+    economy.RestoreWallet(_childId, 100, 0);
+    var store = new TestTypedAggregateStore(new FixedTimeProvider(_now));
+    store.Seed(
+      family,
+      economy,
+      FamilyEconomyPresentationState.Empty,
+      FamilyHouse.CreateInitial(family)
+    );
+
+    return store;
+  }
+
+  private static ShopReward Reward(TestTypedAggregateStore store, ShopRewardId rewardId)
+  {
+    return store.RequiredEconomy().ShopRewards.Single(item => item.Id == rewardId);
   }
 
   private static async Task ExecuteAsync(
@@ -302,29 +246,5 @@ public sealed class RewardShopCommandHandlerTests
       ),
       CancellationToken.None
     );
-  }
-
-  private static JsonElement Reward(
-    TestFamilyAggregateSnapshotRepository repository,
-    string rewardId
-  )
-  {
-    return repository.Required(_familyId, "reward-shop")
-      .State
-      .GetProperty("rewards")
-      .EnumerateArray()
-      .Single(item => item.GetProperty("id").GetString() == rewardId);
-  }
-
-  private static decimal Balance(
-    TestFamilyAggregateSnapshotRepository repository,
-    FamilyMemberId memberId
-  )
-  {
-    return repository.Required(_familyId, "savings")
-      .State
-      .GetProperty("balances")
-      .GetProperty(memberId.Value)
-      .GetDecimal();
   }
 }

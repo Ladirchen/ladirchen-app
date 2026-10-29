@@ -1,193 +1,345 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Nodes;
+using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.Family.Setup;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-internal sealed class ProfileFamilyCommandHandler : FamilyCommandAreaHandler
+internal sealed class ProfileFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
-  private readonly FamilyProgressionApplicationService _progression;
+  private readonly IFamilyEconomyRepository _economyRepository;
+  private readonly IHouseCustomizationRepository _houseRepository;
+  private readonly IFamilyProgressionRepository _progressionRepository;
 
   public ProfileFamilyCommandHandler(
-    IFamilyAggregateSnapshotRepository repository,
-    TimeProvider timeProvider,
-    FamilyProgressionApplicationService progression
+    IFamilyEconomyRepository economyRepository,
+    IFamilyProgressionRepository progressionRepository,
+    IHouseCustomizationRepository houseRepository,
+    ITypedAggregateUnitOfWork unitOfWork,
+    TimeProvider timeProvider
   )
-    : base(repository, timeProvider, "profile.")
+    : base(unitOfWork, timeProvider, "profile.")
   {
-    _progression = progression;
+    _economyRepository = economyRepository
+      ?? throw new ArgumentNullException(nameof(economyRepository));
+    _progressionRepository = progressionRepository
+      ?? throw new ArgumentNullException(nameof(progressionRepository));
+    _houseRepository = houseRepository
+      ?? throw new ArgumentNullException(nameof(houseRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
     FamilyCommand command,
-    FamilyAggregateSnapshot profile,
-    JsonObject profileState,
-    JsonObject payload,
+    LoadedAggregate<Family> loadedFamily,
     CancellationToken cancellationToken
   )
   {
+    ArgumentNullException.ThrowIfNull(command);
+    ArgumentNullException.ThrowIfNull(loadedFamily);
+    var family = loadedFamily.Root;
+    var payload = RequiredObject(command.Payload);
     var refreshProgression = false;
-    var now = _timeProvider.GetUtcNow();
+    var invalidatedReadModels = new HashSet<string>(StringComparer.Ordinal)
+    {
+      "family-profile",
+    };
+    var now = TimeProvider.GetUtcNow();
 
-    var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
+    if (command.CommandType == "profile.complete-setup")
+    {
+      return await CompleteSetupAsync(
+        command,
+        loadedFamily,
+        payload,
+        now,
+        cancellationToken
+      );
+    }
 
     switch (command.CommandType)
     {
       case "profile.set-weekly-participation":
-        SetWeeklyParticipation(family, command.ActorId, payload, now);
+        family.SetGuardianWeeklyGoalParticipation(
+          command.ActorId,
+          new FamilyMemberId(RequiredString(payload, "memberId")),
+          RequiredBool(payload, "participates"),
+          now
+        );
         refreshProgression = true;
+        invalidatedReadModels.Add("family-progression");
+        invalidatedReadModels.Add("savings");
+        invalidatedReadModels.Add("home-customization");
         break;
       case "profile.save-own-appearance":
-        SaveOwnAppearance(family, command.ActorId, profileState, payload);
+        family.SaveOwnAppearance(
+          command.ActorId,
+          ReadAvatarAppearance(RequiredObject(payload, "appearance")),
+          now
+        );
         break;
       case "profile.set-own-nickname":
-        SetOwnNickname(family, command.ActorId, payload, now);
+        family.SaveOwnNickname(
+          command.ActorId,
+          OptionalString(payload, "nickname") ?? string.Empty,
+          now
+        );
         break;
       case "profile.invite-guardian":
-        InviteGuardian(family, command.ActorId, payload, now);
+        family.InviteGuardian(
+          command.ActorId,
+          new FamilyMemberId(RequiredString(payload, "id")),
+          RequiredString(payload, "name"),
+          RequiredString(payload, "email"),
+          ParseGuardianAccess(RequiredString(payload, "guardianAccess")),
+          now
+        );
         break;
       case "profile.set-guardian-access":
-        SetGuardianAccess(family, command.ActorId, payload, now);
-        break;
-      case "profile.complete-setup":
-        CompleteFamilySetup(family, profileState, command.ActorId, payload, now);
-        refreshProgression = true;
+        family.ChangeGuardianAccess(
+          command.ActorId,
+          new FamilyMemberId(RequiredString(payload, "memberId")),
+          ParseGuardianAccess(RequiredString(payload, "guardianAccess")),
+          now
+        );
+        invalidatedReadModels.Add("savings");
+        invalidatedReadModels.Add("reward-shop");
         break;
       default:
         throw new FamilyCommandException("The family-profile command is not supported.");
     }
 
-    FamilyProfileSnapshotMapper.WriteTo(profileState, family);
-
-    var saves = new List<PendingFamilyAggregateSave> { CreateSave(profile, profileState, command.ActorId) };
-    var revisionGuards = new List<FamilyAggregateRevisionGuard>();
+    LoadedAggregate<FamilyHouse>? loadedProgression = null;
 
     if (refreshProgression)
     {
-      var contributions = await RequireSnapshotAsync(command.FamilyId, "contributions", cancellationToken);
-      revisionGuards.Add(FamilyAggregateRevisionGuard.FromSnapshot(contributions));
-      saves.Add(
-        await _progression.CreateSaveAsync(
-          command.FamilyId,
-          profileState,
-          RequireObject(contributions.State),
-          command.ActorId,
-          cancellationToken
+      loadedProgression = await _progressionRepository.LoadAsync(family, cancellationToken)
+        ?? throw new FamilyCommandException(
+          "The family-progression aggregate has not been initialized."
+        );
+    }
+
+    var result = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        family.Id,
+        command.ActorId,
+        family: new PendingFamilySave(family, loadedFamily.Revision),
+        familyProgression: loadedProgression is null
+          ? null
+          : new PendingFamilyProgressionSave(
+            loadedProgression.Root,
+            loadedProgression.Revision
+          )
+      ),
+      cancellationToken
+    );
+    var changes = new List<FamilyAggregateChange>();
+    var savedFamily = result.Family
+      ?? throw new InvalidOperationException("The family-profile command did not save the family aggregate.");
+
+    foreach (var readModel in invalidatedReadModels)
+    {
+      var source = readModel is "family-progression" or "savings" or "home-customization"
+        ? result.FamilyProgression
+        : null;
+      changes.Add(
+        Change(
+          family.Id,
+          readModel,
+          source?.Revision ?? savedFamily.Revision,
+          source?.Audit ?? savedFamily.Audit
         )
       );
     }
 
-    var changed = await _repository.SaveBatchAsync(saves, revisionGuards, cancellationToken);
-
-    return new FamilyCommandResult(changed);
+    return new FamilyCommandResult(changes);
   }
 
-  private static void SetWeeklyParticipation(
-    Family family,
-    FamilyMemberId actorId,
-    JsonObject payload,
-    DateTimeOffset now
+  private async Task<FamilyCommandResult> CompleteSetupAsync(
+    FamilyCommand command,
+    LoadedAggregate<Family> loadedFamily,
+    JsonElement payload,
+    DateTimeOffset now,
+    CancellationToken cancellationToken
   )
   {
-    family.SetGuardianWeeklyGoalParticipation(
-      actorId,
-      new FamilyMemberId(RequiredString(payload, "memberId")),
-      RequiredBool(payload, "participates"),
+    var family = loadedFamily.Root;
+    var loadedEconomy = await _economyRepository.LoadAsync(family, cancellationToken)
+      ?? throw new FamilyCommandException(
+        "The family-economy aggregate has not been initialized."
+      );
+    var loadedProgression = await _progressionRepository.LoadAsync(family, cancellationToken)
+      ?? throw new FamilyCommandException(
+        "The family-progression aggregate has not been initialized."
+      );
+    var loadedHouse = await _houseRepository.LoadAsync(
+      family,
+      loadedProgression.Root.StoredLevel,
+      cancellationToken
+    ) ?? throw new FamilyCommandException(
+      "The house-customization aggregate has not been initialized."
+    );
+
+    family.CompleteSetup(
+      command.ActorId,
+      ReadMembers(payload),
+      ReadPets(payload),
       now
     );
-  }
-
-  private static void SaveOwnAppearance(
-    Family family,
-    FamilyMemberId actorId,
-    JsonObject profileState,
-    JsonObject payload
-  )
-  {
-    var appearance = RequireObject(payload, "appearance");
-    var member = family.ActiveMember(actorId);
-    var profile = member.Role == MemberRole.Child ? AvatarProfile.Child : AvatarProfile.Guardian;
-    var service = new AvatarAppearanceService(new AvatarCatalog());
-    service.Save(
-      actorId,
-      actorId,
-      actorId,
-      profile,
-      FamilyProfileSnapshotMapper.ReadAvatarAppearance(appearance)
+    var economy = loadedEconomy.Root.SynchronizeMembers(family);
+    loadedProgression.Root.SynchronizeParticipants(family);
+    loadedHouse.Root.SynchronizeFamilyEntities(family);
+    var result = await UnitOfWork.SaveAsync(
+      new TypedAggregateSaveBatch(
+        family.Id,
+        command.ActorId,
+        family: new PendingFamilySave(family, loadedFamily.Revision),
+        familyEconomy: new PendingFamilyEconomySave(
+          economy,
+          loadedEconomy.Presentation,
+          loadedEconomy.Revision
+        ),
+        familyProgression: new PendingFamilyProgressionSave(
+          loadedProgression.Root,
+          loadedProgression.Revision
+        ),
+        houseCustomization: new PendingHouseCustomizationSave(
+          loadedHouse.Root,
+          loadedHouse.Revision
+        )
+      ),
+      cancellationToken
     );
-    var actor = FamilyProfileSnapshotMapper.MemberPresentation(profileState, actorId);
-    actor["appearance"] = appearance.DeepClone();
+    var savedFamily = result.Family
+      ?? throw new InvalidOperationException("The setup command did not save the family aggregate.");
+    var savedEconomy = result.FamilyEconomy
+      ?? throw new InvalidOperationException("The setup command did not save the family economy.");
+    var savedProgression = result.FamilyProgression
+      ?? throw new InvalidOperationException("The setup command did not save family progression.");
+    var savedHouse = result.HouseCustomization
+      ?? throw new InvalidOperationException("The setup command did not save house customization.");
+
+    return new FamilyCommandResult(
+    [
+      Change(family.Id, "family-profile", savedFamily.Revision, savedFamily.Audit),
+      Change(family.Id, "contributions", savedEconomy.Revision, savedEconomy.Audit),
+      Change(family.Id, "family-progression", savedProgression.Revision, savedProgression.Audit),
+      Change(family.Id, "savings", savedEconomy.Revision, savedEconomy.Audit),
+      Change(family.Id, "reward-shop", savedEconomy.Revision, savedEconomy.Audit),
+      Change(family.Id, "home-customization", savedHouse.Revision, savedHouse.Audit),
+    ]);
   }
 
-  private static void SetOwnNickname(
-    Family family,
-    FamilyMemberId actorId,
-    JsonObject payload,
-    DateTimeOffset now
-  )
+  private static IReadOnlyList<FamilyMemberState> ReadMembers(JsonElement payload)
   {
-    family.SaveOwnNickname(actorId, StringValue(payload, "nickname") ?? string.Empty, now);
+    return RequiredArray(payload, "members")
+      .Select(ReadMember)
+      .ToArray();
   }
 
-  private static void InviteGuardian(
-    Family family,
-    FamilyMemberId actorId,
-    JsonObject payload,
-    DateTimeOffset now
-  )
+  private static FamilyMemberState ReadMember(JsonElement value)
   {
-    family.InviteGuardian(
-      actorId,
-      new FamilyMemberId(RequiredString(payload, "id")),
-      RequiredString(payload, "name"),
-      RequiredString(payload, "email"),
-      FamilyProfileSnapshotMapper.ParseGuardianAccess(RequiredString(payload, "guardianAccess")),
-      now
+    RequiredObject(value);
+    var role = ParseRole(RequiredString(value, "role"));
+    var access = role == MemberRole.Guardian
+      ? ParseGuardianAccess(RequiredString(value, "guardianAccess"))
+      : GuardianAccess.Supporter;
+    var appearance = value.TryGetProperty("appearance", out var appearanceElement)
+      && appearanceElement.ValueKind != JsonValueKind.Null
+        ? ReadAvatarAppearance(appearanceElement)
+        : null;
+
+    return new FamilyMemberState(
+      new FamilyMemberId(RequiredString(value, "id")),
+      RequiredString(value, "name"),
+      role,
+      access,
+      OptionalBool(value, "invitationPending") ?? false,
+      OptionalString(value, "nickname"),
+      OptionalString(value, "email"),
+      OptionalBool(value, "participatesInWeeklyGoal") ?? role == MemberRole.Child,
+      RequiredString(value, "avatar"),
+      RequiredString(value, "color"),
+      appearance
     );
   }
 
-  private static void SetGuardianAccess(
-    Family family,
-    FamilyMemberId actorId,
-    JsonObject payload,
-    DateTimeOffset now
-  )
+  private static IReadOnlyList<FamilyPetState> ReadPets(JsonElement payload)
   {
-    family.ChangeGuardianAccess(
-      actorId,
-      new FamilyMemberId(RequiredString(payload, "memberId")),
-      FamilyProfileSnapshotMapper.ParseGuardianAccess(RequiredString(payload, "guardianAccess")),
-      now
+    return RequiredArray(payload, "pets")
+      .Select(value =>
+      {
+        RequiredObject(value);
+
+        return new FamilyPetState(
+          new FamilyPetId(RequiredString(value, "id")),
+          RequiredString(value, "name"),
+          ParsePetKind(RequiredString(value, "kind")),
+          RequiredString(value, "avatar"),
+          RequiredString(value, "color")
+        );
+      })
+      .ToArray();
+  }
+
+  private static AvatarAppearance ReadAvatarAppearance(JsonElement value)
+  {
+    RequiredObject(value);
+
+    return new AvatarAppearance(
+      RequiredString(value, "age"),
+      RequiredString(value, "skinToneId"),
+      RequiredString(value, "faceShape"),
+      RequiredString(value, "face"),
+      RequiredString(value, "hair"),
+      RequiredString(value, "hairColorId"),
+      RequiredString(value, "outfit"),
+      RequiredString(value, "outfitColorId"),
+      RequiredString(value, "accessoryId"),
+      RequiredString(value, "funAccessoryId"),
+      RequiredString(value, "seasonalAccessoryId")
     );
   }
 
-  private static void CompleteFamilySetup(
-    Family family,
-    JsonObject profile,
-    FamilyMemberId actorId,
-    JsonObject payload,
-    DateTimeOffset now
-  )
+  private static GuardianAccess ParseGuardianAccess(string value)
   {
-    var members = RequireArray(payload, "members");
-    var pets = RequireArray(payload, "pets");
-    var memberStates = FamilyProfileSnapshotMapper.ReadMembers(members);
-    var petStates = FamilyProfileSnapshotMapper.ReadPets(pets);
-    var memberPresentations = FamilyProfileSnapshotMapper.CreateSetupMemberPresentations(
-      profile,
-      members
-    );
-    var petPresentations = FamilyProfileSnapshotMapper.CreateSetupPetPresentations(pets);
+    return value switch
+    {
+      "admin" => GuardianAccess.Admin,
+      "supporter" => GuardianAccess.Supporter,
+      _ => throw new FamilyCommandException("The guardian access level is invalid."),
+    };
+  }
 
-    family.CompleteSetup(actorId, memberStates, petStates, now);
-    profile["members"] = memberPresentations;
-    profile["pets"] = petPresentations;
+  private static MemberRole ParseRole(string value)
+  {
+    return value switch
+    {
+      "child" => MemberRole.Child,
+      "guardian" => MemberRole.Guardian,
+      _ => throw new FamilyCommandException("The family member role is invalid."),
+    };
+  }
+
+  private static FamilyPetKind ParsePetKind(string value)
+  {
+    return value switch
+    {
+      "cat" => FamilyPetKind.Cat,
+      "dog" => FamilyPetKind.Dog,
+      "rabbit" => FamilyPetKind.Rabbit,
+      "bird" => FamilyPetKind.Bird,
+      "other" => FamilyPetKind.Other,
+      _ => throw new FamilyCommandException("The family pet kind is invalid."),
+    };
   }
 }

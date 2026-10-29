@@ -38,9 +38,9 @@ public sealed partial class HouseItem
   public string AssignedArea { get; }
   public int MinimumLevel { get; }
   public HousePlacement InitialPlacement { get; }
-  public HousePlacement Placement { get; private set; }
-  public bool Owned { get; private set; }
-  public bool Equipped { get; private set; }
+  public HousePlacement Placement { get; internal set; }
+  public bool Owned { get; internal set; }
+  public bool Equipped { get; internal set; }
 
   internal void Acquire(bool equipped)
   {

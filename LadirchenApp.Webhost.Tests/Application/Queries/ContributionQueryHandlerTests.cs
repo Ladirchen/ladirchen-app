@@ -1,10 +1,12 @@
 using System;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Tests.Application.Commands;
 
@@ -12,7 +14,9 @@ namespace LadirchenApp.Webhost.Tests.Application.Queries;
 
 public sealed class ContributionQueryHandlerTests
 {
-  private static readonly FamilyId _familyId = new(Guid.Parse("07155cf8-8894-4973-8956-c758a42ececd"));
+  private static readonly FamilyId _familyId = new(
+    Guid.Parse("07155cf8-8894-4973-8956-c758a42ececd")
+  );
   private static readonly FamilyMemberId _administratorId = new("administrator");
   private static readonly FamilyMemberId _assigneeId = new("assignee");
   private static readonly FamilyMemberId _supporterId = new("supporter");
@@ -21,211 +25,208 @@ public sealed class ContributionQueryHandlerTests
   [Test]
   public async Task QueryProjectsContributionRulesFromTypedFamilyEconomyState()
   {
-    var repository = CreateRepository();
+    var store = CreateStore();
     var handler = new GetFamilyAggregateQueryHandler(
-      repository,
+      store,
+      store,
+      store,
+      store,
       new FixedTimeProvider(new DateTimeOffset(2026, 10, 29, 10, 0, 0, TimeSpan.Zero))
     );
 
     var result = await handler.HandleAsync(
       new GetFamilyAggregateQuery(_familyId, "contributions", _administratorId),
       CancellationToken.None
-    );
+    ) as ContributionsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The contribution read model is missing.");
+    var extra = result.Economy.Contributions.Single(item => item.Id.Value == "extra-task");
+    var approved = result.Economy.Contributions.Single(item => item.Id.Value == "approved-task");
+    var promotion = result.Economy.Promotions.Single();
 
-    var state = result?.State ?? throw new InvalidOperationException("The contribution read model is missing.");
-    var extra = state.GetProperty("contributions").EnumerateArray()
-      .Single(item => item.GetProperty("id").GetString() == "extra-task");
-    var approved = state.GetProperty("contributions").EnumerateArray()
-      .Single(item => item.GetProperty("id").GetString() == "approved-task");
-    var promotion = state.GetProperty("promotions").EnumerateArray().Single();
-    await Assert.That(state.GetProperty("perfectRatingBonusPercent").GetDecimal())
-      .IsEqualTo(25);
-    await Assert.That(extra.GetProperty("projectedReward").GetDecimal())
-      .IsEqualTo(25);
+    await Assert.That(result.CalculatedState.PerfectRatingBonusPercent).IsEqualTo(25);
+    await Assert.That(result.CalculatedState.Contributions[extra.Id].ProjectedReward).IsEqualTo(25);
+    await Assert.That(result.CalculatedState.Contributions[extra.Id].PartnerableMemberIds)
+      .IsEquivalentTo([_administratorId, _supporterId, _siblingId]);
+    await Assert.That(result.CalculatedState.Contributions[approved.Id].PartnerableMemberIds)
+      .IsEmpty();
+    await Assert.That(result.CalculatedState.PromotionAvailability[promotion.Id]).IsTrue();
+    await Assert.That(result.CalculatedState.TodayEarnedByMember[_siblingId]).IsEqualTo(22);
+    await Assert.That(result.CalculatedState.CurrentWeekEarnedByMember[_siblingId]).IsEqualTo(30);
     await Assert.That(
-      extra.GetProperty("partnerableMemberIds").EnumerateArray().Select(item => item.GetString()!)
-    ).IsEquivalentTo([_administratorId.Value, _supporterId.Value, _siblingId.Value]);
-    await Assert.That(approved.GetProperty("partnerableMemberIds").GetArrayLength())
-      .IsEqualTo(0);
-    await Assert.That(promotion.GetProperty("available").GetBoolean())
-      .IsTrue();
-    await Assert.That(
-      state.GetProperty("todayEarnedByMember").GetProperty(_siblingId.Value).GetDecimal()
-    ).IsEqualTo(22);
-    await Assert.That(
-      state.GetProperty("currentWeekEarnedByMember").GetProperty(_siblingId.Value).GetDecimal()
-    ).IsEqualTo(30);
-    await Assert.That(
-      state.GetProperty("currentWeekApprovedContributionCountByMember").GetProperty(_siblingId.Value).GetInt32()
+      result.CalculatedState.CurrentWeekApprovedContributionCountByMember[_siblingId]
     ).IsEqualTo(2);
-    await Assert.That(state.TryGetProperty("usedContributionIds", out _)).IsFalse();
   }
 
-  private static TestFamilyAggregateSnapshotRepository CreateRepository()
+  private static TestTypedAggregateStore CreateStore()
   {
-    var repository = new TestFamilyAggregateSnapshotRepository();
-    repository.Seed(Snapshot("family-profile", 2, new
-    {
-      timeZone = "Europe/Zurich",
-      pets = Array.Empty<object>(),
-      members = new object[]
-      {
-        new
-        {
-          id = _administratorId.Value,
-          name = "Administrator",
-          role = "guardian",
-          guardianAccess = "admin",
-          invitationPending = false,
-          participatesInWeeklyGoal = false,
-        },
-        new
-        {
-          id = _assigneeId.Value,
-          name = "Assignee",
-          role = "child",
-          invitationPending = false,
-          participatesInWeeklyGoal = true,
-        },
-        new
-        {
-          id = _supporterId.Value,
-          name = "Supporter",
-          role = "guardian",
-          guardianAccess = "supporter",
-          invitationPending = false,
-          participatesInWeeklyGoal = false,
-        },
-        new
-        {
-          id = _siblingId.Value,
-          name = "Sibling",
-          role = "child",
-          invitationPending = false,
-          participatesInWeeklyGoal = true,
-        },
-        new
-        {
-          id = "pending-guardian",
-          name = "Pending guardian",
-          role = "guardian",
-          guardianAccess = "supporter",
-          invitationPending = true,
-          participatesInWeeklyGoal = false,
-        },
-      },
-    }));
-    repository.Seed(Snapshot("contributions", 1, new
-    {
-      perfectRatingBonusPercent = 25,
-      contributions = new object[]
-      {
-        new
-        {
-          id = "extra-task",
-          title = "Extra task",
-          description = "Work together",
-          icon = "🤝",
-          area = "Home",
-          kind = "extra",
-          status = "available",
-          reward = 10,
-          projectedReward = 999,
-          energy = 10,
-          assigneeId = _assigneeId.Value,
-          dueLabel = "Optional",
-          invitedChildIds = Array.Empty<string>(),
-        },
-        new
-        {
-          id = "approved-task",
-          title = "Approved task",
-          description = "Already done",
-          icon = "✅",
-          area = "Home",
-          kind = "basic",
-          status = "approved",
-          reward = 10,
-          energy = 20,
-          assigneeId = _siblingId.Value,
-          dueLabel = "Today",
-          invitedChildIds = Array.Empty<string>(),
-          stars = 5,
-          earnedReward = 20,
-          earnedRatingBonus = 2,
-          earnedPromotionMultiplier = 2,
-          approvedAt = "2026-10-29T08:00:00+00:00",
-        },
-        new
-        {
-          id = "approved-task-at-local-week-boundary",
-          title = "Approved at local week boundary",
-          description = "Included through the family timezone",
-          icon = "✅",
-          area = "Home",
-          kind = "basic",
-          status = "approved",
-          reward = 5,
-          energy = 10,
-          assigneeId = _siblingId.Value,
-          dueLabel = "This week",
-          invitedChildIds = Array.Empty<string>(),
-          stars = 4,
-          earnedReward = 5,
-          earnedRatingBonus = 3,
-          earnedPromotionMultiplier = 1,
-          approvedAt = "2026-10-25T23:30:00+00:00",
-        },
-        new
-        {
-          id = "approved-task-in-previous-local-week",
-          title = "Approved in previous local week",
-          description = "Excluded through the family timezone",
-          icon = "✅",
-          area = "Home",
-          kind = "basic",
-          status = "approved",
-          reward = 99,
-          energy = 10,
-          assigneeId = _siblingId.Value,
-          dueLabel = "Previous week",
-          invitedChildIds = Array.Empty<string>(),
-          stars = 4,
-          earnedReward = 99,
-          earnedRatingBonus = 0,
-          earnedPromotionMultiplier = 1,
-          approvedAt = "2026-10-25T22:30:00+00:00",
-        },
-      },
-      usedContributionIds = new[] { "retired-task" },
-      promotions = new object[]
-      {
-        new
-        {
-          id = "double-reward",
-          contributionId = "extra-task",
-          title = "Double reward",
-          multiplier = 2,
-          deadline = "17:00",
-          teamworkBonus = 5,
-          active = true,
-        },
-      },
-    }));
-
-    return repository;
-  }
-
-  private static FamilyAggregateSnapshot Snapshot(string aggregateType, int schemaVersion, object state)
-  {
-    return new FamilyAggregateSnapshot(
+    var family = Family.Reconstitute(new FamilyState(
       _familyId,
-      aggregateType,
-      schemaVersion,
-      1,
-      JsonSerializer.SerializeToElement(state),
-      _administratorId,
-      DateTimeOffset.UnixEpoch
+      new IanaTimeZone("Europe/Zurich"),
+      FamilyCurrency.CHF,
+      new ExchangeRate(1),
+      _assigneeId,
+      false,
+      [
+        Member(_administratorId, "Administrator", MemberRole.Guardian, GuardianAccess.Admin),
+        Member(_assigneeId, "Assignee", MemberRole.Child, GuardianAccess.Supporter),
+        Member(_supporterId, "Supporter", MemberRole.Guardian, GuardianAccess.Supporter),
+        Member(_siblingId, "Sibling", MemberRole.Child, GuardianAccess.Supporter),
+        new FamilyMemberState(
+          new FamilyMemberId("pending-guardian"),
+          "Pending guardian",
+          MemberRole.Guardian,
+          GuardianAccess.Supporter,
+          true,
+          null,
+          null,
+          false
+        ),
+      ],
+      []
+    ));
+    var contributions = new[]
+    {
+      Contribution(
+        "extra-task",
+        "Extra task",
+        ContributionKind.Extra,
+        10,
+        10,
+        _assigneeId,
+        ContributionStatus.Available
+      ),
+      Contribution(
+        "approved-task",
+        "Approved task",
+        ContributionKind.Basic,
+        10,
+        20,
+        _siblingId,
+        ContributionStatus.Approved,
+        5,
+        new ContributionRewardBreakdown(20, 2, 2),
+        new DateTimeOffset(2026, 10, 29, 8, 0, 0, TimeSpan.Zero)
+      ),
+      Contribution(
+        "approved-task-at-local-week-boundary",
+        "Approved at local week boundary",
+        ContributionKind.Basic,
+        5,
+        10,
+        _siblingId,
+        ContributionStatus.Approved,
+        4,
+        new ContributionRewardBreakdown(5, 3, 1),
+        new DateTimeOffset(2026, 10, 25, 23, 30, 0, TimeSpan.Zero)
+      ),
+      Contribution(
+        "approved-task-in-previous-local-week",
+        "Approved in previous local week",
+        ContributionKind.Basic,
+        99,
+        10,
+        _siblingId,
+        ContributionStatus.Approved,
+        4,
+        new ContributionRewardBreakdown(99, 0, 1),
+        new DateTimeOffset(2026, 10, 25, 22, 30, 0, TimeSpan.Zero)
+      ),
+    };
+    var promotionId = new PromotionId("double-reward");
+    var economy = FamilyEconomy.Reconstitute(family, new FamilyEconomyState(
+      _familyId,
+      new ContributionSettings(new Percentage(25)),
+      ActiveWallets(family),
+      contributions,
+      contributions.Select(item => item.Id).Append(new ContributionId("retired-task")).ToArray(),
+      [
+        new PromotionState(
+          promotionId,
+          new ContributionId("extra-task"),
+          new RewardMultiplier(2),
+          new LadirchenAmount(5),
+          new PromotionDeadline(new TimeOnly(17, 0)),
+          true
+        ),
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ));
+    var presentation = new FamilyEconomyPresentationState(
+      contributions.Select(item => new ContributionPresentationState(
+        item.Id,
+        item.Id.Value,
+        "✅",
+        false
+      )),
+      [],
+      [],
+      []
     );
+    var store = new TestTypedAggregateStore(TimeProvider.System);
+    store.Seed(family, economy, presentation);
+
+    return store;
+  }
+
+  private static FamilyMemberState Member(
+    FamilyMemberId id,
+    string name,
+    MemberRole role,
+    GuardianAccess access
+  )
+  {
+    return new FamilyMemberState(
+      id,
+      name,
+      role,
+      access,
+      false,
+      null,
+      null,
+      role == MemberRole.Child
+    );
+  }
+
+  private static ContributionState Contribution(
+    string id,
+    string title,
+    ContributionKind kind,
+    decimal reward,
+    decimal energy,
+    FamilyMemberId assigneeId,
+    ContributionStatus status,
+    int? stars = null,
+    ContributionRewardBreakdown? earnedReward = null,
+    DateTimeOffset? approvedAt = null
+  )
+  {
+    return new ContributionState(
+      new ContributionId(id),
+      title,
+      kind,
+      new LadirchenAmount(reward),
+      new Percentage(energy),
+      assigneeId,
+      status,
+      stars is null ? null : new StarRating(stars.Value),
+      earnedReward,
+      approvedAt,
+      []
+    );
+  }
+
+  private static MemberWalletState[] ActiveWallets(Family family)
+  {
+    return family.Members
+      .Where(member => !member.InvitationPending)
+      .Select(member => new MemberWalletState(member.Id, 0, 0))
+      .ToArray();
   }
 }

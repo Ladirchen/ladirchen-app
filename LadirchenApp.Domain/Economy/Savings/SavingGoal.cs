@@ -290,12 +290,27 @@ public sealed class SavingGoal : Entity<SavingGoalId>
       DomainError.InvalidValue,
       "The restored starter bonus does not match the goal participants."
     );
-    Rules.Require(
-      interestEarned >= 0 && interestEarned <= saved,
-      DomainError.InvalidValue,
-      "The restored interest must be covered by the goal balance."
-    );
-    Saved = cancelled ? 0 : saved;
+    Rules.Require(interestEarned >= 0, DomainError.InvalidValue, "Restored interest cannot be negative.");
+
+    if (cancelled)
+    {
+      Rules.Require(saved == 0, DomainError.InvalidValue, "A cancelled goal cannot retain savings.");
+      Rules.Require(
+        refundableContributions.Count == 0,
+        DomainError.InvalidValue,
+        "A cancelled goal cannot retain refundable contributions."
+      );
+    }
+    else
+    {
+      Rules.Require(
+        interestEarned <= saved,
+        DomainError.InvalidValue,
+        "The restored interest must be covered by the goal balance."
+      );
+    }
+
+    Saved = saved;
     InterestEarned = interestEarned;
     _refundableContributions.Clear();
 

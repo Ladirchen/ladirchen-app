@@ -34,6 +34,10 @@ interface RewardDraft {
   unlimited: boolean;
   availableUntil: string;
 }
+interface HouseThemePreview {
+  backgroundUrl?: string;
+  houseUrl?: string;
+}
 function createEmptyReward(): RewardDraft {
   return {
     title: "",
@@ -171,7 +175,7 @@ export function useShopPage() {
               available: catalogEntry.available,
               description: t(edition.descriptionKey),
               name: t(edition.nameKey),
-              price: catalogEntry.price ?? 0,
+              price: catalogEntry.price,
               purchasableByMemberIds: catalogEntry.purchasableByMemberIds,
             }
           : undefined;
@@ -190,9 +194,9 @@ export function useShopPage() {
               accessoryIds: catalogEntry.accessoryIds,
               available: catalogEntry.available,
               description: t(set.descriptionKey),
-              minimumHouseLevel: catalogEntry.minimumHouseLevel ?? 0,
+              minimumHouseLevel: catalogEntry.minimumHouseLevel,
               name: t(set.nameKey),
-              price: catalogEntry.price ?? 0,
+              price: catalogEntry.price,
               purchasableByMemberIds: catalogEntry.purchasableByMemberIds,
             }
           : undefined;
@@ -204,23 +208,7 @@ export function useShopPage() {
 
     return HOUSE_STAGES.find((stage) => stage.id === activeStage?.id) ?? HOUSE_STAGES[0]!;
   });
-  const houseThemePreviewUrls = reactive<
-    Record<
-      HouseThemeId,
-      {
-        backgroundUrl?: string;
-        houseUrl?: string;
-      }
-    >
-  >(
-    Object.fromEntries(HOUSE_THEMES.map((theme) => [theme.id, {}])) as Record<
-      HouseThemeId,
-      {
-        backgroundUrl?: string;
-        houseUrl?: string;
-      }
-    >,
-  );
+  const houseThemePreviewUrls = reactive<Partial<Record<HouseThemeId, HouseThemePreview>>>({});
   watch(
     previewHouseStage,
     (stage) => {
@@ -254,7 +242,7 @@ export function useShopPage() {
   }
   const redemptionOpen = computed(() => store.rewardShopRedemptionOpen);
   function canRequest(reward: ShopReward) {
-    return reward.requestableByMemberIds?.includes(store.activeChildId) ?? false;
+    return reward.requestableByMemberIds.includes(store.activeChildId);
   }
   function formatCalendarDate(date: string) {
     return DateTime.fromISO(date)

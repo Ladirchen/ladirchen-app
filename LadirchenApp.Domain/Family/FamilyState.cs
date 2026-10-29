@@ -7,7 +7,7 @@ using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.Family;
 
-public sealed record FamilyState
+internal sealed record FamilyState
 {
   public FamilyState(
     FamilyId id,
