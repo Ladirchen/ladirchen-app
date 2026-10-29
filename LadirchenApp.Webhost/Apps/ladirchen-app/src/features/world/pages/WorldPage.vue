@@ -32,7 +32,7 @@
         :house-level="store.houseLevel"
         :house-layout="store.houseLayout"
         :house-theme-id="store.houseThemeId"
-        :ladi-score="store.averageTaskRating"
+        :ladi-stage-id="store.memberProgressions[store.activeChildId]?.ladiStageId ?? 'idle-ladi'"
         :members="store.members"
         :pets="store.pets"
         :room-designs="activeRoomDesigns"

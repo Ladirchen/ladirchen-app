@@ -13,6 +13,14 @@ export const savingsActions = {
   async setLadirchenExchangeRate(this: FamilyWorldStoreContext, rate: number) {
     await executeBackendFamilyCommand(this, "savings.set-exchange-rate", { rate }, "notifications.save.savings");
   },
+  async setMaximumSavingsInterestRate(this: FamilyWorldStoreContext, percent: number) {
+    await executeBackendFamilyCommand(
+      this,
+      "progression.set-maximum-savings-rate",
+      { percent },
+      "notifications.save.savings",
+    );
+  },
   async toggleCheer(this: FamilyWorldStoreContext, id: SavingGoalId) {
     await executeBackendFamilyCommand(this, "savings.toggle-cheer", { id }, "notifications.save.savings", () => {
       const goal = this.goals.find((item) => item.id === id);

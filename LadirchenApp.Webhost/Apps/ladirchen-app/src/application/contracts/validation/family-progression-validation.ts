@@ -1,6 +1,6 @@
 import type { FamilyProgressionState } from "@/application/contracts/family-progression-contract";
 import { HOUSE_STAGES } from "@/domain/house/catalog";
-import { isFiniteNumber, isInteger, isNonNegativeInteger, isRecord } from "./runtime-validation";
+import { isArrayOf, isFiniteNumber, isInteger, isNonNegativeInteger, isRecord } from "./runtime-validation";
 
 const stageLevels = new Set<number>(HOUSE_STAGES.map((item) => item.level));
 const ladiStageIds = new Set(["idle-ladi", "starter-ladi", "garden-ladi", "sun-ladi", "aurora-ladi", "super-ladi"]);
@@ -8,6 +8,10 @@ const ladiStageIds = new Set(["idle-ladi", "starter-ladi", "garden-ladi", "sun-l
 function isMemberProgression(value: unknown): boolean {
   return (
     isRecord(value) &&
+    isArrayOf(
+      value.approvedDates,
+      (date): date is string => typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date),
+    ) &&
     isNonNegativeInteger(value.streakDays) &&
     isFiniteNumber(value.completionPercent) &&
     isFiniteNumber(value.averageBasicRating) &&

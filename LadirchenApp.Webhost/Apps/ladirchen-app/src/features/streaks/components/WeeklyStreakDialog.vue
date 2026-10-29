@@ -51,7 +51,7 @@
 
       <div class="streak-content pa-4">
         <div v-if="store.viewerRole === 'child'" class="ladi-level">
-          <LadiMascot :score="store.averageTaskRating" :show-score="false" :size="88" />
+          <LadiMascot :stage-id="ladiStage.id" :size="88" />
           <div>
             <p class="section-kicker">{{ t("streaks.weekly.ladiLevel") }}</p>
             <strong>{{ t(ladiStage.nameKey) }}</strong>
@@ -103,8 +103,7 @@ import AnimatedStreakFlame from "./AnimatedStreakFlame.vue";
 import LadiMascot from "@/shared/components/LadiMascot.vue";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
 import HeaderDecoration from "@/shared/components/ui/HeaderDecoration.vue";
-import { getLadiStage } from "@/domain/ladi";
-import { approvedContributionDatesInCurrentWeek } from "@/domain/contributions/weekly-progress";
+import { ladiStageById } from "@/domain/ladi";
 import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import { useFamilyWorldStore } from "@/stores/family-world";
 export interface Emits {
@@ -131,13 +130,7 @@ const labels = computed(() => {
     };
   });
 });
-const completedDates = computed(() =>
-  approvedContributionDatesInCurrentWeek(
-    store.contributions,
-    store.familyTimeZone,
-    new Date(store.currentTimeMilliseconds),
-  ),
-);
+const completedDates = computed(() => new Set(store.memberProgressions[store.activeChildId]?.approvedDates ?? []));
 const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
 const weekDays = computed(() =>
   labels.value.map((day) => ({
@@ -145,32 +138,29 @@ const weekDays = computed(() =>
     status: dayStatus(day.calendarDate),
   })),
 );
-const ladiStage = computed(() => getLadiStage(store.averageTaskRating));
+const ladiStage = computed(() =>
+  ladiStageById(store.memberProgressions[store.activeChildId]?.ladiStageId ?? "idle-ladi"),
+);
 const weekMessage = computed(() =>
   store.currentWeekDays >= store.currentWeekTarget
     ? t("streaks.weekly.motivation.complete")
     : t("streaks.weekly.motivation.active"),
 );
 function dayStatus(calendarDate: string): DayStatus {
-
   if (completedDates.value.has(calendarDate)) {
-
     return DayStatus.Done;
   }
 
   if (calendarDate === today.value) {
-
     return DayStatus.Today;
   }
 
   return DayStatus.Upcoming;
 }
 function statusLabel(status: DayStatus) {
-
   return t(`streaks.weekly.status.${status}`);
 }
 function close() {
-
   return emit("update:modelValue", false);
 }
 enum DayStatus {

@@ -134,6 +134,7 @@ public sealed class InMemoryAuthenticationService
     var contributions = new JsonObject
     {
       ["contributions"] = new JsonArray(),
+      ["perfectRatingBonusPercent"] = 5,
       ["promotions"] = new JsonArray(),
     };
     var savings = new JsonObject

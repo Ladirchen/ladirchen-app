@@ -1,7 +1,7 @@
 import type { HouseZoneId, RoomDesignId } from "@/domain/house";
 import type { TranslationKey } from "@/locales/translation-keys";
 import { AUTH_STATE_KEY } from "./family-world-store-utils";
-import { mergeHouseLayout, normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
+import { normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
 function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) => void): boolean {
@@ -59,16 +59,20 @@ export const lifecycleActions = {
     const contributionsLoaded = applySettledLoad(contributionsResult, (contributions) => {
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
+        this.perfectRatingBonusPercent = contributions.state.perfectRatingBonusPercent ?? 5;
         this.promotions = [...contributions.state.promotions];
+        this.todayEarnedByMember = { ...contributions.state.todayEarnedByMember };
       }
     });
     const savingsLoaded = applySettledLoad(savingsResult, (savings) => {
       if (savings) {
         this.balances = { ...savings.state.balances };
+        this.availableBalances = { ...(savings.state.availableBalances ?? savings.state.balances) };
         this.familyCurrencyCode = savings.state.familyCurrencyCode;
         this.goals = [...savings.state.goals];
         this.ladirchenPerCurrencyUnit = savings.state.ladirchenPerCurrencyUnit;
         this.pendingGuardianGifts = [...savings.state.pendingGuardianGifts];
+        this.sharedSavedBalances = { ...savings.state.sharedSavedBalances };
       }
     });
     const rewardShopLoaded = applySettledLoad(rewardShopResult, (rewardShop) => {
@@ -161,7 +165,9 @@ export const lifecycleActions = {
 
         if (snapshot) {
           this.contributions = [...snapshot.state.contributions];
+          this.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent ?? 5;
           this.promotions = [...snapshot.state.promotions];
+          this.todayEarnedByMember = { ...snapshot.state.todayEarnedByMember };
         }
 
         return;
@@ -172,28 +178,46 @@ export const lifecycleActions = {
 
         if (snapshot) {
           this.balances = { ...snapshot.state.balances };
+          this.availableBalances = { ...(snapshot.state.availableBalances ?? snapshot.state.balances) };
           this.familyCurrencyCode = snapshot.state.familyCurrencyCode;
           this.goals = [...snapshot.state.goals];
           this.ladirchenPerCurrencyUnit = snapshot.state.ladirchenPerCurrencyUnit;
           this.pendingGuardianGifts = [...snapshot.state.pendingGuardianGifts];
+          this.sharedSavedBalances = { ...snapshot.state.sharedSavedBalances };
         }
 
         return;
       }
 
       if (aggregateType === "reward-shop") {
-        const snapshot = await rewardShopService.load(familyId);
+        const [snapshot, savingsSnapshot] = await Promise.all([
+          rewardShopService.load(familyId),
+          savingsService.load(familyId),
+        ]);
 
         if (snapshot) {
           this.shopRewards = [...snapshot.state.rewards];
           this.rewardShopRedemptionOpen = snapshot.state.redemptionOpen ?? false;
         }
 
+        if (savingsSnapshot) {
+          this.balances = { ...savingsSnapshot.state.balances };
+          this.availableBalances = {
+            ...(savingsSnapshot.state.availableBalances ?? savingsSnapshot.state.balances),
+          };
+          this.goals = [...savingsSnapshot.state.goals];
+          this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
+          this.sharedSavedBalances = { ...savingsSnapshot.state.sharedSavedBalances };
+        }
+
         return;
       }
 
       if (aggregateType === "family-progression") {
-        const snapshot = await familyProgressionService.load(familyId);
+        const [snapshot, savingsSnapshot] = await Promise.all([
+          familyProgressionService.load(familyId),
+          savingsService.load(familyId),
+        ]);
 
         if (snapshot) {
           this.completedWeeklyStreak = snapshot.state.completedWeeklyStreak;
@@ -204,6 +228,19 @@ export const lifecycleActions = {
           this.houseVisualLevel = snapshot.state.houseVisualLevel;
           this.maxSavingsRatePercent = snapshot.state.maximumSavingsInterestRate;
         }
+
+        if (savingsSnapshot) {
+          this.balances = { ...savingsSnapshot.state.balances };
+          this.availableBalances = {
+            ...(savingsSnapshot.state.availableBalances ?? savingsSnapshot.state.balances),
+          };
+          this.goals = [...savingsSnapshot.state.goals];
+          this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
+          this.sharedSavedBalances = { ...savingsSnapshot.state.sharedSavedBalances };
+        }
+
+        this.homeCustomizationHydrated = false;
+        await this.hydrateHomeCustomization();
 
         return;
       }
@@ -233,7 +270,7 @@ export const lifecycleActions = {
 
           return saved ? { ...accessory, owned: saved.owned, equipped: saved.equipped } : accessory;
         });
-        this.houseLayout = mergeHouseLayout(snapshot.state.placements, initialData);
+        this.houseLayout = [...snapshot.state.placements];
         this.ownedHouseThemeIds = snapshot.state.editions
           .filter((edition) => edition.owned)
           .map((edition) => edition.id);

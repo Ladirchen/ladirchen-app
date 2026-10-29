@@ -25,6 +25,9 @@ export interface SavingGoal {
   starterBonus?: number;
   interestEarned?: number;
   projectedInterestCredit?: number;
+  remainingAmount?: number;
+  withdrawableBalance?: number;
+  visibleToMemberIds?: ReadonlyArray<FamilyMemberId>;
   visibility: GoalVisibility;
   shared: boolean;
   cheered: boolean;

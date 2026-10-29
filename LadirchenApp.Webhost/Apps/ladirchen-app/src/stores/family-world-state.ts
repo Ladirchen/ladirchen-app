@@ -1,16 +1,8 @@
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
-import {
-  characterCollidesWithFurniture,
-  DEFAULT_ROOM_DESIGNS,
-  furnitureVisualDefinitionFor,
-  HOUSE_LAYOUT_CONSTRAINTS,
-  HOUSE_THEMES,
-} from "@/domain/house";
-import { clamp } from "@/domain/shared/numbers";
+import { DEFAULT_ROOM_DESIGNS, HOUSE_THEMES } from "@/domain/house";
 import type { HouseStageLevel, HouseZoneId, RoomDesignId } from "@/domain/house";
 import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from "@/domain/family/types";
 import { DEFAULT_FAMILY_TIME_ZONE } from "@/domain/family/time-zone";
-import type { HouseLayoutPlacement } from "@/domain/house/entities";
 import type { FamilyCurrency, GuardianGift } from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
@@ -18,27 +10,10 @@ import type { FamilyWorldInitialData } from "@/application/ports/family-world-in
 import type { MemberProgression } from "@/application/contracts/family-progression-contract";
 import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
 export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
-  const guardians = members.filter((member) => member.role === "guardian");
-  const hasAdministrator = guardians.some((member) => member.guardianAccess === "admin");
-
-  return members.map(function callback(member) {
-    if (member.role !== "guardian") {
-      return {
-        ...member,
-        participatesInWeeklyGoal: member.participatesInWeeklyGoal ?? true,
-        appearance: resolveFamilyMemberAvatarAppearance(member, members),
-      };
-    }
-
-    const isFirstGuardian = member.id === guardians[0]?.id;
-
-    return {
-      ...member,
-      guardianAccess: member.guardianAccess ?? (!hasAdministrator && isFirstGuardian ? "admin" : "supporter"),
-      participatesInWeeklyGoal: member.participatesInWeeklyGoal ?? false,
-      appearance: resolveFamilyMemberAvatarAppearance(member, members),
-    };
-  });
+  return members.map((member) => ({
+    ...member,
+    appearance: resolveFamilyMemberAvatarAppearance(member, members),
+  }));
 }
 export function normalizeFamilyPets(pets: ReadonlyArray<FamilyPet>): FamilyPet[] {
   return pets.map((pet) => ({ ...pet }));
@@ -54,103 +29,6 @@ function createDefaultSelectedRoomDesignIds(): Partial<Record<HouseZoneId, RoomD
   }
 
   return selections;
-}
-function savedPlacementYIsValid(
-  savedY: number,
-  entityType: HouseLayoutPlacement["entityType"],
-  minimumY: number | undefined,
-  maximumY: number | undefined,
-  locksScale: boolean,
-): boolean {
-  if (minimumY !== undefined) {
-    return savedY >= minimumY && savedY <= (maximumY ?? HOUSE_LAYOUT_CONSTRAINTS.maximumY);
-  }
-
-  if (entityType === "ladi") {
-    return (
-      (savedY >= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMinimumY &&
-        savedY <= HOUSE_LAYOUT_CONSTRAINTS.perch.persistedMaximumY) ||
-      savedY >= HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
-    );
-  }
-
-  const minimumSavedY =
-    entityType === "member" || entityType === "pet" || locksScale
-      ? HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY
-      : HOUSE_LAYOUT_CONSTRAINTS.furnitureMinimumY;
-
-  return savedY >= minimumSavedY;
-}
-export function mergeHouseLayout(
-  stored: ReadonlyArray<HouseLayoutPlacement>,
-  initialData: FamilyWorldInitialData,
-): HouseLayoutPlacement[] {
-  const defaultPlacements = initialData.houseLayout;
-  const accessories = initialData.accessories;
-  const storedById = new Map(stored.map((placement) => [placement.id, placement]));
-  const fixedAccessoryIds = new Set(
-    accessories.filter((accessory) => accessory.mobility === "fixed").map((accessory) => accessory.id),
-  );
-  const mergedPlacements = defaultPlacements.map(function callback(placement) {
-    if (placement.entityType === "furniture" && fixedAccessoryIds.has(placement.entityId)) {
-      return placement;
-    }
-
-    const saved = storedById.get(placement.id);
-
-    if (!saved) {
-      return placement;
-    }
-
-    const isLadi = placement.entityType === "ladi";
-    const savedLadiWasPerched = isLadi && saved.y < HOUSE_LAYOUT_CONSTRAINTS.floorMinimumY;
-    const accessory =
-      placement.entityType === "furniture" ? accessories.find((item) => item.id === placement.entityId) : undefined;
-    const visualDefinition = accessory?.visual ? furnitureVisualDefinitionFor(accessory.visual) : undefined;
-    const locksScale = visualDefinition?.locksScale ?? false;
-    const savedYIsValid = savedPlacementYIsValid(
-      saved.y,
-      placement.entityType,
-      visualDefinition?.minimumY,
-      visualDefinition?.maximumY,
-      locksScale,
-    );
-    const coordinates = {
-      scale: locksScale
-        ? placement.scale
-        : clamp(saved.scale, HOUSE_LAYOUT_CONSTRAINTS.minimumScale, HOUSE_LAYOUT_CONSTRAINTS.maximumScale),
-      x: savedLadiWasPerched
-        ? placement.x
-        : clamp(saved.x, HOUSE_LAYOUT_CONSTRAINTS.minimumX, HOUSE_LAYOUT_CONSTRAINTS.maximumX),
-      y: savedYIsValid
-        ? clamp(saved.y, HOUSE_LAYOUT_CONSTRAINTS.minimumY, HOUSE_LAYOUT_CONSTRAINTS.maximumY)
-        : placement.y,
-      zoneId: saved.zoneId,
-    };
-
-    return {
-      ...placement,
-      ...coordinates,
-    };
-  });
-
-  return mergedPlacements.map(function callback(placement) {
-    if (
-      placement.entityType === "furniture" ||
-      !characterCollidesWithFurniture(
-        placement.id,
-        placement.zoneId,
-        placement.x,
-        placement.y,
-        mergedPlacements,
-        accessories,
-      )
-    ) {
-      return placement;
-    }
-
-    return defaultPlacements.find((defaultPlacement) => defaultPlacement.id === placement.id) ?? placement;
-  });
 }
 export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const viewerRole = initialStateValue<ViewerRole>("child");
@@ -209,14 +87,13 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     onboardingCompleted: false,
     familySetupOpen: false,
     balances: initialData.balances,
+    availableBalances: { ...initialData.balances },
+    sharedSavedBalances: {} as Partial<Record<FamilyMemberId, number>>,
+    todayEarnedByMember: {} as Partial<Record<FamilyMemberId, number>>,
     familyCurrencyCode,
     familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
     ladirchenPerCurrencyUnit: 10,
     perfectRatingBonusPercent: 5,
-    baseSavingsRatePercent: 1,
-    streakBonusRate: 0.5,
-    completionBonusRate: 3.5,
-    ratingBonusRate: 2.5,
     maxSavingsRatePercent: 8,
     memberProgressions,
     familyEnergyReadModel: 60,

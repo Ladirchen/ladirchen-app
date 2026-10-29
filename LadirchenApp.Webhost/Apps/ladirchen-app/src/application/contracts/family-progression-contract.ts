@@ -7,6 +7,7 @@ export const FAMILY_PROGRESSION_SCHEMA_VERSION = 3;
 export const FAMILY_PROGRESSION_AGGREGATE_TYPE = "family-progression";
 
 export interface MemberProgression {
+  readonly approvedDates: ReadonlyArray<string>;
   readonly averageBasicRating: number;
   readonly completionPercent: number;
   readonly energyContribution: number;

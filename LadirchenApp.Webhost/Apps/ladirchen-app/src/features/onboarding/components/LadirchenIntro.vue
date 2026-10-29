@@ -6,7 +6,7 @@
       <div class="intro-cloud intro-cloud-two" aria-hidden="true"></div>
       <div class="intro-card">
         <div class="intro-mascot">
-          <LadiMascot :score="5" :show-score="false" :size="142" />
+          <LadiMascot stage-id="super-ladi" :size="142" />
         </div>
         <div class="intro-logo-row">
           <span class="intro-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png" /></span>
@@ -45,11 +45,9 @@ onMounted(function callback() {
   );
 });
 onUnmounted(function callback() {
-
   if (timer !== undefined) {
     window.clearTimeout(timer);
   }
-
 });
 </script>
 

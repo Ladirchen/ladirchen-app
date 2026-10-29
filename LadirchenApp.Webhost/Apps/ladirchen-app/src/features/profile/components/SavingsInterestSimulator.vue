@@ -10,7 +10,7 @@
     </div>
 
     <div class="simulator-preview mt-4">
-      <LadiMascot :score="simulatedRating" :show-score="false" :size="68" />
+      <LadiMascot :stage-id="simulatedLadiStageId" :size="68" />
       <div class="flex-grow-1">
         <span>{{ t("savings.simulator.preview") }}</span>
         <strong>{{ t(simulatedLadiStage.nameKey) }}</strong>

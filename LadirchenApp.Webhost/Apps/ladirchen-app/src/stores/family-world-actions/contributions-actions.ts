@@ -7,6 +7,14 @@ import { executeBackendFamilyCommand } from "./backend-family-command";
 import { createUuid } from "./family-world-store-utils";
 
 export const contributionsActions = {
+  async setPerfectRatingBonusPercent(this: FamilyWorldStoreContext, percent: number) {
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.set-perfect-rating-bonus",
+      { percent },
+      "notifications.save.contributions",
+    );
+  },
   async submitContribution(this: FamilyWorldStoreContext, id: ContributionId) {
     await executeBackendFamilyCommand(this, "contributions.submit", { id }, "notifications.save.contributions", () =>
       this.notify(
@@ -41,7 +49,7 @@ export const contributionsActions = {
     await executeBackendFamilyCommand(
       this,
       "contributions.approve",
-      { id, perfectRatingBonusPercent: this.perfectRatingBonusPercent, stars },
+      { id, stars },
       "notifications.save.contributions",
       () => {
         const approved = this.contributions.find((item) => item.id === id);

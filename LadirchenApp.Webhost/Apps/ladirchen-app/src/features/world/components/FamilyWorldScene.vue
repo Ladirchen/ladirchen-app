@@ -286,7 +286,7 @@
           :placements="houseLayout"
           :room-designs="roomDesigns"
           :rooms="rooms"
-          :score="ladiScore"
+          :ladi-stage-id="ladiStageId"
           :selected-zone-id="selectedRoomView"
           :show-room-labels="false"
           :storage-open="storageOpen"
@@ -470,11 +470,9 @@ const roofDetailPath = computed(() =>
   houseHasUpperFloor.value ? "M170 82l60-33 61 34M184 89l46-25 47 25" : "M143 145l87-51 88 51M160 151l70-41 71 41",
 );
 function memberRoleClass(member: FamilyMember) {
-
   return member.role === "child" ? "is-child" : "is-guardian";
 }
 function backgroundMemberSize(member: FamilyMember) {
-
   return member.role === "child" ? 42 : 55;
 }
 </script>

@@ -34,6 +34,9 @@ function isSavingGoal(value: unknown): value is SavingGoal {
     isOptionalNonNegativeNumber(value.starterBonus) &&
     isOptionalNonNegativeNumber(value.interestEarned) &&
     isOptionalNonNegativeNumber(value.projectedInterestCredit) &&
+    isOptionalNonNegativeNumber(value.remainingAmount) &&
+    isOptionalNonNegativeNumber(value.withdrawableBalance) &&
+    (value.visibleToMemberIds === undefined || isArrayOf(value.visibleToMemberIds, isFamilyMemberId)) &&
     isKnownString(value.visibility, goalVisibilities) &&
     typeof value.shared === "boolean" &&
     typeof value.cheered === "boolean"
@@ -58,6 +61,16 @@ export function isSavingsState(value: unknown): value is SavingsState {
     Object.entries(value.balances).every(
       ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
     ) &&
+    (value.availableBalances === undefined ||
+      (isRecord(value.availableBalances) &&
+        Object.entries(value.availableBalances).every(
+          ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
+        ))) &&
+    (value.sharedSavedBalances === undefined ||
+      (isRecord(value.sharedSavedBalances) &&
+        Object.entries(value.sharedSavedBalances).every(
+          ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
+        ))) &&
     isFamilyCurrency(value.familyCurrencyCode) &&
     isArrayOf(value.goals, isSavingGoal) &&
     hasUniqueIds(value.goals) &&

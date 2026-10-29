@@ -110,6 +110,12 @@ public sealed class ExecuteFamilyCommandHandler
 
     switch (command.CommandType)
     {
+      case "contributions.set-perfect-rating-bonus":
+        RequireAdministrator(actor);
+        var perfectRatingBonus = RequiredDecimal(payload, "percent");
+        Require(perfectRatingBonus >= 0 && perfectRatingBonus <= 100, "The five-star bonus must be between zero and 100 percent.");
+        contributionState["perfectRatingBonusPercent"] = Round(perfectRatingBonus);
+        break;
       case "contributions.submit":
         Submit(contributionItems, actor, payload);
         break;
@@ -122,7 +128,17 @@ public sealed class ExecuteFamilyCommandHandler
       case "contributions.approve":
         savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
         savingsState = RequireObject(savings.State);
-        Approve(profileState, contributionItems, promotionItems, members, actor, savingsState, payload, now);
+        Approve(
+          profileState,
+          contributionItems,
+          promotionItems,
+          members,
+          actor,
+          savingsState,
+          payload,
+          new Percentage(DecimalValue(contributionState, "perfectRatingBonusPercent") ?? 5),
+          now
+        );
         break;
       case "contributions.return":
         ReturnContribution(contributionItems, members, actor, payload);
@@ -189,6 +205,7 @@ public sealed class ExecuteFamilyCommandHandler
   {
     var home = await RequireSnapshotAsync(command.FamilyId, "home-customization", cancellationToken);
     var homeState = RequireObject(home.State);
+    HomePlacementReadModel.Ensure(homeState, profile);
     var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
     var houseLevel = RequiredInt(RequireObject(progression.State), "houseLevel");
     FamilyAggregateSnapshot? savings = null;
@@ -399,6 +416,13 @@ public sealed class ExecuteFamilyCommandHandler
     {
       case "progression.refresh":
         break;
+      case "progression.set-maximum-savings-rate":
+        RequireAdministrator(actor);
+        var maximumSavingsRate = RequiredDecimal(RequireObject(command.Payload), "percent");
+        Require(maximumSavingsRate > 0 && maximumSavingsRate <= 100, "The maximum savings rate must be above zero and at most 100 percent.");
+        progressionState["maximumSavingsInterestRate"] = Round(maximumSavingsRate);
+        progressionState = BuildProgressionState(profileState, contributionState, progressionState);
+        break;
       case "progression.complete-week":
         RequireAdministrator(actor);
         Require(RequiredInt(progressionState, "familyEnergy") >= 60, "Family energy is too low to complete the week.");
@@ -511,18 +535,19 @@ public sealed class ExecuteFamilyCommandHandler
         .Select(item => RequiredDecimal(item, "stars"))
         .ToArray();
       var averageRating = ratings.Length == 0 ? 0 : ratings.Average();
-      var approvedDays = owned
+      var approvedDates = owned
         .Where(item => StringValue(item, "status") == "approved")
         .Select(item => ParseOptionalInstant(item, "approvedAt"))
         .Where(item => item is not null)
         .Select(item => zone.LocalDate(item!.Value))
         .Where(period.Contains)
         .Distinct()
-        .Count();
+        .Order()
+        .ToArray();
       var streakDays = streakPolicy.Calculate(
         RequiredInt(member, "weeklyStreak"),
         weeklyTarget,
-        approvedDays
+        approvedDates.Length
       );
       var participation = new PersonalParticipation(streakDays, completion.Value, averageRating);
       var value = progressionPolicy.Calculate(participation);
@@ -533,6 +558,9 @@ public sealed class ExecuteFamilyCommandHandler
       evaluations[memberId] = new JsonObject
       {
         ["streakDays"] = streakDays,
+        ["approvedDates"] = new JsonArray(approvedDates
+          .Select(date => JsonValue.Create(date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))
+          .ToArray<JsonNode?>()),
         ["completionPercent"] = completion.Value,
         ["averageBasicRating"] = averageRating,
         ["participationValue"] = value.Capped,
@@ -747,6 +775,7 @@ public sealed class ExecuteFamilyCommandHandler
     JsonObject actor,
     JsonObject savings,
     JsonObject payload,
+    Percentage perfectRatingBonus,
     DateTimeOffset now
   )
   {
@@ -765,11 +794,10 @@ public sealed class ExecuteFamilyCommandHandler
     var promotion = FindActivePromotion(promotions, RequiredString(contribution, "id"), profile, now);
     var multiplier = promotion is null ? null : new RewardMultiplier(RequiredDecimal(promotion, "multiplier"));
     var teamworkBonus = promotion is null ? null : new LadirchenAmount(RequiredDecimal(promotion, "teamworkBonus"));
-    var configuredBonus = DecimalValue(payload, "perfectRatingBonusPercent") ?? 5;
     var reward = ContributionRewardPolicy.Calculate(
       new LadirchenAmount(RequiredDecimal(contribution, "reward")),
       rating,
-      new Percentage(configuredBonus),
+      perfectRatingBonus,
       multiplier,
       teamworkBonus
     );
@@ -1310,12 +1338,7 @@ public sealed class ExecuteFamilyCommandHandler
     }
     else
     {
-      initial = new HousePlacement(
-        RequiredString(payload, "zoneId"),
-        RequiredDecimal(payload, "x"),
-        RequiredDecimal(payload, "y"),
-        RequiredDecimal(payload, "scale")
-      );
+      initial = HomePlacementReadModel.InitialFor(profile, placement);
     }
 
     RequireAreaAvailable(initial.Area, houseLevel);
@@ -1385,7 +1408,11 @@ public sealed class ExecuteFamilyCommandHandler
   {
     Require(StringValue(actor, "role") == "child", "Only children may set a nickname.");
     var nickname = StringValue(payload, "nickname")?.Trim() ?? string.Empty;
-    Require(nickname.Length <= 18, "The nickname must not exceed 18 characters.");
+
+    if (nickname.Length > 18)
+    {
+      nickname = nickname[..18];
+    }
 
     if (nickname.Length == 0)
     {

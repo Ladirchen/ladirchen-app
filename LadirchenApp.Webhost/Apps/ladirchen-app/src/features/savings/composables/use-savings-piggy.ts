@@ -3,7 +3,7 @@ import { useI18n } from "vue-i18n";
 import { isFamilyCurrency } from "@/application/contracts/family-aggregate-validation";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
-import { SAVINGS_RULES } from "@/domain/savings/rules";
+import { DEFAULT_TRANSFER_AMOUNT } from "@/features/savings/transfer-defaults";
 import type { FamilyCurrency } from "@/domain/savings/types";
 import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
 import { percentageOfTotal } from "@/domain/shared/numbers";
@@ -20,7 +20,7 @@ export function useSavingsPiggy() {
   const selectedGoalId = ref<SavingGoalId>();
   const selectedMemberId = ref<FamilyMemberId>();
   const transferDestination = ref<"goal" | "member">("goal");
-  const amount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
+  const amount = ref<number>(DEFAULT_TRANSFER_AMOUNT);
   const transferDirection = ref<"deposit" | "withdraw" | "gift" | "">("");
   const piggyGuideStep = ref(-1);
   let transferTimer: number | undefined;
@@ -47,10 +47,7 @@ export function useSavingsPiggy() {
             contribution.approvedAt !== undefined &&
             isInstantInIsoWeek(contribution.approvedAt, now, store.familyTimeZone),
         );
-        const reserved = store.shopRewards
-          .filter((reward) => reward.status === "requested" && reward.requesterId === member.id)
-          .reduce((sum, reward) => sum + reward.price, 0);
-        const available = Math.max(0, store.balanceFor(member.id) - reserved);
+        const available = store.availableBalances[member.id] ?? 0;
         const saved = store.totalVisibleSavedFor(member.id);
         const ladiLevel = store.memberProgressions[member.id]?.ladiStagePosition ?? 1;
 
@@ -72,9 +69,7 @@ export function useSavingsPiggy() {
   );
   const selectedGoal = computed(() => store.ownSavingGoals.find((goal) => goal.id === selectedGoalId.value));
   const selectedGoalWithdrawable = computed(() => store.withdrawableGoalBalance(selectedGoal.value));
-  const maxDeposit = computed(() =>
-    Math.min(store.availableBalance, Math.max(0, (selectedGoal.value?.target ?? 0) - (selectedGoal.value?.saved ?? 0))),
-  );
+  const maxDeposit = computed(() => Math.min(store.availableBalance, selectedGoal.value?.remainingAmount ?? 0));
   const transferAmountMaximum = computed(() =>
     transferDestination.value === "member"
       ? store.availableBalance
@@ -126,7 +121,7 @@ export function useSavingsPiggy() {
   }
   function setTransferDestination(destination: "goal" | "member") {
     transferDestination.value = destination;
-    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, transferAmountMaximum.value);
+    amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, transferAmountMaximum.value);
   }
   function playTransfer(direction: "deposit" | "withdraw" | "gift") {
     if (transferTimer !== undefined) {
@@ -146,7 +141,7 @@ export function useSavingsPiggy() {
 
     void store.saveToGoal(selectedGoalId.value, amount.value);
     playTransfer("deposit");
-    amount.value = SAVINGS_RULES.defaultTransferAmount;
+    amount.value = DEFAULT_TRANSFER_AMOUNT;
   }
   function withdraw() {
     if (!selectedGoalId.value) {
@@ -155,7 +150,7 @@ export function useSavingsPiggy() {
 
     void store.withdrawFromGoal(selectedGoalId.value, amount.value);
     playTransfer("withdraw");
-    amount.value = SAVINGS_RULES.defaultTransferAmount;
+    amount.value = DEFAULT_TRANSFER_AMOUNT;
   }
   function giftToMember() {
     if (!selectedMemberId.value || amount.value <= 0) {
@@ -172,7 +167,7 @@ export function useSavingsPiggy() {
       message: t("savings.piggy.guide.giftMessage", { name: recipientName }),
       celebration: "gift",
     });
-    amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, store.availableBalance);
+    amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance);
   }
   const piggyGuideSteps = computed(() => [
     {
@@ -216,7 +211,7 @@ export function useSavingsPiggy() {
         : store.ownSavingGoals[0]?.id;
       selectedMemberId.value = memberOptions.value[0]?.value;
       transferDestination.value = "goal";
-      amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, store.availableBalance);
+      amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance);
       piggyGuideStep.value = -1;
       guidanceTimer = window.setTimeout(function callback() {
         nextPiggyGuide();

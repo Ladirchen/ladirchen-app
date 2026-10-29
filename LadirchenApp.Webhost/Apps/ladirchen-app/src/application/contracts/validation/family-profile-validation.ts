@@ -14,6 +14,7 @@ import {
   isRecord,
 } from "./runtime-validation";
 import { isAvatarAppearance } from "@/domain/avatar";
+import type { FamilyPermissions } from "@/domain/family/permissions";
 import type {
   FamilyMember,
   FamilyPet,
@@ -45,6 +46,18 @@ export function isGuardianAccessLevel(value: unknown): value is GuardianAccessLe
 export function isFamilyPetKindId(value: unknown): value is FamilyPetKindId {
   return isKnownString(value, familyPetKinds);
 }
+function isFamilyPermissions(value: unknown): value is FamilyPermissions {
+  return (
+    isRecord(value) &&
+    typeof value.canInviteMembers === "boolean" &&
+    typeof value.canManageContent === "boolean" &&
+    typeof value.canManageFamily === "boolean" &&
+    typeof value.canManageGoals === "boolean" &&
+    typeof value.canSupportChildGoals === "boolean" &&
+    typeof value.canViewFamilyGoals === "boolean" &&
+    typeof value.canViewGuardianGoals === "boolean"
+  );
+}
 function isFamilyMember(value: unknown): value is FamilyMember {
   return (
     isRecord(value) &&
@@ -59,7 +72,8 @@ function isFamilyMember(value: unknown): value is FamilyMember {
     isNonNegativeInteger(value.weeklyStreak) &&
     isOptionalString(value.email) &&
     isOptionalBoolean(value.invitationPending) &&
-    (value.appearance === undefined || isAvatarAppearance(value.appearance))
+    (value.appearance === undefined || isAvatarAppearance(value.appearance)) &&
+    (value.permissions === undefined || isFamilyPermissions(value.permissions))
   );
 }
 function isFamilyPet(value: unknown): value is FamilyPet {

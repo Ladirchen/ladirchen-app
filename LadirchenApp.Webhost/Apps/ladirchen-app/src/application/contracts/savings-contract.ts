@@ -6,11 +6,13 @@ export const SAVINGS_SCHEMA_VERSION = 1;
 export const SAVINGS_AGGREGATE_TYPE = "savings";
 
 export interface SavingsState {
+  readonly availableBalances?: Readonly<Record<FamilyMemberId, number>>;
   readonly balances: Readonly<Record<FamilyMemberId, number>>;
   readonly familyCurrencyCode: FamilyCurrency;
   readonly goals: ReadonlyArray<SavingGoal>;
   readonly ladirchenPerCurrencyUnit: number;
   readonly pendingGuardianGifts: ReadonlyArray<GuardianGift>;
+  readonly sharedSavedBalances?: Readonly<Record<FamilyMemberId, number>>;
 }
 
 export type SavingsSnapshot = VersionedAggregateSnapshot<

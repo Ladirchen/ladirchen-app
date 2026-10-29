@@ -60,21 +60,7 @@ export const homeActions = {
     );
   },
   async resetHouseEntityPosition(this: FamilyWorldStoreContext, placementId: HouseLayoutPlacementId) {
-    const initialPlacement = this.$familyWorld.initialDataFactory
-      .create()
-      .houseLayout.find((item) => item.id === placementId);
-    await executeBackendFamilyCommand(
-      this,
-      "home.reset-entity",
-      {
-        placementId,
-        scale: initialPlacement?.scale ?? 1,
-        x: initialPlacement?.x ?? 50,
-        y: initialPlacement?.y ?? 66,
-        zoneId: initialPlacement?.zoneId ?? "living-room",
-      },
-      "notifications.save.home",
-    );
+    await executeBackendFamilyCommand(this, "home.reset-entity", { placementId }, "notifications.save.home");
   },
   setSimulatedEnergy(this: FamilyWorldStoreContext, value: number | null) {
     if (!import.meta.env.DEV && !this.permissions.canManageContent) {

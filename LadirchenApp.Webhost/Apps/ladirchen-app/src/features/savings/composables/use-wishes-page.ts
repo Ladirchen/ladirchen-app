@@ -4,7 +4,7 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PageViewOption } from "@/shared/components/ui/page-view-option";
 import type { GoalVisibility, NewGoal, SavingGoal, SavingGoalOwnerId } from "@/domain/savings/types";
-import { SAVINGS_RULES } from "@/domain/savings/rules";
+import { DEFAULT_TRANSFER_AMOUNT } from "@/features/savings/transfer-defaults";
 import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
 import { percentageOfTotal } from "@/domain/shared/numbers";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
@@ -17,34 +17,12 @@ const SUPPORT_ANIMATION_DURATION_MS = 950;
 
 type WishView = "own" | "children" | "family";
 
-type FamilyGoalViewer = {
-  role: "child" | "guardian";
-  memberId: FamilyMemberId;
-  canViewGuardianGoals: boolean;
-};
-
 function goalBalanceLabel(goal: SavingGoal) {
   return `${goal.saved} / ${goal.target}`;
 }
 
-function remainingGoalAmount(goal: Pick<SavingGoal, "saved" | "target">) {
-  return Math.max(0, goal.target - goal.saved);
-}
-
-function isVisibleFamilyGoal(goal: SavingGoal, viewer: FamilyGoalViewer, ownerRole?: FamilyGoalViewer["role"]) {
-  if (viewer.role === "guardian") {
-    if (goal.ownerId === "family") {
-      return true;
-    }
-
-    return (
-      goal.ownerId !== viewer.memberId &&
-      ownerRole === "guardian" &&
-      (goal.visibility === "family" || (viewer.canViewGuardianGoals && goal.visibility === "guardians"))
-    );
-  }
-
-  return goal.ownerId !== viewer.memberId && goal.visibility === "family";
+function remainingGoalAmount(goal: Pick<SavingGoal, "remainingAmount" | "saved" | "target">) {
+  return goal.remainingAmount ?? Math.max(0, goal.target - goal.saved);
 }
 
 function progress(saved: number, target: number) {
@@ -66,9 +44,9 @@ export function useWishesPage() {
   const newGoalOwnerId = ref<SavingGoalOwnerId>(store.activeChildId);
   const supportDialog = ref(false);
   const supportGoalId = ref<SavingGoalId>();
-  const supportAmount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
+  const supportAmount = ref<number>(DEFAULT_TRANSFER_AMOUNT);
   const supportSending = ref(false);
-  const saveAmount = ref<number>(SAVINGS_RULES.defaultTransferAmount);
+  const saveAmount = ref<number>(DEFAULT_TRANSFER_AMOUNT);
   const saveMotion = ref(false);
   let saveTimer: number | undefined;
   let supportTimer: number | undefined;
@@ -82,7 +60,7 @@ export function useWishesPage() {
     localizedGoals.value.filter((goal) => {
       const owner = goal.ownerId === "family" ? undefined : store.members.find((member) => member.id === goal.ownerId);
 
-      return owner?.role === "child" && goal.visibility !== "private";
+      return owner?.role === "child" && goal.visibleToMemberIds?.includes(store.signedInMemberId);
     }),
   );
   const personalGoals = computed(() =>
@@ -91,22 +69,11 @@ export function useWishesPage() {
       : localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId),
   );
   const canCreatePersonalGoal = computed(() => activeTab.value === "own");
-  const visibleFamilyGoals = computed(() => {
-    const viewer: FamilyGoalViewer = {
-      role: store.viewerRole,
-      memberId: store.signedInMemberId,
-      canViewGuardianGoals: store.permissions.canViewGuardianGoals,
-    };
-
-    return localizedGoals.value.filter((goal) => {
-      const ownerRole =
-        store.viewerRole === "guardian" && goal.ownerId !== "family"
-          ? store.members.find((member) => member.id === goal.ownerId)?.role
-          : undefined;
-
-      return isVisibleFamilyGoal(goal, viewer, ownerRole);
-    });
-  });
+  const visibleFamilyGoals = computed(() =>
+    localizedGoals.value.filter(
+      (goal) => goal.ownerId !== store.signedInMemberId && goal.visibleToMemberIds?.includes(store.signedInMemberId),
+    ),
+  );
   const wishViewOptions = computed<Array<PageViewOption<WishView>>>(() => {
     const ownGoals = localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId);
     const options: Array<PageViewOption<WishView>> = [
@@ -179,7 +146,7 @@ export function useWishesPage() {
     saveTimer = window.setTimeout(() => {
       void store.saveToGoal(store.activeGoal.id, saveAmount.value);
       saveDialog.value = false;
-      saveAmount.value = SAVINGS_RULES.defaultTransferAmount;
+      saveAmount.value = DEFAULT_TRANSFER_AMOUNT;
       saveMotion.value = false;
       saveTimer = undefined;
     }, SAVE_ANIMATION_DURATION_MS);
@@ -187,11 +154,7 @@ export function useWishesPage() {
 
   function openSave(goalId: SavingGoalId) {
     store.activeGoalId = goalId;
-    saveAmount.value = Math.min(
-      SAVINGS_RULES.defaultTransferAmount,
-      store.availableBalance,
-      remainingGoalAmount(store.activeGoal),
-    );
+    saveAmount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance, remainingGoalAmount(store.activeGoal));
     saveDialog.value = true;
   }
 
@@ -201,11 +164,7 @@ export function useWishesPage() {
     const remaining = goal ? remainingGoalAmount(goal) : 0;
     supportAmount.value = Math.max(
       0,
-      Math.min(
-        SAVINGS_RULES.defaultTransferAmount,
-        store.viewerRole === "child" ? store.availableBalance : remaining,
-        remaining,
-      ),
+      Math.min(DEFAULT_TRANSFER_AMOUNT, store.viewerRole === "child" ? store.availableBalance : remaining, remaining),
     );
     supportDialog.value = true;
   }

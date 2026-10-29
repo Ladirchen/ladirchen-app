@@ -111,8 +111,17 @@ export function isContributionsState(value: unknown): value is ContributionsStat
     !isRecord(value) ||
     !isArrayOf(value.contributions, isContribution) ||
     !hasUniqueIds(value.contributions) ||
+    (value.perfectRatingBonusPercent !== undefined &&
+      (!isFiniteNumber(value.perfectRatingBonusPercent) ||
+        value.perfectRatingBonusPercent < 0 ||
+        value.perfectRatingBonusPercent > 100)) ||
     !isArrayOf(value.promotions, isPromotion) ||
-    !hasUniqueIds(value.promotions)
+    !hasUniqueIds(value.promotions) ||
+    (value.todayEarnedByMember !== undefined &&
+      (!isRecord(value.todayEarnedByMember) ||
+        !Object.entries(value.todayEarnedByMember).every(
+          ([memberId, amount]) => isFamilyMemberId(memberId) && isFiniteNumber(amount) && amount >= 0,
+        )))
   ) {
     return false;
   }

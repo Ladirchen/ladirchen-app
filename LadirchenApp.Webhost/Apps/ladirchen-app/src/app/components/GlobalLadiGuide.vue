@@ -51,7 +51,7 @@
         :aria-label="t('guide.openExplanation')"
         @click="speakCurrentPageIntro"
       >
-        <LadiMascot :score="ladiScore" :show-score="false" :smart="mascotIsSmart" :size="80" />
+        <LadiMascot :stage-id="ladiStageId" :smart="mascotIsSmart" :size="80" />
       </button>
     </template>
   </aside>
@@ -72,7 +72,7 @@ const {
   hideGuide,
   isHidden,
   isSmart,
-  ladiScore,
+  ladiStageId,
   mood,
   moodOptions,
   moodPromptPending,

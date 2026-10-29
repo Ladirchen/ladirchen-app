@@ -1,6 +1,6 @@
 import type { AvatarAppearance } from "@/domain/avatar";
 import type { FamilyMember, FamilyPet, GuardianAccessLevel } from "@/domain/family/types";
-import { FAMILY_PROFILE_RULES } from "@/domain/family/profile-rules";
+import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import { createDomainId } from "@/domain/shared/identifiers";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { FOLLOW_UP_REWARD_REVEAL_DELAY_MS } from "@/shared/runtime-timing";
@@ -10,7 +10,13 @@ import { AUTH_STATE_KEY, createUuid } from "./family-world-store-utils";
 
 export const familyActions = {
   refreshCurrentTime(this: FamilyWorldStoreContext) {
+    const previousDate = calendarDateInTimeZone(new Date(this.currentTimeMilliseconds), this.familyTimeZone);
     this.currentTimeMilliseconds = Date.now();
+    const currentDate = calendarDateInTimeZone(new Date(this.currentTimeMilliseconds), this.familyTimeZone);
+
+    if (previousDate !== currentDate && this.familyAggregatesHydrated) {
+      void this.refreshFamilyAggregate("contributions");
+    }
   },
   switchSession(this: FamilyWorldStoreContext, memberId: FamilyMemberId, revealRewards = true) {
     const member = this.members.find((item) => item.id === memberId);
@@ -118,17 +124,19 @@ export const familyActions = {
     );
   },
   async setOwnNickname(this: FamilyWorldStoreContext, nickname: string) {
-    const normalizedNickname = nickname.trim().slice(0, FAMILY_PROFILE_RULES.nicknameMaximumLength);
     await executeBackendFamilyCommand(
       this,
       "profile.set-own-nickname",
-      { nickname: normalizedNickname },
+      { nickname },
       "notifications.save.profile",
-      () =>
+      () => {
+        const savedNickname = this.signedInMember.nickname ?? "";
+
         this.notify(
-          normalizedNickname ? "notifications.profile.nicknameSaved" : "notifications.profile.nicknameRemoved",
-          normalizedNickname ? { nickname: normalizedNickname } : {},
-        ),
+          savedNickname ? "notifications.profile.nicknameSaved" : "notifications.profile.nicknameRemoved",
+          savedNickname ? { nickname: savedNickname } : {},
+        );
+      },
     );
   },
   async inviteGuardian(
