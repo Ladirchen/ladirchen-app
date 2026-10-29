@@ -31,11 +31,6 @@ public sealed record FamilyMemberState
       DomainError.InvalidValue,
       "Children cannot have guardian access."
     );
-    Rules.Require(
-      !invitationPending || role == MemberRole.Guardian,
-      DomainError.InvalidValue,
-      "Only guardians can have a pending invitation."
-    );
     InvitationPending = invitationPending;
     Nickname = NormalizeNickname(nickname);
     EmailAddress = emailAddress is null ? null : Family.NormalizeEmailAddress(emailAddress);
@@ -54,17 +49,50 @@ public sealed record FamilyMemberState
     Appearance = appearance;
   }
 
-  public FamilyMemberId Id { get; }
-  public string Name { get; }
-  public MemberRole Role { get; }
-  public GuardianAccess Access { get; }
-  public bool InvitationPending { get; }
-  public string? Nickname { get; }
-  public string? EmailAddress { get; }
-  public bool ParticipatesInWeeklyGoal { get; }
-  public string? Avatar { get; }
-  public string? Color { get; }
-  public AvatarAppearance? Appearance { get; }
+  public FamilyMemberId Id
+  {
+    get;
+  }
+  public string Name
+  {
+    get;
+  }
+  public MemberRole Role
+  {
+    get;
+  }
+  public GuardianAccess Access
+  {
+    get;
+  }
+  public bool InvitationPending
+  {
+    get;
+  }
+  public string? Nickname
+  {
+    get;
+  }
+  public string? EmailAddress
+  {
+    get;
+  }
+  public bool ParticipatesInWeeklyGoal
+  {
+    get;
+  }
+  public string? Avatar
+  {
+    get;
+  }
+  public string? Color
+  {
+    get;
+  }
+  public AvatarAppearance? Appearance
+  {
+    get;
+  }
 
   private static string? NormalizeNickname(string? nickname)
   {

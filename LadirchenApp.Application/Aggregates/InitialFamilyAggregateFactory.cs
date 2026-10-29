@@ -9,15 +9,22 @@ namespace LadirchenApp.Application.Aggregates;
 
 public static class InitialFamilyAggregateFactory
 {
-  private static readonly IanaTimeZone DefaultTimeZone = new("Europe/Zurich");
+  private static readonly IanaTimeZone _defaultTimeZone = new("Europe/Zurich");
 
   public static TypedAggregateSaveBatch Create(
     FamilyId familyId,
     FamilyMemberId actorId,
-    string guardianName
+    string guardianName,
+    string? guardianEmailAddress = null
   )
   {
-    var family = new Family(familyId, actorId, guardianName, DefaultTimeZone);
+    var family = new Family(
+      familyId,
+      actorId,
+      guardianName,
+      _defaultTimeZone,
+      guardianEmailAddress
+    );
     var economy = new FamilyEconomy(family);
     var progression = FamilyHouse.CreateInitial(family);
     var houseCustomization = FamilyHouseShop.CreateInitial(

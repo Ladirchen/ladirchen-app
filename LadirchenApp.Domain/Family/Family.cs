@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net.Mail;
 
 using LadirchenApp.Domain.Avatar;
-using LadirchenApp.Domain.Family.Setup;
 using LadirchenApp.Domain.Family.Permissions;
+using LadirchenApp.Domain.Family.Setup;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Prototypes;
 
@@ -18,14 +18,31 @@ public sealed class Family : AggregateRoot<FamilyId>
   private readonly List<FamilyMember> _members = new();
   private readonly List<FamilyPetState> _pets = new();
 
-  public Family(FamilyId id, FamilyMemberId administratorId, string administratorName, IanaTimeZone timeZone)
+  public Family(
+    FamilyId id,
+    FamilyMemberId administratorId,
+    string administratorName,
+    IanaTimeZone timeZone,
+    string? administratorEmailAddress = null
+  )
     : base(id)
   {
     ArgumentNullException.ThrowIfNull(administratorId);
     ArgumentNullException.ThrowIfNull(timeZone);
-    _members.Add(
-      new FamilyMember(administratorId, administratorName, MemberRole.Guardian, GuardianAccess.Admin, false)
+    var administrator = new FamilyMember(
+      administratorId,
+      administratorName,
+      MemberRole.Guardian,
+      GuardianAccess.Admin,
+      false
     );
+
+    if (administratorEmailAddress is not null)
+    {
+      administrator.SetEmailAddress(NormalizeEmailAddress(administratorEmailAddress));
+    }
+
+    _members.Add(administrator);
     TimeZone = timeZone;
   }
 
@@ -132,8 +149,14 @@ public sealed class Family : AggregateRoot<FamilyId>
   }
   public FamilyCurrency Currency { get; private set; } = FamilyCurrency.CHF;
   public ExchangeRate ExchangeRate { get; private set; } = new(1);
-  public FamilyMemberId? ActiveChildId { get; private set; }
-  public bool OnboardingCompleted { get; private set; }
+  public FamilyMemberId? ActiveChildId
+  {
+    get; private set;
+  }
+  public bool OnboardingCompleted
+  {
+    get; private set;
+  }
 
   public FamilyMember ActiveMember(FamilyMemberId id)
   {
@@ -203,11 +226,48 @@ public sealed class Family : AggregateRoot<FamilyId>
     DateTimeOffset now
   )
   {
+    InviteMember(
+      actor,
+      id,
+      name,
+      emailAddress,
+      MemberRole.Guardian,
+      access,
+      now
+    );
+  }
+
+  public void InviteMember(
+    FamilyMemberId actor,
+    FamilyMemberId id,
+    string name,
+    string emailAddress,
+    MemberRole role,
+    GuardianAccess access,
+    DateTimeOffset now
+  )
+  {
     RequireAdministrator(actor);
     var normalizedName = Rules.Text(name);
-    Rules.Require(normalizedName.Length >= 2, DomainError.InvalidValue, "A guardian name requires at least two characters.");
+    Rules.Require(
+      normalizedName.Length >= 2,
+      DomainError.InvalidValue,
+      "A family member name requires at least two characters."
+    );
+    Rules.Defined(role);
+    Rules.Defined(access);
+    Rules.Require(
+      role == MemberRole.Guardian || access == GuardianAccess.Supporter,
+      DomainError.InvalidValue,
+      "Children cannot have guardian access."
+    );
     var normalizedEmail = NormalizeEmailAddress(emailAddress);
-    AddMember(actor, id, normalizedName, MemberRole.Guardian, access, true, now);
+    Rules.Require(
+      _members.All(item => !string.Equals(item.EmailAddress, normalizedEmail, StringComparison.OrdinalIgnoreCase)),
+      DomainError.Duplicate,
+      "The email address is already assigned to a family member."
+    );
+    AddMember(actor, id, normalizedName, role, access, true, now);
     var member = _members.Find(item => item.Id == id) ?? throw new InvalidOperationException();
     member.SetEmailAddress(normalizedEmail);
     member.SetWeeklyGoalParticipation(false);
@@ -285,6 +345,21 @@ public sealed class Family : AggregateRoot<FamilyId>
       ?? throw new DomainRuleException(DomainError.InvalidState, "No pending invitation exists.");
     Rules.Require(member.InvitationPending, DomainError.InvalidState, "No pending invitation exists.");
     member.AcceptInvitation();
+
+    if (member.Role == MemberRole.Child)
+    {
+      member.SetWeeklyGoalParticipation(true);
+      ActiveChildId ??= member.Id;
+    }
+
+    if (
+      _members.Any(item => !item.InvitationPending && item.Role == MemberRole.Guardian)
+      && _members.Any(item => !item.InvitationPending && item.Role == MemberRole.Child)
+    )
+    {
+      OnboardingCompleted = true;
+    }
+
     AddDomainEvent(new FamilyMemberChanged(Id, memberId, "InvitationAccepted", now));
   }
 

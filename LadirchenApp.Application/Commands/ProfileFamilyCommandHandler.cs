@@ -94,16 +94,6 @@ internal sealed class ProfileFamilyCommandHandler : TypedFamilyCommandAreaHandle
           now
         );
         break;
-      case "profile.invite-guardian":
-        family.InviteGuardian(
-          command.ActorId,
-          new FamilyMemberId(RequiredString(payload, "id")),
-          RequiredString(payload, "name"),
-          RequiredString(payload, "email"),
-          ParseGuardianAccess(RequiredString(payload, "guardianAccess")),
-          now
-        );
-        break;
       case "profile.set-guardian-access":
         family.ChangeGuardianAccess(
           command.ActorId,
@@ -189,12 +179,9 @@ internal sealed class ProfileFamilyCommandHandler : TypedFamilyCommandAreaHandle
       "The house-customization aggregate has not been initialized."
     );
 
-    family.CompleteSetup(
-      command.ActorId,
-      ReadMembers(payload),
-      ReadPets(payload),
-      now
-    );
+    var members = ReadMembers(payload);
+    RequireStableMembership(family, members);
+    family.CompleteSetup(command.ActorId, members, ReadPets(payload), now);
     var economy = loadedEconomy.Root.SynchronizeMembers(family);
     loadedProgression.Root.SynchronizeParticipants(family);
     loadedHouse.Root.SynchronizeFamilyEntities(family);
@@ -289,6 +276,40 @@ internal sealed class ProfileFamilyCommandHandler : TypedFamilyCommandAreaHandle
         );
       })
       .ToArray();
+  }
+
+  private static void RequireStableMembership(
+    Family family,
+    IReadOnlyList<FamilyMemberState> requestedMembers
+  )
+  {
+    var existingMembers = family.Members.ToDictionary(item => item.Id);
+
+    if (existingMembers.Count != requestedMembers.Count)
+    {
+      throw new FamilyCommandException(
+        "Family members must be created through a personal account invitation."
+      );
+    }
+
+    foreach (var requested in requestedMembers)
+    {
+      if (
+        !existingMembers.TryGetValue(requested.Id, out var existing)
+        || existing.Role != requested.Role
+        || existing.InvitationPending != requested.InvitationPending
+        || !string.Equals(
+          existing.EmailAddress,
+          requested.EmailAddress,
+          StringComparison.OrdinalIgnoreCase
+        )
+      )
+      {
+        throw new FamilyCommandException(
+          "Family account identities cannot be changed through family setup."
+        );
+      }
+    }
   }
 
   private static AvatarAppearance ReadAvatarAppearance(JsonElement value)
