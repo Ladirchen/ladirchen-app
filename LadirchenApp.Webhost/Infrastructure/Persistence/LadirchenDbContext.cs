@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-
 using LadirchenApp.Webhost.Infrastructure.Persistence.Typed;
 using LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace LadirchenApp.Webhost.Infrastructure.Persistence;
 
@@ -15,6 +15,22 @@ public sealed class LadirchenDbContext : DbContext
     get
     {
       return Set<AuthenticationAccountEntity>();
+    }
+  }
+
+  public DbSet<BetaFamilyRegistrationEntity> BetaFamilyRegistrations
+  {
+    get
+    {
+      return Set<BetaFamilyRegistrationEntity>();
+    }
+  }
+
+  public DbSet<MemberAccountInvitationEntity> MemberAccountInvitations
+  {
+    get
+    {
+      return Set<MemberAccountInvitationEntity>();
     }
   }
 
@@ -72,11 +88,43 @@ public sealed class LadirchenDbContext : DbContext
     account.ToTable("AuthenticationAccounts");
     account.HasKey(item => item.Username);
     account.Property(item => item.Username).HasMaxLength(100);
+    account.Property(item => item.EmailAddress).HasMaxLength(320);
+    account.Property(item => item.NormalizedEmail).HasMaxLength(320);
     account.Property(item => item.FamilyName).HasMaxLength(200);
     account.Property(item => item.MemberId).HasMaxLength(100);
     account.Property(item => item.PasswordHash).IsRequired();
     account.Property(item => item.PasswordSalt).IsRequired();
     account.HasIndex(item => item.FamilyId);
+    account
+      .HasIndex(item => item.NormalizedEmail)
+      .IsUnique()
+      .HasFilter("\"NormalizedEmail\" IS NOT NULL");
+    account.HasIndex(item => new { item.FamilyId, item.MemberId }).IsUnique();
+
+    var betaRegistration = modelBuilder.Entity<BetaFamilyRegistrationEntity>();
+    betaRegistration.ToTable(
+      "BetaFamilyRegistrations",
+      table => table.HasCheckConstraint("CK_BetaFamilyRegistrations_Singleton", "\"Id\" = 1")
+    );
+    betaRegistration.HasKey(item => item.Id);
+    betaRegistration.HasIndex(item => item.FamilyId).IsUnique();
+
+    var memberInvitation = modelBuilder.Entity<MemberAccountInvitationEntity>();
+    memberInvitation.ToTable("MemberAccountInvitations");
+    memberInvitation.HasKey(item => item.InvitationId);
+    memberInvitation.Property(item => item.FamilyName).HasMaxLength(200);
+    memberInvitation.Property(item => item.MemberId).HasMaxLength(128);
+    memberInvitation.Property(item => item.EmailAddress).HasMaxLength(320);
+    memberInvitation.Property(item => item.NormalizedEmail).HasMaxLength(320);
+    memberInvitation.Property(item => item.ActivationCodeHash).IsRequired();
+    memberInvitation
+      .HasIndex(item => item.NormalizedEmail)
+      .IsUnique()
+      .HasFilter("\"RedeemedAt\" IS NULL");
+    memberInvitation
+      .HasIndex(item => new { item.FamilyId, item.MemberId })
+      .IsUnique()
+      .HasFilter("\"RedeemedAt\" IS NULL");
 
     var receipt = modelBuilder.Entity<FamilyCommandReceiptEntity>();
     receipt.ToTable("FamilyCommandReceipts");

@@ -10,9 +10,9 @@ using LadirchenApp.Application.Queries;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Infrastructure.Persistence;
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -101,6 +101,9 @@ public static class WebApplicationBuilderExtensions
       PostgreSqlFamilyCommandExecutionCoordinator
     >();
     webApplicationBuilder.Services.AddScoped<AuthenticationService>();
+    webApplicationBuilder.Services.AddScoped<CurrentAuthenticationSessionReader>();
+    webApplicationBuilder.Services.AddScoped<FamilyMembershipOutboxWriter>();
+    webApplicationBuilder.Services.AddScoped<MemberAccountService>();
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
     webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();
     webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();

@@ -44,4 +44,15 @@ public static class FamilySessionIdentity
 
     return memberId is not null;
   }
+
+  public static bool TryGetFamilyId(ClaimsPrincipal principal, out FamilyId? familyId)
+  {
+    ArgumentNullException.ThrowIfNull(principal);
+    var value = principal.FindFirstValue(FamilyIdClaim);
+    familyId = Guid.TryParse(value, out var parsed) && parsed != Guid.Empty
+      ? new FamilyId(parsed)
+      : null;
+
+    return familyId is not null;
+  }
 }
