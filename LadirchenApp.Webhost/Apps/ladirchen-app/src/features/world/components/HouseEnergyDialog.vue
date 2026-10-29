@@ -73,24 +73,28 @@
         </div>
         <div class="child-energy-list">
           <div
-            v-for="child in children"
-            :key="child.id"
+            v-for="participant in participants"
+            :key="participant.id"
             class="child-energy-row"
-            :style="{ '--avatar-color': child.color }"
+            :style="{ '--avatar-color': participant.color }"
           >
             <div class="child-avatar">
-              <AvatarFigure :appearance="resolveFamilyMemberAvatarAppearance(child, store.members)" calm :size="54" />
+              <AvatarFigure
+                :appearance="resolveFamilyMemberAvatarAppearance(participant, store.members)"
+                calm
+                :size="54"
+              />
             </div>
             <div class="child-energy-copy">
               <div class="child-energy-title">
-                <strong>{{ child.name }}</strong>
-                <b>{{ store.contributionProgress(child.id) }} %</b>
+                <strong>{{ participant.name }}</strong>
+                <b>{{ energyContributionFor(participant.id) }} %</b>
               </div>
               <v-progress-linear
                 class="mt-2"
                 color="primary"
                 height="8"
-                :model-value="store.contributionProgress(child.id)"
+                :model-value="energyContributionFor(participant.id)"
                 rounded
               />
             </div>
@@ -107,6 +111,7 @@ import { useI18n } from "vue-i18n";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
 import AnimatedEnergyStar from "./AnimatedEnergyStar.vue";
@@ -125,7 +130,7 @@ const emit = defineEmits<Emits>();
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const guideStep = ref(-1);
-const children = computed(() => store.members.filter((member) => member.role === "child"));
+const participants = computed(() => store.members.filter((member) => member.participatesInWeeklyGoal === true));
 // 100 % energy maps to a full 360deg ring.
 const energyOrbStyle = computed(() => ({ "--energy": `${store.familyEnergy * 3.6}deg` }));
 const energyState = computed(function callback() {
@@ -147,7 +152,7 @@ const dailyGoalStatus = computed(() =>
 const guideSteps = computed(() => [
   {
     heading: t("world.energy.guide.calculation.title"),
-    message: t("world.energy.guide.calculation.message", { count: Math.max(1, children.value.length) }),
+    message: t("world.energy.guide.calculation.message"),
   },
   {
     heading: t("world.energy.guide.day.title"),
@@ -162,6 +167,9 @@ const guideSteps = computed(() => [
     message: t("world.energy.guide.safe.message"),
   },
 ]);
+function energyContributionFor(memberId: FamilyMemberId): number {
+  return store.memberProgressions[memberId]?.energyContribution ?? 0;
+}
 function startEnergyGuide() {
   guideStep.value = guideStep.value >= guideSteps.value.length - 1 ? 0 : guideStep.value + 1;
   const step = guideSteps.value[guideStep.value];

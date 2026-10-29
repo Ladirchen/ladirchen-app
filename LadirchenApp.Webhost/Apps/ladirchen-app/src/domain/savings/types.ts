@@ -16,6 +16,22 @@ export interface GuardianGift {
   amount: number;
 }
 
+export interface SavingGoalCancellationRequest {
+  requestedByMemberId: FamilyMemberId;
+  consentedMemberIds: ReadonlyArray<FamilyMemberId>;
+  pendingMemberIds: ReadonlyArray<FamilyMemberId>;
+}
+
+export interface SavingGoalCommandLimits {
+  canApproveCancellation: boolean;
+  canCancel: boolean;
+  canRejectCancellation: boolean;
+  canRequestCancellation: boolean;
+  canWithdraw: boolean;
+  maximumDepositAmount: number;
+  maximumSupportAmount: number;
+}
+
 export interface SavingGoal {
   id: SavingGoalId;
   translationKey?: SavingGoalTranslationNamespaceKey;
@@ -33,19 +49,8 @@ export interface SavingGoal {
   visibleToMemberIds?: ReadonlyArray<FamilyMemberId>;
   participantIds?: ReadonlyArray<FamilyMemberId>;
   voucherId?: SavingGoalId;
-  commandLimits?: Readonly<
-    Partial<
-      Record<
-        string,
-        {
-          canCancel: boolean;
-          canWithdraw: boolean;
-          maximumDepositAmount: number;
-          maximumSupportAmount: number;
-        }
-      >
-    >
-  >;
+  cancellationRequest?: SavingGoalCancellationRequest;
+  commandLimits?: Readonly<Partial<Record<FamilyMemberId, SavingGoalCommandLimits>>>;
   visibility: GoalVisibility;
   shared: boolean;
   cheered: boolean;

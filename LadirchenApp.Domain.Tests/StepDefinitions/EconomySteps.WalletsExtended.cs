@@ -20,7 +20,7 @@ public sealed partial class EconomySteps
   private bool _settingsStored;
   private ExchangeRate? _storedRate;
 
-  [Given("an administrator enters a special gift of {float} Ladirchen with a reason")]
+  [Given("a guardian administrator enters a special gift of {float} Ladirchen with a reason")]
   public void EnterSpecialGift(decimal amount)
   {
     CreateEconomy();
@@ -58,7 +58,7 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.WalletFor(_child).Balance).IsEqualTo(0);
   }
 
-  [Given("an administrator configures family currency {string} and an exchange rate of {float}")]
+  [Given("a guardian administrator configures family currency {string} and an exchange rate of {float}")]
   public void ConfigureCurrency(string currency, decimal rate)
   {
     CreateEconomy();

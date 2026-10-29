@@ -42,6 +42,7 @@ internal static class ContributionReadModelSnapshotMapper
     );
     WriteContributions(state, projection.Contributions);
     WritePromotions(state, projection.PromotionAvailability);
+    state.Remove("usedContributionIds");
 
     using var document = JsonDocument.Parse(state.ToJsonString());
 

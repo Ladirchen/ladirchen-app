@@ -1,6 +1,6 @@
 import { computed } from "vue";
 import type { ComputedRef } from "vue";
-import { isHouseZoneId } from "@/application/contracts/family-aggregate-validation";
+import { isHouseZoneId } from "@/application/contracts/family-read-model-validation";
 import { characterCollidesWithFurniture, furnitureVisualDefinitionFor, HOUSE_LAYOUT_CONSTRAINTS } from "@/domain/house";
 import type { HouseAccessory, HouseLayoutPlacement, HouseZoneId } from "@/domain/house";
 import type { HouseLayoutPlacementId } from "@/domain/shared/identifiers";
@@ -24,7 +24,6 @@ function isLadiPerchDrop(
   x: number,
   y: number,
 ): boolean {
-
   return (
     placement?.entityType === "ladi" &&
     zoneId === "living-room" &&
@@ -47,21 +46,16 @@ export function useDollhouseDrag(
     placement: HouseLayoutPlacement | undefined,
     elementsAtDropPoint: Element[],
   ): boolean {
-
     if (!elementsAtDropPoint.some((element) => element.closest("[data-furniture-storage]"))) {
-
       return false;
     }
 
     try {
-
       if (placement?.entityType === "furniture") {
         emit("store", placement.entityId);
-
       } else {
         emit("reset", activeDrag.placementId);
       }
-
     } finally {
       clearDrag();
       emit("drag-state", null);
@@ -73,7 +67,6 @@ export function useDollhouseDrag(
     const activeDrag = drag.value;
 
     if (!activeDrag) {
-
       return;
     }
 
@@ -81,7 +74,6 @@ export function useDollhouseDrag(
     const placement = props.placements.find((item) => item.id === activeDrag.placementId);
 
     if (finishStorageDrop(activeDrag, placement, elementsAtDropPoint)) {
-
       return;
     }
 
@@ -128,12 +120,10 @@ export function useDollhouseDrag(
       if (!collidesWithFurniture) {
         emit("move", activeDrag.placementId, zoneId, x, y);
       }
-
     } finally {
       clearDrag();
       emit("drag-state", null);
     }
-
   }
   const {
     cancel: cancelDrag,
@@ -156,25 +146,20 @@ export function useDollhouseDrag(
     return placement?.entityType === "furniture";
   });
   function dragOffset(placementId: HouseLayoutPlacementId) {
-
     return drag.value?.placementId === placementId ? { x: drag.value.offsetX, y: drag.value.offsetY } : undefined;
   }
   function startDrag(event: PointerEvent, placement: HouseLayoutPlacement) {
-
     if (!props.editable && !(props.storageOpen && placement.entityType === "furniture")) {
-
       return;
     }
 
     if (placement.entityType === "furniture" && accessoryFor(placement)?.mobility === "fixed") {
-
       return;
     }
 
     if (startEntityDrag(event, placement.id)) {
       emit("drag-state", placement.entityType);
     }
-
   }
 
   return { cancelDrag, dragOffset, draggingFurniture, finishDrag, finishDragAtLastPosition, startDrag, trackDrag };

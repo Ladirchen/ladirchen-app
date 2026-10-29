@@ -7,18 +7,42 @@ using System.Text.Json.Nodes;
 using LadirchenApp.Application.Commands;
 using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Family.Permissions;
+using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
 public sealed partial class GetFamilyAggregateQueryHandler
 {
-  private static FamilyAggregateSnapshot ProjectFamilyPermissions(FamilyAggregateSnapshot profile)
+  private static FamilyAggregateSnapshot ProjectFamilyPermissions(
+    FamilyAggregateSnapshot profile,
+    FamilyMemberId authenticatedMemberId,
+    FamilyMemberId viewerId
+  )
   {
-    var state = JsonNode.Parse(profile.State.GetRawText()) as JsonObject
-      ?? throw new InvalidOperationException("The family profile state must be an object.");
+    var state = ReadProfileState(profile);
     var members = state["members"] as JsonArray
       ?? throw new InvalidOperationException("The family member collection is required.");
     var family = FamilyProfileSnapshotMapper.Rehydrate(profile.FamilyId, state);
+    var permissionPolicy = new FamilyPermissionPolicy();
+    var authenticatedPermissions = permissionPolicy.Resolve(family.ActiveMember(authenticatedMemberId));
+    var viewerPermissions = permissionPolicy.Resolve(family.ActiveMember(viewerId));
+    var canManageInvitations = (
+      authenticatedPermissions.InviteMembers && viewerPermissions.InviteMembers
+    ) || (
+      authenticatedPermissions.ManageFamily && viewerPermissions.ManageFamily
+    );
+
+    if (!canManageInvitations)
+    {
+      foreach (var pendingInvitation in members
+        .OfType<JsonObject>()
+        .Where(member => member["invitationPending"]?.GetValue<bool>() == true)
+        .ToArray())
+      {
+        members.Remove(pendingInvitation);
+      }
+    }
+
     var presentations = members
       .OfType<JsonObject>()
       .ToDictionary(
@@ -26,20 +50,32 @@ public sealed partial class GetFamilyAggregateQueryHandler
           ?? throw new InvalidOperationException("A family member identity is required."),
         StringComparer.Ordinal
       );
-    var permissionPolicy = new FamilyPermissionPolicy();
-
-    foreach (var member in family.Members)
+    foreach (var member in family.Members.Where(member => presentations.ContainsKey(member.Id.Value)))
     {
-      var permissions = permissionPolicy.Resolve(member);
-      presentations[member.Id.Value]["permissions"] = new JsonObject
+      var presentation = presentations[member.Id.Value];
+
+      if (!canManageInvitations && member.Id != viewerId)
       {
-        ["canInviteMembers"] = permissions.InviteMembers,
-        ["canManageContent"] = permissions.ManageContent,
-        ["canManageFamily"] = permissions.ManageFamily,
-        ["canManageGoals"] = permissions.ManageGoals,
-        ["canSupportChildGoals"] = permissions.SupportGoals,
-        ["canViewFamilyGoals"] = permissions.ViewFamilyGoals,
-        ["canViewGuardianGoals"] = permissions.ViewGuardianGoals,
+        presentation.Remove("email");
+      }
+
+      if (member.Id != viewerId)
+      {
+        presentation.Remove("permissions");
+
+        continue;
+      }
+
+      var permissions = permissionPolicy.Resolve(member);
+      presentation["permissions"] = new JsonObject
+      {
+        ["canInviteMembers"] = permissions.InviteMembers && authenticatedPermissions.InviteMembers,
+        ["canManageContent"] = permissions.ManageContent && authenticatedPermissions.ManageContent,
+        ["canManageFamily"] = permissions.ManageFamily && authenticatedPermissions.ManageFamily,
+        ["canManageGoals"] = permissions.ManageGoals && authenticatedPermissions.ManageGoals,
+        ["canSupportChildGoals"] = permissions.SupportGoals && authenticatedPermissions.SupportGoals,
+        ["canViewFamilyGoals"] = permissions.ViewFamilyGoals && authenticatedPermissions.ViewFamilyGoals,
+        ["canViewGuardianGoals"] = permissions.ViewGuardianGoals && authenticatedPermissions.ViewGuardianGoals,
       };
     }
 
@@ -48,6 +84,12 @@ public sealed partial class GetFamilyAggregateQueryHandler
     using var document = JsonDocument.Parse(state.ToJsonString());
 
     return profile with { State = document.RootElement.Clone() };
+  }
+
+  private static JsonObject ReadProfileState(FamilyAggregateSnapshot profile)
+  {
+    return JsonNode.Parse(profile.State.GetRawText()) as JsonObject
+      ?? throw new InvalidOperationException("The family profile state must be an object.");
   }
 
   private static JsonObject ProjectAvatarCatalog()

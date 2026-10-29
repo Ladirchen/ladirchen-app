@@ -142,7 +142,7 @@ public sealed class HomeCommandHandlerTests
     );
 
     var snapshot = await handler.HandleAsync(
-      new GetFamilyAggregateQuery(_familyId, "home-customization"),
+      new GetFamilyAggregateQuery(_familyId, "home-customization", _childId),
       CancellationToken.None
     );
 

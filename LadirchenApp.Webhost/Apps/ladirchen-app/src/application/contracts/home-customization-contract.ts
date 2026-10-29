@@ -8,10 +8,9 @@ import type {
   SelectedRoomDesignState,
 } from "@/domain/house";
 import type { HouseLayoutPlacement } from "@/domain/house/entities";
-import type { VersionedAggregateSnapshot } from "./versioned-aggregate-contract";
+import type { FamilyReadModel } from "./family-read-model-contract";
 
-export const HOME_CUSTOMIZATION_SCHEMA_VERSION = 3;
-export const HOME_CUSTOMIZATION_AGGREGATE_TYPE = "home-customization";
+export const HOME_CUSTOMIZATION_READ_MODEL_TYPE = "home-customization";
 
 export interface HouseAccessoryState {
   readonly id: HouseAccessoryId;
@@ -75,8 +74,7 @@ export interface HomeCustomizationState {
   readonly selectedEditionId: HouseThemeId;
 }
 
-export type HomeCustomizationSnapshot = VersionedAggregateSnapshot<
-  typeof HOME_CUSTOMIZATION_AGGREGATE_TYPE,
-  typeof HOME_CUSTOMIZATION_SCHEMA_VERSION,
+export type HomeCustomizationReadModel = FamilyReadModel<
+  typeof HOME_CUSTOMIZATION_READ_MODEL_TYPE,
   HomeCustomizationState
 >;

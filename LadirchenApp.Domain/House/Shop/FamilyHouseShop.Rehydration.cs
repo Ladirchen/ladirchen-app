@@ -9,14 +9,13 @@ namespace LadirchenApp.Domain.House.Shop;
 public sealed partial class FamilyHouseShop
 {
   public void Restore(
-    decimal balance,
     int houseLevel,
     string selectedThemeId,
     IEnumerable<HouseTheme> themes
   )
   {
     ArgumentNullException.ThrowIfNull(themes);
-    Restore(balance, houseLevel);
+    Restore(houseLevel);
     var selectedTheme = themes.SingleOrDefault(item => item.Id == selectedThemeId);
     Rules.Require(
       selectedTheme is not null && selectedTheme.Owned,

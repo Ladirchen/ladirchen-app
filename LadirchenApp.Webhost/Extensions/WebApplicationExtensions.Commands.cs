@@ -8,6 +8,7 @@ using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Helpers;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Models;
+using LadirchenApp.Webhost.Models.Commands;
 using LadirchenApp.Webhost.Realtime;
 
 using Microsoft.AspNetCore.Builder;
@@ -52,8 +53,6 @@ public static partial class WebApplicationExtensions
       return Results.Forbid();
     }
 
-    var actorId = new FamilyMemberId(request.ActorId);
-
     if (!FamilySessionIdentity.TryGetMemberId(context.User, out var authenticatedMemberId))
     {
       return Results.Forbid();
@@ -61,12 +60,24 @@ public static partial class WebApplicationExtensions
 
     try
     {
+      if (request.CommandId == Guid.Empty)
+      {
+        throw new ArgumentException("A non-empty command ID is required.", nameof(request));
+      }
+
+      var actorId = new FamilyMemberId(request.ActorId);
+
+      if (actorId != authenticatedMemberId)
+      {
+        return Results.Forbid();
+      }
+
       var command = new FamilyCommand(
         request.CommandId,
         new FamilyId(familyId),
         actorId,
-        request.CommandType,
-        request.Payload,
+        request.GetCommandName(),
+        request.CreatePayloadElement(),
         authenticatedMemberId
       );
       var result = await handler.HandleAsync(command, cancellationToken);

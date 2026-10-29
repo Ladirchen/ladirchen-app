@@ -9,5 +9,6 @@ internal sealed record SavingsGoalReadProjection(
   decimal RemainingAmount,
   decimal WithdrawableBalance,
   IReadOnlyList<FamilyMemberId> VisibleToMemberIds,
-  IReadOnlyDictionary<FamilyMemberId, SavingsGoalCommandLimits> CommandLimits
+  IReadOnlyDictionary<FamilyMemberId, SavingsGoalCommandLimits> CommandLimits,
+  SavingsGoalCancellationRequestReadProjection? CancellationRequest
 );

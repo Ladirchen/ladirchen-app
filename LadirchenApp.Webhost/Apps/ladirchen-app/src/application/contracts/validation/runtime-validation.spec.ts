@@ -4,7 +4,7 @@ import { isContributionsState } from "./contributions-validation";
 import { isFamilyPetKindId } from "./family-profile-validation";
 import { isFamilyProgressionState } from "./family-progression-validation";
 import { isHomeCustomizationState, isHouseAccessoryId, isHouseThemeId } from "./home-customization-validation";
-import { isFamilyCurrency } from "./savings-validation";
+import { isFamilyCurrency, isSavingsState } from "./savings-validation";
 
 describe("family aggregate runtime validation", () => {
   it("rejects localized labels and unknown catalog identifiers", () => {
@@ -65,6 +65,98 @@ describe("family aggregate runtime validation", () => {
         editions: [{ id: "sunny-dollhouse", owned: false }],
         placements: [],
         selectedEditionId: "sunny-dollhouse",
+      }),
+    ).toBe(false);
+  });
+
+  it("requires backend-projected available and shared savings balances", () => {
+    const savings = {
+      availableBalances: {},
+      balances: {},
+      familyCurrencyCode: "CHF",
+      goals: [],
+      ladirchenPerCurrencyUnit: 1,
+      pendingGuardianGifts: [],
+      settledInterestPeriods: [],
+      sharedSavedBalances: {},
+      vouchers: [],
+    };
+
+    expect(isSavingsState(savings)).toBe(true);
+    expect(isSavingsState({ ...savings, availableBalances: undefined })).toBe(false);
+    expect(isSavingsState({ ...savings, sharedSavedBalances: undefined })).toBe(false);
+  });
+
+  it("validates cancellation requests and backend-projected decision capabilities", () => {
+    const goal = {
+      cancellationRequest: {
+        requestedByMemberId: "member-1",
+        consentedMemberIds: ["member-1"],
+        pendingMemberIds: ["member-2"],
+      },
+      cheered: false,
+      commandLimits: {
+        "member-2": {
+          canApproveCancellation: true,
+          canCancel: false,
+          canRejectCancellation: true,
+          canRequestCancellation: false,
+          canWithdraw: false,
+          maximumDepositAmount: 0,
+          maximumSupportAmount: 0,
+        },
+      },
+      icon: "🎯",
+      id: "goal-1",
+      ownerId: "family",
+      participantIds: ["member-1", "member-2"],
+      saved: 25,
+      shared: true,
+      target: 100,
+      title: "Family goal",
+      visibility: "family",
+    };
+    const savings = {
+      availableBalances: {},
+      balances: {},
+      familyCurrencyCode: "CHF",
+      goals: [goal],
+      ladirchenPerCurrencyUnit: 1,
+      pendingGuardianGifts: [],
+      settledInterestPeriods: [],
+      sharedSavedBalances: {},
+      vouchers: [],
+    };
+
+    expect(isSavingsState(savings)).toBe(true);
+    expect(
+      isSavingsState({
+        ...savings,
+        goals: [
+          {
+            ...goal,
+            cancellationRequest: {
+              requestedByMemberId: "member-1",
+              consentedMemberIds: ["member-1"],
+            },
+          },
+        ],
+      }),
+    ).toBe(false);
+    expect(
+      isSavingsState({
+        ...savings,
+        goals: [
+          {
+            ...goal,
+            commandLimits: {
+              "member-2": {
+                ...goal.commandLimits["member-2"],
+                canRejectCancellation: undefined,
+              },
+            },
+          },
+        ],
       }),
     ).toBe(false);
   });

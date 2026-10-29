@@ -1,14 +1,8 @@
 using System;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
-using LadirchenApp.Application.Queries;
-using LadirchenApp.Domain.Shared;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -47,73 +41,22 @@ public sealed class WeeklyInterestSettlementService : BackgroundService
     try
     {
       await using var scope = _scopeFactory.CreateAsyncScope();
-      var repository = scope.ServiceProvider.GetRequiredService<IFamilyAggregateSnapshotRepository>();
-      var familyIds = await repository.ListFamilyIdsAsync(cancellationToken);
-
-      foreach (var familyId in familyIds)
-      {
-        await SettleFamilyAsync(familyId, cancellationToken);
-      }
+      var handler = scope.ServiceProvider.GetRequiredService<
+        ICommandHandler<SettleAvailableWeeklyInterestCommand, WeeklyInterestSettlementResult>
+      >();
+      var result = await handler.HandleAsync(new SettleAvailableWeeklyInterestCommand(), cancellationToken);
+      _logger.LogInformation(
+        "Weekly savings-interest settlement processed {AttemptedPeriods} periods: {SettledPeriods} settled, {DeferredPeriods} deferred and {FailedFamilies} invalid families skipped.",
+        result.AttemptedPeriods,
+        result.SettledPeriods,
+        result.DeferredPeriods,
+        result.FailedFamilies
+      );
     }
     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
     catch (Exception exception)
     {
       _logger.LogError(exception, "The scheduled savings-interest settlement failed.");
     }
-  }
-
-  private async Task SettleFamilyAsync(FamilyId familyId, CancellationToken cancellationToken)
-  {
-    await using var scope = _scopeFactory.CreateAsyncScope();
-    var planner = scope.ServiceProvider.GetRequiredService<GetWeeklyInterestSettlementPlanQueryHandler>();
-    var handler = scope.ServiceProvider.GetRequiredService<ExecuteFamilyCommandHandler>();
-    var plan = await planner.HandleAsync(familyId, cancellationToken);
-
-    if (plan is null)
-    {
-      return;
-    }
-
-    foreach (var period in plan.Periods)
-    {
-      var command = new FamilyCommand(
-        CreateSettlementCommandId(familyId, period.Key),
-        familyId,
-        plan.AdministratorId,
-        "savings.settle-weekly-interest",
-        JsonSerializer.SerializeToElement(new { year = period.Year, week = period.Week })
-      );
-
-      try
-      {
-        await handler.HandleAsync(command, cancellationToken);
-      }
-      catch (FamilyCommandException exception)
-      {
-        _logger.LogInformation(
-          exception,
-          "Interest period {PeriodKey} for family {FamilyId} is not ready for settlement.",
-          period.Key,
-          familyId.Value
-        );
-      }
-      catch (FamilyAggregateConflictException exception)
-      {
-        _logger.LogInformation(
-          exception,
-          "Interest period {PeriodKey} for family {FamilyId} will be retried after a concurrent update.",
-          period.Key,
-          familyId.Value
-        );
-      }
-    }
-  }
-
-  private static Guid CreateSettlementCommandId(FamilyId familyId, string periodKey)
-  {
-    var source = Encoding.UTF8.GetBytes($"weekly-interest:{familyId.Value:D}:{periodKey}");
-    var hash = SHA256.HashData(source);
-
-    return new Guid(hash.AsSpan(0, 16));
   }
 }

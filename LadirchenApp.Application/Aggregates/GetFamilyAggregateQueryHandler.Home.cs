@@ -18,7 +18,8 @@ public sealed partial class GetFamilyAggregateQueryHandler
     FamilyAggregateSnapshot progression,
     FamilyAggregateSnapshot profile,
     FamilyAggregateSnapshot savings,
-    FamilyAggregateSnapshot rewardShop
+    FamilyAggregateSnapshot rewardShop,
+    FamilyMemberId viewerId
   )
   {
     var profileState = ParseHomeObject(profile, "family profile");
@@ -36,11 +37,10 @@ public sealed partial class GetFamilyAggregateQueryHandler
     var customization = HomeCustomizationSnapshotMapper.Rehydrate(
       ParseHomeObject(home, "home customization"),
       profileState,
-      0,
       houseLevel
     );
     var state = customization.Presentation;
-    var activeMembers = family.Members.Where(member => !member.InvitationPending).ToArray();
+    var activeMembers = new[] { family.ActiveMember(viewerId) };
     var availableBalances = economy.Wallets.ToDictionary(
       wallet => wallet.Id,
       wallet => Math.Max(0, wallet.Available)
@@ -169,7 +169,10 @@ public sealed partial class GetFamilyAggregateQueryHandler
 
     using var document = JsonDocument.Parse(state.ToJsonString());
 
-    return home with { State = document.RootElement.Clone() };
+    return home with
+    {
+      State = document.RootElement.Clone()
+    };
   }
 
   private static JsonArray HomePurchasableByMemberIds(

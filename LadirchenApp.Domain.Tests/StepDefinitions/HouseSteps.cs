@@ -178,8 +178,8 @@ public sealed class HouseSteps
     await Assert.That(_visualLevel).IsEqualTo(level);
   }
 
-  [When("an authorized user attempts to complete the family week")]
-  [When("an authorized user attempts to close the family week as successful")]
+  [When("a family member who can manage the family attempts to complete the family week")]
+  [When("a family member who can manage the family attempts to close the family week as successful")]
   public void TryCompleteWeek()
   {
     _initialStoredLevel = _house.StoredLevel;
@@ -241,7 +241,7 @@ public sealed class HouseSteps
     await Assert.That(_progressionPolicy.IsRoomAvailable(room, _house.StoredLevel)).IsTrue();
   }
 
-  [When("an authorized user closes the family week as successful")]
+  [When("a family member who can manage the family closes the family week as successful")]
   [When("the family week was successful closed")]
   public void CloseSuccessfulWeek()
   {
@@ -279,7 +279,7 @@ public sealed class HouseSteps
     await Assert.That(_house.StoredLevel).IsEqualTo(_initialStoredLevel);
   }
 
-  [When("an authorized user closes the family week as failed")]
+  [When("a family member who can manage the family closes the family week as failed")]
   public void CloseFailedWeek()
   {
     _house.CloseFailedWeek(_energy);

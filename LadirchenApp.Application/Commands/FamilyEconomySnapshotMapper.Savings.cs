@@ -37,6 +37,25 @@ internal static partial class FamilyEconomySnapshotMapper
         .Select(RequiredString)
         .Select(value => new FamilyMemberId(value))
         .ToArray();
+      var saved = RequiredDecimal(item, "saved");
+      var starterBonus = RequiredDecimal(item, "starterBonus");
+      var interestEarned = OptionalDecimal(item, "interestEarned") ?? 0;
+      var refundableContributions = ParseRefundableContributions(
+        item,
+        saved,
+        starterBonus,
+        interestEarned
+      );
+      var cancellationRequest = item["cancellationRequest"] as JsonObject;
+      var cancellationRequestedByMemberId = cancellationRequest is null
+        ? null
+        : new FamilyMemberId(RequiredString(cancellationRequest, "requestedByMemberId"));
+      var cancellationConsentedMemberIds = cancellationRequest is null
+        ? Array.Empty<FamilyMemberId>()
+        : RequiredArray(cancellationRequest, "consentedMemberIds")
+          .Select(RequiredString)
+          .Select(value => new FamilyMemberId(value))
+          .ToArray();
 
       var lastPeriod = ParseOptionalPeriod(item, "lastInterestPeriod");
       economy.RestoreSavingGoal(
@@ -49,9 +68,12 @@ internal static partial class FamilyEconomySnapshotMapper
           participants
         ),
         OptionalInstant(item, "createdAt") ?? DateTimeOffset.UnixEpoch,
-        RequiredDecimal(item, "saved"),
-        RequiredDecimal(item, "starterBonus"),
-        OptionalDecimal(item, "interestEarned") ?? 0,
+        saved,
+        starterBonus,
+        interestEarned,
+        refundableContributions,
+        cancellationRequestedByMemberId,
+        cancellationConsentedMemberIds,
         OptionalBool(item, "cheered", false),
         false,
         lastPeriod,
@@ -144,6 +166,7 @@ internal static partial class FamilyEconomySnapshotMapper
     WriteSavingsVouchers(result, economy);
     WriteGuardianGifts(result, economy, addedGift);
     WriteSettledPeriods(result, economy);
+    WriteEconomyHistory(result, economy);
 
     return result;
   }
@@ -201,6 +224,30 @@ internal static partial class FamilyEconomySnapshotMapper
       item["cheered"] = goal.Cheered;
       item["createdAt"] = goal.CreatedAt.ToString("O", CultureInfo.InvariantCulture);
       item["participantIds"] = IdentifierArray(goal.Participants);
+      item["refundableContributions"] = new JsonArray(
+        goal.RefundableContributions
+          .OrderBy(contribution => contribution.Key.Value, StringComparer.Ordinal)
+          .Select(contribution => new JsonObject
+          {
+            ["memberId"] = contribution.Key.Value,
+            ["amount"] = contribution.Value,
+          })
+          .ToArray<JsonNode?>()
+      );
+
+      if (goal.CancellationRequest is null)
+      {
+        item.Remove("cancellationRequest");
+      }
+      else
+      {
+        item["cancellationRequest"] = new JsonObject
+        {
+          ["requestedByMemberId"] = goal.CancellationRequest.RequestedByMemberId.Value,
+          ["consentedMemberIds"] = IdentifierArray(goal.CancellationRequest.ConsentedMemberIds),
+        };
+      }
+
       SetOptional(item, "voucherId", voucherIds.Contains(goal.Id) ? goal.Id.Value : null);
       SetOptional(item, "lastInterestPeriod", goal.LastInterestPeriod?.Key);
 
@@ -213,6 +260,47 @@ internal static partial class FamilyEconomySnapshotMapper
         item["lastInterestRate"] = goal.LastInterestRate.Value;
       }
     }
+  }
+
+  private static IReadOnlyDictionary<FamilyMemberId, decimal> ParseRefundableContributions(
+    JsonObject goal,
+    decimal saved,
+    decimal starterBonus,
+    decimal interestEarned
+  )
+  {
+    if (!goal.TryGetPropertyValue("refundableContributions", out var stored) || stored is null)
+    {
+      if (saved > checked(starterBonus + interestEarned))
+      {
+        throw new FamilyCommandException(
+          "The stored savings goal requires explicit refundable-contribution provenance."
+        );
+      }
+
+      return new Dictionary<FamilyMemberId, decimal>();
+    }
+
+    if (stored is not JsonArray contributions)
+    {
+      throw new FamilyCommandException("Stored refundable contributions must be an array.");
+    }
+
+    var result = new Dictionary<FamilyMemberId, decimal>();
+
+    foreach (var node in contributions)
+    {
+      var contribution = node as JsonObject
+        ?? throw new FamilyCommandException("Every stored refundable contribution must be an object.");
+      var memberId = new FamilyMemberId(RequiredString(contribution, "memberId"));
+
+      if (!result.TryAdd(memberId, RequiredDecimal(contribution, "amount")))
+      {
+        throw new FamilyCommandException("A refundable contributor is stored more than once.");
+      }
+    }
+
+    return result;
   }
 
   private static void WriteSavingsVouchers(JsonObject state, FamilyEconomy economy)
@@ -295,7 +383,7 @@ internal static partial class FamilyEconomySnapshotMapper
     SetOptional(state, "lastSettledInterestPeriod", periods.LastOrDefault()?.Key);
   }
 
-  private static JsonArray IdentifierArray(IEnumerable<FamilyMemberId> identifiers)
+  private static JsonArray IdentifierArray(IEnumerable<DomainIdentifier> identifiers)
   {
     return new JsonArray(
       identifiers.Select(item => JsonValue.Create(item.Value)).ToArray<JsonNode?>()

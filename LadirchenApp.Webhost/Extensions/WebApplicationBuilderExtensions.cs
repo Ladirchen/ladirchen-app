@@ -37,6 +37,10 @@ public static class WebApplicationBuilderExtensions
     ConfigureLocalSpaToolPath(webApplicationBuilder);
     webApplicationBuilder.SetupSpaMiddleware(appSettings);
     webApplicationBuilder.SetupNswag();
+    webApplicationBuilder.Services.ConfigureHttpJsonOptions(options =>
+    {
+      options.SerializerOptions.AllowOutOfOrderMetadataProperties = true;
+    });
     ConfigurePersistence(webApplicationBuilder);
     webApplicationBuilder.Services.AddSignalR();
     webApplicationBuilder.Services
@@ -97,6 +101,10 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
     webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();
     webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<
+      ICommandHandler<SettleAvailableWeeklyInterestCommand, WeeklyInterestSettlementResult>,
+      SettleAvailableWeeklyInterestCommandHandler
+    >();
     webApplicationBuilder.Services.AddScoped<SimulateSavingsInterestQueryHandler>();
     webApplicationBuilder.Services.AddHostedService<FamilyAggregateOutboxDispatcher>();
     webApplicationBuilder.Services.AddHostedService<WeeklyInterestSettlementService>();

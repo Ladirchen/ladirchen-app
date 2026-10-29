@@ -66,35 +66,48 @@
                 </MetricCard>
               </div>
               <v-progress-linear class="mt-3" color="primary" height="8" :model-value="card.progress" rounded />
-              <div class="d-flex align-center justify-space-between mt-2">
+              <div class="d-flex align-center justify-space-between flex-wrap ga-2 mt-2">
                 <span class="goal-total">
                   <small>{{ t("wishes.stats.balance") }}</small>
                   <strong><LadirchenAmount :value="card.balanceLabel" /></strong>
                 </span>
-                <v-btn
-                  v-if="card.canSave"
-                  class="assign-button"
-                  color="info"
-                  rounded="lg"
-                  size="small"
-                  variant="tonal"
-                  @click="openSave(card.goal.id)"
-                >
-                  <span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span>
-                  <span>{{ t("wishes.assign") }}</span>
-                  <i class="assign-spark" aria-hidden="true">✦</i>
-                </v-btn>
-                <v-btn
-                  v-else-if="!card.isOwn"
-                  color="info"
-                  prepend-icon="i-mdi:gift-outline"
-                  rounded="lg"
-                  size="small"
-                  variant="tonal"
-                  @click="openSupport(card.goal.id)"
-                >
-                  {{ t("wishes.gift") }}
-                </v-btn>
+                <div class="d-flex align-center flex-wrap ga-2">
+                  <v-btn
+                    v-if="card.canSave"
+                    class="assign-button"
+                    color="info"
+                    rounded="lg"
+                    size="small"
+                    variant="tonal"
+                    @click="openSave(card.goal.id)"
+                  >
+                    <span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span>
+                    <span>{{ t("wishes.assign") }}</span>
+                    <i class="assign-spark" aria-hidden="true">✦</i>
+                  </v-btn>
+                  <v-btn
+                    v-else-if="!card.isOwn"
+                    color="info"
+                    prepend-icon="i-mdi:gift-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="tonal"
+                    @click="openSupport(card.goal.id)"
+                  >
+                    {{ t("wishes.gift") }}
+                  </v-btn>
+                  <v-btn
+                    v-if="card.canCancel"
+                    color="error"
+                    prepend-icon="i-mdi:delete-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="text"
+                    @click="store.cancelGoal(card.goal.id)"
+                  >
+                    {{ t("wishes.cancellation.cancelPersonal") }}
+                  </v-btn>
+                </div>
               </div>
             </div>
           </div>
@@ -123,6 +136,9 @@
                 </div>
                 <v-chip v-if="card.goal.shared" color="primary" size="x-small" variant="tonal">
                   {{ t("wishes.shared") }}
+                </v-chip>
+                <v-chip v-if="card.cancellationPending" color="warning" size="x-small" variant="tonal">
+                  {{ t("wishes.cancellation.pending") }}
                 </v-chip>
               </div>
               <v-progress-linear class="mt-3" color="primary" height="8" :model-value="card.progress" rounded />
@@ -156,6 +172,17 @@
                     <span class="assign-coin" aria-hidden="true"><LadirchenCoin small /></span>
                     <span>{{ t("wishes.giftCoins") }}</span>
                     <i class="assign-spark" aria-hidden="true">✦</i>
+                  </v-btn>
+                  <v-btn
+                    v-if="card.canRequestCancellation"
+                    color="error"
+                    prepend-icon="i-mdi:delete-clock-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="text"
+                    @click="store.requestGoalCancellation(card.goal.id)"
+                  >
+                    {{ t("wishes.cancellation.request") }}
                   </v-btn>
                 </div>
               </div>
@@ -212,7 +239,7 @@
     </section>
 
     <v-dialog v-model="saveDialog" max-width="420">
-      <v-card class="save-dialog-card" :class="{ 'is-saving': saveMotion }" rounded="xl">
+      <v-card v-if="activeGoal" class="save-dialog-card" :class="{ 'is-saving': saveMotion }" rounded="xl">
         <header class="save-dialog-header">
           <div class="save-goal-icon" aria-hidden="true">{{ activeGoal.icon }}</div>
           <div class="flex-grow-1 min-w-0">
@@ -407,6 +434,7 @@ const personalGoalCards = computed(() =>
       ownerLabel: ownerName(goal.ownerId),
       visibilityLabel: personalGoalVisibilityLabel(goal),
       canSave: (goal.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0) > 0,
+      canCancel: goal.commandLimits?.[store.signedInMemberId]?.canCancel === true,
       deposited: depositedAmount(goal),
       weeklyInterest: weeklyInterestForGoal(goal),
       interestEarned: goal.interestEarned ?? 0,
@@ -423,6 +451,8 @@ const familyGoalCards = computed(() =>
     balanceLabel: goalBalanceLabel(goal),
     cheerAriaLabel: t("wishes.cheerAria", { title: goal.title }),
     canGift: (goal.commandLimits?.[store.signedInMemberId]?.maximumSupportAmount ?? 0) > 0,
+    canRequestCancellation: goal.commandLimits?.[store.signedInMemberId]?.canRequestCancellation === true,
+    cancellationPending: goal.cancellationRequest !== undefined,
   })),
 );
 const saveSliderMax = computed(() => Math.max(1, maxAssignable.value));

@@ -3,16 +3,10 @@ import type { TranslationKey } from "@/locales/translation-keys";
 import { AUTH_STATE_KEY } from "./family-world-store-utils";
 import { normalizeFamilyMembers, normalizeFamilyPets } from "@/stores/family-world-state";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
-import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
+import { FAMILY_READ_MODEL_TYPES, type FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import { createHouseAccessories } from "@/domain/house/catalog";
-const familyAggregateTypes: ReadonlyArray<FamilyAggregateType> = [
-  "family-profile",
-  "contributions",
-  "savings",
-  "reward-shop",
-  "family-progression",
-  "home-customization",
-];
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
+const emptyMemberId = "00000000-0000-0000-0000-000000000000";
 function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) => void): boolean {
   if (result.status === "rejected") {
     return false;
@@ -26,9 +20,12 @@ function applySettledLoad<T>(result: PromiseSettledResult<T>, apply: (value: T) 
     return false;
   }
 }
+function readModelViewerId(context: FamilyWorldStoreContext): FamilyMemberId | undefined {
+  return context.signedInMemberId === emptyMemberId ? undefined : context.signedInMemberId;
+}
 export const lifecycleActions = {
-  async hydrateFamilyAggregates(this: FamilyWorldStoreContext) {
-    if (this.familyAggregatesHydrated) {
+  async hydrateFamilyReadModels(this: FamilyWorldStoreContext) {
+    if (this.familyReadModelsHydrated) {
       return;
     }
 
@@ -48,13 +45,14 @@ export const lifecycleActions = {
     }
 
     const familyId = familyContext.activeFamilyId;
+    const viewerMemberId = readModelViewerId(this);
     const [profileResult, contributionsResult, savingsResult, rewardShopResult, progressionResult] =
       await Promise.allSettled([
-        familyProfileService.load(familyId),
-        contributionsService.load(familyId),
-        savingsService.load(familyId),
-        rewardShopService.load(familyId),
-        familyProgressionService.load(familyId),
+        familyProfileService.load(familyId, viewerMemberId),
+        contributionsService.load(familyId, viewerMemberId),
+        savingsService.load(familyId, viewerMemberId),
+        rewardShopService.load(familyId, viewerMemberId),
+        familyProgressionService.load(familyId, viewerMemberId),
       ]);
     const profileLoaded = applySettledLoad(profileResult, (profile) => {
       if (profile) {
@@ -82,7 +80,7 @@ export const lifecycleActions = {
     const savingsLoaded = applySettledLoad(savingsResult, (savings) => {
       if (savings) {
         this.balances = { ...savings.state.balances };
-        this.availableBalances = { ...(savings.state.availableBalances ?? savings.state.balances) };
+        this.availableBalances = { ...savings.state.availableBalances };
         this.familyCurrencyCode = savings.state.familyCurrencyCode;
         this.goals = [...savings.state.goals];
         this.ladirchenPerCurrencyUnit = savings.state.ladirchenPerCurrencyUnit;
@@ -126,16 +124,7 @@ export const lifecycleActions = {
 
     const hydrationSucceeded =
       profileLoaded && contributionsLoaded && savingsLoaded && rewardShopLoaded && progressionLoaded;
-    this.familyAggregatesHydrated = hydrationSucceeded;
-
-    if (hydrationSucceeded && progressionResult.status === "fulfilled" && progressionResult.value !== null) {
-      try {
-        await this.$familyWorld.familyCommands.execute(familyId, this.signedInMemberId, "progression.refresh", {});
-        await this.refreshFamilyAggregate("family-progression");
-      } catch {
-        this.notify("notifications.load.family");
-      }
-    }
+    this.familyReadModelsHydrated = hydrationSucceeded;
 
     if (!hydrationSucceeded) {
       this.notify("notifications.load.family");
@@ -148,23 +137,23 @@ export const lifecycleActions = {
         familyId,
         (change) => {
           if (change.updatedBy !== this.signedInMemberId) {
-            void this.refreshFamilyAggregate(change.aggregateType);
+            void this.refreshFamilyReadModel(change.aggregateType);
           }
         },
         async () => {
-          await this.refreshAllFamilyAggregates();
+          await this.refreshAllFamilyReadModels();
         },
       );
     } catch {
       this.notify("notifications.load.family");
     }
   },
-  async refreshAllFamilyAggregates(this: FamilyWorldStoreContext) {
-    for (const aggregateType of familyAggregateTypes) {
-      await this.refreshFamilyAggregate(aggregateType);
+  async refreshAllFamilyReadModels(this: FamilyWorldStoreContext) {
+    for (const readModelType of FAMILY_READ_MODEL_TYPES) {
+      await this.refreshFamilyReadModel(readModelType);
     }
   },
-  async refreshFamilyAggregate(this: FamilyWorldStoreContext, aggregateType: FamilyAggregateType) {
+  async refreshFamilyReadModel(this: FamilyWorldStoreContext, readModelType: FamilyReadModelType) {
     const {
       contributionsService,
       familyContext,
@@ -174,10 +163,11 @@ export const lifecycleActions = {
       savingsService,
     } = this.$familyWorld;
     const familyId = familyContext.activeFamilyId;
+    const viewerMemberId = readModelViewerId(this);
 
     try {
-      if (aggregateType === "family-profile") {
-        const snapshot = await familyProfileService.load(familyId);
+      if (readModelType === "family-profile") {
+        const snapshot = await familyProfileService.load(familyId, viewerMemberId);
 
         if (snapshot) {
           this.members = normalizeFamilyMembers([...snapshot.state.members]);
@@ -191,8 +181,8 @@ export const lifecycleActions = {
         return;
       }
 
-      if (aggregateType === "contributions") {
-        const snapshot = await contributionsService.load(familyId);
+      if (readModelType === "contributions") {
+        const snapshot = await contributionsService.load(familyId, viewerMemberId);
 
         if (snapshot) {
           this.contributions = [...snapshot.state.contributions];
@@ -208,12 +198,12 @@ export const lifecycleActions = {
         return;
       }
 
-      if (aggregateType === "savings") {
-        const snapshot = await savingsService.load(familyId);
+      if (readModelType === "savings") {
+        const snapshot = await savingsService.load(familyId, viewerMemberId);
 
         if (snapshot) {
           this.balances = { ...snapshot.state.balances };
-          this.availableBalances = { ...(snapshot.state.availableBalances ?? snapshot.state.balances) };
+          this.availableBalances = { ...snapshot.state.availableBalances };
           this.familyCurrencyCode = snapshot.state.familyCurrencyCode;
           this.goals = [...snapshot.state.goals];
           this.ladirchenPerCurrencyUnit = snapshot.state.ladirchenPerCurrencyUnit;
@@ -225,10 +215,10 @@ export const lifecycleActions = {
         return;
       }
 
-      if (aggregateType === "reward-shop") {
+      if (readModelType === "reward-shop") {
         const [snapshot, savingsSnapshot] = await Promise.all([
-          rewardShopService.load(familyId),
-          savingsService.load(familyId),
+          rewardShopService.load(familyId, viewerMemberId),
+          savingsService.load(familyId, viewerMemberId),
         ]);
 
         if (snapshot) {
@@ -238,9 +228,7 @@ export const lifecycleActions = {
 
         if (savingsSnapshot) {
           this.balances = { ...savingsSnapshot.state.balances };
-          this.availableBalances = {
-            ...(savingsSnapshot.state.availableBalances ?? savingsSnapshot.state.balances),
-          };
+          this.availableBalances = { ...savingsSnapshot.state.availableBalances };
           this.goals = [...savingsSnapshot.state.goals];
           this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
           this.savingsVouchers = [...savingsSnapshot.state.vouchers];
@@ -250,10 +238,10 @@ export const lifecycleActions = {
         return;
       }
 
-      if (aggregateType === "family-progression") {
+      if (readModelType === "family-progression") {
         const [snapshot, savingsSnapshot] = await Promise.all([
-          familyProgressionService.load(familyId),
-          savingsService.load(familyId),
+          familyProgressionService.load(familyId, viewerMemberId),
+          savingsService.load(familyId, viewerMemberId),
         ]);
 
         if (snapshot) {
@@ -271,9 +259,7 @@ export const lifecycleActions = {
 
         if (savingsSnapshot) {
           this.balances = { ...savingsSnapshot.state.balances };
-          this.availableBalances = {
-            ...(savingsSnapshot.state.availableBalances ?? savingsSnapshot.state.balances),
-          };
+          this.availableBalances = { ...savingsSnapshot.state.availableBalances };
           this.goals = [...savingsSnapshot.state.goals];
           this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
           this.savingsVouchers = [...savingsSnapshot.state.vouchers];
@@ -289,7 +275,7 @@ export const lifecycleActions = {
       this.homeCustomizationHydrated = false;
       await this.hydrateHomeCustomization();
     } catch {
-      this.notify(aggregateType === "home-customization" ? "notifications.load.home" : "notifications.load.family");
+      this.notify(readModelType === "home-customization" ? "notifications.load.home" : "notifications.load.family");
     }
   },
   async hydrateHomeCustomization(this: FamilyWorldStoreContext) {
@@ -300,7 +286,7 @@ export const lifecycleActions = {
     const { familyContext, homeCustomizationService } = this.$familyWorld;
 
     try {
-      const snapshot = await homeCustomizationService.load(familyContext.activeFamilyId);
+      const snapshot = await homeCustomizationService.load(familyContext.activeFamilyId, readModelViewerId(this));
 
       if (snapshot) {
         this.houseCatalog = snapshot.state.catalog;

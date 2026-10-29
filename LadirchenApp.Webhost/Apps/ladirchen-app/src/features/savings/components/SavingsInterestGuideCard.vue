@@ -45,7 +45,7 @@ const answers = computed(() => [
   {
     title: t("savings.interestGuide.streakTitle"),
     text: t("savings.interestGuide.streakMessage", {
-      days: store.currentDailyStreak,
+      days: store.currentParticipationStreakDays,
       rate: formatRate(streakInterest.value),
     }),
   },

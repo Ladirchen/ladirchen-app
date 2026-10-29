@@ -53,7 +53,7 @@ export const savingsActions = {
     await executeBackendFamilyCommand(
       this,
       "savings.support-goal",
-      { amount, giftId, id, senderName: this.signedInMember.name.replace(" (du)", "") },
+      { amount, giftId, id, senderName: (this.signedInMember?.name ?? "").replace(" (du)", "") },
       "notifications.save.savings",
       () => {
         const credited = Math.max(0, (this.goals.find((item) => item.id === id)?.saved ?? 0) - savedBefore);
@@ -72,7 +72,7 @@ export const savingsActions = {
     await executeBackendFamilyCommand(
       this,
       "savings.gift-to-goal",
-      { amount, giftId, id, senderName: this.signedInMember.name },
+      { amount, giftId, id, senderName: this.signedInMember?.name ?? "" },
       "notifications.save.savings",
       () => {
         const credited = Math.max(0, (this.goals.find((item) => item.id === id)?.saved ?? 0) - savedBefore);
@@ -90,7 +90,7 @@ export const savingsActions = {
     await executeBackendFamilyCommand(
       this,
       "savings.gift-to-member",
-      { amount, giftId, recipientId: memberId, senderName: this.signedInMember.name },
+      { amount, giftId, recipientId: memberId, senderName: this.signedInMember?.name ?? "" },
       "notifications.save.savings",
       () => this.notify("notifications.goals.memberGifted", { amount: Math.round(amount), name }),
     );
@@ -101,7 +101,7 @@ export const savingsActions = {
     await executeBackendFamilyCommand(
       this,
       "savings.special-gift",
-      { amount, childId, giftId, reason, senderName: this.signedInMember.name.replace(" (du)", "") },
+      { amount, childId, giftId, reason, senderName: (this.signedInMember?.name ?? "").replace(" (du)", "") },
       "notifications.save.savings",
       () => this.notify("notifications.goals.specialGifted", { amount: Math.round(amount), name }),
     );
@@ -120,7 +120,7 @@ export const savingsActions = {
     await executeBackendFamilyCommand(
       this,
       "savings.consume-guardian-gift",
-      { id: gift.id },
+      { giftId: gift.id },
       "notifications.save.savings",
       () => {
         this.guardianGiftAnimation = {
@@ -153,20 +153,31 @@ export const savingsActions = {
     });
   },
   async cancelGoal(this: FamilyWorldStoreContext, id: SavingGoalId) {
-    const goal = this.goals.find((item) => item.id === id);
-    const balanceBefore = this.balance;
     await executeBackendFamilyCommand(this, "savings.cancel-goal", { id }, "notifications.save.savings", () => {
-      const returned = Math.max(0, this.balance - balanceBefore);
-      const forfeitedBonus = Math.max(0, (goal?.saved ?? 0) - returned);
-      this.notify(forfeitedBonus > 0 ? "notifications.goals.cancelledWithBonus" : "notifications.goals.cancelled", {
-        amount: returned,
-      });
+      this.notify("notifications.goals.cancelled");
 
       if (this.activeGoalId === id) {
         this.activeGoalId =
           this.goals.find((item) => item.ownerId === this.activeChildId)?.id ?? this.goals[0]?.id ?? this.activeGoalId;
       }
     });
+  },
+  async requestGoalCancellation(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    await executeBackendFamilyCommand(
+      this,
+      "savings.request-goal-cancellation",
+      { id },
+      "notifications.save.savings",
+      () => this.notify("notifications.goals.cancellationRequested"),
+    );
+  },
+  async decideGoalCancellation(this: FamilyWorldStoreContext, id: SavingGoalId, approved: boolean) {
+    await executeBackendFamilyCommand(
+      this,
+      "savings.decide-goal-cancellation",
+      { approved, id },
+      "notifications.save.savings",
+    );
   },
   async consentToSavingsVoucher(this: FamilyWorldStoreContext, id: SavingGoalId) {
     await executeBackendFamilyCommand(this, "savings.consent-voucher", { id }, "notifications.save.savings");

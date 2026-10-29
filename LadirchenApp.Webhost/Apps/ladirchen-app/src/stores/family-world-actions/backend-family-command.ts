@@ -16,13 +16,13 @@ export async function executeBackendFamilyCommand(
   const { familyCommands, familyContext } = store.$familyWorld;
 
   try {
-    const changedAggregates = await familyCommands.execute(
+    const changedReadModelTypes = await familyCommands.execute(
       familyContext.activeFamilyId,
       store.signedInMemberId,
       commandType,
       payload,
     );
-    await Promise.all(changedAggregates.map((aggregateType) => store.refreshFamilyAggregate(aggregateType)));
+    await Promise.all(changedReadModelTypes.map((readModelType) => store.refreshFamilyReadModel(readModelType)));
     onSuccess?.();
   } catch {
     store.notify(failureNotification);

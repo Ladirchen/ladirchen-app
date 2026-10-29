@@ -77,10 +77,14 @@ internal static class SavingsReadModelSnapshotMapper
     ArgumentNullException.ThrowIfNull(savings);
     ArgumentNullException.ThrowIfNull(projection);
     var state = ReadObject(savings, "The savings state must be an object.");
+    state["balances"] = DecimalMap(projection.Balances);
     state["availableBalances"] = DecimalMap(projection.AvailableBalances);
     state["sharedSavedBalances"] = DecimalMap(projection.SharedSavedBalances);
     WriteGoals(state, projection.Goals);
     WriteVouchers(state, projection.Vouchers);
+    WritePendingGuardianGifts(state, projection.VisibleBalanceMemberIds);
+    state.Remove("appliedOperationIds");
+    state.Remove("ledger");
 
     using var document = JsonDocument.Parse(state.ToJsonString());
 
@@ -92,7 +96,17 @@ internal static class SavingsReadModelSnapshotMapper
     IReadOnlyDictionary<SavingGoalId, SavingsGoalReadProjection> projections
   )
   {
-    foreach (var node in RequiredArray(state, "goals"))
+    var goals = RequiredArray(state, "goals");
+
+    foreach (var hiddenGoal in goals
+      .OfType<JsonObject>()
+      .Where(goal => !projections.ContainsKey(new SavingGoalId(RequiredString(goal, "id"))))
+      .ToArray())
+    {
+      goals.Remove(hiddenGoal);
+    }
+
+    foreach (var node in goals)
     {
       var goal = node as JsonObject
         ?? throw new InvalidOperationException("Every savings goal must be an object.");
@@ -100,11 +114,26 @@ internal static class SavingsReadModelSnapshotMapper
       var projection = projections.TryGetValue(goalId, out var value)
         ? value
         : throw new InvalidOperationException("The savings-goal projection is missing.");
+      goal.Remove("refundableContributions");
       goal["projectedInterestCredit"] = projection.ProjectedInterestCredit;
       goal["remainingAmount"] = projection.RemainingAmount;
       goal["withdrawableBalance"] = projection.WithdrawableBalance;
       goal["visibleToMemberIds"] = IdentifierArray(projection.VisibleToMemberIds);
       goal["commandLimits"] = CommandLimitsMap(projection.CommandLimits);
+
+      if (projection.CancellationRequest is null)
+      {
+        goal.Remove("cancellationRequest");
+      }
+      else
+      {
+        goal["cancellationRequest"] = new JsonObject
+        {
+          ["requestedByMemberId"] = projection.CancellationRequest.RequestedByMemberId.Value,
+          ["consentedMemberIds"] = IdentifierArray(projection.CancellationRequest.ConsentedMemberIds),
+          ["pendingMemberIds"] = IdentifierArray(projection.CancellationRequest.PendingMemberIds),
+        };
+      }
     }
   }
 
@@ -115,6 +144,14 @@ internal static class SavingsReadModelSnapshotMapper
   {
     var vouchers = state["vouchers"] as JsonArray ?? new JsonArray();
     state["vouchers"] = vouchers;
+
+    foreach (var hiddenVoucher in vouchers
+      .OfType<JsonObject>()
+      .Where(voucher => !projections.ContainsKey(new SavingGoalId(RequiredString(voucher, "goalId"))))
+      .ToArray())
+    {
+      vouchers.Remove(hiddenVoucher);
+    }
 
     foreach (var node in vouchers)
     {
@@ -127,6 +164,23 @@ internal static class SavingsReadModelSnapshotMapper
       voucher["visibleToMemberIds"] = IdentifierArray(projection.VisibleToMemberIds);
       voucher["consentableByMemberIds"] = IdentifierArray(projection.ConsentableByMemberIds);
       voucher["redeemableByMemberIds"] = IdentifierArray(projection.RedeemableByMemberIds);
+    }
+  }
+
+  private static void WritePendingGuardianGifts(
+    JsonObject state,
+    IReadOnlySet<FamilyMemberId> visibleMemberIds
+  )
+  {
+    var gifts = state["pendingGuardianGifts"] as JsonArray ?? new JsonArray();
+    state["pendingGuardianGifts"] = gifts;
+
+    foreach (var hiddenGift in gifts
+      .OfType<JsonObject>()
+      .Where(gift => !visibleMemberIds.Contains(new FamilyMemberId(RequiredString(gift, "childId"))))
+      .ToArray())
+    {
+      gifts.Remove(hiddenGift);
     }
   }
 
@@ -153,6 +207,9 @@ internal static class SavingsReadModelSnapshotMapper
       result[item.Key.Value] = new JsonObject
       {
         ["canCancel"] = item.Value.CanCancel,
+        ["canRequestCancellation"] = item.Value.CanRequestCancellation,
+        ["canApproveCancellation"] = item.Value.CanApproveCancellation,
+        ["canRejectCancellation"] = item.Value.CanRejectCancellation,
         ["canWithdraw"] = item.Value.CanWithdraw,
         ["maximumDepositAmount"] = item.Value.MaximumDepositAmount,
         ["maximumSupportAmount"] = item.Value.MaximumSupportAmount,

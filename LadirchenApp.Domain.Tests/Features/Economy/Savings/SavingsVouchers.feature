@@ -17,15 +17,20 @@ Feature: Savings-goal vouchers and family consent
     Then no voucher is created
     And the starter bonus remains locked
 
-  Scenario: A family goal defines who participates
+  Scenario: A family goal defines who participates [participation=the entire family; participants=all active children and guardians]
     Given the family has children and guardians
-    When a family savings goal is created for "<participation>"
-    Then the goal participants are "<participants>"
-    Examples:
-      | participation             | participants                         |
-      | the entire family         | all active children and guardians    |
-      | children only             | all active children                   |
-      | selected family members   | only the selected children and guardians |
+    When a family savings goal is created for "the entire family"
+    Then the goal participants are "all active children and guardians"
+
+  Scenario: A family goal defines who participates [participation=children only; participants=all active children]
+    Given the family has children and guardians
+    When a family savings goal is created for "children only"
+    Then the goal participants are "all active children"
+
+  Scenario: A family goal defines who participates [participation=selected family members; participants=only the selected children and guardians]
+    Given the family has children and guardians
+    When a family savings goal is created for "selected family members"
+    Then the goal participants are "only the selected children and guardians"
 
   Scenario: Selected family-goal participants may combine children and guardians
     Given a family savings goal uses selected family members

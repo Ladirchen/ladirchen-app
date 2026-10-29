@@ -28,7 +28,7 @@ public sealed class ContributionQueryHandlerTests
     );
 
     var result = await handler.HandleAsync(
-      new GetFamilyAggregateQuery(_familyId, "contributions"),
+      new GetFamilyAggregateQuery(_familyId, "contributions", _administratorId),
       CancellationToken.None
     );
 
@@ -58,6 +58,7 @@ public sealed class ContributionQueryHandlerTests
     await Assert.That(
       state.GetProperty("currentWeekApprovedContributionCountByMember").GetProperty(_siblingId.Value).GetInt32()
     ).IsEqualTo(2);
+    await Assert.That(state.TryGetProperty("usedContributionIds", out _)).IsFalse();
   }
 
   private static TestFamilyAggregateSnapshotRepository CreateRepository()
@@ -196,6 +197,7 @@ public sealed class ContributionQueryHandlerTests
           approvedAt = "2026-10-25T22:30:00+00:00",
         },
       },
+      usedContributionIds = new[] { "retired-task" },
       promotions = new object[]
       {
         new

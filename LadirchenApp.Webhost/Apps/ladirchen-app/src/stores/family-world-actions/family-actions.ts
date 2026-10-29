@@ -14,8 +14,8 @@ export const familyActions = {
     this.currentTimeMilliseconds = Date.now();
     const currentDate = calendarDateInTimeZone(new Date(this.currentTimeMilliseconds), this.familyTimeZone);
 
-    if (previousDate !== currentDate && this.familyAggregatesHydrated) {
-      void this.refreshFamilyAggregate("contributions");
+    if (previousDate !== currentDate && this.familyReadModelsHydrated) {
+      void this.refreshFamilyReadModel("contributions");
     }
   },
   switchSession(this: FamilyWorldStoreContext, memberId: FamilyMemberId, revealRewards = true) {
@@ -28,14 +28,32 @@ export const familyActions = {
     this.rewardAnimation.visible = false;
     this.signedInMemberId = member.id;
     this.viewerRole = member.role;
+    this.balances = {};
+    this.availableBalances = {};
+    this.goals = [];
+    this.pendingGuardianGifts = [];
+    this.savingsVouchers = [];
+    this.sharedSavedBalances = {};
+    this.shopRewards = [];
+    this.members = this.members.filter((item) => !item.invitationPending).map(({ email: _email, ...item }) => item);
 
     if (member.role === "child") {
       this.activeChildId = member.id;
-      this.revealNextGuardianGift();
     }
 
-    if (revealRewards && this.isAuthenticated) {
-      this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), FOLLOW_UP_REWARD_REVEAL_DELAY_MS);
+    if (this.isAuthenticated) {
+      void this.refreshAllFamilyReadModels().then(() => {
+        if (member.role === "child") {
+          this.revealNextGuardianGift();
+        }
+
+        if (revealRewards) {
+          this.$familyWorld.scheduler.schedule(
+            () => this.revealNextContributionReward(),
+            FOLLOW_UP_REWARD_REVEAL_DELAY_MS,
+          );
+        }
+      });
     }
 
     this.notify("notifications.session.switched", { name: member.name });
@@ -69,14 +87,15 @@ export const familyActions = {
   async signInToFamily(this: FamilyWorldStoreContext, familyId: FamilyId, memberId: FamilyMemberId): Promise<boolean> {
     this.$familyWorld.familyContext.setActiveFamilyId(familyId);
     this.$reset();
-    this.isAuthenticated = true;
-    this.familyAggregatesHydrated = false;
+    this.signedInMemberId = memberId;
+    this.isAuthenticated = false;
+    this.familyReadModelsHydrated = false;
     this.homeCustomizationHydrated = false;
     this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "authenticated");
-    await this.hydrateFamilyAggregates();
+    await this.hydrateFamilyReadModels();
     const member = this.members.find((item) => item.id === memberId);
 
-    if (!member) {
+    if (!this.familyReadModelsHydrated || !member) {
       this.isAuthenticated = false;
       this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "signed-out");
 
@@ -90,6 +109,7 @@ export const familyActions = {
       this.activeChildId = member.id;
     }
 
+    this.isAuthenticated = true;
     this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), FOLLOW_UP_REWARD_REVEAL_DELAY_MS);
 
     return true;
@@ -135,7 +155,7 @@ export const familyActions = {
       { nickname },
       "notifications.save.profile",
       () => {
-        const savedNickname = this.signedInMember.nickname ?? "";
+        const savedNickname = this.signedInMember?.nickname ?? "";
 
         this.notify(
           savedNickname ? "notifications.profile.nicknameSaved" : "notifications.profile.nicknameRemoved",

@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 using LadirchenApp.Application.Commands;
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
@@ -16,7 +17,9 @@ public sealed partial class GetFamilyAggregateQueryHandler
   private FamilyAggregateSnapshot ProjectRewardShop(
     FamilyAggregateSnapshot rewardShop,
     FamilyAggregateSnapshot profile,
-    FamilyAggregateSnapshot savings
+    FamilyAggregateSnapshot savings,
+    FamilyMemberId authenticatedMemberId,
+    FamilyMemberId viewerId
   )
   {
     var state = ParseRewardShopState(rewardShop.State, "reward shop");
@@ -30,6 +33,10 @@ public sealed partial class GetFamilyAggregateQueryHandler
     );
     var presentations = RequiredRewardPresentations(state);
     var now = _timeProvider.GetUtcNow();
+    var permissionPolicy = new FamilyPermissionPolicy();
+    var authenticatedPermissions = permissionPolicy.Resolve(family.ActiveMember(authenticatedMemberId));
+    var viewerPermissions = permissionPolicy.Resolve(family.ActiveMember(viewerId));
+    var mayManageContent = authenticatedPermissions.ManageContent && viewerPermissions.ManageContent;
     state["redemptionOpen"] = ShopAvailabilityPolicy.RedemptionIsOpen(now, family.TimeZone);
 
     foreach (var reward in economy.ShopRewards)
@@ -39,11 +46,16 @@ public sealed partial class GetFamilyAggregateQueryHandler
         throw new InvalidOperationException("The reward presentation is missing.");
       }
 
-      WriteRewardAvailability(
-        presentation,
-        economy.GetShopRewardAvailability(reward.Id, now),
-        family.TimeZone
-      );
+      var availability = economy.GetShopRewardAvailability(reward.Id, now);
+
+      if (!mayManageContent && availability.PublicationStatus != ShopRewardPublicationStatus.Visible)
+      {
+        (state["rewards"] as JsonArray)?.Remove(presentation);
+
+        continue;
+      }
+
+      WriteRewardAvailability(presentation, availability, family.TimeZone, viewerId);
     }
 
     using var document = JsonDocument.Parse(state.ToJsonString());
@@ -57,7 +69,8 @@ public sealed partial class GetFamilyAggregateQueryHandler
   private static void WriteRewardAvailability(
     JsonObject target,
     ShopRewardAvailability availability,
-    IanaTimeZone timeZone
+    IanaTimeZone timeZone,
+    FamilyMemberId viewerId
   )
   {
     target["published"] = availability.Published;
@@ -76,9 +89,17 @@ public sealed partial class GetFamilyAggregateQueryHandler
       target["nextStatusChangeAt"] = nextStatusChangeAt;
     }
 
-    target["requestableByMemberIds"] = MemberIdArray(availability.RequestableByMemberIds);
-    target["cancellableByMemberIds"] = MemberIdArray(availability.CancellableByMemberIds);
-    target["approvableByMemberIds"] = MemberIdArray(availability.ApprovableByMemberIds);
+    target["requestableByMemberIds"] = ViewerCapability(availability.RequestableByMemberIds, viewerId);
+    target["cancellableByMemberIds"] = ViewerCapability(availability.CancellableByMemberIds, viewerId);
+    target["approvableByMemberIds"] = ViewerCapability(availability.ApprovableByMemberIds, viewerId);
+  }
+
+  private static JsonArray ViewerCapability(
+    IReadOnlyCollection<FamilyMemberId> capableMemberIds,
+    FamilyMemberId viewerId
+  )
+  {
+    return capableMemberIds.Contains(viewerId) ? MemberIdArray([viewerId]) : new JsonArray();
   }
 
   private static IReadOnlyDictionary<ShopRewardId, JsonObject> RequiredRewardPresentations(

@@ -1,7 +1,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { isFamilyCurrency } from "@/application/contracts/family-aggregate-validation";
-import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import { isFamilyCurrency } from "@/application/contracts/family-read-model-validation";
+import { createDefaultAvatarAppearance, resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
 import { DEFAULT_TRANSFER_AMOUNT } from "@/features/savings/transfer-defaults";
 import type { FamilyCurrency } from "@/domain/savings/types";
@@ -86,7 +86,7 @@ export function useSavingsPiggy() {
   function memberAppearance(memberId: unknown): AvatarAppearance {
     const member = store.members.find((candidate) => candidate.id === memberId) ?? store.activeChild;
 
-    return resolveFamilyMemberAvatarAppearance(member, store.members);
+    return member ? resolveFamilyMemberAvatarAppearance(member, store.members) : createDefaultAvatarAppearance();
   }
   const formattedFamilyValue = computed(() =>
     new Intl.NumberFormat(locale.value, { style: "currency", currency: store.familyCurrencyCode }).format(
@@ -199,9 +199,11 @@ export function useSavingsPiggy() {
         return;
       }
 
-      selectedGoalId.value = store.ownSavingGoals.some((goal) => goal.id === store.activeGoal.id)
-        ? store.activeGoal.id
-        : store.ownSavingGoals[0]?.id;
+      const activeGoalId = store.activeGoal?.id;
+      selectedGoalId.value =
+        activeGoalId && store.ownSavingGoals.some((goal) => goal.id === activeGoalId)
+          ? activeGoalId
+          : store.ownSavingGoals[0]?.id;
       selectedMemberId.value = memberOptions.value[0]?.value;
       transferDestination.value = "goal";
       amount.value = Math.min(DEFAULT_TRANSFER_AMOUNT, store.availableBalance);

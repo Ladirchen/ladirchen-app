@@ -3,18 +3,35 @@ Feature: Family energy from personal Ladi stages
   Family energy is the rounded average of these stage contributions.
   The energy value controls the visual state of the house independently from the stored house level.
 
-  Scenario: Each personal Ladi stage has a fixed energy contribution
-    Given a participating family member has the personal Ladi stage "<stageId>"
+  Scenario: Each personal Ladi stage has a fixed energy contribution [stageId=idle-ladi; energy=0]
+    Given a participating family member has the personal Ladi stage "idle-ladi"
     When the member's contribution to family energy is determined
-    Then the member contributes <energy> percent energy
-    Examples:
-      | stageId      | energy |
-      | idle-ladi    | 0      |
-      | starter-ladi | 20     |
-      | garden-ladi  | 40     |
-      | sun-ladi     | 60     |
-      | aurora-ladi  | 80     |
-      | super-ladi   | 100    |
+    Then the member contributes 0 percent energy
+
+  Scenario: Each personal Ladi stage has a fixed energy contribution [stageId=starter-ladi; energy=20]
+    Given a participating family member has the personal Ladi stage "starter-ladi"
+    When the member's contribution to family energy is determined
+    Then the member contributes 20 percent energy
+
+  Scenario: Each personal Ladi stage has a fixed energy contribution [stageId=garden-ladi; energy=40]
+    Given a participating family member has the personal Ladi stage "garden-ladi"
+    When the member's contribution to family energy is determined
+    Then the member contributes 40 percent energy
+
+  Scenario: Each personal Ladi stage has a fixed energy contribution [stageId=sun-ladi; energy=60]
+    Given a participating family member has the personal Ladi stage "sun-ladi"
+    When the member's contribution to family energy is determined
+    Then the member contributes 60 percent energy
+
+  Scenario: Each personal Ladi stage has a fixed energy contribution [stageId=aurora-ladi; energy=80]
+    Given a participating family member has the personal Ladi stage "aurora-ladi"
+    When the member's contribution to family energy is determined
+    Then the member contributes 80 percent energy
+
+  Scenario: Each personal Ladi stage has a fixed energy contribution [stageId=super-ladi; energy=100]
+    Given a participating family member has the personal Ladi stage "super-ladi"
+    When the member's contribution to family energy is determined
+    Then the member contributes 100 percent energy
 
   Scenario: Family energy averages the Ladi stages of all participants
     Given the participating family members have these personal Ladi stages:
@@ -53,28 +70,62 @@ Feature: Family energy from personal Ladi stages
     Then the participant's energy contribution changes from 40 percent to 60 percent
     And the extra contribution adds no separate amount directly to family energy
 
-  Scenario: Energy determines the house visual level
-    Given family energy is <energy> percent
+  Scenario: Energy determines the house visual level [energy=0; visualLevel=1]
+    Given family energy is 0 percent
     When the house visual level is determined
-    Then the visual level is <visualLevel>
-    Examples:
-      | energy | visualLevel |
-      | 0      | 1           |
-      | 19     | 1           |
-      | 20     | 2           |
-      | 39     | 2           |
-      | 40     | 3           |
-      | 64     | 3           |
-      | 65     | 4           |
-      | 84     | 4           |
-      | 85     | 5           |
-      | 100    | 5           |
+    Then the visual level is 1
 
-  Scenario: A successful family week requires at least Sun-level average energy
-    Given family energy is <energy> percent
-    When an authorized user attempts to complete the family week
-    Then the week completion is <result>
-    Examples:
-      | energy | result   |
-      | 59     | rejected |
-      | 60     | accepted |
+  Scenario: Energy determines the house visual level [energy=19; visualLevel=1]
+    Given family energy is 19 percent
+    When the house visual level is determined
+    Then the visual level is 1
+
+  Scenario: Energy determines the house visual level [energy=20; visualLevel=2]
+    Given family energy is 20 percent
+    When the house visual level is determined
+    Then the visual level is 2
+
+  Scenario: Energy determines the house visual level [energy=39; visualLevel=2]
+    Given family energy is 39 percent
+    When the house visual level is determined
+    Then the visual level is 2
+
+  Scenario: Energy determines the house visual level [energy=40; visualLevel=3]
+    Given family energy is 40 percent
+    When the house visual level is determined
+    Then the visual level is 3
+
+  Scenario: Energy determines the house visual level [energy=64; visualLevel=3]
+    Given family energy is 64 percent
+    When the house visual level is determined
+    Then the visual level is 3
+
+  Scenario: Energy determines the house visual level [energy=65; visualLevel=4]
+    Given family energy is 65 percent
+    When the house visual level is determined
+    Then the visual level is 4
+
+  Scenario: Energy determines the house visual level [energy=84; visualLevel=4]
+    Given family energy is 84 percent
+    When the house visual level is determined
+    Then the visual level is 4
+
+  Scenario: Energy determines the house visual level [energy=85; visualLevel=5]
+    Given family energy is 85 percent
+    When the house visual level is determined
+    Then the visual level is 5
+
+  Scenario: Energy determines the house visual level [energy=100; visualLevel=5]
+    Given family energy is 100 percent
+    When the house visual level is determined
+    Then the visual level is 5
+
+  Scenario: A successful family week requires at least Sun-level average energy [energy=59; result=rejected]
+    Given family energy is 59 percent
+    When a family member who can manage the family attempts to complete the family week
+    Then the week completion is rejected
+
+  Scenario: A successful family week requires at least Sun-level average energy [energy=60; result=accepted]
+    Given family energy is 60 percent
+    When a family member who can manage the family attempts to complete the family week
+    Then the week completion is accepted

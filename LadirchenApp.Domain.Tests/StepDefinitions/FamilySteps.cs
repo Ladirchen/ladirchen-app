@@ -20,7 +20,7 @@ public sealed class FamilySteps
   private FamilyAggregate _family = null!;
   private DomainRuleException? _error;
 
-  [Given("a family with an administrator")]
+  [Given("a family with a guardian administrator")]
   public void CreateFamily()
   {
     _family = new(
@@ -31,14 +31,14 @@ public sealed class FamilySteps
     );
   }
 
-  [When("the administrator adds a child")]
-  [Given("the administrator adds a child")]
+  [When("the guardian administrator adds a child")]
+  [Given("the guardian administrator adds a child")]
   public void AddChild()
   {
     _family.AddMember(_administrator, _child, "Sam", MemberRole.Child, GuardianAccess.Supporter, false, _now);
   }
 
-  [When("a second administrator is added")]
+  [When("a second guardian administrator is added")]
   public void AddAdministrator()
   {
     _family.AddMember(_administrator, new("admin2"), "Pat", MemberRole.Guardian, GuardianAccess.Admin, false, _now);
@@ -50,7 +50,7 @@ public sealed class FamilySteps
     Try(() => _family.AddMember(_child, new("other"), "Pat", MemberRole.Child, GuardianAccess.Supporter, false, _now));
   }
 
-  [When("the administrator tries to become a supporter")]
+  [When("the guardian administrator tries to become a supporter")]
   public void Demote()
   {
     Try(() => _family.ChangeGuardianAccess(_administrator, _administrator, GuardianAccess.Supporter, _now));
@@ -68,7 +68,7 @@ public sealed class FamilySteps
     await Assert.That(_family.Members.Count(item => !item.InvitationPending)).IsEqualTo(count);
   }
 
-  [Then("the family has {int} administrators")]
+  [Then("the number of guardian administrators is {int}")]
   public async Task AdminCount(int count)
   {
     await Assert.That(_family.Members.Count(item => item.IsAdministrator)).IsEqualTo(count);

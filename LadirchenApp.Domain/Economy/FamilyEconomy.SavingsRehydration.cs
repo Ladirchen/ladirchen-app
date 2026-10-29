@@ -31,6 +31,9 @@ public sealed partial class FamilyEconomy
     decimal saved,
     decimal starterBonus,
     decimal interestEarned,
+    IReadOnlyDictionary<FamilyMemberId, decimal> refundableContributions,
+    FamilyMemberId? cancellationRequestedByMemberId,
+    IReadOnlyCollection<FamilyMemberId> cancellationConsentedMemberIds,
     bool cheered,
     bool cancelled,
     IsoWeekPeriod? lastInterestPeriod,
@@ -39,12 +42,14 @@ public sealed partial class FamilyEconomy
   {
     ArgumentNullException.ThrowIfNull(id);
     ArgumentNullException.ThrowIfNull(definition);
+    ArgumentNullException.ThrowIfNull(refundableContributions);
+    ArgumentNullException.ThrowIfNull(cancellationConsentedMemberIds);
     Rules.Require(_goals.All(item => item.Id != id), DomainError.Duplicate, "This savings goal was already restored.");
     var owner = definition.Owner;
 
     if (!owner.IsFamily)
     {
-      _family.ActiveMember(owner.MemberId!);
+      ActiveMember(owner.MemberId!);
     }
 
     var participants = definition.ParticipantIds?.Distinct().ToArray() ?? Array.Empty<FamilyMemberId>();
@@ -61,7 +66,12 @@ public sealed partial class FamilyEconomy
 
     foreach (var participant in participants)
     {
-      _family.ActiveMember(participant);
+      ActiveMember(participant);
+    }
+
+    foreach (var contributor in refundableContributions.Keys)
+    {
+      ActiveMember(contributor);
     }
 
     var goal = new SavingGoal(
@@ -77,11 +87,29 @@ public sealed partial class FamilyEconomy
       saved,
       starterBonus,
       interestEarned,
+      refundableContributions,
       cheered,
       cancelled,
       lastInterestPeriod,
       lastInterestRate
     );
+
+    if (cancellationRequestedByMemberId is null)
+    {
+      Rules.Require(
+        cancellationConsentedMemberIds.Count == 0,
+        DomainError.InvalidValue,
+        "Cancellation consents require a cancellation requester."
+      );
+    }
+    else
+    {
+      goal.RestoreCancellationRequest(
+        cancellationRequestedByMemberId,
+        cancellationConsentedMemberIds
+      );
+    }
+
     _goals.Add(goal);
   }
 
@@ -126,11 +154,11 @@ public sealed partial class FamilyEconomy
   )
   {
     ArgumentNullException.ThrowIfNull(id);
-    _family.ActiveMember(recipientId);
+    ActiveMember(recipientId);
 
     if (senderId is not null)
     {
-      _family.ActiveMember(senderId);
+      ActiveMember(senderId);
     }
 
     if (goalId is not null)

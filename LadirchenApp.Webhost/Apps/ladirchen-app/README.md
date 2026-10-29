@@ -95,16 +95,16 @@ German and English messages live as flat, alphabetically sorted JSON files in `s
 
 ## 🔌 Backend integration boundary
 
-The application uses backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. Each aggregate adapter expects:
+The application uses backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. Each read-model adapter expects:
 
 ```text
-GET /api/families/{familyId}/aggregates/{aggregateType}
+GET /api/families/{familyId}/read-models/{readModelType}
 POST /api/families/{familyId}/commands
 ```
 
-Responses use the versioned snapshot contracts from `src/application/contracts/`. Runtime guards validate every loaded snapshot before it reaches the store. Parallel hydration retains successful aggregates independently and remains retryable when only part of the backend is unavailable. Business writes are expressed only as commands; the frontend does not save aggregate snapshots. Every command carries a client-generated `commandId`, and retries reuse that identifier so an uncertain HTTP response cannot apply a write twice. If an atomic command save detects a revision conflict, the API returns HTTP 409 and the command gateway retries the same command once against the newly loaded server state.
+Responses contain a read-model type, revision and validated state from `src/application/contracts/`; persistence schema versions and audit metadata stay on the server. Runtime guards validate every loaded read model before it reaches the store. Parallel hydration retains successful read models independently and remains retryable when only part of the backend is unavailable. Business writes are expressed only as commands; the frontend never saves persistence snapshots. Every command carries a client-generated `commandId`, and retries reuse that identifier so an uncertain HTTP response cannot apply a write twice. If an atomic command save detects a revision conflict, the API returns HTTP 409 and the command gateway retries the same command once against the newly loaded server state.
 
-Family aggregate reads, commands, projections, and SignalR subscriptions require an HTTP-only family-session cookie. The server verifies that the route or subscription family matches the authenticated family. The shared-device member switch remains a UI concept inside that authenticated family; command handlers still verify the selected actor's current membership and permissions.
+Family read-model requests, commands, projections, and SignalR subscriptions require an HTTP-only family-session cookie. The server verifies that the route or subscription family matches the authenticated family. The shared-device member switch remains a UI concept inside that authenticated family; command handlers still verify the selected actor's current membership and permissions.
 
 In API mode the application also connects to:
 
@@ -112,7 +112,7 @@ In API mode the application also connects to:
 /hubs/family-updates
 ```
 
-After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. After a SignalR reconnection, the client subscribes to the family again and reloads every aggregate so that changes missed during the interruption are recovered. Authentication accounts and aggregate snapshots are stored in PostgreSQL through Npgsql. The server applies EF Core migrations during startup, saves multi-aggregate commands transactionally, and rejects stale aggregate revisions with HTTP 409. Production can use `DATABASE_URL`, `POSTGRES_URL`, or `ConnectionStrings__Ladirchen`; local development uses the `Ladirchen` connection string from `appsettings.json`.
+After another family member changes an aggregate, SignalR publishes its type, revision, and audit metadata separately from the HTTP read model. Pinia then reloads only the corresponding read model and remains the reactive UI read-model cache. After a SignalR reconnection, the client subscribes to the family again and reloads every read model so that changes missed during the interruption are recovered. Authentication accounts and aggregate snapshots are stored in PostgreSQL through Npgsql. The server applies EF Core migrations during startup, saves multi-aggregate commands transactionally, and rejects stale aggregate revisions with HTTP 409. Production can use `DATABASE_URL`, `POSTGRES_URL`, or `ConnectionStrings__Ladirchen`; local development uses the `Ladirchen` connection string from `appsettings.json`.
 
 Family profile, avatar, contribution, savings, family reward-shop, progression and house-customization writes in API mode use the backend-owned command endpoint:
 
@@ -120,7 +120,7 @@ Family profile, avatar, contribution, savings, family reward-shop, progression a
 POST /api/families/{familyId}/commands
 ```
 
-These actions no longer mutate Pinia first. The backend validates each command and saves its receipt, all affected snapshots, and durable notification outbox entries in one PostgreSQL transaction. A separate dispatcher publishes committed revisions through SignalR and retries failed deliveries, so a notification failure cannot turn an already committed command into an HTTP failure. Pinia reloads the snapshots as a reactive read-model cache. The savings-interest simulator also obtains its projection from the backend. Production and local development use the HTTP backend; fixtures are limited to tests and explicitly isolated visual-development tooling.
+These actions no longer mutate Pinia first. The backend validates each command and saves its receipt, all affected snapshots, and durable notification outbox entries in one PostgreSQL transaction. A separate dispatcher publishes committed revisions through SignalR and retries failed deliveries, so a notification failure cannot turn an already committed command into an HTTP failure. Pinia reloads the read models into its reactive cache. The savings-interest simulator also obtains its projection from the backend. Production and local development use the HTTP backend; fixtures are limited to tests and explicitly isolated visual-development tooling.
 
 Authentication is exposed through `src/application/ports/authentication-gateway.ts`. Registration and authentication run through the server, where passwords are salted and hashed with PBKDF2, an HTTP-only cookie is issued, and family registration initializes all aggregate snapshots in one database transaction. The product currently uses a shared-device identity model: a signed-in family manager may switch to another family member, while members without `ManageFamily` may issue commands only as themselves. Authentication endpoints are rate-limited and repeated failed sign-ins temporarily lock the account. Sign-out invalidates the server cookie and disconnects the SignalR client.
 

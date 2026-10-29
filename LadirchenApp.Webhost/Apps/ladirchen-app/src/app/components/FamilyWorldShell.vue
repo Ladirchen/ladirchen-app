@@ -42,15 +42,15 @@
             <template v-else>
               <button
                 class="header-stat header-streak d-flex align-center justify-center cursor-pointer"
-                :aria-label="t('shell.streak.aria', { days: store.currentDailyStreak })"
+                :aria-label="t('shell.streak.aria', { days: store.currentParticipationStreakDays })"
                 aria-haspopup="dialog"
                 :data-ladi-heading="t('shell.streak.heading')"
-                :data-ladi-tip="t('shell.streak.tip', { days: store.currentDailyStreak })"
+                :data-ladi-tip="t('shell.streak.tip', { days: store.currentParticipationStreakDays })"
                 type="button"
                 @click="streakDialog = true"
               >
                 <span class="header-stat-symbol"><AnimatedStreakFlame :size="30" /></span>
-                <strong>{{ store.currentDailyStreak }}</strong>
+                <strong>{{ store.currentParticipationStreakDays }}</strong>
                 <span class="header-stat-label">{{ t("shell.streak.days") }}</span>
               </button>
               <button
@@ -196,6 +196,47 @@
         </v-card>
       </v-dialog>
 
+      <v-dialog :model-value="store.pendingGoalCancellation !== undefined" max-width="420" persistent>
+        <v-card v-if="store.pendingGoalCancellation" class="pa-6" rounded="xl">
+          <div class="d-flex align-center ga-3 mb-4">
+            <v-avatar color="warning" size="52" variant="tonal">
+              <v-icon icon="i-mdi:account-group-outline" size="30" />
+            </v-avatar>
+            <div>
+              <p class="eyebrow mb-1">{{ t("shell.cancellation.eyebrow") }}</p>
+              <h2 class="text-h6">
+                {{ t("shell.cancellation.title", { goal: store.pendingGoalCancellation.title }) }}
+              </h2>
+            </div>
+          </div>
+          <p class="text-body-2 text-medium-emphasis">{{ t("shell.cancellation.description") }}</p>
+          <div class="d-flex flex-column flex-sm-row justify-end ga-2 mt-6">
+            <v-btn
+              v-if="pendingCancellationLimits?.canRejectCancellation"
+              color="error"
+              :disabled="cancellationDecision !== undefined"
+              :loading="cancellationDecision === false"
+              rounded="lg"
+              variant="tonal"
+              @click="decideGoalCancellation(false)"
+            >
+              {{ t("shell.cancellation.reject") }}
+            </v-btn>
+            <v-btn
+              v-if="pendingCancellationLimits?.canApproveCancellation"
+              color="primary"
+              :disabled="cancellationDecision !== undefined"
+              :loading="cancellationDecision === true"
+              rounded="lg"
+              variant="flat"
+              @click="decideGoalCancellation(true)"
+            >
+              {{ t("shell.cancellation.approve") }}
+            </v-btn>
+          </div>
+        </v-card>
+      </v-dialog>
+
       <AsyncFamilySetupDialog v-if="store.familySetupOpen" />
       <AsyncSavingsPiggyDialog v-if="store.piggyBankOpen" />
       <AsyncWeeklyStreakDialog v-if="streakDialog" v-model="streakDialog" />
@@ -234,6 +275,7 @@ const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
 const appHydrated = ref(false);
+const cancellationDecision = ref<boolean>();
 const introFinished = ref(false);
 const contentElement = ref<HTMLElement | null>(null);
 const streakDialog = ref(false);
@@ -286,6 +328,9 @@ const guardianGiftBalanceMessage = computed(() =>
     ? t("shell.gift.balance", { goal: store.guardianGiftAnimation.goalTitle })
     : t("shell.gift.balanceDefault"),
 );
+const pendingCancellationLimits = computed(
+  () => store.pendingGoalCancellation?.commandLimits?.[store.signedInMemberId],
+);
 const isLandscape = computed(() => viewportWidth.value > viewportHeight.value);
 const usesFullscreenShell = computed(
   () => smAndDown.value || (md.value && (isLandscape.value || platform.value.touch)),
@@ -321,7 +366,22 @@ function handleIntroFinished() {
 function resetContentScroll() {
   window.requestAnimationFrame(() => contentElement.value?.scrollTo({ top: 0, left: 0 }));
 }
-void store.hydrateFamilyAggregates().finally(() => {
+async function decideGoalCancellation(approved: boolean) {
+  const goal = store.pendingGoalCancellation;
+
+  if (!goal || cancellationDecision.value !== undefined) {
+    return;
+  }
+
+  cancellationDecision.value = approved;
+
+  try {
+    await store.decideGoalCancellation(goal.id, approved);
+  } finally {
+    cancellationDecision.value = undefined;
+  }
+}
+void store.hydrateFamilyReadModels().finally(() => {
   appHydrated.value = true;
 });
 onMounted(function callback() {

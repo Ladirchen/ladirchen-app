@@ -66,13 +66,13 @@ public sealed partial class EconomySteps
     _economy.SubmitContribution(assignee, _contributionId, _now);
   }
 
-  [When("the administrator approves it with {int} stars")]
+  [When("the guardian administrator approves it with {int} stars")]
   public void Approve(int stars)
   {
     _economy.ApproveContribution(_admin, _contributionId, new(stars), NextOperation(), _now);
   }
 
-  [When("the administrator tries to approve it again")]
+  [When("the guardian administrator tries to approve it again")]
   public void DuplicateApproval()
   {
     Try(() => Approve(5));
@@ -102,7 +102,7 @@ public sealed partial class EconomySteps
     _economy.ClaimContribution(_child, _contributionId, _now);
   }
 
-  [When("the administrator returns it")]
+  [When("the guardian administrator returns it")]
   public void Return()
   {
     _economy.ReturnContribution(_admin, _contributionId, _now);

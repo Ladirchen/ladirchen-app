@@ -111,7 +111,7 @@ public sealed class FamilySetupSteps
     );
   }
 
-  [When("an administrator edits the family setup")]
+  [When("a guardian administrator edits the family setup")]
   public void EditSetup()
   {
     _draftMembers = _family.Members.Select(ToState).ToArray();
@@ -140,7 +140,7 @@ public sealed class FamilySetupSteps
     await Assert.That(_family.Pets.Single().Name).IsEqualTo("Milo");
   }
 
-  [Given("an administrator is editing the aggregate family setup")]
+  [Given("a guardian administrator is editing the aggregate family setup")]
   public void EditAggregateSetup()
   {
     _family = new FamilyAggregate(

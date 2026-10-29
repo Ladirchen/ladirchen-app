@@ -12,14 +12,15 @@ public sealed partial class FamilyHouseShop
   private readonly HouseLayoutPolicy _layoutPolicy = new();
   private readonly HashSet<string> _unlockedAreas = new(StringComparer.OrdinalIgnoreCase);
 
-  public decimal Balance { get; private set; }
-  public int HouseLevel { get; private set; }
+  public int HouseLevel
+  {
+    get; private set;
+  }
   public string SelectedThemeId { get; private set; } = "default";
 
-  public void Restore(decimal balance, int houseLevel)
+  public void Restore(int houseLevel)
   {
-    Rules.Require(balance >= 0 && houseLevel >= 0, DomainError.InvalidValue, "Invalid house-shop state.");
-    Balance = balance;
+    Rules.Require(houseLevel >= 0, DomainError.InvalidValue, "Invalid house-shop state.");
     HouseLevel = houseLevel;
     _unlockedAreas.Clear();
 
@@ -107,31 +108,28 @@ public sealed partial class FamilyHouseShop
       && design.Price <= availableBalance;
   }
 
-  public bool PurchaseAccessory(HouseItem item, bool actorIsChild)
+  public bool PurchaseAccessory(HouseItem item, bool actorIsChild, decimal availableBalance)
   {
     ArgumentNullException.ThrowIfNull(item);
 
-    if (!CanPurchaseAccessory(item, actorIsChild, Balance))
+    if (!CanPurchaseAccessory(item, actorIsChild, availableBalance))
     {
       return false;
     }
 
-    Balance -= item.Price;
     item.Acquire(false);
 
     return true;
   }
 
-  public bool PurchaseSet(FurnitureSet set, bool actorIsChild)
+  public bool PurchaseSet(FurnitureSet set, bool actorIsChild, decimal availableBalance)
   {
     ArgumentNullException.ThrowIfNull(set);
 
-    if (!CanPurchaseSet(set, actorIsChild, Balance))
+    if (!CanPurchaseSet(set, actorIsChild, availableBalance))
     {
       return false;
     }
-
-    Balance -= set.Price;
 
     foreach (var item in set.Items)
     {
@@ -141,28 +139,28 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool PurchaseTheme(HouseTheme theme, bool actorIsChild)
+  public bool PurchaseTheme(HouseTheme theme, bool actorIsChild, decimal availableBalance)
   {
     ArgumentNullException.ThrowIfNull(theme);
 
-    return PurchaseTheme(theme, theme.Designs, actorIsChild);
+    return PurchaseTheme(theme, theme.Designs, actorIsChild, availableBalance);
   }
 
   public bool PurchaseTheme(
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns,
-    bool actorIsChild
+    bool actorIsChild,
+    decimal availableBalance
   )
   {
     ArgumentNullException.ThrowIfNull(theme);
     ArgumentNullException.ThrowIfNull(catalogDesigns);
 
-    if (!CanPurchaseTheme(theme, actorIsChild, Balance))
+    if (!CanPurchaseTheme(theme, actorIsChild, availableBalance))
     {
       return false;
     }
 
-    Balance -= theme.Price;
     theme.Owned = true;
     ApplyTheme(theme, catalogDesigns);
 
@@ -191,28 +189,33 @@ public sealed partial class FamilyHouseShop
     return true;
   }
 
-  public bool PurchaseDesign(RoomDesign design, HouseTheme theme, bool actorIsChild)
+  public bool PurchaseDesign(
+    RoomDesign design,
+    HouseTheme theme,
+    bool actorIsChild,
+    decimal availableBalance
+  )
   {
-    return PurchaseDesign(design, theme, [design], actorIsChild);
+    return PurchaseDesign(design, theme, [design], actorIsChild, availableBalance);
   }
 
   public bool PurchaseDesign(
     RoomDesign design,
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns,
-    bool actorIsChild
+    bool actorIsChild,
+    decimal availableBalance
   )
   {
     ArgumentNullException.ThrowIfNull(design);
     ArgumentNullException.ThrowIfNull(theme);
     ArgumentNullException.ThrowIfNull(catalogDesigns);
 
-    if (!CanPurchaseDesign(design, theme, actorIsChild, Balance))
+    if (!CanPurchaseDesign(design, theme, actorIsChild, availableBalance))
     {
       return false;
     }
 
-    Balance -= design.Price;
     design.Owned = true;
     SelectRoomDesign(design, catalogDesigns);
     SelectedThemeId = theme.Id;
@@ -415,7 +418,11 @@ public sealed partial class FamilyHouseShop
       y,
       entity.Placement.Scale
     );
-    var moved = entity with { Placement = normalized, Active = true };
+    var moved = entity with
+    {
+      Placement = normalized,
+      Active = true
+    };
 
     if (_layoutPolicy.CollidesWithFurniture(moved, entities))
     {
@@ -470,7 +477,11 @@ public sealed partial class FamilyHouseShop
       initialPlacement.Y,
       initialPlacement.Scale
     );
-    var reset = entity with { Placement = normalized, Active = true };
+    var reset = entity with
+    {
+      Placement = normalized,
+      Active = true
+    };
 
     if (_layoutPolicy.CollidesWithFurniture(reset, entities))
     {

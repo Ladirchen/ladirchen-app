@@ -34,7 +34,7 @@ public sealed partial class EconomySteps
     );
   }
 
-  [When("the administrator approves the contribution with {int} stars")]
+  [When("the guardian administrator approves the contribution with {int} stars")]
   public void ApproveContribution(int stars)
   {
     Approve(stars);
@@ -158,7 +158,7 @@ public sealed partial class EconomySteps
     await Assert.That(_campaignApplied).IsEqualTo(availability == "applied");
   }
 
-  [Given("a content manager selects the {int}-times reward multiplier")]
+  [Given("a family member who can manage content selects the {int}-times reward multiplier")]
   public void SelectCampaignMultiplier(int multiplier)
   {
     CreateEconomy();
@@ -166,8 +166,8 @@ public sealed partial class EconomySteps
     _campaignMultiplier = multiplier;
   }
 
-  [When("the content manager creates a valid bonus campaign")]
-  [When("the content manager creates the bonus campaign")]
+  [When("the family member who can manage content creates a valid bonus campaign")]
+  [When("the family member who can manage content creates the bonus campaign")]
   public void CreateValidCampaign()
   {
     _economy.AddPromotion(
@@ -187,7 +187,7 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.Promotions.Single().Multiplier.Value).IsEqualTo(multiplier);
   }
 
-  [Given("a content manager enters a supported multiplier, a deadline and a non-negative teamwork bonus")]
+  [Given("a family member who can manage content enters a supported multiplier, a deadline and a non-negative teamwork bonus")]
   public void ValidCampaignData()
   {
     _campaignMultiplier = 2;
@@ -212,7 +212,7 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.Promotions.Single().Deadline.IsOpen(_now, _family.TimeZone)).IsTrue();
   }
 
-  [Given("a content manager enters campaign data with {string}")]
+  [Given("a family member who can manage content enters campaign data with {string}")]
   public void InvalidCampaignData(string invalidData)
   {
     CreateEconomy();
@@ -220,7 +220,7 @@ public sealed partial class EconomySteps
     _invalidCampaignData = invalidData;
   }
 
-  [When("the content manager attempts to create the bonus campaign")]
+  [When("the family member who can manage content attempts to create the bonus campaign")]
   public void AttemptInvalidCampaign()
   {
     if (_invalidCampaignData == "a missing deadline")

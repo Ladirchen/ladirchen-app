@@ -24,7 +24,7 @@ public sealed class RewardShopQueryHandlerTests
     );
 
     var result = await handler.HandleAsync(
-      new GetFamilyAggregateQuery(_familyId, "reward-shop"),
+      new GetFamilyAggregateQuery(_familyId, "reward-shop", _administratorId),
       CancellationToken.None
     );
     var state = result?.State ?? throw new InvalidOperationException("The reward shop result is required.");
@@ -37,9 +37,8 @@ public sealed class RewardShopQueryHandlerTests
     await Assert.That(affordableReward.GetProperty("publicationStatus").GetString())
       .IsEqualTo("visible");
     await Assert.That(MemberIds(affordableReward, "requestableByMemberIds"))
-      .IsEquivalentTo(["sibling"]);
-    await Assert.That(MemberIds(requestedReward, "cancellableByMemberIds"))
-      .IsEquivalentTo(["child"]);
+      .IsEmpty();
+    await Assert.That(MemberIds(requestedReward, "cancellableByMemberIds")).IsEmpty();
     await Assert.That(MemberIds(requestedReward, "approvableByMemberIds"))
       .IsEquivalentTo([_administratorId.Value]);
     await Assert.That(scheduledReward.GetProperty("published").GetBoolean()).IsFalse();
@@ -59,7 +58,7 @@ public sealed class RewardShopQueryHandlerTests
     );
 
     var result = await handler.HandleAsync(
-      new GetFamilyAggregateQuery(_familyId, "reward-shop"),
+      new GetFamilyAggregateQuery(_familyId, "reward-shop", _administratorId),
       CancellationToken.None
     );
     var state = result?.State ?? throw new InvalidOperationException("The reward shop result is required.");
@@ -69,8 +68,29 @@ public sealed class RewardShopQueryHandlerTests
     await Assert.That(state.GetProperty("redemptionOpen").GetBoolean()).IsFalse();
     await Assert.That(MemberIds(affordableReward, "requestableByMemberIds")).IsEmpty();
     await Assert.That(MemberIds(requestedReward, "approvableByMemberIds")).IsEmpty();
-    await Assert.That(MemberIds(requestedReward, "cancellableByMemberIds"))
-      .IsEquivalentTo(["child"]);
+    await Assert.That(MemberIds(requestedReward, "cancellableByMemberIds")).IsEmpty();
+  }
+
+  [Test]
+  public async Task OrdinaryMemberCannotRetrieveUnpublishedRewards()
+  {
+    var handler = new GetFamilyAggregateQueryHandler(
+      CreateRepository(),
+      new FixedTimeProvider(new DateTimeOffset(2026, 10, 10, 10, 0, 0, TimeSpan.Zero))
+    );
+    var childId = new FamilyMemberId("child");
+    var result = await handler.HandleAsync(
+      new GetFamilyAggregateQuery(_familyId, "reward-shop", childId),
+      CancellationToken.None
+    );
+    var state = result?.State ?? throw new InvalidOperationException("The reward shop result is required.");
+
+    await Assert.That(state.GetProperty("rewards").EnumerateArray()
+      .Any(item => item.GetProperty("id").GetString() == "scheduled"))
+      .IsFalse();
+    await Assert.That(MemberIds(Reward(state, "affordable"), "requestableByMemberIds")).IsEmpty();
+    await Assert.That(MemberIds(Reward(state, "requested"), "cancellableByMemberIds"))
+      .IsEquivalentTo([childId.Value]);
   }
 
   private static TestFamilyAggregateSnapshotRepository CreateRepository()

@@ -16,33 +16,33 @@ Feature: Shared family weekly streak
     Given the stored house level is at its maximum
     And the completed family weekly streak is 7
     And the family energy is at least 60 percent
-    When an authorized user closes the family week as successful
+    When a family member who can manage the family closes the family week as successful
     Then the stored house level remains at its maximum
     And the completed family weekly streak is 8
 
   Scenario: Insufficient family energy does not extend the family streak
     Given the family energy is below 60 percent
     And the completed family weekly streak is 3
-    When an authorized user attempts to close the family week as successful
+    When a family member who can manage the family attempts to close the family week as successful
     Then the week completion is rejected
     And the completed family weekly streak remains 3
 
   Scenario: A family week from 30 to below 60 percent energy preserves the shared family streak
     Given the completed family weekly streak is 4
     And the family energy is at least 30 but below 60 percent
-    When an authorized user closes the family week as failed
+    When a family member who can manage the family closes the family week as failed
     Then the completed family weekly streak remains 4
     And every family member participating in the weekly goal has a stored weekly streak of 4
 
   Scenario: A family week below 30 percent energy degrades the shared family streak
     Given the completed family weekly streak is 4
     And the family energy is below 30 percent
-    When an authorized user closes the family week as failed
+    When a family member who can manage the family closes the family week as failed
     Then the completed family weekly streak is 3
     And every family member participating in the weekly goal has a stored weekly streak of 3
 
   Scenario: A severely failed week cannot degrade the family streak below zero
     Given the completed family weekly streak is 0
     And the family energy is below 30 percent
-    When an authorized user closes the family week as failed
+    When a family member who can manage the family closes the family week as failed
     Then the completed family weekly streak remains 0

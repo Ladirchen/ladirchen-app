@@ -51,9 +51,9 @@ export function useWishesPage() {
   const visibleSavingsVouchers = computed(() =>
     store.savingsVouchers.filter((voucher) => voucher.visibleToMemberIds.includes(store.signedInMemberId)),
   );
-  const activeGoal = computed(() => localize.goal(store.activeGoal));
+  const activeGoal = computed(() => (store.activeGoal ? localize.goal(store.activeGoal) : undefined));
   const maxAssignable = computed(
-    () => activeGoal.value.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
+    () => activeGoal.value?.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
   );
   const personalGoalOwnerId = computed<FamilyMemberId>(() => store.signedInMemberId);
   const childrenGoals = computed(() =>
@@ -148,13 +148,15 @@ export function useWishesPage() {
   }
 
   function saveToGoal() {
-    if (saveAmount.value <= 0 || saveMotion.value) {
+    const goalId = activeGoal.value?.id;
+
+    if (!goalId || saveAmount.value <= 0 || saveMotion.value) {
       return;
     }
 
     saveMotion.value = true;
     saveTimer = window.setTimeout(() => {
-      void store.saveToGoal(store.activeGoal.id, saveAmount.value);
+      void store.saveToGoal(goalId, saveAmount.value);
       saveDialog.value = false;
       saveAmount.value = DEFAULT_TRANSFER_AMOUNT;
       saveMotion.value = false;
@@ -164,9 +166,15 @@ export function useWishesPage() {
 
   function openSave(goalId: SavingGoalId) {
     store.activeGoalId = goalId;
+    const goal = store.activeGoal;
+
+    if (!goal || goal.id !== goalId) {
+      return;
+    }
+
     saveAmount.value = Math.min(
       DEFAULT_TRANSFER_AMOUNT,
-      store.activeGoal.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
+      goal.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0,
     );
     saveDialog.value = true;
   }

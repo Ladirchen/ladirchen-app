@@ -16,9 +16,9 @@ public sealed partial class FamilyEconomy
   )
   {
     var reward = FindShopReward(rewardId);
-    var localDate = _family.TimeZone.LocalDate(now);
+    var localDate = _timeZone.LocalDate(now);
     var publicationStatus = reward.PublicationStatus(localDate);
-    var redemptionOpen = ShopAvailabilityPolicy.RedemptionIsOpen(now, _family.TimeZone);
+    var redemptionOpen = ShopAvailabilityPolicy.RedemptionIsOpen(now, _timeZone);
     var pendingRequest = _requests.SingleOrDefault(item =>
       item.RewardId == rewardId && item.Status == RedemptionStatus.Pending
     );
@@ -57,7 +57,7 @@ public sealed partial class FamilyEconomy
       return [];
     }
 
-    return _family.Members
+    return _members
       .Where(member => !member.InvitationPending && member.Role == MemberRole.Child)
       .Where(member => WalletFor(member.Id).Available >= reward.Price.Value)
       .Select(member => member.Id)
@@ -76,8 +76,8 @@ public sealed partial class FamilyEconomy
 
     var permissionPolicy = new FamilyPermissionPolicy();
 
-    return _family.Members
-      .Where(member => permissionPolicy.Resolve(member).ManageContent)
+    return _members
+      .Where(member => permissionPolicy.Resolve(member.Role, member.Access, member.InvitationPending).ManageContent)
       .Select(member => member.Id)
       .ToArray();
   }

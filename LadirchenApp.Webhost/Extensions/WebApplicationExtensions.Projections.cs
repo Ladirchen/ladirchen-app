@@ -36,7 +36,8 @@ public static partial class WebApplicationExtensions
       .WithTags("Family projections")
       .RequireAuthorization()
       .Produces<SavingsInterestSimulation>()
-      .ProducesProblem(StatusCodes.Status400BadRequest);
+      .ProducesProblem(StatusCodes.Status400BadRequest)
+      .ProducesProblem(StatusCodes.Status403Forbidden);
 
     return app;
   }
@@ -54,11 +55,23 @@ public static partial class WebApplicationExtensions
       return Results.Forbid();
     }
 
+    if (!FamilySessionIdentity.TryGetMemberId(context.User, out var authenticatedMemberId))
+    {
+      return Results.Forbid();
+    }
+
     try
     {
+      var requestedMemberId = new FamilyMemberId(request.MemberId);
+
+      if (requestedMemberId != authenticatedMemberId)
+      {
+        return Results.Forbid();
+      }
+
       var query = new SimulateSavingsInterestQuery(
         new FamilyId(familyId),
-        new FamilyMemberId(request.MemberId),
+        requestedMemberId,
         request.StreakDays,
         request.CompletionPercent,
         request.AverageRating

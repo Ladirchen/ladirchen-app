@@ -3,7 +3,7 @@
     <section class="world-hero px-4">
       <div class="d-flex align-start justify-space-between ga-3">
         <div v-if="store.viewerRole === 'child'">
-          <p class="eyebrow">{{ t("world.hero.childEyebrow", { name: store.activeChild.name }) }}</p>
+          <p class="eyebrow">{{ t("world.hero.childEyebrow", { name: store.activeChild?.name ?? "" }) }}</p>
           <h1 class="world-title">{{ t("world.hero.childTitle") }}</h1>
         </div>
         <div v-else>
@@ -56,7 +56,7 @@
             <div>
               <strong>{{ t("world.management.title") }}</strong>
               <p class="text-caption text-medium-emphasis">
-                {{ t("world.management.description", { name: store.activeChild.name }) }}
+                {{ t("world.management.description", { name: store.activeChild?.name ?? "" }) }}
               </p>
             </div>
             <v-icon color="info">i-mdi:shield-account-outline</v-icon>

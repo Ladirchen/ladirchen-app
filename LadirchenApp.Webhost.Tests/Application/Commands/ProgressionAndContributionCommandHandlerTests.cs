@@ -196,6 +196,109 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       .IsEqualTo(13);
   }
 
+  [Test]
+  public async Task DeletedContributionIdentityRemainsUsedAfterTheNextReload()
+  {
+    var repository = CreateRepository(
+      [
+        Contribution(
+          "daily-basic",
+          "basic",
+          _childId,
+          Array.Empty<string>()
+        ),
+      ]
+    );
+    var handler = CreateHandler(repository);
+
+    await ExecuteAsync(handler, _guardianId, "contributions.delete", new
+    {
+      id = "daily-basic",
+    });
+
+    var contributionsAfterDelete = repository.Required(_familyId, "contributions");
+    var usedIds = contributionsAfterDelete.State
+      .GetProperty("usedContributionIds")
+      .EnumerateArray()
+      .Select(item => item.GetString())
+      .ToArray();
+    await Assert.That(contributionsAfterDelete.SchemaVersion)
+      .IsEqualTo(FamilyAggregateSchema.GetVersion("contributions"));
+    await Assert.That(usedIds).Contains("daily-basic");
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _guardianId, "contributions.add", new
+      {
+        id = "daily-basic",
+        title = "Reused contribution",
+        description = "A reused identity must remain forbidden.",
+        icon = "reused-icon",
+        kind = "basic",
+        reward = 10,
+        energy = 25,
+        assigneeId = _childId.Value,
+      })
+    ).Throws<DomainRuleException>();
+
+    var contributionsAfterRetry = repository.Required(_familyId, "contributions");
+    await Assert.That(contributionsAfterRetry.Revision).IsEqualTo(contributionsAfterDelete.Revision);
+    await Assert.That(contributionsAfterRetry.State.GetProperty("contributions").GetArrayLength())
+      .IsEqualTo(0);
+  }
+
+  [Test]
+  public async Task ContributionApprovalRestoresAppliedOperationsFromSavings()
+  {
+    var replayedCommandId = Guid.Parse("cc34726e-dda7-4427-9c1f-2461b0cdb7bf");
+    var repository = CreateRepository(
+      [
+        Contribution(
+          "daily-basic",
+          "basic",
+          _childId,
+          Array.Empty<string>()
+        ),
+      ]
+    );
+    repository.Seed(Snapshot("savings", 3, new
+    {
+      balances = new
+      {
+        guardian = 0,
+        child = 0,
+      },
+      appliedOperationIds = new[] { replayedCommandId.ToString("N") },
+      ledger = Array.Empty<object>(),
+    }));
+    var handler = CreateHandler(repository);
+    await ExecuteAsync(handler, _childId, "contributions.submit", new
+    {
+      id = "daily-basic",
+    });
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+      {
+        id = "daily-basic",
+        stars = 5,
+      }, commandId: replayedCommandId)
+    ).Throws<DomainRuleException>();
+
+    var contribution = repository.Required(_familyId, "contributions")
+      .State
+      .GetProperty("contributions")
+      .EnumerateArray()
+      .Single();
+    await Assert.That(contribution.GetProperty("status").GetString()).IsEqualTo("pending");
+    await Assert.That(
+      repository.Required(_familyId, "savings")
+        .State
+        .GetProperty("balances")
+        .GetProperty(_childId.Value)
+        .GetDecimal()
+    ).IsEqualTo(0);
+  }
+
   private static ExecuteFamilyCommandHandler CreateHandler(
     TestFamilyAggregateSnapshotRepository repository
   )
@@ -329,12 +432,13 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     FamilyMemberId actorId,
     string commandType,
     object payload,
-    FamilyMemberId? authenticatedMemberId = null
+    FamilyMemberId? authenticatedMemberId = null,
+    Guid? commandId = null
   )
   {
     await handler.HandleAsync(
       new FamilyCommand(
-        Guid.NewGuid(),
+        commandId ?? Guid.NewGuid(),
         _familyId,
         actorId,
         commandType,

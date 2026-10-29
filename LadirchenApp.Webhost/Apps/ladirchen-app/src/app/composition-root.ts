@@ -1,7 +1,7 @@
-import type { FamilyAggregateRepositories } from "@/application/ports/family-aggregate-repositories";
+import type { FamilyReadModelRepositories } from "@/application/ports/family-read-model-repositories";
 import { frontendRuntimeConfig } from "@/config/runtime";
 import { localFamilyContext } from "@/infrastructure/context/local-family-context";
-import { createHttpFamilyAggregateRepositories } from "@/infrastructure/http/http-family-aggregate-repositories";
+import { createHttpFamilyReadModelRepositories } from "@/infrastructure/http/http-family-read-model-repositories";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
 import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 import { browserScheduler } from "@/infrastructure/scheduling/browser-scheduler";
@@ -11,7 +11,7 @@ import { SignalRFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/
 import { HttpFamilyCommandGateway } from "@/infrastructure/http/http-family-command-gateway";
 import { HttpAuthenticationGateway } from "@/infrastructure/http/http-authentication-gateway";
 import { HttpSavingsInterestSimulationGateway } from "@/infrastructure/http/http-savings-interest-simulation-gateway";
-const repositories: FamilyAggregateRepositories = createHttpFamilyAggregateRepositories(
+const repositories: FamilyReadModelRepositories = createHttpFamilyReadModelRepositories(
   frontendRuntimeConfig.apiBaseUrl,
 );
 const familyAggregateUpdates = new SignalRFamilyAggregateUpdatesGateway(frontendRuntimeConfig.apiBaseUrl);

@@ -1,6 +1,6 @@
 Feature: Member wallets and Ladirchen transfers
   A wallet separates total balance, reserved funds and available funds.
-  Transfers conserve earned Ladirchen unless an authorized guardian creates a special gift.
+  Transfers conserve earned Ladirchen unless a family member who can manage content creates a special gift.
 
   Scenario: Child gifts transfer rather than create money
     Given a core economy
@@ -31,30 +31,52 @@ Feature: Member wallets and Ladirchen transfers
     And the sibling wallet contains 0 Ladirchen
     And the rejected command left the economy unchanged
 
-  Scenario: Special gifts are rounded and limited to the supported range
-    Given an administrator enters a special gift of <entered> Ladirchen with a reason
+  Scenario: Special gifts are rounded and limited to the supported range [entered=-5; credited=1]
+    Given a guardian administrator enters a special gift of -5 Ladirchen with a reason
     When the special gift amount is normalized
-    Then <credited> Ladirchen are credited to the child
-    Examples:
-      | entered | credited |
-      | -5      | 1        |
-      | 1.4     | 1        |
-      | 1.5     | 2        |
-      | 12000   | 10000    |
+    Then 1 Ladirchen are credited to the child
+
+  Scenario: Special gifts are rounded and limited to the supported range [entered=1.4; credited=1]
+    Given a guardian administrator enters a special gift of 1.4 Ladirchen with a reason
+    When the special gift amount is normalized
+    Then 1 Ladirchen are credited to the child
+
+  Scenario: Special gifts are rounded and limited to the supported range [entered=1.5; credited=2]
+    Given a guardian administrator enters a special gift of 1.5 Ladirchen with a reason
+    When the special gift amount is normalized
+    Then 2 Ladirchen are credited to the child
+
+  Scenario: Special gifts are rounded and limited to the supported range [entered=12000; credited=10000]
+    Given a guardian administrator enters a special gift of 12000 Ladirchen with a reason
+    When the special gift amount is normalized
+    Then 10000 Ladirchen are credited to the child
 
   Scenario: A special gift requires content-management permission and a reason
     Given a family member attempts to create a special gift
     When the member lacks content-management permission or provides a blank reason
     Then no Ladirchen are credited
 
-  Scenario: Only supported family currency settings are stored
-    Given an administrator configures family currency "<currency>" and an exchange rate of <rate>
+  Scenario: Only supported family currency settings are stored [currency=CHF; rate=10; result=stored]
+    Given a guardian administrator configures family currency "CHF" and an exchange rate of 10
     When the family currency settings are saved
-    Then the settings are <result>
-    Examples:
-      | currency | rate | result   |
-      | CHF      | 10   | stored   |
-      | EUR      | 10.4 | stored with rate 10 |
-      | HUF      | 1    | stored   |
-      | USD      | 10   | rejected |
-      | CHF      | 0    | rejected |
+    Then the settings are stored
+
+  Scenario: Only supported family currency settings are stored [currency=EUR; rate=10.4; result=stored with rate 10]
+    Given a guardian administrator configures family currency "EUR" and an exchange rate of 10.4
+    When the family currency settings are saved
+    Then the settings are stored with rate 10
+
+  Scenario: Only supported family currency settings are stored [currency=HUF; rate=1; result=stored]
+    Given a guardian administrator configures family currency "HUF" and an exchange rate of 1
+    When the family currency settings are saved
+    Then the settings are stored
+
+  Scenario: Only supported family currency settings are stored [currency=USD; rate=10; result=rejected]
+    Given a guardian administrator configures family currency "USD" and an exchange rate of 10
+    When the family currency settings are saved
+    Then the settings are rejected
+
+  Scenario: Only supported family currency settings are stored [currency=CHF; rate=0; result=rejected]
+    Given a guardian administrator configures family currency "CHF" and an exchange rate of 0
+    When the family currency settings are saved
+    Then the settings are rejected

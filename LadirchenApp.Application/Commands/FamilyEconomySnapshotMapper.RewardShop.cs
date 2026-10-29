@@ -57,6 +57,7 @@ internal static partial class FamilyEconomySnapshotMapper
     }
 
     RestoreShopWallets(economy, savingsState);
+    RestoreEconomyHistory(economy, savingsState);
 
     return economy;
   }

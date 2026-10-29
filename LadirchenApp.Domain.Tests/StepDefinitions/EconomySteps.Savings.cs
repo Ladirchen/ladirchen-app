@@ -51,7 +51,7 @@ public sealed partial class EconomySteps
     _economy.CancelGoal(_child, _goalId, NextOperation(), _now);
   }
 
-  [When("the administrator tries to support it")]
+  [When("the guardian administrator tries to support it")]
   public void AdminSupport()
   {
     Try(() => _economy.SupportGoal(_admin, _goalId, new(10), NextOperation(), _now));

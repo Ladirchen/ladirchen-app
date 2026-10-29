@@ -22,7 +22,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     ArgumentNullException.ThrowIfNull(settings);
     _contributionSettings = settings;
     AddDomainEvent(

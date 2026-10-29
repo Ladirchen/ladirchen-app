@@ -1,18 +1,24 @@
 import type { FamilyCommandGateway, FamilyCommandPayload } from "@/application/ports/family-command-gateway";
-import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
+import { isFamilyReadModelType, type FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
-
-interface CommandSnapshotResponse {
-  readonly aggregateType: FamilyAggregateType;
-}
-
-interface CommandResponse {
-  readonly changedAggregates: ReadonlyArray<CommandSnapshotResponse>;
-}
 
 interface ProblemResponse {
   readonly detail?: string;
   readonly title?: string;
+}
+
+function parseCommandResponse(value: unknown): ReadonlyArray<FamilyReadModelType> {
+  if (typeof value !== "object" || value === null) {
+    throw new TypeError("The family command response must be an object.");
+  }
+
+  const changedReadModelTypes = (value as Record<string, unknown>).changedReadModelTypes;
+
+  if (!Array.isArray(changedReadModelTypes) || !changedReadModelTypes.every(isFamilyReadModelType)) {
+    throw new TypeError("The family command response contains invalid read-model types.");
+  }
+
+  return [...new Set(changedReadModelTypes)];
 }
 
 export class FamilyCommandHttpError extends Error {
@@ -33,7 +39,7 @@ export class HttpFamilyCommandGateway implements FamilyCommandGateway {
     actorId: FamilyMemberId,
     commandType: string,
     payload: FamilyCommandPayload,
-  ): Promise<ReadonlyArray<FamilyAggregateType>> {
+  ): Promise<ReadonlyArray<FamilyReadModelType>> {
     const url = `${this.apiBaseUrl}/api/families/${encodeURIComponent(familyId)}/commands`;
     const commandId = crypto.randomUUID();
     const request = {
@@ -63,9 +69,9 @@ export class HttpFamilyCommandGateway implements FamilyCommandGateway {
       );
     }
 
-    const result = (await response.json()) as CommandResponse;
+    const result: unknown = await response.json();
 
-    return result.changedAggregates.map((snapshot) => snapshot.aggregateType);
+    return parseCommandResponse(result);
   }
 
   private async readProblem(response: Response): Promise<ProblemResponse> {

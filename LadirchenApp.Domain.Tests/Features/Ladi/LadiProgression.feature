@@ -30,63 +30,145 @@ Feature: Personal Ladi progression
     Then the current Ladi preview is recalculated from the updated personal participation
     But no closed weekly Ladi evaluation is changed
 
-  Scenario: Approved extra energy can improve the personal Ladi stage
+  Scenario: Approved extra energy can improve the personal Ladi stage [extraEnergy=0; completion=70; stageId=garden-ladi]
     Given the family member has no personal streak and no rated basic contribution
     And the family member has 100 assigned basic energy
     And 70 basic energy is approved
-    And <extraEnergy> extra energy is approved
+    And 0 extra energy is approved
     When the family member's personal Ladi stage is calculated
-    Then the effective completion is <completion> percent
-    And the personal Ladi stage is "<stageId>"
-    Examples:
-      | extraEnergy | completion | stageId     |
-      | 0           | 70         | garden-ladi |
-      | 20          | 90         | sun-ladi    |
+    Then the effective completion is 70 percent
+    And the personal Ladi stage is "garden-ladi"
 
-  Scenario: The default weights calculate one personal participation value
-    Given the family member has <streakDays> personal streak days
-    And the family member's effective completion is <completion> percent
-    And the family member's basic contributions have an average rating of <averageRating> stars
+  Scenario: Approved extra energy can improve the personal Ladi stage [extraEnergy=20; completion=90; stageId=sun-ladi]
+    Given the family member has no personal streak and no rated basic contribution
+    And the family member has 100 assigned basic energy
+    And 70 basic energy is approved
+    And 20 extra energy is approved
+    When the family member's personal Ladi stage is calculated
+    Then the effective completion is 90 percent
+    And the personal Ladi stage is "sun-ladi"
+
+  Scenario: The default weights calculate one personal participation value [streakDays=0; completion=0; averageRating=0; uncappedValue=1; cappedValue=1]
+    Given the family member has 0 personal streak days
+    And the family member's effective completion is 0 percent
+    And the family member's basic contributions have an average rating of 0 stars
     When the family member's participation value is calculated with the default weights
-    Then the uncapped participation value is <uncappedValue>
-    And the capped participation value is <cappedValue>
-    Examples:
-      | streakDays | completion | averageRating | uncappedValue | cappedValue |
-      | 0          | 0          | 0             | 1             | 1           |
-      | 0          | 60         | 0             | 3.1           | 3.1         |
-      | 1          | 50         | 5             | 5.75          | 5.75        |
-      | 7          | 100        | 5             | 10.5          | 8           |
-      | 0          | 33.33      | 2.5           | 3.41655       | 3.41655     |
+    Then the uncapped participation value is 1
+    And the capped participation value is 1
 
-  Scenario: Equal participation bands determine the ordered Ladi stage
+  Scenario: The default weights calculate one personal participation value [streakDays=0; completion=60; averageRating=0; uncappedValue=3.1; cappedValue=3.1]
+    Given the family member has 0 personal streak days
+    And the family member's effective completion is 60 percent
+    And the family member's basic contributions have an average rating of 0 stars
+    When the family member's participation value is calculated with the default weights
+    Then the uncapped participation value is 3.1
+    And the capped participation value is 3.1
+
+  Scenario: The default weights calculate one personal participation value [streakDays=1; completion=50; averageRating=5; uncappedValue=5.75; cappedValue=5.75]
+    Given the family member has 1 personal streak days
+    And the family member's effective completion is 50 percent
+    And the family member's basic contributions have an average rating of 5 stars
+    When the family member's participation value is calculated with the default weights
+    Then the uncapped participation value is 5.75
+    And the capped participation value is 5.75
+
+  Scenario: The default weights calculate one personal participation value [streakDays=7; completion=100; averageRating=5; uncappedValue=10.5; cappedValue=8]
+    Given the family member has 7 personal streak days
+    And the family member's effective completion is 100 percent
+    And the family member's basic contributions have an average rating of 5 stars
+    When the family member's participation value is calculated with the default weights
+    Then the uncapped participation value is 10.5
+    And the capped participation value is 8
+
+  Scenario: The default weights calculate one personal participation value [streakDays=0; completion=33.33; averageRating=2.5; uncappedValue=3.41655; cappedValue=3.41655]
+    Given the family member has 0 personal streak days
+    And the family member's effective completion is 33.33 percent
+    And the family member's basic contributions have an average rating of 2.5 stars
+    When the family member's participation value is calculated with the default weights
+    Then the uncapped participation value is 3.41655
+    And the capped participation value is 3.41655
+
+  Scenario: Equal participation bands determine the ordered Ladi stage [participationValue=1; stageId=idle-ladi; stageNumber=1]
     Given the maximum participation value is 8
     And there are 6 ordered Ladi stages
-    And the family member's capped participation value is <participationValue>
+    And the family member's capped participation value is 1
     When the family member's personal Ladi stage is determined
-    Then the personal Ladi stage is "<stageId>" at position <stageNumber>
-    Examples:
-      | participationValue | stageId      | stageNumber |
-      | 1                  | idle-ladi    | 1           |
-      | 1.34               | starter-ladi | 2           |
-      | 3.1                | garden-ladi  | 3           |
-      | 4.01               | sun-ladi     | 4           |
-      | 5.75               | aurora-ladi  | 5           |
-      | 8                  | super-ladi   | 6           |
+    Then the personal Ladi stage is "idle-ladi" at position 1
 
-  Scenario: Personal participation determines the Ladi stage
+  Scenario: Equal participation bands determine the ordered Ladi stage [participationValue=1.34; stageId=starter-ladi; stageNumber=2]
+    Given the maximum participation value is 8
+    And there are 6 ordered Ladi stages
+    And the family member's capped participation value is 1.34
+    When the family member's personal Ladi stage is determined
+    Then the personal Ladi stage is "starter-ladi" at position 2
+
+  Scenario: Equal participation bands determine the ordered Ladi stage [participationValue=3.1; stageId=garden-ladi; stageNumber=3]
+    Given the maximum participation value is 8
+    And there are 6 ordered Ladi stages
+    And the family member's capped participation value is 3.1
+    When the family member's personal Ladi stage is determined
+    Then the personal Ladi stage is "garden-ladi" at position 3
+
+  Scenario: Equal participation bands determine the ordered Ladi stage [participationValue=4.01; stageId=sun-ladi; stageNumber=4]
+    Given the maximum participation value is 8
+    And there are 6 ordered Ladi stages
+    And the family member's capped participation value is 4.01
+    When the family member's personal Ladi stage is determined
+    Then the personal Ladi stage is "sun-ladi" at position 4
+
+  Scenario: Equal participation bands determine the ordered Ladi stage [participationValue=5.75; stageId=aurora-ladi; stageNumber=5]
+    Given the maximum participation value is 8
+    And there are 6 ordered Ladi stages
+    And the family member's capped participation value is 5.75
+    When the family member's personal Ladi stage is determined
+    Then the personal Ladi stage is "aurora-ladi" at position 5
+
+  Scenario: Equal participation bands determine the ordered Ladi stage [participationValue=8; stageId=super-ladi; stageNumber=6]
+    Given the maximum participation value is 8
+    And there are 6 ordered Ladi stages
+    And the family member's capped participation value is 8
+    When the family member's personal Ladi stage is determined
+    Then the personal Ladi stage is "super-ladi" at position 6
+
+  Scenario: Personal participation determines the Ladi stage [streakDays=0; completion=0; averageRating=0; stageId=idle-ladi]
     Given the default participation configuration
-    And the family member has <streakDays> personal streak days
-    And the family member's effective completion is <completion> percent
-    And the family member's basic contributions have an average rating of <averageRating> stars
+    And the family member has 0 personal streak days
+    And the family member's effective completion is 0 percent
+    And the family member's basic contributions have an average rating of 0 stars
     When the family member's capped participation value is calculated
-    Then the personal Ladi stage is "<stageId>"
-    Examples:
-      | streakDays | completion | averageRating | stageId      |
-      | 0          | 0          | 0             | idle-ladi    |
-      | 0          | 60         | 0             | garden-ladi  |
-      | 1          | 50         | 5             | aurora-ladi  |
-      | 7          | 100        | 5             | super-ladi   |
-      | 0          | 33.33      | 2.5           | garden-ladi  |
+    Then the personal Ladi stage is "idle-ladi"
+
+  Scenario: Personal participation determines the Ladi stage [streakDays=0; completion=60; averageRating=0; stageId=garden-ladi]
+    Given the default participation configuration
+    And the family member has 0 personal streak days
+    And the family member's effective completion is 60 percent
+    And the family member's basic contributions have an average rating of 0 stars
+    When the family member's capped participation value is calculated
+    Then the personal Ladi stage is "garden-ladi"
+
+  Scenario: Personal participation determines the Ladi stage [streakDays=1; completion=50; averageRating=5; stageId=aurora-ladi]
+    Given the default participation configuration
+    And the family member has 1 personal streak days
+    And the family member's effective completion is 50 percent
+    And the family member's basic contributions have an average rating of 5 stars
+    When the family member's capped participation value is calculated
+    Then the personal Ladi stage is "aurora-ladi"
+
+  Scenario: Personal participation determines the Ladi stage [streakDays=7; completion=100; averageRating=5; stageId=super-ladi]
+    Given the default participation configuration
+    And the family member has 7 personal streak days
+    And the family member's effective completion is 100 percent
+    And the family member's basic contributions have an average rating of 5 stars
+    When the family member's capped participation value is calculated
+    Then the personal Ladi stage is "super-ladi"
+
+  Scenario: Personal participation determines the Ladi stage [streakDays=0; completion=33.33; averageRating=2.5; stageId=garden-ladi]
+    Given the default participation configuration
+    And the family member has 0 personal streak days
+    And the family member's effective completion is 33.33 percent
+    And the family member's basic contributions have an average rating of 2.5 stars
+    When the family member's capped participation value is calculated
+    Then the personal Ladi stage is "garden-ladi"
 
   Scenario: The maximum participation value always selects Super Ladi
     Given the family member reaches or exceeds the configured maximum participation value

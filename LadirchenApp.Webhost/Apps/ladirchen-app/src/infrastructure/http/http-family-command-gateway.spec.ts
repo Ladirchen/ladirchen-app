@@ -20,7 +20,7 @@ describe("HttpFamilyCommandGateway", () => {
         }),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ changedAggregates: [{ aggregateType: "savings" }] }), {
+        new Response(JSON.stringify({ changedReadModelTypes: ["savings"] }), {
           headers: { "Content-Type": "application/json" },
           status: 200,
         }),
@@ -54,7 +54,7 @@ describe("HttpFamilyCommandGateway", () => {
       .fn<typeof fetch>()
       .mockRejectedValueOnce(new TypeError("The response was lost"))
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ changedAggregates: [{ aggregateType: "savings" }] }), {
+        new Response(JSON.stringify({ changedReadModelTypes: ["savings"] }), {
           headers: { "Content-Type": "application/json" },
           status: 200,
         }),
@@ -86,5 +86,37 @@ describe("HttpFamilyCommandGateway", () => {
       message: "Revision conflict",
       status: 409,
     });
+  });
+
+  it("rejects an invalid successful response instead of leaving the cache stale", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ changedReadModelTypes: ["savings", "unknown"] }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        }),
+      ),
+    );
+    const gateway = new HttpFamilyCommandGateway("");
+
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).rejects.toThrow(
+      "The family command response contains invalid read-model types.",
+    );
+  });
+
+  it("deduplicates changed read-model types", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ changedReadModelTypes: ["savings", "savings"] }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        }),
+      ),
+    );
+    const gateway = new HttpFamilyCommandGateway("");
+
+    await expect(gateway.execute(familyId, actorId, "savings.deposit", { amount: 10 })).resolves.toEqual(["savings"]);
   });
 });

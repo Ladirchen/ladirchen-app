@@ -7,7 +7,7 @@ import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldState } from "./family-world-state";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
-import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
+import type { FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 
 declare module "pinia" {
   export interface PiniaCustomProperties {
@@ -17,7 +17,8 @@ declare module "pinia" {
 
 export type FamilyWorldStoreContext = FamilyWorldState & {
   readonly $familyWorld: FamilyWorldDependencies;
-  readonly activeChild: FamilyMember;
+  readonly activeChild: FamilyMember | undefined;
+  readonly activeGoal: SavingGoal | undefined;
   readonly availableBalance: number;
   readonly balance: number;
   readonly canArrangeHouse: boolean;
@@ -25,17 +26,18 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   readonly houseMeetsMinimumEnergy: boolean;
   readonly ownedFurnitureSetIds: FurnitureSetId[];
   readonly permissions: FamilyPermissions;
-  readonly signedInMember: FamilyMember;
+  readonly pendingGoalCancellation: SavingGoal | undefined;
+  readonly signedInMember: FamilyMember | undefined;
   averageTaskRatingFor: (memberId: FamilyMemberId) => number;
   balanceFor: (memberId: FamilyMemberId) => number;
   contributionProgress: (memberId: FamilyMemberId) => number;
   currentWeekApprovedContributionCountFor: (memberId: FamilyMemberId) => number;
   currentWeekEarnedFor: (memberId: FamilyMemberId) => number;
-  hydrateFamilyAggregates: () => Promise<void>;
+  hydrateFamilyReadModels: () => Promise<void>;
   hydrateHomeCustomization: () => Promise<void>;
   notify: (messageKey: TranslationKey, params?: Record<string, number | string>) => void;
-  refreshAllFamilyAggregates: () => Promise<void>;
-  refreshFamilyAggregate: (aggregateType: FamilyAggregateType) => Promise<void>;
+  refreshAllFamilyReadModels: () => Promise<void>;
+  refreshFamilyReadModel: (readModelType: FamilyReadModelType) => Promise<void>;
   playRewardAnimation: (contribution: Contribution) => void;
   refreshCurrentTime: () => void;
   revealNextContributionReward: () => void;

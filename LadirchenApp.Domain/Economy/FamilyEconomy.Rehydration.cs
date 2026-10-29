@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
@@ -10,7 +11,7 @@ public sealed partial class FamilyEconomy
 {
   public void RestoreWallet(FamilyMemberId memberId, decimal balance, decimal reserved)
   {
-    _family.ActiveMember(memberId);
+    ActiveMember(memberId);
     Rules.Require(balance >= 0, DomainError.InvalidValue, "A restored wallet balance cannot be negative.");
     Rules.Require(reserved >= 0 && reserved <= balance, DomainError.InvalidValue, "A restored reservation must be covered by the wallet balance.");
     var wallet = _wallets.Find(item => item.Id == memberId) ?? new MemberWallet(memberId);
@@ -52,12 +53,12 @@ public sealed partial class FamilyEconomy
 
     if (definition.AssigneeId is not null)
     {
-      _family.ActiveMember(definition.AssigneeId);
+      ActiveMember(definition.AssigneeId);
     }
 
     foreach (var partner in invitedPartners)
     {
-      _family.ActiveMember(partner);
+      ActiveMember(partner);
       Rules.Require(
         partner != definition.AssigneeId,
         DomainError.InvalidValue,
@@ -87,6 +88,34 @@ public sealed partial class FamilyEconomy
     }
 
     _contributions.Add(contribution);
+  }
+
+  public void RestoreUsedContributionId(ContributionId id)
+  {
+    ArgumentNullException.ThrowIfNull(id);
+    _usedContributionIds.Add(id);
+  }
+
+  public void RestoreAppliedOperation(TransactionId operationId)
+  {
+    ArgumentNullException.ThrowIfNull(operationId);
+    Rules.Require(
+      _operations.Add(operationId),
+      DomainError.Duplicate,
+      "This applied operation was already restored."
+    );
+  }
+
+  public void RestoreLedgerEntry(LedgerEntry entry)
+  {
+    ArgumentNullException.ThrowIfNull(entry);
+    Rules.Require(
+      _ledger.All(item => item.EntryId != entry.EntryId),
+      DomainError.Duplicate,
+      "This ledger entry was already restored."
+    );
+    _operations.Add(entry.OperationId);
+    _ledger.Add(entry);
   }
 
   public void RestorePromotion(

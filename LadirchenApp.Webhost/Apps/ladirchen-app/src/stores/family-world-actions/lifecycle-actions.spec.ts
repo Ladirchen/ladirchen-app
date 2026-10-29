@@ -30,23 +30,19 @@ const dependencies = {
   savingsService: { load: serviceMocks.savingsLoad },
 };
 
-describe("hydrateFamilyAggregates", () => {
+describe("hydrateFamilyReadModels", () => {
   beforeEach(() => {
     Object.values(serviceMocks).forEach((mock) => mock.mockReset().mockResolvedValue(null));
   });
 
-  it("applies successful aggregate loads and remains retryable after a partial failure", async () => {
+  it("applies successful read-model loads and remains retryable after a partial failure", async () => {
     const contributions = createContributions();
     const firstContribution = contributions[0]!;
     firstContribution.title = "Loaded contribution";
     serviceMocks.contributionsLoad.mockResolvedValue({
-      aggregateType: "contributions",
-      familyId: "c776a9b6-c37d-4a51-91ba-269a67274478",
+      readModelType: "contributions",
       revision: 3,
-      schemaVersion: 1,
       state: { contributions, promotions: [] },
-      updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "member-1",
     });
     serviceMocks.familyProfileLoad.mockRejectedValue(new Error("Profile endpoint unavailable"));
     const context = Object.assign(createFamilyWorldState(createFamilyWorldInitialData()), {
@@ -56,29 +52,33 @@ describe("hydrateFamilyAggregates", () => {
       persistContributions: vi.fn(),
     }) as unknown as FamilyWorldStoreContext;
 
-    await lifecycleActions.hydrateFamilyAggregates.call(context);
+    await lifecycleActions.hydrateFamilyReadModels.call(context);
 
     expect(context.contributions[0]?.title).toBe("Loaded contribution");
-    expect(context.familyAggregatesHydrated).toBe(false);
+    expect(serviceMocks.familyProfileLoad).toHaveBeenCalledWith(
+      dependencies.familyContext.activeFamilyId,
+      context.signedInMemberId,
+    );
+    expect(context.familyReadModelsHydrated).toBe(false);
     expect(context.notify).toHaveBeenCalledWith("notifications.load.family");
     expect(context.hydrateHomeCustomization).toHaveBeenCalledOnce();
   });
 
   it("marks hydration complete only when every aggregate load succeeds", async () => {
-    const refreshFamilyAggregate = vi.fn().mockResolvedValue(undefined);
-    const refreshAllFamilyAggregates = vi.fn().mockResolvedValue(undefined);
+    const refreshFamilyReadModel = vi.fn().mockResolvedValue(undefined);
+    const refreshAllFamilyReadModels = vi.fn().mockResolvedValue(undefined);
     const context = Object.assign(createFamilyWorldState(createFamilyWorldInitialData()), {
       $familyWorld: dependencies,
       hydrateHomeCustomization: vi.fn().mockResolvedValue(undefined),
       notify: vi.fn(),
       persistContributions: vi.fn(),
-      refreshFamilyAggregate,
-      refreshAllFamilyAggregates,
+      refreshFamilyReadModel,
+      refreshAllFamilyReadModels,
     }) as unknown as FamilyWorldStoreContext;
 
-    await lifecycleActions.hydrateFamilyAggregates.call(context);
+    await lifecycleActions.hydrateFamilyReadModels.call(context);
 
-    expect(context.familyAggregatesHydrated).toBe(true);
+    expect(context.familyReadModelsHydrated).toBe(true);
     expect(context.notify).not.toHaveBeenCalled();
     const onChanged = serviceMocks.updatesConnect.mock.calls[0]?.[1] as
       | ((change: FamilyAggregateChanged) => void)
@@ -87,7 +87,7 @@ describe("hydrateFamilyAggregates", () => {
     const onReconnected = serviceMocks.updatesConnect.mock.calls[0]?.[2] as (() => Promise<void>) | undefined;
     expect(onReconnected).toBeDefined();
     await onReconnected?.();
-    expect(refreshAllFamilyAggregates).toHaveBeenCalledOnce();
+    expect(refreshAllFamilyReadModels).toHaveBeenCalledOnce();
     onChanged?.({
       aggregateType: "savings",
       familyId: dependencies.familyContext.activeFamilyId,
@@ -95,8 +95,8 @@ describe("hydrateFamilyAggregates", () => {
       updatedAt: "2026-09-10T08:00:00.000Z",
       updatedBy: "other-member",
     } as FamilyAggregateChanged);
-    expect(refreshFamilyAggregate).toHaveBeenCalledWith("savings");
-    refreshFamilyAggregate.mockClear();
+    expect(refreshFamilyReadModel).toHaveBeenCalledWith("savings");
+    refreshFamilyReadModel.mockClear();
     onChanged?.({
       aggregateType: "savings",
       familyId: dependencies.familyContext.activeFamilyId,
@@ -104,7 +104,7 @@ describe("hydrateFamilyAggregates", () => {
       updatedAt: "2026-09-10T08:01:00.000Z",
       updatedBy: context.signedInMemberId,
     } as FamilyAggregateChanged);
-    expect(refreshFamilyAggregate).not.toHaveBeenCalled();
+    expect(refreshFamilyReadModel).not.toHaveBeenCalled();
   });
 });
 
@@ -129,10 +129,8 @@ describe("hydrateHomeCustomization", () => {
   it("restores an unequipped default accessory", async () => {
     const { context, initialData } = createHomeCustomizationContext();
     serviceMocks.homeCustomizationLoad.mockResolvedValue({
-      aggregateType: "home-customization",
-      familyId: dependencies.familyContext.activeFamilyId,
+      readModelType: "home-customization",
       revision: 1,
-      schemaVersion: 3,
       state: {
         capabilities: { canArrangeHouse: true },
         catalog: {
@@ -166,8 +164,6 @@ describe("hydrateHomeCustomization", () => {
           }),
         ),
       },
-      updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "member-1",
     });
 
     await lifecycleActions.hydrateHomeCustomization.call(context);
@@ -179,10 +175,8 @@ describe("hydrateHomeCustomization", () => {
     const { context, initialData } = createHomeCustomizationContext();
     const ownedThemeIds = new Set(["sunny-dollhouse", "halloween-night"]);
     serviceMocks.homeCustomizationLoad.mockResolvedValue({
-      aggregateType: "home-customization",
-      familyId: dependencies.familyContext.activeFamilyId,
+      readModelType: "home-customization",
       revision: 1,
-      schemaVersion: 3,
       state: {
         capabilities: { canArrangeHouse: true },
         catalog: {
@@ -212,8 +206,6 @@ describe("hydrateHomeCustomization", () => {
           { designId: "kitchen-halloween-night", zoneId: "kitchen" },
         ],
       },
-      updatedAt: "2026-09-10T08:00:00.000Z",
-      updatedBy: "member-1",
     });
 
     await lifecycleActions.hydrateHomeCustomization.call(context);

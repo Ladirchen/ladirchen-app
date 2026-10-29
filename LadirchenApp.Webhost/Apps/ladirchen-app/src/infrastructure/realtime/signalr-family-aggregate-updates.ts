@@ -7,21 +7,8 @@ import type {
   FamilyAggregateUpdatesGateway,
 } from "@/application/ports/family-aggregate-updates";
 import { isDomainIdValue, isUuidValue } from "@/domain/shared/identifiers";
-import type { FamilyAggregateType } from "@/application/contracts/versioned-aggregate-contract";
+import { isFamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
-
-const aggregateTypes = new Set<FamilyAggregateType>([
-  "contributions",
-  "family-profile",
-  "family-progression",
-  "home-customization",
-  "reward-shop",
-  "savings",
-]);
-
-function isFamilyAggregateType(value: unknown): value is FamilyAggregateType {
-  return typeof value === "string" && aggregateTypes.has(value as FamilyAggregateType);
-}
 
 function parseChange(value: unknown): FamilyAggregateChanged | null {
   if (typeof value !== "object" || value === null) {
@@ -31,7 +18,7 @@ function parseChange(value: unknown): FamilyAggregateChanged | null {
   const candidate = value as Record<string, unknown>;
 
   if (
-    !isFamilyAggregateType(candidate.aggregateType) ||
+    !isFamilyReadModelType(candidate.aggregateType) ||
     !isUuidValue(candidate.familyId) ||
     !Number.isSafeInteger(candidate.revision) ||
     (candidate.revision as number) < 1 ||

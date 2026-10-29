@@ -421,7 +421,7 @@ const {
 const dialogTitle = computed(() =>
   store.viewerRole === "guardian"
     ? t("savings.piggy.header.guardian.title")
-    : t("savings.piggy.header.child.title", { name: store.activeChild.name }),
+    : t("savings.piggy.header.child.title", { name: store.activeChild?.name ?? "" }),
 );
 const transferDirectionClass = computed(() => (transferDirection.value ? `transfer-${transferDirection.value}` : ""));
 const balanceEquivalenceLabel = computed(() => `${store.availableBalance} = ${formattedFamilyValue.value}`);

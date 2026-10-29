@@ -41,7 +41,7 @@ public static partial class WebApplicationExtensions
 
     app.MapAboutInfo(aboutInfoPath);
     app.MapAuthenticationApi();
-    app.MapFamilyAggregateApi();
+    app.MapFamilyReadModelApi();
     app.MapFamilyCommandApi();
     app.MapFamilyProjectionApi();
     app.MapHub<FamilyUpdatesHub>("/hubs/family-updates");

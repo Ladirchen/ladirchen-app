@@ -18,12 +18,12 @@ public sealed partial class FamilyEconomy
     int weeklyTarget
   )
   {
-    _family.ActiveMember(memberId);
+    ActiveMember(memberId);
     ArgumentNullException.ThrowIfNull(period);
     ArgumentOutOfRangeException.ThrowIfNegative(completedWeeklyStreak);
     ArgumentOutOfRangeException.ThrowIfLessThan(weeklyTarget, 1);
     ArgumentOutOfRangeException.ThrowIfGreaterThan(weeklyTarget, PersonalStreakPolicy.DefaultWeeklyTargetDays);
-    var days = ContributionParticipationPolicy.ApprovedDays(_contributions, memberId, period, _family.TimeZone);
+    var days = ContributionParticipationPolicy.ApprovedDays(_contributions, memberId, period, _timeZone);
 
     return new PersonalParticipation(
       checked(completedWeeklyStreak * weeklyTarget + days),
@@ -41,12 +41,12 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.RequireAdministrator(actor);
+    RequireAdministrator(actor);
     ArgumentNullException.ThrowIfNull(period);
     ArgumentNullException.ThrowIfNull(evaluations);
     ArgumentNullException.ThrowIfNull(policy);
     Rules.Require(
-      period.Start < IsoWeekPeriod.For(_family.TimeZone.LocalDate(now)).Start,
+      period.Start < IsoWeekPeriod.For(_timeZone.LocalDate(now)).Start,
       DomainError.InvalidState,
       "Only a closed ISO week can be settled."
     );
@@ -83,7 +83,7 @@ public sealed partial class FamilyEconomy
         && !item.Owner.IsFamily
         && !item.Completed
         && item.Saved > 0
-        && _family.TimeZone.LocalDate(item.CreatedAt) <= period.Start.AddDays(6)
+        && _timeZone.LocalDate(item.CreatedAt) <= period.Start.AddDays(6)
       )
     )
     {

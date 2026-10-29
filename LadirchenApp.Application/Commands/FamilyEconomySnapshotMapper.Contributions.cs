@@ -30,6 +30,7 @@ internal static partial class FamilyEconomySnapshotMapper
       )
     );
     RestoreWallets(economy, savingsState);
+    RestoreEconomyHistory(economy, savingsState);
 
     foreach (var item in RequiredArray(contributionState, "contributions").OfType<JsonObject>())
     {
@@ -66,6 +67,11 @@ internal static partial class FamilyEconomySnapshotMapper
         OptionalInstant(item, "approvedAt"),
         partners
       );
+    }
+
+    foreach (var node in OptionalArray(contributionState, "usedContributionIds"))
+    {
+      economy.RestoreUsedContributionId(new ContributionId(RequiredString(node)));
     }
 
     foreach (var item in RequiredArray(contributionState, "promotions").OfType<JsonObject>())
@@ -126,6 +132,7 @@ internal static partial class FamilyEconomySnapshotMapper
     }
 
     WritePromotions(result, economy);
+    result["usedContributionIds"] = IdentifierArray(economy.UsedContributionIds);
 
     return result;
   }
@@ -141,6 +148,8 @@ internal static partial class FamilyEconomySnapshotMapper
     {
       balances[wallet.Id.Value] = wallet.Balance;
     }
+
+    WriteEconomyHistory(result, economy);
 
     return result;
   }

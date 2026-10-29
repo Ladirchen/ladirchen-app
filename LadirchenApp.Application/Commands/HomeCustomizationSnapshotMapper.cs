@@ -13,7 +13,6 @@ internal static class HomeCustomizationSnapshotMapper
   public static HomeCustomizationState Rehydrate(
     JsonObject home,
     JsonObject profile,
-    decimal availableBalance,
     int houseLevel
   )
   {
@@ -31,7 +30,6 @@ internal static class HomeCustomizationSnapshotMapper
     var themes = CreateThemes(themeStates, roomDesigns);
     var shop = new FamilyHouseShop();
     shop.Restore(
-      availableBalance,
       houseLevel,
       RequiredString(presentation, "selectedEditionId"),
       themes.Values

@@ -24,7 +24,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.ActiveMember(actor);
+    ActiveMember(actor);
     var voucher = FindSavingsVoucher(voucherId);
     Rules.Require(voucher.OwnerId is null, DomainError.InvalidState, "A personal voucher needs no family consent.");
     Rules.Require(voucher.RedemptionCount == 0, DomainError.InvalidState, "A redeemed voucher cannot receive consent.");
@@ -49,7 +49,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    _family.ActiveMember(actor);
+    ActiveMember(actor);
     var voucher = FindSavingsVoucher(voucherId);
     Rules.Require(
       voucher.OwnerId == actor || voucher.Participants.Contains(actor),
@@ -66,7 +66,7 @@ public sealed partial class FamilyEconomy
 
   public void ConsumeGuardianGift(FamilyMemberId actor, GuardianGiftId giftId)
   {
-    _family.ActiveMember(actor);
+    ActiveMember(actor);
     ArgumentNullException.ThrowIfNull(giftId);
     var gift = _guardianGifts.Find(item => item.Id == giftId)
       ?? throw new DomainRuleException(DomainError.NotFound, "The pending gift does not exist.");

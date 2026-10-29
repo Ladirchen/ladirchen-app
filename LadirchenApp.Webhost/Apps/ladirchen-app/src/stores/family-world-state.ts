@@ -120,7 +120,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     subscriptionTier,
     houseLayout: initialData.houseLayout,
     homeCustomizationHydrated: false,
-    familyAggregatesHydrated: false,
+    familyReadModelsHydrated: false,
     revealVersion: 0,
     snackbar,
     members: normalizeFamilyMembers(initialData.members),

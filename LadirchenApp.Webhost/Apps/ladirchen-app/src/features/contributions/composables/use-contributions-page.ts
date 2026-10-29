@@ -53,7 +53,7 @@ export function useContributionsPage() {
     if (!store.permissions.canManageContent) {
       return [
         {
-          title: t("contributions.assignment.own", { name: store.signedInMember.name }),
+          title: t("contributions.assignment.own", { name: store.signedInMember?.name ?? "" }),
           value: store.signedInMemberId,
         },
       ];

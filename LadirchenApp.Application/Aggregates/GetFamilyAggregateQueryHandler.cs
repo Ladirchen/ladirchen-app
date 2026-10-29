@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
+using LadirchenApp.Application.Commands;
+using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
@@ -39,21 +43,38 @@ public sealed partial class GetFamilyAggregateQueryHandler
       return null;
     }
 
+    if (!snapshots.TryGetValue("family-profile", out var profile))
+    {
+      return null;
+    }
+
+    var family = FamilyProfileSnapshotMapper.Rehydrate(query.FamilyId, ReadProfileState(profile));
+    family.RequireActorAccess(query.AuthenticatedMemberId, query.ViewerId);
+
     return query.AggregateType switch
     {
       "contributions" => ProjectContributions(snapshot, snapshots),
-      "family-profile" => ProjectFamilyPermissions(snapshot),
+      "family-profile" => ProjectFamilyPermissions(
+        snapshot,
+        query.AuthenticatedMemberId,
+        query.ViewerId
+      ),
       "family-progression" => ProjectProgressionCapabilities(snapshot),
-      "home-customization" => ProjectHome(snapshot, snapshots),
-      "reward-shop" => ProjectRewardShopSnapshot(snapshot, snapshots),
-      "savings" => ProjectSavings(snapshot, snapshots),
+      "home-customization" => ProjectHome(snapshot, snapshots, query.AuthenticatedMemberId),
+      "reward-shop" => ProjectRewardShopSnapshot(
+        snapshot,
+        snapshots,
+        query.AuthenticatedMemberId,
+        query.ViewerId
+      ),
+      "savings" => ProjectSavings(snapshot, snapshots, query.AuthenticatedMemberId),
       _ => snapshot,
     };
   }
 
   private static IReadOnlyCollection<string> GetRequiredAggregateTypes(string aggregateType)
   {
-    return aggregateType switch
+    string[] required = aggregateType switch
     {
       "contributions" => ["contributions", "family-profile"],
       "home-customization" =>
@@ -62,6 +83,8 @@ public sealed partial class GetFamilyAggregateQueryHandler
       "savings" => ["savings", "family-progression", "family-profile", "reward-shop"],
       _ => [aggregateType],
     };
+
+    return required.Append("family-profile").Distinct(StringComparer.Ordinal).ToArray();
   }
 
   private FamilyAggregateSnapshot ProjectContributions(
@@ -71,37 +94,54 @@ public sealed partial class GetFamilyAggregateQueryHandler
   {
     snapshots.TryGetValue("family-profile", out var profile);
 
-    return profile is null ? snapshot : ProjectContributionRewards(snapshot, profile);
+    return ProjectContributionRewards(
+      snapshot,
+      profile ?? throw new InvalidOperationException("The family profile read-model dependency is missing.")
+    );
   }
 
   private static FamilyAggregateSnapshot ProjectSavings(
     FamilyAggregateSnapshot snapshot,
-    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots
+    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots,
+    FamilyMemberId viewerId
   )
   {
     snapshots.TryGetValue("family-progression", out var progression);
     snapshots.TryGetValue("family-profile", out var profile);
     snapshots.TryGetValue("reward-shop", out var rewardShop);
 
-    return progression is null
-      ? snapshot
-      : ProjectSavingsReadModel(snapshot, progression, profile, rewardShop);
+    return ProjectSavingsReadModel(
+      snapshot,
+      progression ?? throw new InvalidOperationException("The family progression read-model dependency is missing."),
+      profile ?? throw new InvalidOperationException("The family profile read-model dependency is missing."),
+      rewardShop ?? throw new InvalidOperationException("The reward shop read-model dependency is missing."),
+      viewerId
+    );
   }
 
   private FamilyAggregateSnapshot ProjectRewardShopSnapshot(
     FamilyAggregateSnapshot snapshot,
-    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots
+    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots,
+    FamilyMemberId authenticatedMemberId,
+    FamilyMemberId viewerId
   )
   {
     snapshots.TryGetValue("family-profile", out var profile);
     snapshots.TryGetValue("savings", out var savings);
 
-    return profile is null || savings is null ? snapshot : ProjectRewardShop(snapshot, profile, savings);
+    return ProjectRewardShop(
+      snapshot,
+      profile ?? throw new InvalidOperationException("The family profile read-model dependency is missing."),
+      savings ?? throw new InvalidOperationException("The savings read-model dependency is missing."),
+      authenticatedMemberId,
+      viewerId
+    );
   }
 
   private static FamilyAggregateSnapshot ProjectHome(
     FamilyAggregateSnapshot snapshot,
-    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots
+    IReadOnlyDictionary<string, FamilyAggregateSnapshot> snapshots,
+    FamilyMemberId viewerId
   )
   {
     snapshots.TryGetValue("family-progression", out var progression);
@@ -109,8 +149,13 @@ public sealed partial class GetFamilyAggregateQueryHandler
     snapshots.TryGetValue("savings", out var savings);
     snapshots.TryGetValue("reward-shop", out var rewardShop);
 
-    return progression is null || profile is null || savings is null || rewardShop is null
-      ? snapshot
-      : ProjectHomeCatalog(snapshot, progression, profile, savings, rewardShop);
+    return ProjectHomeCatalog(
+      snapshot,
+      progression ?? throw new InvalidOperationException("The family progression read-model dependency is missing."),
+      profile ?? throw new InvalidOperationException("The family profile read-model dependency is missing."),
+      savings ?? throw new InvalidOperationException("The savings read-model dependency is missing."),
+      rewardShop ?? throw new InvalidOperationException("The reward shop read-model dependency is missing."),
+      viewerId
+    );
   }
 }

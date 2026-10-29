@@ -49,7 +49,7 @@ public sealed partial class EconomySteps
     _economy.SetContributionPartners(_child, _contributionId, [_sibling], _now);
   }
 
-  [When("an administrator assigns the contribution to another member")]
+  [When("a guardian administrator assigns the contribution to another member")]
   public void AssignToOtherMember()
   {
     _economy.AssignContribution(_admin, _contributionId, _sibling, _now);
@@ -62,7 +62,7 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.Contributions.Single().InvitedPartners).IsEmpty();
   }
 
-  [Given("an administrator creates an extra contribution with {float} energy")]
+  [Given("a guardian administrator creates an extra contribution with {float} energy")]
   public void AdministratorCreatesExtra(decimal energy)
   {
     CreateEconomy();
@@ -228,7 +228,7 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.Contributions.Single().AssigneeId).IsEqualTo(_assigneeBefore);
   }
 
-  [Given("a content manager attempts to assign a contribution that is {string}")]
+  [Given("a family member who can manage content attempts to assign a contribution that is {string}")]
   public void InvalidAssignmentState(string state)
   {
     CreateEconomy();
@@ -267,7 +267,7 @@ public sealed partial class EconomySteps
     _contributionAssignee = _sibling;
   }
 
-  [When("a content manager assigns the contribution to the different family member")]
+  [When("a family member who can manage content assigns the contribution to the different family member")]
   public void ReassignContribution()
   {
     _economy.AssignContribution(_admin, _contributionId, _contributionAssignee, _now);
@@ -308,8 +308,8 @@ public sealed partial class EconomySteps
     _walletBeforeDelete = _economy.WalletFor(_child).Balance;
   }
 
-  [When("a content manager deletes the contribution")]
-  [When("an administrator deletes the contribution")]
+  [When("a family member who can manage content deletes the contribution")]
+  [When("a guardian administrator deletes the contribution")]
   public void DeleteContribution()
   {
     _economy.DeleteContribution(_admin, _contributionId, _now);

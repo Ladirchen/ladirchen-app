@@ -1,20 +1,19 @@
 using System;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Domain.Family;
-using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
 
-public sealed partial class ExecuteFamilyCommandHandler
+public sealed class ExecuteFamilyCommandHandler
+  : ICommandHandler<FamilyCommand, FamilyCommandResult>
 {
-  private readonly IFamilyAggregateSnapshotRepository _repository;
+  private readonly IReadOnlyList<IFamilyCommandAreaHandler> _areaHandlers;
   private readonly IFamilyCommandExecutionCoordinator _executionCoordinator;
-  private readonly TimeProvider _timeProvider;
+  private readonly IFamilyAggregateSnapshotRepository _repository;
 
   public ExecuteFamilyCommandHandler(
     IFamilyAggregateSnapshotRepository repository,
@@ -24,10 +23,22 @@ public sealed partial class ExecuteFamilyCommandHandler
   {
     _repository = repository;
     _executionCoordinator = executionCoordinator;
-    _timeProvider = timeProvider;
+    var progression = new FamilyProgressionApplicationService(repository, timeProvider);
+    _areaHandlers =
+    [
+      new ProfileFamilyCommandHandler(repository, timeProvider, progression),
+      new HomeFamilyCommandHandler(repository, timeProvider),
+      new SavingsFamilyCommandHandler(repository, timeProvider),
+      new RewardShopFamilyCommandHandler(repository, timeProvider),
+      new ProgressionFamilyCommandHandler(repository, timeProvider),
+      new ContributionsFamilyCommandHandler(repository, timeProvider, progression),
+    ];
   }
 
-  public async Task<FamilyCommandResult> HandleAsync(FamilyCommand command, CancellationToken cancellationToken)
+  public async Task<FamilyCommandResult> HandleAsync(
+    FamilyCommand command,
+    CancellationToken cancellationToken
+  )
   {
     ArgumentNullException.ThrowIfNull(command);
 
@@ -48,171 +59,29 @@ public sealed partial class ExecuteFamilyCommandHandler
     CancellationToken cancellationToken
   )
   {
-    var profile = await RequireSnapshotAsync(command.FamilyId, "family-profile", cancellationToken);
-    var profileState = RequireObject(profile.State);
-    var payload = RequireObject(command.Payload);
+    var profile = await _repository.GetAsync(
+      command.FamilyId,
+      "family-profile",
+      cancellationToken
+    ) ?? throw new FamilyCommandException(
+      "The family-profile aggregate has not been initialized."
+    );
+    var profileState = FamilyCommandAreaHandler.RequireObject(profile.State);
+    var payload = FamilyCommandAreaHandler.RequireObject(command.Payload);
     var family = FamilyProfileSnapshotMapper.Rehydrate(command.FamilyId, profileState);
     family.RequireActorAccess(
       command.AuthenticatedMemberId ?? command.ActorId,
       command.ActorId
     );
+    var handler = _areaHandlers.FirstOrDefault(candidate => candidate.CanHandle(command))
+      ?? throw new FamilyCommandException("The family command is not supported.");
 
-    if (command.CommandType.StartsWith("profile.", StringComparison.Ordinal))
-    {
-      return await ExecuteProfileAsync(command, profile, profileState, payload, cancellationToken);
-    }
-
-    if (command.CommandType.StartsWith("home.", StringComparison.Ordinal))
-    {
-      return await ExecuteHomeAsync(command, profile, profileState, payload, cancellationToken);
-    }
-
-    if (command.CommandType.StartsWith("savings.", StringComparison.Ordinal))
-    {
-      return await ExecuteSavingsAsync(
-        command,
-        profile,
-        profileState,
-        payload,
-        cancellationToken
-      );
-    }
-
-    if (command.CommandType.StartsWith("reward-shop.", StringComparison.Ordinal))
-    {
-      return await ExecuteRewardShopAsync(
-        command,
-        profile,
-        profileState,
-        payload,
-        cancellationToken
-      );
-    }
-
-    if (command.CommandType.StartsWith("progression.", StringComparison.Ordinal))
-    {
-      return await ExecuteProgressionAsync(command, profile, profileState, cancellationToken);
-    }
-
-    if (command.CommandType.StartsWith("contributions.", StringComparison.Ordinal))
-    {
-      return await ExecuteContributionsAsync(
-        command,
-        profile,
-        profileState,
-        payload,
-        cancellationToken
-      );
-    }
-
-    throw new FamilyCommandException("The family command is not supported.");
-  }
-
-  private async Task<FamilyAggregateSnapshot> RequireSnapshotAsync(
-    FamilyId familyId,
-    string aggregateType,
-    CancellationToken cancellationToken
-  )
-  {
-    return await _repository.GetAsync(familyId, aggregateType, cancellationToken)
-      ?? throw new FamilyCommandException($"The {aggregateType} aggregate has not been initialized.");
-  }
-
-  private static PendingFamilyAggregateSave CreateSave(
-    FamilyAggregateSnapshot current,
-    JsonObject state,
-    FamilyMemberId actorId
-  )
-  {
-    using var document = JsonDocument.Parse(state.ToJsonString());
-    var command = new SaveFamilyAggregateCommand(
-      current.FamilyId,
-      current.AggregateType,
-      current.Revision,
-      document.RootElement.Clone(),
-      actorId
+    return await handler.HandleAsync(
+      command,
+      profile,
+      profileState,
+      payload,
+      cancellationToken
     );
-
-    return new PendingFamilyAggregateSave(command, current.SchemaVersion);
-  }
-
-  private static decimal Round(decimal value)
-  {
-    return decimal.Round(value, 0, MidpointRounding.AwayFromZero);
-  }
-
-  private static JsonObject RequireObject(JsonElement element)
-  {
-    return JsonNode.Parse(element.GetRawText()) as JsonObject
-      ?? throw new FamilyCommandException("A JSON object is required.");
-  }
-
-  private static JsonObject RequireObject(JsonObject parent, string property)
-  {
-    return parent[property] as JsonObject
-      ?? throw new FamilyCommandException($"The {property} object is required.");
-  }
-
-  private static JsonArray RequireArray(JsonObject parent, string property)
-  {
-    return parent[property] as JsonArray
-      ?? throw new FamilyCommandException($"The {property} collection is required.");
-  }
-
-  private static string RequiredString(JsonObject value, string property)
-  {
-    var result = StringValue(value, property);
-    Require(!string.IsNullOrWhiteSpace(result), $"The {property} value is required.");
-
-    return result!;
-  }
-
-  private static string RequiredString(JsonNode? value)
-  {
-    var result = value?.GetValue<string>();
-    Require(!string.IsNullOrWhiteSpace(result), "A non-empty string value is required.");
-
-    return result!;
-  }
-
-  private static string? StringValue(JsonObject value, string property)
-  {
-    return value[property]?.GetValue<string>();
-  }
-
-  private static int RequiredInt(JsonObject value, string property)
-  {
-    return value[property]?.GetValue<int>()
-      ?? throw new FamilyCommandException($"The {property} value is required.");
-  }
-
-  private static decimal RequiredDecimal(JsonObject value, string property)
-  {
-    return DecimalValue(value, property)
-      ?? throw new FamilyCommandException($"The {property} value is required.");
-  }
-
-  private static decimal? DecimalValue(JsonObject value, string property)
-  {
-    return value[property]?.GetValue<decimal>();
-  }
-
-  private static bool BoolValueOrDefault(JsonObject value, string property, bool defaultValue)
-  {
-    return value[property]?.GetValue<bool>() ?? defaultValue;
-  }
-
-  private static bool RequiredBool(JsonObject value, string property)
-  {
-    return value[property]?.GetValue<bool>()
-      ?? throw new FamilyCommandException($"The {property} value is required.");
-  }
-
-  private static void Require(bool condition, string message)
-  {
-    if (!condition)
-    {
-      throw new FamilyCommandException(message);
-    }
   }
 }
