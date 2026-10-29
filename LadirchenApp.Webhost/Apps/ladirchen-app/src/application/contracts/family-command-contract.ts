@@ -56,12 +56,6 @@ export interface FamilyCommandPayloadMap {
     members: ReadonlyArray<FamilySetupMemberPayload>;
     pets: ReadonlyArray<FamilySetupPetPayload>;
   }>;
-  readonly "profile.invite-guardian": Readonly<{
-    id: FamilyMemberId;
-    name: string;
-    email: string;
-    guardianAccess: GuardianAccessLevel;
-  }>;
   readonly "profile.save-own-appearance": Readonly<{ appearance: AvatarAppearance }>;
   readonly "profile.set-guardian-access": Readonly<{
     memberId: FamilyMemberId;

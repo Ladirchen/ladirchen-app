@@ -25,7 +25,6 @@ import type {
   HomeStoreAccessoryCommandRequest,
   HomeToggleAccessoryCommandRequest,
   ProfileCompleteSetupCommandRequest,
-  ProfileInviteGuardianCommandRequest,
   ProfileSaveOwnAppearanceCommandRequest,
   ProfileSetGuardianAccessCommandRequest,
   ProfileSetOwnNicknameCommandRequest,
@@ -87,7 +86,6 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "home.store-accessory": HomeStoreAccessoryCommandRequest;
   readonly "home.toggle-accessory": HomeToggleAccessoryCommandRequest;
   readonly "profile.complete-setup": ProfileCompleteSetupCommandRequest;
-  readonly "profile.invite-guardian": ProfileInviteGuardianCommandRequest;
   readonly "profile.save-own-appearance": ProfileSaveOwnAppearanceCommandRequest;
   readonly "profile.set-guardian-access": ProfileSetGuardianAccessCommandRequest;
   readonly "profile.set-own-nickname": ProfileSetOwnNicknameCommandRequest;

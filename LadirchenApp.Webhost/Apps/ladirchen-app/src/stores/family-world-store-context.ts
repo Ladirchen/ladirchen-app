@@ -3,7 +3,7 @@ import type { FurnitureSetId } from "@/domain/house";
 import type { Contribution } from "@/domain/contributions/types";
 import type { FamilyMember } from "@/domain/family/types";
 import type { SavingGoal } from "@/domain/savings/types";
-import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldState } from "./family-world-state";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
@@ -22,6 +22,7 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   readonly availableBalance: number;
   readonly balance: number;
   readonly canArrangeHouse: boolean;
+  readonly canInviteFamilyMembers: boolean;
   readonly currentWeekDays: number;
   readonly houseMeetsMinimumEnergy: boolean;
   readonly ownedFurnitureSetIds: FurnitureSetId[];
@@ -42,8 +43,9 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   refreshCurrentTime: () => void;
   revealNextContributionReward: () => void;
   revealNextGuardianGift: () => void;
+  restoreAuthenticatedSession: () => Promise<boolean>;
   savingsInterestRateFor: (memberId: FamilyMemberId) => number;
-  switchSession: (memberId: FamilyMemberId, revealRewards?: boolean) => void;
+  signInToFamily: (familyId: FamilyId, memberId: FamilyMemberId) => Promise<boolean>;
   todayEarnedFor: (memberId: FamilyMemberId) => number;
   withdrawableGoalBalance: (goal?: SavingGoal) => number;
   $reset: () => void;

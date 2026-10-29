@@ -3,7 +3,6 @@ import { frontendRuntimeConfig } from "@/config/runtime";
 import { localFamilyContext } from "@/infrastructure/context/local-family-context";
 import { createHttpFamilyReadModelRepositories } from "@/infrastructure/http/http-family-read-model-repositories";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
-import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 import { browserScheduler } from "@/infrastructure/scheduling/browser-scheduler";
 import { createEmptyFamilyWorldInitialData } from "@/infrastructure/empty-family-world-initial-data";
 import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
@@ -31,7 +30,6 @@ export const rewardShopService = repositories.rewardShop;
 export const familyProgressionService = repositories.familyProgression;
 export const familyWorldDependencies: FamilyWorldDependencies = {
   authentication: authenticationGateway,
-  clientStorage: browserClientStorage,
   contributionsService,
   familyAggregateUpdates,
   familyCommands,

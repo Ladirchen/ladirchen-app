@@ -1,6 +1,6 @@
 <template>
   <main class="auth-gateway">
-    <section class="auth-card" aria-labelledby="auth-title">
+    <section class="auth-card" :aria-labelledby="authTitleId">
       <div class="auth-brand">
         <span class="auth-logo" aria-hidden="true"><img alt="" src="/ladirchen-logo.png" /></span>
         <span>
@@ -9,7 +9,12 @@
         </span>
       </div>
 
-      <div class="auth-switch mt-5" role="tablist" :aria-label="t('auth.accessAria')">
+      <div
+        class="auth-switch mt-5"
+        :class="{ 'auth-switch--registration': registrationAvailable }"
+        role="tablist"
+        :aria-label="t('auth.accessAria')"
+      >
         <button
           :aria-selected="mode === 'login'"
           :class="{ active: mode === 'login' }"
@@ -21,6 +26,7 @@
           {{ t("auth.loginTab") }}
         </button>
         <button
+          v-if="registrationAvailable"
           :aria-selected="mode === 'register'"
           :class="{ active: mode === 'register' }"
           role="tab"
@@ -30,19 +36,29 @@
           <v-icon icon="i-mdi:home-heart" />
           {{ t("auth.registerTab") }}
         </button>
+        <button
+          :aria-selected="mode === 'activate'"
+          :class="{ active: mode === 'activate' }"
+          role="tab"
+          type="button"
+          @click="setMode('activate')"
+        >
+          <v-icon icon="i-mdi:account-key-outline" />
+          {{ t("auth.activateTab") }}
+        </button>
       </div>
 
       <form v-if="mode === 'login'" class="auth-form mt-5" @submit.prevent="login">
         <div class="auth-heading">
           <p>{{ t("auth.login.eyebrow") }}</p>
-          <h1 id="auth-title">{{ t("auth.login.title") }}</h1>
+          <h1 id="auth-login-title">{{ t("auth.login.title") }}</h1>
           <span>{{ t("auth.login.description") }}</span>
         </div>
         <v-text-field
-          v-model="loginUsername"
+          v-model="loginIdentifier"
           autocomplete="username"
           density="comfortable"
-          :label="t('auth.login.username')"
+          :label="t('auth.login.identifier')"
           prepend-inner-icon="i-mdi:account-outline"
           variant="outlined"
         />
@@ -65,7 +81,7 @@
         </button>
       </form>
 
-      <form v-else class="auth-form mt-5" @submit.prevent="register">
+      <form v-else-if="mode === 'register'" class="auth-form mt-5" @submit.prevent="register">
         <div class="auth-heading">
           <p>{{ t("auth.register.eyebrow") }}</p>
           <h1 id="auth-register-title">{{ t("auth.register.title") }}</h1>
@@ -90,10 +106,21 @@
           />
         </div>
         <v-text-field
+          v-model="registerEmail"
+          autocomplete="email"
+          density="comfortable"
+          :label="t('auth.register.email')"
+          :maxlength="AUTH_INPUT_RULES.emailMaximumLength"
+          prepend-inner-icon="i-mdi:email-outline"
+          type="email"
+          variant="outlined"
+        />
+        <v-text-field
           v-model="registerUsername"
           autocomplete="username"
           density="comfortable"
           :label="t('auth.login.username')"
+          :maxlength="AUTH_INPUT_RULES.usernameMaximumLength"
           prepend-inner-icon="i-mdi:account-outline"
           variant="outlined"
         />
@@ -104,6 +131,7 @@
           density="comfortable"
           :hint="t('auth.register.passwordHint')"
           :label="t('auth.login.password')"
+          :maxlength="AUTH_INPUT_RULES.passwordMaximumLength"
           persistent-hint
           prepend-inner-icon="i-mdi:lock-plus-outline"
           :type="registerPasswordType"
@@ -115,6 +143,7 @@
           autocomplete="new-password"
           density="comfortable"
           :label="t('auth.register.passwordConfirmation')"
+          :maxlength="AUTH_INPUT_RULES.passwordMaximumLength"
           prepend-inner-icon="i-mdi:lock-check-outline"
           type="password"
           variant="outlined"
@@ -126,50 +155,139 @@
           <i aria-hidden="true">✦</i>
         </button>
       </form>
+
+      <form v-else class="auth-form mt-5" @submit.prevent="activate">
+        <div class="auth-heading">
+          <p>{{ t("auth.activate.eyebrow") }}</p>
+          <h1 id="auth-activate-title">{{ t("auth.activate.title") }}</h1>
+          <span>{{ t("auth.activate.description") }}</span>
+        </div>
+        <v-text-field
+          v-model="activationEmail"
+          autocomplete="email"
+          density="comfortable"
+          :label="t('auth.activate.email')"
+          :maxlength="AUTH_INPUT_RULES.emailMaximumLength"
+          prepend-inner-icon="i-mdi:email-outline"
+          type="email"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="activationCode"
+          autocomplete="one-time-code"
+          density="comfortable"
+          :label="t('auth.activate.code')"
+          prepend-inner-icon="i-mdi:key-outline"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="activationUsername"
+          autocomplete="username"
+          density="comfortable"
+          :label="t('auth.login.username')"
+          :maxlength="AUTH_INPUT_RULES.usernameMaximumLength"
+          prepend-inner-icon="i-mdi:account-outline"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="activationPassword"
+          autocomplete="new-password"
+          density="comfortable"
+          :hint="t('auth.register.passwordHint')"
+          :label="t('auth.login.password')"
+          :maxlength="AUTH_INPUT_RULES.passwordMaximumLength"
+          persistent-hint
+          prepend-inner-icon="i-mdi:lock-plus-outline"
+          type="password"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="activationPasswordConfirmation"
+          autocomplete="new-password"
+          density="comfortable"
+          :label="t('auth.register.passwordConfirmation')"
+          :maxlength="AUTH_INPUT_RULES.passwordMaximumLength"
+          prepend-inner-icon="i-mdi:lock-check-outline"
+          type="password"
+          variant="outlined"
+        />
+        <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
+        <button class="auth-submit" :disabled="activationIsDisabled" type="submit">
+          <v-icon icon="i-mdi:account-check-outline" />
+          <span>{{ activationSubmitLabel }}</span>
+          <i aria-hidden="true">→</i>
+        </button>
+      </form>
     </section>
   </main>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authenticationGateway } from "@/app/composition-root";
 import { createDomainId } from "@/domain/shared/identifiers";
-import { AUTH_INPUT_RULES } from "@/features/auth/auth-config";
+import {
+  accountActivationInputIsValid,
+  AUTH_INPUT_RULES,
+  bootstrapRegistrationInputIsValid,
+} from "@/features/auth/auth-config";
 import { useFamilyWorldStore } from "@/stores/family-world";
-type AuthMode = "login" | "register";
+
+type AuthMode = "activate" | "login" | "register";
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const mode = ref<AuthMode>("login");
-const loginUsername = ref("");
+const loginIdentifier = ref("");
 const loginPassword = ref("");
+const registerEmail = ref("");
 const registerUsername = ref("");
 const registerPassword = ref("");
 const passwordConfirmation = ref("");
 const familyName = ref("");
 const guardianName = ref("");
+const activationEmail = ref("");
+const activationCode = ref("");
+const activationUsername = ref("");
+const activationPassword = ref("");
+const activationPasswordConfirmation = ref("");
+const registrationAvailable = ref(false);
 const showLoginPassword = ref(false);
 const showRegisterPassword = ref(false);
 const submitting = ref(false);
 const errorMessage = ref("");
-const registrationIsValid = computed(
-  () =>
-    familyName.value.trim().length >= AUTH_INPUT_RULES.familyNameMinimumLength &&
-    guardianName.value.trim().length >= AUTH_INPUT_RULES.guardianNameMinimumLength &&
-    registerUsername.value.trim().length >= AUTH_INPUT_RULES.usernameMinimumLength &&
-    registerPassword.value.length >= AUTH_INPUT_RULES.passwordMinimumLength &&
-    registerPassword.value === passwordConfirmation.value,
+const registrationIsValid = computed(() =>
+  bootstrapRegistrationInputIsValid({
+    email: registerEmail.value,
+    familyName: familyName.value,
+    guardianName: guardianName.value,
+    password: registerPassword.value,
+    passwordConfirmation: passwordConfirmation.value,
+    username: registerUsername.value,
+  }),
 );
+const activationIsValid = computed(() =>
+  accountActivationInputIsValid({
+    activationCode: activationCode.value,
+    email: activationEmail.value,
+    password: activationPassword.value,
+    passwordConfirmation: activationPasswordConfirmation.value,
+    username: activationUsername.value,
+  }),
+);
+const authTitleId = computed(() => `auth-${mode.value}-title`);
 const loginPasswordIcon = computed(() => (showLoginPassword.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline"));
 const loginPasswordType = computed(() => (showLoginPassword.value ? "text" : "password"));
 const registerPasswordIcon = computed(() =>
   showRegisterPassword.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline",
 );
 const registerPasswordType = computed(() => (showRegisterPassword.value ? "text" : "password"));
-const loginIsDisabled = computed(() => submitting.value || !loginUsername.value.trim() || !loginPassword.value);
+const loginIsDisabled = computed(() => submitting.value || !loginIdentifier.value.trim() || !loginPassword.value);
 const registrationIsDisabled = computed(() => submitting.value || !registrationIsValid.value);
+const activationIsDisabled = computed(() => submitting.value || !activationIsValid.value);
 const loginSubmitLabel = computed(() => t(submitting.value ? "auth.login.pending" : "auth.login.submit"));
 const registerSubmitLabel = computed(() => t(submitting.value ? "auth.register.pending" : "auth.register.submit"));
+const activationSubmitLabel = computed(() => t(submitting.value ? "auth.activate.pending" : "auth.activate.submit"));
 function toggleLoginPassword() {
   showLoginPassword.value = !showLoginPassword.value;
 }
@@ -189,7 +307,7 @@ async function login() {
   errorMessage.value = "";
 
   try {
-    const localAccount = await authenticationGateway.authenticate(loginUsername.value, loginPassword.value);
+    const localAccount = await authenticationGateway.authenticate(loginIdentifier.value, loginPassword.value);
 
     if (localAccount) {
       const signedIn = await store.signInToFamily(localAccount.familyId, localAccount.memberId);
@@ -202,6 +320,8 @@ async function login() {
     }
 
     errorMessage.value = t("auth.login.credentialsError");
+  } catch {
+    errorMessage.value = t("auth.login.requestError");
   } finally {
     submitting.value = false;
   }
@@ -217,16 +337,17 @@ async function register() {
   try {
     const familyId = createDomainId.family(crypto.randomUUID());
     const guardianId = createDomainId.familyMember(crypto.randomUUID());
-    await authenticationGateway.register({
+    const session = await authenticationGateway.register({
       familyId,
       familyName: familyName.value,
+      email: registerEmail.value.trim(),
       guardianName: guardianName.value,
       memberId: guardianId,
       password: registerPassword.value,
       username: registerUsername.value,
     });
 
-    const signedIn = await store.signInToFamily(familyId, guardianId);
+    const signedIn = await store.signInToFamily(session.familyId, session.memberId);
 
     if (!signedIn) {
       throw new Error("The registered family could not be loaded.");
@@ -237,6 +358,42 @@ async function register() {
     submitting.value = false;
   }
 }
+
+async function activate() {
+  if (submitting.value || !activationIsValid.value) {
+    return;
+  }
+
+  submitting.value = true;
+  errorMessage.value = "";
+
+  try {
+    const session = await authenticationGateway.activate({
+      activationCode: activationCode.value.trim(),
+      email: activationEmail.value.trim(),
+      password: activationPassword.value,
+      username: activationUsername.value.trim(),
+    });
+    const signedIn = await store.signInToFamily(session.familyId, session.memberId);
+
+    if (!signedIn) {
+      errorMessage.value = t("auth.login.loadError");
+    }
+  } catch {
+    errorMessage.value = t("auth.activate.activationError");
+  } finally {
+    submitting.value = false;
+  }
+}
+
+onMounted(async () => {
+  try {
+    const status = await authenticationGateway.getRegistrationStatus();
+    registrationAvailable.value = status.registrationAvailable;
+  } catch {
+    registrationAvailable.value = false;
+  }
+});
 </script>
 
 <style lang="scss" scoped>
@@ -302,6 +459,9 @@ async function register() {
   border: rem(1) solid color-mix(in srgb, var(--lad-color-info) 15%, transparent);
   border-radius: rem(18);
   background: color-mix(in srgb, var(--lad-surface-raised) 65%, transparent);
+}
+.auth-switch--registration {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .auth-switch button {
   min-height: rem(45);

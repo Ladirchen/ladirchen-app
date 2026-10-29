@@ -36,7 +36,7 @@
           <span>{{ t("family.roster.count", { count: store.members.length }) }}</span>
         </div>
         <v-btn
-          v-if="store.permissions.canInviteMembers"
+          v-if="store.canInviteFamilyMembers"
           color="primary"
           prepend-icon="i-mdi:account-plus-outline"
           rounded="lg"
@@ -128,40 +128,26 @@
       </div>
     </BrandedCard>
 
-    <v-dialog v-model="inviteDialog" max-width="420">
+    <v-dialog v-if="store.canInviteFamilyMembers" v-model="inviteDialog" max-width="420">
       <v-card class="pa-5" rounded="xl">
         <v-card-title class="pa-0">{{ t("family.invite.title") }}</v-card-title>
         <v-card-subtitle class="pa-0 mt-1 mb-5">{{ t("family.invite.description") }}</v-card-subtitle>
-        <v-text-field v-model="invite.name" :label="t('family.setup.name')" variant="outlined" />
-        <v-text-field v-model="invite.email" :label="t('family.invite.email')" type="email" variant="outlined" />
-        <v-select
-          v-model="invite.guardianAccess"
-          :items="guardianAccessOptions"
-          item-title="title"
-          item-value="value"
-          :label="t('family.permissions.label')"
-          variant="outlined"
-        />
-        <v-alert class="mb-4" color="primary" density="compact" variant="tonal">
-          {{ t("family.invite.notice") }}
-        </v-alert>
-        <div class="d-grid invite-actions ga-2">
-          <v-btn rounded="lg" variant="text" @click="inviteDialog = false">{{ t("common.cancel") }}</v-btn>
-          <v-btn color="primary" :disabled="!canInvite" rounded="lg" variant="flat" @click="inviteGuardian">
-            {{ t("family.invite.submit") }}
-          </v-btn>
-        </div>
+        <MemberAccountInvitationForm />
+        <v-btn block class="mt-3" rounded="lg" variant="text" @click="inviteDialog = false">
+          {{ t("common.close") }}
+        </v-btn>
       </v-card>
     </v-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import HeaderDecoration from "@/shared/components/ui/HeaderDecoration.vue";
 import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
+import MemberAccountInvitationForm from "@/features/family/components/MemberAccountInvitationForm.vue";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
 import { CONTRIBUTION_RATING } from "@/domain/contributions/rating";
@@ -173,21 +159,13 @@ import { isGuardianAccessLevel } from "@/application/contracts/family-read-model
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
+import { familyMemberCardControls } from "@/features/family/member-card-controls";
 let timer: number | undefined;
 const FAMILY_HERO_MEMBER_LIMIT = 3;
 const store = useFamilyWorldStore();
 const { t } = useI18n();
 const localize = useLocalizedDomainContent();
 const inviteDialog = ref(false);
-const invite = reactive<{
-  name: string;
-  email: string;
-  guardianAccess: GuardianAccessLevel;
-}>({
-  name: "",
-  email: "",
-  guardianAccess: "supporter",
-});
 const guardianAccessOptions = computed<
   Array<{
     title: string;
@@ -199,15 +177,11 @@ const guardianAccessOptions = computed<
 ]);
 const heroMembers = computed(() => store.members.slice(0, FAMILY_HERO_MEMBER_LIMIT));
 const additionalHeroMemberCount = computed(() => Math.max(0, store.members.length - FAMILY_HERO_MEMBER_LIMIT));
-const canInvite = computed(
-  () => invite.name.trim().length > 1 && /^[^@\s]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(invite.email),
-);
 const memberCards = computed(() =>
   store.members.map(function callback(member) {
-    const isGuardian = member.role === "guardian";
-    const isSignedIn = member.id === store.signedInMemberId;
     const canManageFamily = store.permissions.canManageFamily;
     const participates = member.participatesInWeeklyGoal ?? false;
+    const controls = familyMemberCardControls(member, store.signedInMemberId, canManageFamily);
 
     return {
       member,
@@ -217,8 +191,8 @@ const memberCards = computed(() =>
       access: member.guardianAccess ?? "supporter",
       accessColor: guardianAccessColor(member.guardianAccess),
       accessLabel: accessLabel(member.guardianAccess),
-      canEditAccess: canManageFamily && isGuardian && !isSignedIn,
-      showParticipation: isGuardian && (canManageFamily || isSignedIn),
+      canEditAccess: controls.canEditAccess,
+      showParticipation: controls.showParticipation,
       participates,
       participationLabel: participationLabel(member),
       showProgress: member.role === "child" || participates,
@@ -258,13 +232,6 @@ function setGuardianAccess(memberId: FamilyMemberId, value: unknown) {
   if (isGuardianAccessLevel(value)) {
     store.setGuardianAccess(memberId, value);
   }
-}
-function inviteGuardian() {
-  store.inviteGuardian(invite.name.trim(), invite.email.trim(), invite.guardianAccess);
-  invite.name = "";
-  invite.email = "";
-  invite.guardianAccess = "supporter";
-  inviteDialog.value = false;
 }
 onMounted(function callback() {
   if (store.viewerRole !== "child") {
@@ -455,9 +422,6 @@ onUnmounted(function callback() {
   margin-top: rem(2);
   color: var(--lad-muted);
   font-size: rem(10);
-}
-.invite-actions {
-  grid-template-columns: 1fr 1.4fr;
 }
 @keyframes family-avatar-bob {
   0%,

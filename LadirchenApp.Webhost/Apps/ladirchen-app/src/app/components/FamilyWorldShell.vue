@@ -1,6 +1,23 @@
 <template>
   <div class="family-world-background" :class="shellLayoutClasses">
-    <AsyncAuthGateway v-if="!store.isAuthenticated" />
+    <div v-if="!appHydrated" class="family-world-loading" role="status">
+      <v-progress-circular color="primary" indeterminate />
+    </div>
+    <section
+      v-else-if="store.sessionRestorationFailed"
+      class="family-world-loading family-world-session-error pa-5"
+      role="alert"
+    >
+      <v-card class="pa-6 text-center" max-width="420" rounded="xl">
+        <v-icon color="warning" icon="i-mdi:cloud-alert-outline" size="44" />
+        <h1 class="mt-3">{{ t("auth.sessionRestore.title") }}</h1>
+        <p class="text-medium-emphasis mt-2 mb-5">{{ t("auth.sessionRestore.description") }}</p>
+        <v-btn color="primary" prepend-icon="i-mdi:refresh" rounded="lg" @click="restoreAuthenticationSession">
+          {{ t("auth.sessionRestore.retry") }}
+        </v-btn>
+      </v-card>
+    </section>
+    <AsyncAuthGateway v-else-if="!store.isAuthenticated" />
     <template v-else>
       <LadirchenIntro @finished="handleIntroFinished" />
 
@@ -381,9 +398,16 @@ async function decideGoalCancellation(approved: boolean) {
     cancellationDecision.value = undefined;
   }
 }
-void store.hydrateFamilyReadModels().finally(() => {
-  appHydrated.value = true;
-});
+async function restoreAuthenticationSession() {
+  appHydrated.value = false;
+
+  try {
+    await store.restoreAuthenticatedSession();
+  } finally {
+    appHydrated.value = true;
+  }
+}
+void restoreAuthenticationSession();
 onMounted(function callback() {
   store.refreshCurrentTime();
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
@@ -400,6 +424,13 @@ watch(isLandscape, resetContentScroll);
 
 <style lang="scss" scoped>
 @use "@/styles/mixins" as *;
+.family-world-loading {
+  min-height: calc(100dvh - 3.5rem);
+  --uno: d-grid place-center;
+}
+.family-world-session-error h1 {
+  font-size: rem(24);
+}
 .family-world-page-enter-active,
 .family-world-page-leave-active {
   transition:

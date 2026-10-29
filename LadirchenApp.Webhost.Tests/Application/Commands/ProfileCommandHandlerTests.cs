@@ -143,7 +143,7 @@ public sealed class ProfileCommandHandlerTests
   }
 
   [Test]
-  public async Task CompleteSetupCannotRemoveAMemberWithWalletFundsAndDoesNotPartiallySave()
+  public async Task CompleteSetupCannotRemoveAKnownMemberAndDoesNotPartiallySave()
   {
     var timeProvider = new FixedTimeProvider(
       new DateTimeOffset(2026, 10, 12, 10, 0, 0, TimeSpan.Zero)
@@ -203,7 +203,7 @@ public sealed class ProfileCommandHandlerTests
         CompleteSetupCommand(_guardianId, siblingId),
         CancellationToken.None
       )
-    ).Throws<DomainRuleException>();
+    ).Throws<FamilyCommandException>();
 
     await Assert.That(store.RequiredFamily().Members.Select(item => item.Id)).Contains(_childId);
     await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(10);
@@ -286,6 +286,15 @@ public sealed class ProfileCommandHandlerTests
       _guardianId,
       "Guardian",
       new IanaTimeZone("Europe/Zurich")
+    );
+    family.AddMember(
+      _guardianId,
+      _childId,
+      "Child",
+      MemberRole.Child,
+      GuardianAccess.Supporter,
+      false,
+      timeProvider.GetUtcNow()
     );
     var economy = new FamilyEconomy(family);
     var progression = FamilyHouse.CreateInitial(family);

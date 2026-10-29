@@ -1,12 +1,10 @@
 import type { AvatarAppearance } from "@/domain/avatar";
 import type { FamilyMember, FamilyPet, GuardianAccessLevel } from "@/domain/family/types";
 import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
-import { createDomainId } from "@/domain/shared/identifiers";
 import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { FOLLOW_UP_REWARD_REVEAL_DELAY_MS } from "@/shared/runtime-timing";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { executeBackendFamilyCommand } from "./backend-family-command";
-import { AUTH_STATE_KEY, createUuid } from "./family-world-store-utils";
 
 export const familyActions = {
   refreshCurrentTime(this: FamilyWorldStoreContext) {
@@ -18,46 +16,6 @@ export const familyActions = {
       void this.refreshFamilyReadModel("contributions");
     }
   },
-  switchSession(this: FamilyWorldStoreContext, memberId: FamilyMemberId, revealRewards = true) {
-    const member = this.members.find((item) => item.id === memberId);
-
-    if (!member) {
-      return;
-    }
-
-    this.rewardAnimation.visible = false;
-    this.signedInMemberId = member.id;
-    this.viewerRole = member.role;
-    this.balances = {};
-    this.availableBalances = {};
-    this.goals = [];
-    this.pendingGuardianGifts = [];
-    this.savingsVouchers = [];
-    this.sharedSavedBalances = {};
-    this.shopRewards = [];
-    this.members = this.members.filter((item) => !item.invitationPending).map(({ email: _email, ...item }) => item);
-
-    if (member.role === "child") {
-      this.activeChildId = member.id;
-    }
-
-    if (this.isAuthenticated) {
-      void this.refreshAllFamilyReadModels().then(() => {
-        if (member.role === "child") {
-          this.revealNextGuardianGift();
-        }
-
-        if (revealRewards) {
-          this.$familyWorld.scheduler.schedule(
-            () => this.revealNextContributionReward(),
-            FOLLOW_UP_REWARD_REVEAL_DELAY_MS,
-          );
-        }
-      });
-    }
-
-    this.notify("notifications.session.switched", { name: member.name });
-  },
   async signOut(this: FamilyWorldStoreContext) {
     try {
       await this.$familyWorld.authentication.signOut();
@@ -67,22 +25,29 @@ export const familyActions = {
       this.familySetupOpen = false;
       this.piggyBankOpen = false;
       this.rewardAnimation.visible = false;
-      this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "signed-out");
     }
   },
-  signInCurrentFamily(this: FamilyWorldStoreContext, memberId: FamilyMemberId): boolean {
-    const member = this.members.find((item) => item.id === memberId);
+  async restoreAuthenticatedSession(this: FamilyWorldStoreContext): Promise<boolean> {
+    this.sessionRestorationFailed = false;
 
-    if (!member) {
+    try {
+      const session = await this.$familyWorld.authentication.getCurrentSession();
+
+      if (session) {
+        const restored = await this.signInToFamily(session.familyId, session.memberId);
+        this.sessionRestorationFailed = !restored;
+
+        return restored;
+      }
+    } catch {
+      this.sessionRestorationFailed = true;
+
       return false;
     }
 
-    this.switchSession(member.id, false);
-    this.isAuthenticated = true;
-    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "authenticated");
-    this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), FOLLOW_UP_REWARD_REVEAL_DELAY_MS);
+    this.$reset();
 
-    return true;
+    return false;
   },
   async signInToFamily(this: FamilyWorldStoreContext, familyId: FamilyId, memberId: FamilyMemberId): Promise<boolean> {
     this.$familyWorld.familyContext.setActiveFamilyId(familyId);
@@ -91,13 +56,11 @@ export const familyActions = {
     this.isAuthenticated = false;
     this.familyReadModelsHydrated = false;
     this.homeCustomizationHydrated = false;
-    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "authenticated");
     await this.hydrateFamilyReadModels();
     const member = this.members.find((item) => item.id === memberId);
 
     if (!this.familyReadModelsHydrated || !member) {
       this.isAuthenticated = false;
-      this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "signed-out");
 
       return false;
     }
@@ -119,7 +82,9 @@ export const familyActions = {
       return;
     }
 
-    const child = this.members.find((member) => member.id === memberId && member.role === "child");
+    const child = this.members.find(
+      (member) => member.id === memberId && member.role === "child" && !member.invitationPending,
+    );
 
     if (child) {
       this.activeChildId = child.id;
@@ -164,21 +129,6 @@ export const familyActions = {
       },
     );
   },
-  async inviteGuardian(
-    this: FamilyWorldStoreContext,
-    name: string,
-    email: string,
-    guardianAccess: GuardianAccessLevel = "supporter",
-  ) {
-    const id = createDomainId.familyMember(createUuid());
-    await executeBackendFamilyCommand(
-      this,
-      "profile.invite-guardian",
-      { email, guardianAccess, id, name },
-      "notifications.save.profile",
-      () => this.notify("notifications.family.invitationCreated", { name }),
-    );
-  },
   async setGuardianAccess(
     this: FamilyWorldStoreContext,
     memberId: FamilyMemberId,
@@ -198,25 +148,22 @@ export const familyActions = {
     );
   },
   openFamilySetup(this: FamilyWorldStoreContext) {
-    if (!this.onboardingCompleted || this.permissions.canManageFamily) {
+    const canOpenSetup = this.onboardingCompleted ? this.permissions.canManageFamily : this.canInviteFamilyMembers;
+
+    if (canOpenSetup) {
       this.familySetupOpen = true;
     }
   },
   async completeFamilySetup(this: FamilyWorldStoreContext, members: FamilyMember[], pets: FamilyPet[]) {
+    const memberPayload = members.map(
+      ({ permissions: _permissions, weeklyStreak: _weeklyStreak, ...member }) => member,
+    );
     await executeBackendFamilyCommand(
       this,
       "profile.complete-setup",
-      { members, pets },
+      { members: memberPayload, pets },
       "notifications.save.profile",
       () => {
-        const activeChildStillExists = this.members.some(
-          (member) => member.id === this.activeChildId && member.role === "child",
-        );
-
-        if (!activeChildStillExists) {
-          this.activeChildId = this.members.find((member) => member.role === "child")?.id ?? this.activeChildId;
-        }
-
         this.familySetupOpen = false;
         this.notify("notifications.family.setupComplete");
       },

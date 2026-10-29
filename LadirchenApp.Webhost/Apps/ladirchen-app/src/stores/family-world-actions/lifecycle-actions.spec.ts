@@ -17,7 +17,6 @@ const serviceMocks = vi.hoisted(() => ({
 }));
 
 const dependencies = createFamilyWorldTestDependencies({
-  clientStorage: { getItem: vi.fn(() => null), removeItem: vi.fn(), setItem: vi.fn() },
   contributionsService: { load: serviceMocks.contributionsLoad },
   familyAggregateUpdates: { connect: serviceMocks.updatesConnect, disconnect: vi.fn(async () => undefined) },
   familyContext: {
@@ -109,6 +108,35 @@ describe("hydrateFamilyReadModels", () => {
       updatedBy: context.signedInMemberId,
     });
     expect(refreshFamilyReadModel).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-open account setup for a viewer without the invitation capability", async () => {
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    const supporterId = createDomainId.familyMember("hannes");
+    context.signedInMemberId = supporterId;
+    context.members = context.members.map((member) =>
+      member.id === supporterId
+        ? {
+            ...member,
+            permissions: {
+              canInviteMembers: false,
+              canManageContent: false,
+              canManageFamily: false,
+              canManageGoals: false,
+              canSupportChildGoals: true,
+              canViewFamilyGoals: true,
+              canViewGuardianGoals: false,
+            },
+          }
+        : member,
+    );
+    vi.spyOn(context, "hydrateHomeCustomization").mockResolvedValue(undefined);
+
+    await context.hydrateFamilyReadModels();
+
+    expect(context.onboardingCompleted).toBe(false);
+    expect(context.canInviteFamilyMembers).toBe(false);
+    expect(context.familySetupOpen).toBe(false);
   });
 });
 

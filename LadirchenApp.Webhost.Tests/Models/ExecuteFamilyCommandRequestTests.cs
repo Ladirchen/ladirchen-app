@@ -132,7 +132,6 @@ public sealed class ExecuteFamilyCommandRequestTests
       ["home.store-accessory"] = (typeof(HomeStoreAccessoryCommandRequest), Id()),
       ["home.toggle-accessory"] = (typeof(HomeToggleAccessoryCommandRequest), Id()),
       ["profile.complete-setup"] = (typeof(ProfileCompleteSetupCommandRequest), """{"members":[{"id":"child","name":"Anna","avatar":"A","color":"#fff","role":"child"}],"pets":[{"id":"pet","name":"Milo","kind":"cat","avatar":"M","color":"#000"}]}"""),
-      ["profile.invite-guardian"] = (typeof(ProfileInviteGuardianCommandRequest), """{"id":"guardian-2","name":"Alex","email":"alex@example.com","guardianAccess":"supporter"}"""),
       ["profile.save-own-appearance"] = (typeof(ProfileSaveOwnAppearanceCommandRequest), """{"appearance":{"age":"adult","skinToneId":"skin-medium","faceShape":"soft","face":"happy","hair":"short","hairColorId":"hair-brown","outfit":"shirt","outfitColorId":"outfit-blue","accessoryId":"none","funAccessoryId":"none","seasonalAccessoryId":"none"}}"""),
       ["profile.set-guardian-access"] = (typeof(ProfileSetGuardianAccessCommandRequest), """{"memberId":"guardian-2","guardianAccess":"admin"}"""),
       ["profile.set-own-nickname"] = (typeof(ProfileSetOwnNicknameCommandRequest), """{"nickname":"Mum"}"""),

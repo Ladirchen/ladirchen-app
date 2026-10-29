@@ -90,6 +90,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   return {
     currentTimeMilliseconds: Date.now(),
     isAuthenticated: false,
+    sessionRestorationFailed: false,
     signedInMemberId: initialData.signedInMemberId,
     viewerRole,
     activeChildId: initialData.activeChildId,

@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { createEmptyFamilyWorldInitialData } from "@/infrastructure/empty-family-world-initial-data";
 import type { SavingGoal } from "@/domain/savings/types";
 import { createDomainId } from "@/domain/shared/identifiers";
+import { NO_FAMILY_PERMISSIONS } from "@/domain/family/permissions";
+import { familyMemberColorPalette } from "@/theme/color-palette";
 import { createFamilyWorldStoreDefinition } from "./family-world";
 
 describe("family world empty state", () => {
@@ -88,5 +90,30 @@ describe("family world empty state", () => {
     ];
 
     expect(store.pendingGoalCancellation).toBeUndefined();
+  });
+
+  it("exposes member invitations only for an active member with the backend capability", () => {
+    const memberId = createDomainId.familyMember("administrator");
+    const useStore = createFamilyWorldStoreDefinition({ create: createEmptyFamilyWorldInitialData });
+    const store = useStore();
+    store.signedInMemberId = memberId;
+    store.members = [
+      {
+        avatar: "🧑",
+        color: familyMemberColorPalette.mama,
+        guardianAccess: "admin",
+        id: memberId,
+        name: "Administrator",
+        permissions: { ...NO_FAMILY_PERMISSIONS, canInviteMembers: true },
+        role: "guardian",
+        weeklyStreak: 0,
+      },
+    ];
+
+    expect(store.canInviteFamilyMembers).toBe(true);
+
+    store.members[0]!.invitationPending = true;
+
+    expect(store.canInviteFamilyMembers).toBe(false);
   });
 });

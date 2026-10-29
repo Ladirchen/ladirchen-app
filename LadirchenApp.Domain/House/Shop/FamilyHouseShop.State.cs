@@ -105,7 +105,10 @@ public sealed partial class FamilyHouseShop
       DomainError.InvalidState,
       "The house customization belongs to another family."
     );
-    var memberIds = family.Members.Select(item => item.Id.Value).ToHashSet(StringComparer.Ordinal);
+    var memberIds = family.Members
+      .Where(item => !item.InvitationPending)
+      .Select(item => item.Id.Value)
+      .ToHashSet(StringComparer.Ordinal);
     var petIds = family.Pets.Select(item => item.Id.Value).ToHashSet(StringComparer.Ordinal);
     var obsoletePlacementIds = _statePlacements.Values
       .Where(item =>
@@ -494,9 +497,13 @@ public sealed partial class FamilyHouseShop
 
     SetInitialPlacement("ladi", "family-ladi", policy.FamilyLadi());
 
-    for (var index = 0; index < family.Members.Count; index++)
+    var activeMembers = family.Members
+      .Where(item => !item.InvitationPending)
+      .ToArray();
+
+    for (var index = 0; index < activeMembers.Length; index++)
     {
-      var member = family.Members[index];
+      var member = activeMembers[index];
       SetInitialPlacement(
         "member",
         member.Id.Value,

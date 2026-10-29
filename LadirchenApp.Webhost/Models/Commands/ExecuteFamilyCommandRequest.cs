@@ -29,7 +29,6 @@ namespace LadirchenApp.Webhost.Models.Commands;
 [JsonDerivedType(typeof(HomeStoreAccessoryCommandRequest), "home.store-accessory")]
 [JsonDerivedType(typeof(HomeToggleAccessoryCommandRequest), "home.toggle-accessory")]
 [JsonDerivedType(typeof(ProfileCompleteSetupCommandRequest), "profile.complete-setup")]
-[JsonDerivedType(typeof(ProfileInviteGuardianCommandRequest), "profile.invite-guardian")]
 [JsonDerivedType(typeof(ProfileSaveOwnAppearanceCommandRequest), "profile.save-own-appearance")]
 [JsonDerivedType(typeof(ProfileSetGuardianAccessCommandRequest), "profile.set-guardian-access")]
 [JsonDerivedType(typeof(ProfileSetOwnNicknameCommandRequest), "profile.set-own-nickname")]

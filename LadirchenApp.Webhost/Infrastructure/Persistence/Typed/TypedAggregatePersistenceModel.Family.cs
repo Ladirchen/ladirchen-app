@@ -50,10 +50,6 @@ internal static partial class TypedAggregatePersistenceModel
           "CK_FamilyMembers_RoleAccess",
           "\"Role\" = 1 OR \"GuardianAccess\" = 1"
         );
-        table.HasCheckConstraint(
-          "CK_FamilyMembers_PendingInvitation",
-          "NOT \"InvitationPending\" OR \"Role\" = 1"
-        );
       }
     );
     member.HasKey(item => new { item.FamilyId, item.MemberId });

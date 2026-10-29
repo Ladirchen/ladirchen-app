@@ -32,6 +32,11 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
       permissions(): FamilyPermissions {
         return this.signedInMember?.permissions ?? NO_FAMILY_PERMISSIONS;
       },
+      canInviteFamilyMembers(): boolean {
+        return Boolean(
+          this.signedInMember && !this.signedInMember.invitationPending && this.permissions.canInviteMembers,
+        );
+      },
       isFamilyAdmin(): boolean {
         return this.permissions.canManageFamily;
       },

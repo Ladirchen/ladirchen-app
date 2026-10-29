@@ -28,6 +28,10 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("EmailAddress")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
                     b.Property<int>("FailedLoginCount")
                         .HasColumnType("integer");
 
@@ -47,6 +51,10 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("bytea");
@@ -62,7 +70,39 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("FamilyId");
 
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique()
+                        .HasFilter("\"NormalizedEmail\" IS NOT NULL");
+
+                    b.HasIndex("FamilyId", "MemberId")
+                        .IsUnique();
+
                     b.ToTable("AuthenticationAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.BetaFamilyRegistrationEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("RegisteredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId")
+                        .IsUnique();
+
+                    b.ToTable("BetaFamilyRegistrations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BetaFamilyRegistrations_Singleton", "\"Id\" = 1");
+                        });
                 });
 
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.FamilyAggregateOutboxMessageEntity", b =>
@@ -159,6 +199,61 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.HasIndex("FamilyId");
 
                     b.ToTable("FamilyCommandReceipts", (string)null);
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.MemberAccountInvitationEntity", b =>
+                {
+                    b.Property<Guid>("InvitationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("ActivationCodeHash")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmailAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FamilyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<DateTimeOffset?>("RedeemedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("InvitationId");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique()
+                        .HasFilter("\"RedeemedAt\" IS NULL");
+
+                    b.HasIndex("FamilyId", "MemberId")
+                        .IsUnique()
+                        .HasFilter("\"RedeemedAt\" IS NULL");
+
+                    b.ToTable("MemberAccountInvitations", (string)null);
                 });
 
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.ClosedFamilyWeekEntity", b =>
@@ -993,8 +1088,6 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.ToTable("FamilyMembers", null, t =>
                         {
                             t.HasCheckConstraint("CK_FamilyMembers_GuardianAccess", "\"GuardianAccess\" >= 0 AND \"GuardianAccess\" <= 1");
-
-                            t.HasCheckConstraint("CK_FamilyMembers_PendingInvitation", "NOT \"InvitationPending\" OR \"Role\" = 1");
 
                             t.HasCheckConstraint("CK_FamilyMembers_Role", "\"Role\" >= 0 AND \"Role\" <= 1");
 
