@@ -51,15 +51,15 @@ public sealed class AvatarAppearanceService
 
   private static AvatarAppearance Default(AvatarProfile profile, int profileIndex)
   {
-    var skin = profileIndex % 2 == 0 ? "light" : "medium";
+    var skin = profileIndex % 2 == 0 ? "skin-light" : "skin-medium";
 
     if (profile == AvatarProfile.Child)
     {
-      return new("child", skin, "round", "smile", "short", "brown", "play", "blue", "none", "none", "none");
+      return new("child", skin, "soft", "happy", "short", "hair-brown", "hoodie", "outfit-blue", "none", "none", "none");
     }
 
     var age = profileIndex % 2 == 0 ? "adult" : "senior";
 
-    return new(age, skin, "oval", "happy", "short", "black", "casual", "green", "glasses", "none", "none");
+    return new(age, skin, "oval", "happy", "short", "hair-black", "shirt", "outfit-green", "glasses", "none", "none");
   }
 }

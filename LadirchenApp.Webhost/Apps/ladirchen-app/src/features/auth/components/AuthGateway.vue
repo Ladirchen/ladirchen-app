@@ -195,9 +195,7 @@ function setMode(nextMode: AuthMode) {
   errorMessage.value = "";
 }
 async function login() {
-
   if (submitting.value) {
-
     return;
   }
 
@@ -224,22 +222,22 @@ async function login() {
         member.nickname?.trim().toLocaleLowerCase("de") === normalizedUsername,
     );
 
-    if (loginPassword.value === DEMO_CREDENTIALS.password && demoMember && store.signInCurrentFamily(demoMember.id)) {
-
+    if (
+      !authenticationGateway.backendDriven &&
+      loginPassword.value === DEMO_CREDENTIALS.password &&
+      demoMember &&
+      store.signInCurrentFamily(demoMember.id)
+    ) {
       return;
     }
 
     errorMessage.value = t("auth.login.credentialsError");
-
   } finally {
     submitting.value = false;
   }
-
 }
 async function register() {
-
   if (submitting.value || !registrationIsValid.value) {
-
     return;
   }
 
@@ -258,20 +256,26 @@ async function register() {
     await authenticationGateway.register({
       familyId,
       familyName: familyName.value,
+      guardianName: guardianName.value,
       memberId: guardianId,
       password: registerPassword.value,
       username: registerUsername.value,
     });
-    store.createRegisteredFamily(familyId, guardianId, guardianName.value);
 
+    if (authenticationGateway.backendDriven) {
+      const signedIn = await store.signInToFamily(familyId, guardianId);
+
+      if (!signedIn) {
+        throw new Error("The registered family could not be loaded.");
+      }
+    } else {
+      store.createRegisteredFamily(familyId, guardianId, guardianName.value);
+    }
   } catch {
     errorMessage.value = t("auth.register.createError");
-
   } finally {
-
     submitting.value = false;
   }
-
 }
 </script>
 

@@ -33,6 +33,7 @@ function isSavingGoal(value: unknown): value is SavingGoal {
     value.saved >= 0 &&
     isOptionalNonNegativeNumber(value.starterBonus) &&
     isOptionalNonNegativeNumber(value.interestEarned) &&
+    isOptionalNonNegativeNumber(value.projectedInterestCredit) &&
     isKnownString(value.visibility, goalVisibilities) &&
     typeof value.shared === "boolean" &&
     typeof value.cheered === "boolean"

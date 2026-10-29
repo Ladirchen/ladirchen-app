@@ -25,7 +25,17 @@ function applyHouseThemeRoomDesigns(store: FamilyWorldStoreContext, themeId: Hou
   }
 }
 export const homeActions = {
-  purchaseAccessory(this: FamilyWorldStoreContext, id: HouseAccessory["id"]) {
+  async purchaseAccessory(this: FamilyWorldStoreContext, id: HouseAccessory["id"]) {
+    const title = this.accessories.find((item) => item.id === id)?.title ?? "";
+
+    if (
+      await executeBackendFamilyCommand(this, "home.purchase-accessory", { id }, "notifications.save.home", () =>
+        this.notify("notifications.home.accessoryPurchased", { title }),
+      )
+    ) {
+      return;
+    }
+
     const accessory = this.accessories.find((item) => item.id === id);
 
     if (this.viewerRole !== "child" || !accessory || accessory.owned || accessory.price > this.availableBalance) {
@@ -39,7 +49,15 @@ export const homeActions = {
     this.persistSavings();
     this.notify("notifications.home.accessoryPurchased", { title: accessory.title });
   },
-  purchaseFurnitureSet(this: FamilyWorldStoreContext, id: FurnitureSetId) {
+  async purchaseFurnitureSet(this: FamilyWorldStoreContext, id: FurnitureSetId) {
+    if (
+      await executeBackendFamilyCommand(this, "home.purchase-furniture-set", { id }, "notifications.save.home", () =>
+        this.notify("notifications.home.setPurchased"),
+      )
+    ) {
+      return;
+    }
+
     const set = FURNITURE_SETS.find((item) => item.id === id);
 
     if (
@@ -66,7 +84,11 @@ export const homeActions = {
     this.persistSavings();
     this.notify("notifications.home.setPurchased");
   },
-  toggleAccessory(this: FamilyWorldStoreContext, id: HouseAccessory["id"]) {
+  async toggleAccessory(this: FamilyWorldStoreContext, id: HouseAccessory["id"]) {
+    if (await executeBackendFamilyCommand(this, "home.toggle-accessory", { id }, "notifications.save.home")) {
+      return;
+    }
+
     const accessory = this.accessories.find((item) => item.id === id);
 
     if (!accessory?.owned || accessory.mobility === "fixed") {
@@ -76,7 +98,11 @@ export const homeActions = {
     accessory.equipped = !accessory.equipped;
     this.persistHomeCustomization();
   },
-  storeHouseAccessory(this: FamilyWorldStoreContext, id: HouseAccessoryId) {
+  async storeHouseAccessory(this: FamilyWorldStoreContext, id: HouseAccessoryId) {
+    if (await executeBackendFamilyCommand(this, "home.store-accessory", { id }, "notifications.save.home")) {
+      return;
+    }
+
     const accessory = this.accessories.find((item) => item.id === id);
 
     if (!accessory?.owned || !accessory.equipped || accessory.mobility === "fixed") {
@@ -86,7 +112,18 @@ export const homeActions = {
     accessory.equipped = false;
     this.persistHomeCustomization();
   },
-  placeStoredHouseAccessory(this: FamilyWorldStoreContext, id: HouseAccessoryId, requestedZoneId: HouseZoneId) {
+  async placeStoredHouseAccessory(this: FamilyWorldStoreContext, id: HouseAccessoryId, requestedZoneId: HouseZoneId) {
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "home.place-accessory",
+        { id, zoneId: requestedZoneId },
+        "notifications.save.home",
+      )
+    ) {
+      return;
+    }
+
     const accessory = this.accessories.find((item) => item.id === id);
     const placement = this.houseLayout.find((item) => item.entityType === "furniture" && item.entityId === id);
 
@@ -121,7 +158,15 @@ export const homeActions = {
     accessory.equipped = true;
     this.persistHomeCustomization();
   },
-  purchaseHouseTheme(this: FamilyWorldStoreContext, id: HouseThemeId) {
+  async purchaseHouseTheme(this: FamilyWorldStoreContext, id: HouseThemeId) {
+    if (
+      await executeBackendFamilyCommand(this, "home.purchase-theme", { id }, "notifications.save.home", () =>
+        this.notify("notifications.home.themePurchased"),
+      )
+    ) {
+      return;
+    }
+
     const edition = HOUSE_THEMES.find((item) => item.id === id);
 
     if (
@@ -141,7 +186,15 @@ export const homeActions = {
     this.persistSavings();
     this.notify("notifications.home.themePurchased");
   },
-  selectHouseTheme(this: FamilyWorldStoreContext, id: HouseThemeId) {
+  async selectHouseTheme(this: FamilyWorldStoreContext, id: HouseThemeId) {
+    if (
+      await executeBackendFamilyCommand(this, "home.select-theme", { id }, "notifications.save.home", () =>
+        this.notify("notifications.home.themeSelected"),
+      )
+    ) {
+      return;
+    }
+
     if (!this.ownedHouseThemeIds.includes(id)) {
       return;
     }
@@ -151,7 +204,15 @@ export const homeActions = {
     this.persistHomeCustomization();
     this.notify("notifications.home.themeSelected");
   },
-  purchaseRoomDesign(this: FamilyWorldStoreContext, id: RoomDesignId) {
+  async purchaseRoomDesign(this: FamilyWorldStoreContext, id: RoomDesignId) {
+    if (
+      await executeBackendFamilyCommand(this, "home.purchase-room-design", { id }, "notifications.save.home", () =>
+        this.notify("notifications.home.roomDesignPurchased"),
+      )
+    ) {
+      return;
+    }
+
     const design = ROOM_DESIGNS.find((item) => item.id === id);
 
     if (
@@ -172,7 +233,15 @@ export const homeActions = {
     this.persistSavings();
     this.notify("notifications.home.roomDesignPurchased");
   },
-  selectRoomDesign(this: FamilyWorldStoreContext, id: RoomDesignId) {
+  async selectRoomDesign(this: FamilyWorldStoreContext, id: RoomDesignId) {
+    if (
+      await executeBackendFamilyCommand(this, "home.select-room-design", { id }, "notifications.save.home", () =>
+        this.notify("notifications.home.roomDesignSelected"),
+      )
+    ) {
+      return;
+    }
+
     const design = ROOM_DESIGNS.find((item) => item.id === id);
 
     if (
@@ -189,13 +258,24 @@ export const homeActions = {
     this.persistHomeCustomization();
     this.notify("notifications.home.roomDesignSelected");
   },
-  moveHouseEntity(
+  async moveHouseEntity(
     this: FamilyWorldStoreContext,
     placementId: HouseLayoutPlacementId,
     zoneId: HouseZoneId,
     x: number,
     y: number,
   ) {
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "home.move-entity",
+        { placementId, x, y, zoneId },
+        "notifications.save.home",
+      )
+    ) {
+      return;
+    }
+
     if (!this.canArrangeHouse) {
       return;
     }
@@ -232,14 +312,32 @@ export const homeActions = {
     );
     this.persistHomeCustomization();
   },
-  resetHouseEntityPosition(this: FamilyWorldStoreContext, placementId: HouseLayoutPlacementId) {
+  async resetHouseEntityPosition(this: FamilyWorldStoreContext, placementId: HouseLayoutPlacementId) {
+    const initialPlacement =
+      this.$familyWorld.initialDataFactory.create().houseLayout.find((item) => item.id === placementId) ??
+      this.houseLayout.find((item) => item.id === placementId);
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "home.reset-entity",
+        {
+          placementId,
+          scale: initialPlacement?.scale ?? 1,
+          x: initialPlacement?.x ?? HOUSE_LAYOUT_CONSTRAINTS.defaultX,
+          y: initialPlacement?.y ?? HOUSE_LAYOUT_CONSTRAINTS.defaultIndoorY,
+          zoneId: initialPlacement?.zoneId ?? "living-room",
+        },
+        "notifications.save.home",
+      )
+    ) {
+      return;
+    }
+
     if (!this.canArrangeHouse) {
       return;
     }
 
-    const initialPlacement = this.$familyWorld.initialDataFactory
-      .create()
-      .houseLayout.find((item) => item.id === placementId);
     const placement = this.houseLayout.find((item) => item.id === placementId);
 
     if (!initialPlacement || !placement) {

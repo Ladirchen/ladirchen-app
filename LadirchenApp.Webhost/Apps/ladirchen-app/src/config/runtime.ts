@@ -4,18 +4,14 @@ export interface FrontendRuntimeConfig {
   readonly dataSource: FrontendDataSource;
 }
 function normalizeApiBaseUrl(value: string | undefined): string {
-
   return (value ?? "").trim().replace(/\/+$/u, "");
 }
 function resolveDataSource(value: string | undefined): FrontendDataSource {
-
-  if (value === undefined || value === "" || value === "local-storage") {
-
-    return "local-storage";
+  if (value === undefined || value === "" || value === "api") {
+    return "api";
   }
 
-  if (value === "api") {
-
+  if (value === "local-storage") {
     return value;
   }
 

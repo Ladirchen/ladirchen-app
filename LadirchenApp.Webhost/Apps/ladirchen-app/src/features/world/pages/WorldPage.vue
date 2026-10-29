@@ -379,7 +379,6 @@ import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.v
 import PromotionCountdown from "@/shared/components/contributions/PromotionCountdown.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import type { ContributionId } from "@/domain/shared/identifiers";
-import { isPromotionAvailable } from "@/domain/contributions/promotions";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ROOM_DESIGNS } from "@/domain/house";
@@ -424,7 +423,6 @@ const emptyTaskTitle = computed(() =>
   ),
 );
 const emptyTaskMessage = computed(() => {
-
   return t(
     completedPersonalContributions.value.length
       ? "world.tasks.empty.completedMessage"
@@ -434,7 +432,7 @@ const emptyTaskMessage = computed(() => {
 const activePromotion = computed(() =>
   localizedPromotions.value.find(
     (promotion) =>
-      isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)) &&
+      promotion.available &&
       localizedContributions.value.some(
         (contribution) =>
           contribution.id === promotion.contributionId &&
@@ -446,9 +444,7 @@ const activePromotion = computed(() =>
 const showGuardianManagement = computed(() => store.viewerRole === "guardian" && store.permissions.canManageContent);
 const bannerPromotion = computed(() => (store.viewerRole === "child" ? activePromotion.value : undefined));
 const promotionRewardTotal = computed(function callback() {
-
   if (!activePromotion.value) {
-
     return 0;
   }
 
@@ -464,18 +460,14 @@ const childOptions = computed(() =>
 );
 const canGiveGift = computed(() => gift.amount >= 1 && gift.reason.trim().length >= 3);
 function contributionTitle(contributionId: ContributionId) {
-
   return (
     localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
     t("contributions.singular")
   );
 }
 function promotionFor(contributionId: ContributionId) {
-
   return localizedPromotions.value.find(
-    (promotion) =>
-      promotion.contributionId === contributionId &&
-      isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
+    (promotion) => promotion.contributionId === contributionId && promotion.available,
   );
 }
 function openGiftDialog() {

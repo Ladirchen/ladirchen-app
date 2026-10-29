@@ -5,7 +5,6 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { calculateSavingsCredit } from "@/domain/savings/interest";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
@@ -15,11 +14,11 @@ const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const { goal: localizeGoal } = useLocalizedDomainContent();
 const conversationStep = ref(-1);
-const streakInterest = computed(() => store.currentDailyStreak * store.streakBonusRate);
+const streakInterest = computed(() => store.savingsInterestRate);
 const goalInterestRows = computed(function callback() {
   const rows = store.ownSavingGoals.map((goal) => ({
     ...localizeGoal(goal),
-    weeklyInterest: weeklyInterest(goal.saved, goal.target),
+    weeklyInterest: goal.projectedInterestCredit ?? 0,
   }));
   const highestInterest = Math.max(0, ...rows.map((goal) => goal.weeklyInterest));
 
@@ -62,12 +61,7 @@ const answers = computed(() => [
     text: t("savings.interestGuide.tipMessage"),
   },
 ]);
-function weeklyInterest(saved: number, target = Number.POSITIVE_INFINITY) {
-
-  return calculateSavingsCredit(saved, target, store.savingsInterestRate);
-}
 function formatRate(value: number) {
-
   return value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 }
 function nextAnswer() {
@@ -75,7 +69,6 @@ function nextAnswer() {
   const answer = answers.value[conversationStep.value];
 
   if (!answer) {
-
     return;
   }
 

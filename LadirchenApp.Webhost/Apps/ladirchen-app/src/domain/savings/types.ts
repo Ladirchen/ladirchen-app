@@ -24,6 +24,7 @@ export interface SavingGoal {
   saved: number;
   starterBonus?: number;
   interestEarned?: number;
+  projectedInterestCredit?: number;
   visibility: GoalVisibility;
   shared: boolean;
   cheered: boolean;

@@ -2,6 +2,7 @@ using System;
 
 using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Application.Queries;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Realtime;
 
@@ -29,9 +30,11 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Services.AddSingleton(TimeProvider.System);
     webApplicationBuilder.Services.AddSingleton<IFamilyAggregateSnapshotRepository, InMemoryFamilyAggregateSnapshotRepository>();
     webApplicationBuilder.Services.AddSingleton<IFamilyAggregateChangePublisher, SignalRFamilyAggregateChangePublisher>();
+    webApplicationBuilder.Services.AddSingleton<InMemoryAuthenticationService>();
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
     webApplicationBuilder.Services.AddScoped<SaveFamilyAggregateCommandHandler>();
     webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<SimulateSavingsInterestQueryHandler>();
   }
 
   /// <summary>

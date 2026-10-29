@@ -4,7 +4,6 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PageViewOption } from "@/shared/components/ui/page-view-option";
 import type { GoalVisibility, NewGoal, SavingGoal, SavingGoalOwnerId } from "@/domain/savings/types";
-import { calculateSavingsCredit } from "@/domain/savings/interest";
 import { SAVINGS_RULES } from "@/domain/savings/rules";
 import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
 import { percentageOfTotal } from "@/domain/shared/numbers";
@@ -154,7 +153,7 @@ export function useWishesPage() {
   );
 
   function weeklyInterestForGoal(goal: SavingGoal) {
-    return calculateSavingsCredit(goal.saved, goal.target, store.savingsInterestRate);
+    return goal.projectedInterestCredit ?? 0;
   }
 
   function formatInterestRate(value: number) {

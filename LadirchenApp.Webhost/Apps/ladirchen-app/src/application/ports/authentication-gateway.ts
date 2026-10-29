@@ -7,11 +7,13 @@ export interface AuthenticationSession {
 }
 
 export interface RegisterAccountCommand extends AuthenticationSession {
+  readonly guardianName: string;
   readonly password: string;
   readonly username: string;
 }
 
 export interface AuthenticationGateway {
+  readonly backendDriven: boolean;
   authenticate: (username: string, password: string) => Promise<AuthenticationSession | null>;
   register: (command: RegisterAccountCommand) => Promise<void>;
   usernameExists: (username: string) => Promise<boolean>;

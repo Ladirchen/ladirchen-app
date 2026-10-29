@@ -13,11 +13,9 @@ interface StoredLocalAccount {
   memberId: string;
 }
 function normalizeUsername(username: string) {
-
   return username.trim().toLocaleLowerCase("de");
 }
 function isStoredLocalAccount(value: unknown): value is StoredLocalAccount {
-
   return (
     isRecord(value) &&
     typeof value.username === "string" &&
@@ -34,22 +32,17 @@ function isStoredLocalAccount(value: unknown): value is StoredLocalAccount {
   );
 }
 function loadAccounts(storage: ClientStorage): StoredLocalAccount[] {
-
   try {
     const parsed: unknown = JSON.parse(storage.getItem(ACCOUNT_STORAGE_KEY) ?? "[]");
 
     if (!Array.isArray(parsed)) {
-
       return [];
     }
 
     return parsed.filter(isStoredLocalAccount);
-
   } catch {
-
     return [];
   }
-
 }
 async function digestPassword(password: string, salt: string): Promise<string> {
   const bytes = new TextEncoder().encode(`${salt}:${password}`);
@@ -58,7 +51,6 @@ async function digestPassword(password: string, salt: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 function localUsernameExists(storage: ClientStorage, username: string): boolean {
-
   return loadAccounts(storage).some((account) => account.username === normalizeUsername(username));
 }
 async function registerLocalAccount(
@@ -95,7 +87,6 @@ async function authenticateLocalAccount(
   const account = loadAccounts(storage).find((item) => item.username === normalizeUsername(username));
 
   if (!account || account.passwordHash !== (await digestPassword(password, account.salt))) {
-
     return null;
   }
 
@@ -106,14 +97,12 @@ async function authenticateLocalAccount(
   };
 }
 export function createLocalAuthenticationGateway(storage: ClientStorage): AuthenticationGateway {
-
   return {
+    backendDriven: false,
     authenticate(this: void, username, password) {
-
       return authenticateLocalAccount(storage, username, password);
     },
     register(this: void, command) {
-
       return registerLocalAccount(
         storage,
         command.username,
@@ -124,7 +113,6 @@ export function createLocalAuthenticationGateway(storage: ClientStorage): Authen
       );
     },
     async usernameExists(this: void, username) {
-
       return localUsernameExists(storage, username);
     },
   };

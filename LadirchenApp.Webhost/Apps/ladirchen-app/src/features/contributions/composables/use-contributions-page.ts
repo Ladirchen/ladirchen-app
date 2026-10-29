@@ -2,7 +2,6 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { isPromotionAvailable } from "@/domain/contributions/promotions";
 import type {
   Contribution,
   ContributionKind,
@@ -51,9 +50,7 @@ export function useContributionsPage() {
     { title: t("contributions.kind.extraOptional"), value: "extra" },
   ]);
   const assignmentOptions = computed(function callback() {
-
     if (!store.permissions.canManageContent) {
-
       return [
         {
           title: t("contributions.assignment.own", { name: store.signedInMember.name }),
@@ -134,33 +131,25 @@ export function useContributionsPage() {
       .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
   );
   function promotionFor(contributionId: ContributionId) {
-
     return localizedPromotions.value.find(
-      (promotion) =>
-        promotion.contributionId === contributionId &&
-        isPromotionAvailable(promotion, store.familyTimeZone, new Date(store.currentTimeMilliseconds)),
+      (promotion) => promotion.contributionId === contributionId && promotion.available,
     );
   }
   function contributionTitle(contributionId: ContributionId) {
-
     return (
       localizedContributions.value.find((contribution) => contribution.id === contributionId)?.title ??
       t("contributions.singular")
     );
   }
   function memberName(memberId?: FamilyMemberId) {
-
     return store.members.find((member) => member.id === memberId)?.name ?? t("contributions.assignment.stillOpen");
   }
   function guardianContributionStatus(contribution: Contribution): string {
-
     if (contribution.status === "pending") {
-
       return t("contributions.guardianOwn.awaitingRating");
     }
 
     if (contribution.status === "approved") {
-
       return t("contributions.starsReceived", { value: contribution.stars ?? 1 });
     }
 
@@ -181,9 +170,7 @@ export function useContributionsPage() {
     contributionToDelete.value = contribution;
   }
   function confirmContributionDelete() {
-
     if (!contributionToDelete.value) {
-
       return;
     }
 
@@ -191,9 +178,7 @@ export function useContributionsPage() {
     contributionToDelete.value = undefined;
   }
   function confirmPromotionDelete() {
-
     if (!promotionToDelete.value) {
-
       return;
     }
 
@@ -209,46 +194,37 @@ export function useContributionsPage() {
     const seedKey = contribution.translationKey?.split(".").at(-1);
 
     if (seedKey === "roomAir") {
-
       return t("contributions.tips.air");
     }
 
     if (seedKey === "setTable" || seedKey === "adamBreakfast") {
-
       return t("contributions.tips.table");
     }
 
     if (seedKey === "dishwasher") {
-
       return t("contributions.tips.dishes");
     }
 
     if (seedKey === "feedPet" || seedKey === "danielCats") {
-
       return t("contributions.tips.pets");
     }
 
     if (seedKey === "waterPlants") {
-
       return t("contributions.tips.plants");
     }
 
     if (seedKey === "danielLaundry") {
-
       return t("contributions.tips.laundry");
     }
 
     if (seedKey === "takeTrash") {
-
       return t("contributions.tips.trash");
     }
 
     return t("contributions.tips.default", { description: contribution.description });
   }
   function saveTeamInvite() {
-
     if (!teamContributionId.value) {
-
       return;
     }
 
@@ -290,9 +266,7 @@ export function useContributionsPage() {
     { immediate: false },
   );
   onMounted(function callback() {
-
     if (store.viewerRole !== "child") {
-
       return;
     }
 
@@ -301,22 +275,18 @@ export function useContributionsPage() {
   watch(
     () => route.query.new,
     function callback(value) {
-
       if (value === "1" && store.permissions.canManageContent) {
         addDialog.value = true;
       }
-
     },
     { immediate: true },
   );
   watch(
     () => route.query.promotion,
     function callback(value) {
-
       if (value === "1" && store.permissions.canManageContent) {
         promotionDialog.value = true;
       }
-
     },
     { immediate: true },
   );

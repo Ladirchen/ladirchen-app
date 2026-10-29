@@ -9,8 +9,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Domain.Avatar;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Ladi;
 using LadirchenApp.Domain.Shared;
 
@@ -60,6 +62,16 @@ public sealed class ExecuteFamilyCommandHandler
     var members = RequireArray(profileState, "members");
     var payload = RequireObject(command.Payload);
     var actor = RequireMember(members, command.ActorId.Value.ToString());
+
+    if (command.CommandType.StartsWith("profile.", StringComparison.Ordinal))
+    {
+      return await ExecuteProfileAsync(command, profile, profileState, members, actor, payload, cancellationToken);
+    }
+
+    if (command.CommandType.StartsWith("home.", StringComparison.Ordinal))
+    {
+      return await ExecuteHomeAsync(command, profileState, actor, payload, cancellationToken);
+    }
 
     if (command.CommandType.StartsWith("savings.", StringComparison.Ordinal))
     {
@@ -158,6 +170,147 @@ public sealed class ExecuteFamilyCommandHandler
     );
 
     var changed = await _repository.SaveBatchAsync(pendingSaves, cancellationToken);
+
+    foreach (var snapshot in changed)
+    {
+      await _publisher.PublishAsync(snapshot, cancellationToken);
+    }
+
+    return new FamilyCommandResult(changed);
+  }
+
+  private async Task<FamilyCommandResult> ExecuteHomeAsync(
+    FamilyCommand command,
+    JsonObject profile,
+    JsonObject actor,
+    JsonObject payload,
+    CancellationToken cancellationToken
+  )
+  {
+    var home = await RequireSnapshotAsync(command.FamilyId, "home-customization", cancellationToken);
+    var homeState = RequireObject(home.State);
+    var progression = await RequireSnapshotAsync(command.FamilyId, "family-progression", cancellationToken);
+    var houseLevel = RequiredInt(RequireObject(progression.State), "houseLevel");
+    FamilyAggregateSnapshot? savings = null;
+    JsonObject? savingsState = null;
+
+    if (command.CommandType.StartsWith("home.purchase-", StringComparison.Ordinal))
+    {
+      savings = await RequireSnapshotAsync(command.FamilyId, "savings", cancellationToken);
+      savingsState = RequireObject(savings.State);
+    }
+
+    switch (command.CommandType)
+    {
+      case "home.purchase-accessory":
+        PurchaseAccessory(homeState, savingsState!, actor, payload);
+        break;
+      case "home.purchase-furniture-set":
+        PurchaseFurnitureSet(homeState, savingsState!, actor, payload, houseLevel);
+        break;
+      case "home.toggle-accessory":
+        ToggleAccessory(homeState, payload);
+        break;
+      case "home.store-accessory":
+        StoreAccessory(homeState, payload);
+        break;
+      case "home.place-accessory":
+        PlaceAccessory(homeState, payload, houseLevel);
+        break;
+      case "home.purchase-theme":
+        PurchaseTheme(homeState, savingsState!, actor, payload);
+        break;
+      case "home.select-theme":
+        SelectTheme(homeState, payload);
+        break;
+      case "home.purchase-room-design":
+        PurchaseRoomDesign(homeState, savingsState!, actor, payload, houseLevel);
+        break;
+      case "home.select-room-design":
+        SelectRoomDesign(homeState, payload, houseLevel);
+        break;
+      case "home.move-entity":
+        MoveHouseEntity(profile, homeState, payload, houseLevel);
+        break;
+      case "home.reset-entity":
+        ResetHouseEntity(profile, homeState, payload, houseLevel);
+        break;
+      default:
+        throw new FamilyCommandException("The home-customization command is not supported.");
+    }
+
+    var saves = new List<PendingFamilyAggregateSave> { CreateSave(home, homeState, command.ActorId) };
+
+    if (savings is not null && savingsState is not null)
+    {
+      saves.Add(CreateSave(savings, savingsState, command.ActorId));
+    }
+
+    var changed = await _repository.SaveBatchAsync(saves, cancellationToken);
+
+    foreach (var snapshot in changed)
+    {
+      await _publisher.PublishAsync(snapshot, cancellationToken);
+    }
+
+    return new FamilyCommandResult(changed);
+  }
+
+  private async Task<FamilyCommandResult> ExecuteProfileAsync(
+    FamilyCommand command,
+    FamilyAggregateSnapshot profile,
+    JsonObject profileState,
+    JsonArray members,
+    JsonObject actor,
+    JsonObject payload,
+    CancellationToken cancellationToken
+  )
+  {
+    var refreshProgression = false;
+
+    switch (command.CommandType)
+    {
+      case "profile.set-weekly-participation":
+        SetWeeklyParticipation(members, actor, payload);
+        refreshProgression = true;
+        break;
+      case "profile.save-own-appearance":
+        SaveOwnAppearance(actor, payload);
+        break;
+      case "profile.set-own-nickname":
+        SetOwnNickname(actor, payload);
+        break;
+      case "profile.invite-guardian":
+        InviteGuardian(members, actor, payload);
+        break;
+      case "profile.set-guardian-access":
+        SetGuardianAccess(members, actor, payload);
+        break;
+      case "profile.complete-setup":
+        CompleteFamilySetup(profileState, actor, payload);
+        refreshProgression = true;
+        break;
+      default:
+        throw new FamilyCommandException("The family-profile command is not supported.");
+    }
+
+    var saves = new List<PendingFamilyAggregateSave> { CreateSave(profile, profileState, command.ActorId) };
+
+    if (refreshProgression)
+    {
+      var contributions = await RequireSnapshotAsync(command.FamilyId, "contributions", cancellationToken);
+      saves.Add(
+        await CreateProgressionSaveAsync(
+          command.FamilyId,
+          profileState,
+          RequireObject(contributions.State),
+          command.ActorId,
+          cancellationToken
+        )
+      );
+    }
+
+    var changed = await _repository.SaveBatchAsync(saves, cancellationToken);
 
     foreach (var snapshot in changed)
     {
@@ -948,6 +1101,470 @@ public sealed class ExecuteFamilyCommandHandler
     Require(DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result), "The shop date is invalid.");
 
     return result;
+  }
+
+  private static void PurchaseAccessory(JsonObject home, JsonObject savings, JsonObject actor, JsonObject payload)
+  {
+    Require(StringValue(actor, "role") == "child", "Only children may purchase house items.");
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
+    var accessory = RequireCatalogItem(home, "accessories", id);
+    Require(!RequiredBool(accessory, "owned"), "The house accessory is already owned.");
+    DebitBalance(savings, RequiredString(actor, "id"), definition.Price);
+    accessory["owned"] = true;
+    accessory["equipped"] = false;
+  }
+
+  private static void PurchaseFurnitureSet(
+    JsonObject home,
+    JsonObject savings,
+    JsonObject actor,
+    JsonObject payload,
+    int houseLevel
+  )
+  {
+    Require(StringValue(actor, "role") == "child", "Only children may purchase furniture sets.");
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.FurnitureSets.TryGetValue(id, out var definition), "The furniture set is unknown.");
+    Require(houseLevel >= definition.MinimumLevel, "The house level is too low for this furniture set.");
+    var items = definition.AccessoryIds.Select(itemId => RequireCatalogItem(home, "accessories", itemId)).ToArray();
+    Require(items.Any(item => !RequiredBool(item, "owned")), "The furniture set is already owned.");
+    DebitBalance(savings, RequiredString(actor, "id"), definition.Price);
+
+    foreach (var item in items)
+    {
+      item["owned"] = true;
+      item["equipped"] = false;
+    }
+  }
+
+  private static void ToggleAccessory(JsonObject home, JsonObject payload)
+  {
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
+    var accessory = RequireCatalogItem(home, "accessories", id);
+    Require(RequiredBool(accessory, "owned"), "The house accessory is not owned.");
+    Require(definition.Movable, "A fixed house accessory cannot be toggled.");
+    accessory["equipped"] = !RequiredBool(accessory, "equipped");
+  }
+
+  private static void StoreAccessory(JsonObject home, JsonObject payload)
+  {
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
+    var accessory = RequireCatalogItem(home, "accessories", id);
+    Require(RequiredBool(accessory, "owned"), "The house accessory is not owned.");
+    Require(RequiredBool(accessory, "equipped"), "The house accessory is already stored.");
+    Require(definition.Movable, "A fixed house accessory cannot be stored.");
+    accessory["equipped"] = false;
+  }
+
+  private static void PlaceAccessory(JsonObject home, JsonObject payload, int houseLevel)
+  {
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.Accessories.TryGetValue(id, out var definition), "The house accessory is unknown.");
+    var accessory = RequireCatalogItem(home, "accessories", id);
+    Require(RequiredBool(accessory, "owned"), "The house accessory is not owned.");
+    Require(definition.Movable, "A fixed house accessory cannot be placed.");
+    var requestedArea = RequiredString(payload, "zoneId");
+    var targetArea = definition.IntendedArea == "outside"
+      ? "garden"
+      : requestedArea == "garden"
+        ? definition.AssignedArea
+        : requestedArea;
+    RequireAreaAvailable(targetArea, houseLevel);
+    var placement = RequireFurniturePlacement(home, id);
+
+    if (StringValue(placement, "zoneId") != targetArea)
+    {
+      placement["zoneId"] = targetArea;
+      placement["x"] = 50;
+      placement["y"] = targetArea == "garden" ? 68 : 66;
+    }
+
+    accessory["equipped"] = true;
+  }
+
+  private static void PurchaseTheme(JsonObject home, JsonObject savings, JsonObject actor, JsonObject payload)
+  {
+    Require(StringValue(actor, "role") == "child", "Only children may purchase house themes.");
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.Themes.TryGetValue(id, out var price), "The house theme is unknown.");
+    var theme = RequireCatalogItem(home, "editions", id);
+    Require(!RequiredBool(theme, "owned"), "The house theme is already owned.");
+    DebitBalance(savings, RequiredString(actor, "id"), price);
+    theme["owned"] = true;
+    ApplyTheme(home, id);
+  }
+
+  private static void SelectTheme(JsonObject home, JsonObject payload)
+  {
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.Themes.ContainsKey(id), "The house theme is unknown.");
+    Require(RequiredBool(RequireCatalogItem(home, "editions", id), "owned"), "The house theme is not owned.");
+    ApplyTheme(home, id);
+  }
+
+  private static void PurchaseRoomDesign(
+    JsonObject home,
+    JsonObject savings,
+    JsonObject actor,
+    JsonObject payload,
+    int houseLevel
+  )
+  {
+    Require(StringValue(actor, "role") == "child", "Only children may purchase room designs.");
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.RoomDesigns.TryGetValue(id, out var definition), "The room design is unknown.");
+    Require(houseLevel >= definition.MinimumLevel, "The house level is too low for this room design.");
+    Require(
+      RequiredBool(RequireCatalogItem(home, "editions", definition.ThemeId), "owned"),
+      "The matching house theme is not owned."
+    );
+    var design = RequireCatalogItem(home, "roomDesigns", id);
+    Require(!RequiredBool(design, "owned"), "The room design is already owned.");
+    DebitBalance(savings, RequiredString(actor, "id"), definition.Price);
+    design["owned"] = true;
+    home["selectedEditionId"] = definition.ThemeId;
+    SetSelectedRoomDesign(home, definition.Area, id);
+  }
+
+  private static void SelectRoomDesign(JsonObject home, JsonObject payload, int houseLevel)
+  {
+    var id = RequiredString(payload, "id");
+    Require(HouseShopCatalog.RoomDesigns.TryGetValue(id, out var definition), "The room design is unknown.");
+    Require(houseLevel >= definition.MinimumLevel, "The house level is too low for this room design.");
+    Require(RequiredBool(RequireCatalogItem(home, "roomDesigns", id), "owned"), "The room design is not owned.");
+    Require(
+      RequiredBool(RequireCatalogItem(home, "editions", definition.ThemeId), "owned"),
+      "The matching house theme is not owned."
+    );
+    home["selectedEditionId"] = definition.ThemeId;
+    SetSelectedRoomDesign(home, definition.Area, id);
+  }
+
+  private static void ApplyTheme(JsonObject home, string themeId)
+  {
+    home["selectedEditionId"] = themeId;
+
+    foreach (var item in HouseShopCatalog.RoomDesigns.Where(item => item.Value.ThemeId == themeId))
+    {
+      RequireCatalogItem(home, "roomDesigns", item.Key)["owned"] = true;
+      SetSelectedRoomDesign(home, item.Value.Area, item.Key);
+    }
+  }
+
+  private static void SetSelectedRoomDesign(JsonObject home, string area, string designId)
+  {
+    var selected = RequireArray(home, "selectedRoomDesigns");
+    var existing = selected.OfType<JsonObject>().FirstOrDefault(item => StringValue(item, "zoneId") == area);
+
+    if (existing is null)
+    {
+      selected.Add(new JsonObject { ["designId"] = designId, ["zoneId"] = area });
+    }
+    else
+    {
+      existing["designId"] = designId;
+    }
+  }
+
+  private static void MoveHouseEntity(
+    JsonObject profile,
+    JsonObject home,
+    JsonObject payload,
+    int houseLevel
+  )
+  {
+    Require(StringValue(profile, "subscriptionTier") == "pro", "House arrangement requires a pro subscription.");
+    var placement = RequireCatalogItem(home, "placements", RequiredString(payload, "placementId"));
+    var area = RequiredString(payload, "zoneId");
+    RequireAreaAvailable(area, houseLevel);
+    RequireMovablePlacement(placement);
+    var normalized = new HouseShopPolicy().NormalizePlacement(
+      area,
+      RequiredDecimal(payload, "x"),
+      RequiredDecimal(payload, "y"),
+      RequiredDecimal(placement, "scale")
+    );
+    ApplyPlacement(placement, normalized);
+  }
+
+  private static void ResetHouseEntity(
+    JsonObject profile,
+    JsonObject home,
+    JsonObject payload,
+    int houseLevel
+  )
+  {
+    Require(StringValue(profile, "subscriptionTier") == "pro", "House arrangement requires a pro subscription.");
+    var placement = RequireCatalogItem(home, "placements", RequiredString(payload, "placementId"));
+    RequireMovablePlacement(placement);
+    HousePlacement initial;
+
+    if (StringValue(placement, "entityType") == "furniture")
+    {
+      var entityId = RequiredString(placement, "entityId");
+      Require(HouseShopCatalog.Accessories.TryGetValue(entityId, out var definition), "The house accessory is unknown.");
+      initial = definition.Initial;
+    }
+    else
+    {
+      initial = new HousePlacement(
+        RequiredString(payload, "zoneId"),
+        RequiredDecimal(payload, "x"),
+        RequiredDecimal(payload, "y"),
+        RequiredDecimal(payload, "scale")
+      );
+    }
+
+    RequireAreaAvailable(initial.Area, houseLevel);
+    var normalized = new HouseShopPolicy().NormalizePlacement(initial.Area, initial.X, initial.Y, initial.Scale);
+    ApplyPlacement(placement, normalized);
+  }
+
+  private static void ApplyPlacement(JsonObject placement, HousePlacement value)
+  {
+    placement["zoneId"] = value.Area;
+    placement["x"] = value.X;
+    placement["y"] = value.Y;
+    placement["scale"] = value.Scale;
+  }
+
+  private static void RequireMovablePlacement(JsonObject placement)
+  {
+    if (StringValue(placement, "entityType") != "furniture")
+    {
+      return;
+    }
+
+    var entityId = RequiredString(placement, "entityId");
+    Require(HouseShopCatalog.Accessories.TryGetValue(entityId, out var definition), "The house accessory is unknown.");
+    Require(definition.Movable, "A fixed house accessory cannot be moved.");
+  }
+
+  private static void RequireAreaAvailable(string area, int houseLevel)
+  {
+    Require(HouseShopCatalog.AreaMinimumLevels.TryGetValue(area, out var minimumLevel), "The house area is unknown.");
+    Require(houseLevel >= minimumLevel, "The house area is not unlocked.");
+  }
+
+  private static JsonObject RequireFurniturePlacement(JsonObject home, string accessoryId)
+  {
+    return RequireArray(home, "placements")
+      .OfType<JsonObject>()
+      .FirstOrDefault(item => StringValue(item, "entityType") == "furniture" && StringValue(item, "entityId") == accessoryId)
+      ?? throw new FamilyCommandException("The house accessory placement does not exist.");
+  }
+
+  private static JsonObject RequireCatalogItem(JsonObject state, string collection, string id)
+  {
+    return FindById(RequireArray(state, collection), id)
+      ?? throw new FamilyCommandException($"The {collection} item does not exist.");
+  }
+
+  private static void SetWeeklyParticipation(JsonArray members, JsonObject actor, JsonObject payload)
+  {
+    var member = RequireMember(members, RequiredString(payload, "memberId"));
+    Require(StringValue(member, "role") == "guardian", "Only guardians may opt into the weekly family goal.");
+    Require(
+      IsAdministrator(actor) || StringValue(actor, "id") == StringValue(member, "id"),
+      "Only an administrator or the affected guardian may change weekly participation."
+    );
+    member["participatesInWeeklyGoal"] = RequiredBool(payload, "participates");
+  }
+
+  private static void SaveOwnAppearance(JsonObject actor, JsonObject payload)
+  {
+    var appearance = RequireObject(payload, "appearance");
+    ValidateAvatarAppearance(appearance, RequiredString(actor, "role"));
+    actor["appearance"] = appearance.DeepClone();
+  }
+
+  private static void SetOwnNickname(JsonObject actor, JsonObject payload)
+  {
+    Require(StringValue(actor, "role") == "child", "Only children may set a nickname.");
+    var nickname = StringValue(payload, "nickname")?.Trim() ?? string.Empty;
+    Require(nickname.Length <= 18, "The nickname must not exceed 18 characters.");
+
+    if (nickname.Length == 0)
+    {
+      actor.Remove("nickname");
+    }
+    else
+    {
+      actor["nickname"] = nickname;
+    }
+  }
+
+  private static void InviteGuardian(JsonArray members, JsonObject actor, JsonObject payload)
+  {
+    RequireAdministrator(actor);
+    var id = RequiredString(payload, "id");
+    Require(FindById(members, id) is null, "The invited family member already exists.");
+    var name = RequiredString(payload, "name").Trim();
+    var email = RequiredString(payload, "email").Trim();
+    var access = RequiredString(payload, "guardianAccess");
+    Require(access is "admin" or "supporter", "The guardian access level is invalid.");
+    var normalizedName = name.ToLowerInvariant();
+    var preset = normalizedName.Contains("oma", StringComparison.Ordinal)
+      ? "grandma"
+      : normalizedName.Contains("opa", StringComparison.Ordinal)
+        ? "grandpa"
+        : "adult";
+    members.Add(
+      new JsonObject
+      {
+        ["id"] = id,
+        ["name"] = name,
+        ["email"] = email,
+        ["avatar"] = "🧑",
+        ["color"] = "#7e8db8",
+        ["role"] = "guardian",
+        ["guardianAccess"] = access,
+        ["participatesInWeeklyGoal"] = false,
+        ["weeklyStreak"] = 0,
+        ["invitationPending"] = true,
+        ["appearance"] = GuardianAppearance(preset),
+      }
+    );
+  }
+
+  private static void SetGuardianAccess(JsonArray members, JsonObject actor, JsonObject payload)
+  {
+    RequireAdministrator(actor);
+    var member = RequireMember(members, RequiredString(payload, "memberId"));
+    Require(StringValue(member, "role") == "guardian", "The affected member must be a guardian.");
+    Require(StringValue(member, "id") != StringValue(actor, "id"), "A guardian cannot change their own access.");
+    var access = RequiredString(payload, "guardianAccess");
+    Require(access is "admin" or "supporter", "The guardian access level is invalid.");
+    member["guardianAccess"] = access;
+  }
+
+  private static void CompleteFamilySetup(JsonObject profile, JsonObject actor, JsonObject payload)
+  {
+    RequireAdministrator(actor);
+    var members = RequireArray(payload, "members");
+    var pets = RequireArray(payload, "pets");
+    Require(members.Count > 0, "A family requires at least one member.");
+    var memberIds = new HashSet<string>(StringComparer.Ordinal);
+
+    foreach (var member in members.OfType<JsonObject>())
+    {
+      ValidateFamilyMember(member);
+      Require(memberIds.Add(RequiredString(member, "id")), "Family member identifiers must be unique.");
+    }
+
+    Require(memberIds.Count == members.Count, "Every family member must be an object.");
+    Require(memberIds.Contains(RequiredString(actor, "id")), "The active administrator must remain in the family.");
+    var retainedActor = FindById(members, RequiredString(actor, "id"))!;
+    Require(IsAdministrator(retainedActor), "The active administrator must retain administrator access.");
+    var petIds = new HashSet<string>(StringComparer.Ordinal);
+
+    foreach (var pet in pets.OfType<JsonObject>())
+    {
+      ValidateFamilyPet(pet);
+      Require(petIds.Add(RequiredString(pet, "id")), "Family pet identifiers must be unique.");
+    }
+
+    Require(petIds.Count == pets.Count, "Every family pet must be an object.");
+    profile["members"] = members.DeepClone();
+    profile["pets"] = pets.DeepClone();
+    profile["onboardingCompleted"] = true;
+  }
+
+  private static void ValidateFamilyMember(JsonObject member)
+  {
+    _ = RequiredString(member, "id");
+    _ = RequiredString(member, "name");
+    _ = RequiredString(member, "avatar");
+    _ = RequiredString(member, "color");
+    var role = RequiredString(member, "role");
+    Require(role is "child" or "guardian", "The family member role is invalid.");
+    Require(RequiredInt(member, "weeklyStreak") >= 0, "A weekly streak cannot be negative.");
+
+    if (role == "guardian")
+    {
+      Require(StringValue(member, "guardianAccess") is "admin" or "supporter", "The guardian access level is invalid.");
+    }
+
+    if (member["appearance"] is JsonObject appearance)
+    {
+      ValidateAvatarAppearance(appearance, role);
+    }
+  }
+
+  private static void ValidateFamilyPet(JsonObject pet)
+  {
+    _ = RequiredString(pet, "id");
+    _ = RequiredString(pet, "name");
+    _ = RequiredString(pet, "avatar");
+    _ = RequiredString(pet, "color");
+    Require(
+      RequiredString(pet, "kind") is "cat" or "dog" or "rabbit" or "bird" or "other",
+      "The family pet kind is invalid."
+    );
+  }
+
+  private static void ValidateAvatarAppearance(JsonObject appearance, string role)
+  {
+    var avatar = new AvatarAppearance(
+      RequiredString(appearance, "age"),
+      RequiredString(appearance, "skinToneId"),
+      RequiredString(appearance, "faceShape"),
+      RequiredString(appearance, "face"),
+      RequiredString(appearance, "hair"),
+      RequiredString(appearance, "hairColorId"),
+      RequiredString(appearance, "outfit"),
+      RequiredString(appearance, "outfitColorId"),
+      RequiredString(appearance, "accessoryId"),
+      RequiredString(appearance, "funAccessoryId"),
+      RequiredString(appearance, "seasonalAccessoryId")
+    );
+
+    try
+    {
+      new AvatarCatalog().Validate(avatar, role == "child" ? AvatarProfile.Child : AvatarProfile.Guardian);
+    }
+    catch (DomainRuleException exception)
+    {
+      throw new FamilyCommandException(exception.Message);
+    }
+  }
+
+  private static JsonObject GuardianAppearance(string preset)
+  {
+    var appearance = new JsonObject
+    {
+      ["age"] = preset == "adult" ? "adult" : "senior",
+      ["skinToneId"] = "skin-medium",
+      ["faceShape"] = preset == "grandpa" ? "angular" : "soft",
+      ["face"] = preset == "adult" ? "happy" : "confident",
+      ["hair"] = preset == "grandma" ? "bun" : "short",
+      ["hairColorId"] = preset switch
+      {
+        "grandma" => "hair-white",
+        "grandpa" => "hair-silver",
+        _ => "hair-brown",
+      },
+      ["outfit"] = preset switch
+      {
+        "grandma" => "cardigan",
+        "grandpa" => "blazer",
+        _ => "shirt",
+      },
+      ["outfitColorId"] = preset switch
+      {
+        "grandma" => "outfit-lavender",
+        "grandpa" => "outfit-slate",
+        _ => "outfit-emerald",
+      },
+      ["accessoryId"] = preset == "adult" ? "none" : "glasses",
+      ["funAccessoryId"] = "none",
+      ["seasonalAccessoryId"] = "none",
+    };
+
+    return appearance;
   }
 
   private static void AddGoal(JsonArray goals, JsonArray members, JsonObject actor, JsonObject payload)

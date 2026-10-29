@@ -9,6 +9,7 @@ import { AUTH_STATE_KEY, createUuid } from "./family-world-store-utils";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { FOLLOW_UP_REWARD_REVEAL_DELAY_MS } from "@/shared/runtime-timing";
 import { familyMemberColorPalette } from "@/theme/color-palette";
+import { executeBackendFamilyCommand } from "./backend-family-command";
 
 export const familyActions = {
   refreshCurrentTime(this: FamilyWorldStoreContext) {
@@ -18,7 +19,6 @@ export const familyActions = {
     const member = this.members.find((item) => item.id === memberId);
 
     if (!member) {
-
       return;
     }
 
@@ -48,7 +48,6 @@ export const familyActions = {
     const member = this.members.find((item) => item.id === memberId);
 
     if (!member) {
-
       return false;
     }
 
@@ -65,6 +64,7 @@ export const familyActions = {
     this.isAuthenticated = true;
     this.familyAggregatesHydrated = false;
     this.homeCustomizationHydrated = false;
+    this.$familyWorld.clientStorage.setItem(AUTH_STATE_KEY, "authenticated");
     await this.hydrateFamilyAggregates();
     const member = this.members.find((item) => item.id === memberId);
 
@@ -129,28 +129,42 @@ export const familyActions = {
     this.persistHomeCustomization();
   },
   selectChildForGuardian(this: FamilyWorldStoreContext, memberId: FamilyMemberId) {
-
     if (this.viewerRole !== "guardian") {
-
       return;
     }
 
     const child = this.members.find((member) => member.id === memberId && member.role === "child");
 
     if (!child) {
-
       return;
     }
 
     this.activeChildId = child.id;
     this.notify("notifications.family.childSelected", { name: child.name });
   },
-  setWeeklyGoalParticipation(this: FamilyWorldStoreContext, memberId: FamilyMemberId, participates: boolean) {
+  async setWeeklyGoalParticipation(this: FamilyWorldStoreContext, memberId: FamilyMemberId, participates: boolean) {
+    const memberName = this.members.find((item) => item.id === memberId)?.name ?? "";
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "profile.set-weekly-participation",
+        { memberId, participates },
+        "notifications.save.profile",
+        () =>
+          this.notify(
+            participates ? "notifications.family.weeklyGoalJoined" : "notifications.family.weeklyGoalPaused",
+            { name: memberName },
+          ),
+      )
+    ) {
+      return;
+    }
+
     const member = this.members.find((item) => item.id === memberId && item.role === "guardian");
     const canEdit = this.permissions.canManageFamily || memberId === this.signedInMemberId;
 
     if (!member || !canEdit) {
-
       return;
     }
 
@@ -160,11 +174,22 @@ export const familyActions = {
       name: member.name,
     });
   },
-  saveOwnAppearance(this: FamilyWorldStoreContext, appearance: AvatarAppearance) {
+  async saveOwnAppearance(this: FamilyWorldStoreContext, appearance: AvatarAppearance) {
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "profile.save-own-appearance",
+        { appearance },
+        "notifications.save.profile",
+        () => this.notify("notifications.profile.saved"),
+      )
+    ) {
+      return;
+    }
+
     const member = this.members.find((item) => item.id === this.signedInMemberId && item.role === this.viewerRole);
 
     if (!member || (member.role === "child" && member.id !== this.activeChildId)) {
-
       return;
     }
 
@@ -172,17 +197,32 @@ export const familyActions = {
     this.persistFamilyProfile();
     this.notify("notifications.profile.saved");
   },
-  setOwnNickname(this: FamilyWorldStoreContext, nickname: string) {
+  async setOwnNickname(this: FamilyWorldStoreContext, nickname: string) {
+    const normalizedNickname = nickname.trim().slice(0, FAMILY_PROFILE_RULES.nicknameMaximumLength);
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "profile.set-own-nickname",
+        { nickname: normalizedNickname },
+        "notifications.save.profile",
+        () =>
+          this.notify(
+            normalizedNickname ? "notifications.profile.nicknameSaved" : "notifications.profile.nicknameRemoved",
+            normalizedNickname ? { nickname: normalizedNickname } : {},
+          ),
+      )
+    ) {
+      return;
+    }
 
     if (this.viewerRole !== "child" || this.signedInMemberId !== this.activeChildId) {
-
       return;
     }
 
     const member = this.members.find((item) => item.id === this.activeChildId && item.role === "child");
 
     if (!member) {
-
       return;
     }
 
@@ -193,15 +233,27 @@ export const familyActions = {
       member.nickname ? { nickname: member.nickname } : {},
     );
   },
-  inviteGuardian(
+  async inviteGuardian(
     this: FamilyWorldStoreContext,
     name: string,
     email: string,
     guardianAccess: GuardianAccessLevel = "supporter",
   ) {
+    const id = createDomainId.familyMember(createUuid());
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "profile.invite-guardian",
+        { email, guardianAccess, id, name },
+        "notifications.save.profile",
+        () => this.notify("notifications.family.invitationCreated", { name }),
+      )
+    ) {
+      return;
+    }
 
     if (!this.permissions.canInviteMembers) {
-
       return;
     }
 
@@ -210,13 +262,12 @@ export const familyActions = {
 
     if (normalizedName.includes("oma")) {
       preset = "grandma";
-
     } else if (normalizedName.includes("opa")) {
       preset = "grandpa";
     }
 
     this.members.push({
-      id: createDomainId.familyMember(createUuid()),
+      id,
       name,
       email,
       avatar: "🧑",
@@ -231,17 +282,36 @@ export const familyActions = {
     this.persistFamilyProfile();
     this.notify("notifications.family.invitationCreated", { name });
   },
-  setGuardianAccess(this: FamilyWorldStoreContext, memberId: FamilyMemberId, guardianAccess: GuardianAccessLevel) {
+  async setGuardianAccess(
+    this: FamilyWorldStoreContext,
+    memberId: FamilyMemberId,
+    guardianAccess: GuardianAccessLevel,
+  ) {
+    const memberName = this.members.find((item) => item.id === memberId)?.name ?? "";
+
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "profile.set-guardian-access",
+        { guardianAccess, memberId },
+        "notifications.save.profile",
+        () =>
+          this.notify(
+            guardianAccess === "admin" ? "notifications.family.accessAdmin" : "notifications.family.accessSupporter",
+            { name: memberName },
+          ),
+      )
+    ) {
+      return;
+    }
 
     if (!this.permissions.canManageFamily || memberId === this.signedInMemberId) {
-
       return;
     }
 
     const member = this.members.find((item) => item.id === memberId && item.role === "guardian");
 
     if (!member) {
-
       return;
     }
 
@@ -253,15 +323,36 @@ export const familyActions = {
     );
   },
   openFamilySetup(this: FamilyWorldStoreContext) {
-
     if (this.onboardingCompleted && !this.permissions.canManageFamily) {
-
       return;
     }
 
     this.familySetupOpen = true;
   },
-  completeFamilySetup(this: FamilyWorldStoreContext, members: FamilyMember[], pets: FamilyPet[]) {
+  async completeFamilySetup(this: FamilyWorldStoreContext, members: FamilyMember[], pets: FamilyPet[]) {
+    if (
+      await executeBackendFamilyCommand(
+        this,
+        "profile.complete-setup",
+        { members, pets },
+        "notifications.save.profile",
+        () => {
+          const activeChildStillExists = this.members.some(
+            (member) => member.id === this.activeChildId && member.role === "child",
+          );
+
+          if (!activeChildStillExists) {
+            this.activeChildId = this.members.find((member) => member.role === "child")?.id ?? this.activeChildId;
+          }
+
+          this.familySetupOpen = false;
+          this.notify("notifications.family.setupComplete");
+        },
+      )
+    ) {
+      return;
+    }
+
     const normalizedMembers = normalizeFamilyMembers(members);
     this.members = normalizedMembers;
     this.pets = pets;

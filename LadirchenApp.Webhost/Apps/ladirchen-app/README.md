@@ -95,7 +95,7 @@ German and English messages live as flat, alphabetically sorted JSON files in `s
 
 ## 🔌 Backend integration boundary
 
-The application defaults to versioned local-storage aggregate repositories. Set `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL` to use the HTTP adapters. Each aggregate adapter expects:
+The application defaults to the backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. `VITE_DATA_SOURCE=local-storage` remains an explicit offline UI-development mode. Each aggregate adapter expects:
 
 ```text
 GET /api/families/{familyId}/aggregates/{aggregateType}
@@ -110,17 +110,17 @@ In API mode the application also connects to:
 /hubs/family-updates
 ```
 
-After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. The current server snapshot repository is an in-memory migration adapter; durable persistence and domain-specific command endpoints must replace it before API mode becomes the production default. Whole-aggregate `PUT` is therefore a transition contract, not the final business-command API.
+After another family member changes an aggregate, SignalR publishes its type and revision. Pinia then reloads only that aggregate and remains the reactive UI read-model cache. The current server snapshot repository and authentication store are in-memory adapters and must be replaced by durable persistence before production deployment. Whole-aggregate `PUT` remains available only for the explicit local-storage migration/development path; API-mode business actions use commands.
 
-Contribution, savings, family reward-shop and progression writes in API mode already use the backend-owned command endpoint:
+Family profile, avatar, contribution, savings, family reward-shop, progression and house-customization writes in API mode use the backend-owned command endpoint:
 
 ```text
 POST /api/families/{familyId}/commands
 ```
 
-These actions no longer mutate Pinia first. The backend validates each command, applies the C# domain policies, saves all affected snapshots atomically, publishes their revisions through SignalR, and Pinia reloads the snapshots as a reactive read-model cache. Local-storage mode retains the prototype behavior for offline UI development. Family profile, avatar, authentication, house customization and house-shop writes still use their existing transition paths and must be migrated domain by domain before the whole-aggregate contract and the corresponding frontend calculations can be removed.
+These actions no longer mutate Pinia first. The backend validates each command, applies the C# domain policies, saves all affected snapshots atomically, publishes their revisions through SignalR, and Pinia reloads the snapshots as a reactive read-model cache. The savings-interest simulator also obtains its projection from the backend. Local-storage mode retains the former prototype behavior only for offline UI development.
 
-Authentication is exposed through `src/application/ports/authentication-gateway.ts`. The current local adapter is intentionally isolated in `src/features/auth/local-auth.ts`; replace it in `src/app/composition-root.ts` when the server authentication contract is available. Password hashing and authorization remain server responsibilities in API mode.
+Authentication is exposed through `src/application/ports/authentication-gateway.ts`. API mode registers and authenticates through the server, where passwords are salted and hashed with PBKDF2 and family registration initializes all aggregate snapshots. The local adapter in `src/features/auth/local-auth.ts` is used only by explicit local-storage mode.
 
 ## 🎨 Adding Designs
 

@@ -29,6 +29,7 @@ describe("local authentication gateway", () => {
     await gateway.register({
       familyId,
       familyName: "Musterfamilie",
+      guardianName: "Alex",
       memberId,
       password: "safe-demo-password",
       username: "Laura",
@@ -49,6 +50,7 @@ describe("local authentication gateway", () => {
     await firstGateway.register({
       familyId: createDomainId.family("c776a9b6-c37d-4a51-91ba-269a67274478"),
       familyName: "Musterfamilie",
+      guardianName: "Alex",
       memberId: createDomainId.familyMember("member-guardian"),
       password: "safe-demo-password",
       username: "laura",

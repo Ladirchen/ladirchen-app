@@ -111,6 +111,208 @@ export class Client {
     return Promise.resolve<ExecuteFamilyCommandResponse>(null as any);
   }
 
+  simulateSavingsInterest(
+    familyId: string,
+    request: SimulateSavingsInterestRequest,
+    signal?: AbortSignal,
+  ): Promise<SavingsInterestSimulation> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/projections/savings-interest";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processSimulateSavingsInterest(_response);
+    });
+  }
+
+  protected processSimulateSavingsInterest(response: Response): Promise<SavingsInterestSimulation> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as SavingsInterestSimulation);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<SavingsInterestSimulation>(null as any);
+  }
+
+  authenticateAccount(
+    request: AuthenticateAccountRequest,
+    signal?: AbortSignal,
+  ): Promise<AuthenticationSessionResponse> {
+    let url_ = this.baseUrl + "/api/auth/login";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAuthenticateAccount(_response);
+    });
+  }
+
+  protected processAuthenticateAccount(response: Response): Promise<AuthenticationSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as AuthenticationSessionResponse);
+        return result200;
+      });
+    } else if (status === 401) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<AuthenticationSessionResponse>(null as any);
+  }
+
+  registerAccount(request: RegisterAccountRequest, signal?: AbortSignal): Promise<AuthenticationSessionResponse> {
+    let url_ = this.baseUrl + "/api/auth/register";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processRegisterAccount(_response);
+    });
+  }
+
+  protected processRegisterAccount(response: Response): Promise<AuthenticationSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as AuthenticationSessionResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 409) {
+      return response.text().then((_responseText) => {
+        let result409: any = null;
+        result409 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<AuthenticationSessionResponse>(null as any);
+  }
+
+  authenticationUsernameExists(username: string, signal?: AbortSignal): Promise<boolean> {
+    let url_ = this.baseUrl + "/api/auth/username-exists?";
+    if (username === undefined || username === null)
+      throw new globalThis.Error("The parameter 'username' must be defined and cannot be null.");
+    else url_ += "username=" + encodeURIComponent("" + username) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processAuthenticationUsernameExists(_response);
+    });
+  }
+
+  protected processAuthenticationUsernameExists(response: Response): Promise<boolean> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as boolean);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<boolean>(null as any);
+  }
+
   getFamilyAggregate(
     familyId: string,
     aggregateType: string,
@@ -284,6 +486,40 @@ export interface ExecuteFamilyCommandRequest {
   actorId?: string;
   commandType?: string;
   payload?: any;
+}
+
+export interface SavingsInterestSimulation {
+  ladiStageId?: string;
+  ladiStagePosition?: number;
+  interestRate?: number;
+  projectedCredit?: number;
+}
+
+export interface SimulateSavingsInterestRequest {
+  memberId?: string;
+  streakDays?: number;
+  completionPercent?: number;
+  averageRating?: number;
+}
+
+export interface AuthenticationSessionResponse {
+  familyId?: string;
+  familyName?: string;
+  memberId?: string;
+}
+
+export interface AuthenticateAccountRequest {
+  password?: string;
+  username?: string;
+}
+
+export interface RegisterAccountRequest {
+  familyId?: string;
+  familyName?: string;
+  guardianName?: string;
+  memberId?: string;
+  password?: string;
+  username?: string;
 }
 
 export interface SaveFamilyAggregateRequest {

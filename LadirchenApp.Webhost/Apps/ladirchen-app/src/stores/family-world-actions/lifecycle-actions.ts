@@ -61,23 +61,26 @@ export const lifecycleActions = {
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
         this.promotions = [...contributions.state.promotions];
-        let contributionRewardsMigrated = false;
-        this.contributions.forEach((contribution) => {
-          if (contribution.status !== "approved" || contribution.earnedReward !== undefined) {
-            return;
+
+        if (!this.$familyWorld.familyCommands.backendDriven) {
+          let contributionRewardsMigrated = false;
+          this.contributions.forEach((contribution) => {
+            if (contribution.status !== "approved" || contribution.earnedReward !== undefined) {
+              return;
+            }
+
+            const promotion = this.promotions.find((item) => item.active && item.contributionId === contribution.id);
+            contribution.earnedReward =
+              contribution.reward * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
+            contribution.earnedRatingBonus = 0;
+            contribution.earnedPromotionMultiplier = promotion?.multiplier;
+            contribution.rewardCelebrated = !promotion;
+            contributionRewardsMigrated = true;
+          });
+
+          if (contributionRewardsMigrated) {
+            this.persistContributions();
           }
-
-          const promotion = this.promotions.find((item) => item.active && item.contributionId === contribution.id);
-          contribution.earnedReward =
-            contribution.reward * (promotion?.multiplier ?? 1) + (promotion?.teamworkBonus ?? 0);
-          contribution.earnedRatingBonus = 0;
-          contribution.earnedPromotionMultiplier = promotion?.multiplier;
-          contribution.rewardCelebrated = !promotion;
-          contributionRewardsMigrated = true;
-        });
-
-        if (contributionRewardsMigrated) {
-          this.persistContributions();
         }
       }
     });

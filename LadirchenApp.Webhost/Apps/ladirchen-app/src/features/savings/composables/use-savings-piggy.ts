@@ -3,7 +3,6 @@ import { useI18n } from "vue-i18n";
 import { isFamilyCurrency } from "@/application/contracts/family-aggregate-validation";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
-import { getLadiStage, LADI_STAGES } from "@/domain/ladi";
 import { SAVINGS_RULES } from "@/domain/savings/rules";
 import type { FamilyCurrency } from "@/domain/savings/types";
 import type { FamilyMemberId, SavingGoalId } from "@/domain/shared/identifiers";
@@ -53,13 +52,13 @@ export function useSavingsPiggy() {
           .reduce((sum, reward) => sum + reward.price, 0);
         const available = Math.max(0, store.balanceFor(member.id) - reserved);
         const saved = store.totalVisibleSavedFor(member.id);
-        const ladiStage = getLadiStage(store.averageTaskRatingFor(member.id));
+        const ladiLevel = store.memberProgressions[member.id]?.ladiStagePosition ?? 1;
 
         return {
           available,
           completedThisWeek: completedThisWeek.length,
           id: member.id,
-          ladiLevel: LADI_STAGES.length - LADI_STAGES.indexOf(ladiStage),
+          ladiLevel,
           name: member.nickname?.trim() || member.name,
           saved,
           total: available + saved,
@@ -112,18 +111,14 @@ export function useSavingsPiggy() {
     ),
   );
   function formatRate(value: number) {
-
     return value.toLocaleString(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
   }
   function setCurrency(value: unknown) {
-
     if (isFamilyCurrency(value)) {
       store.setFamilyCurrency(value);
     }
-
   }
   function goalProgress(saved: number, target: number) {
-
     return Math.round(percentageOfTotal(saved, target));
   }
   function adjustTransferAmount(change: number) {
@@ -134,7 +129,6 @@ export function useSavingsPiggy() {
     amount.value = Math.min(SAVINGS_RULES.defaultTransferAmount, transferAmountMaximum.value);
   }
   function playTransfer(direction: "deposit" | "withdraw" | "gift") {
-
     if (transferTimer !== undefined) {
       window.clearTimeout(transferTimer);
     }
@@ -146,9 +140,7 @@ export function useSavingsPiggy() {
     }, TRANSFER_ANIMATION_DURATION_MS);
   }
   function deposit() {
-
     if (!selectedGoalId.value) {
-
       return;
     }
 
@@ -157,9 +149,7 @@ export function useSavingsPiggy() {
     amount.value = SAVINGS_RULES.defaultTransferAmount;
   }
   function withdraw() {
-
     if (!selectedGoalId.value) {
-
       return;
     }
 
@@ -168,9 +158,7 @@ export function useSavingsPiggy() {
     amount.value = SAVINGS_RULES.defaultTransferAmount;
   }
   function giftToMember() {
-
     if (!selectedMemberId.value || amount.value <= 0) {
-
       return;
     }
 
@@ -199,7 +187,6 @@ export function useSavingsPiggy() {
     const step = piggyGuideSteps.value[piggyGuideStep.value];
 
     if (!step) {
-
       return;
     }
 
@@ -216,13 +203,11 @@ export function useSavingsPiggy() {
   watch(
     () => store.piggyBankOpen,
     (isOpen) => {
-
       if (guidanceTimer !== undefined) {
         window.clearTimeout(guidanceTimer);
       }
 
       if (!isOpen || store.viewerRole === "guardian") {
-
         return;
       }
 
@@ -244,7 +229,6 @@ export function useSavingsPiggy() {
     unregisterGuideAction = ladiGuideController.registerAction("piggy:next", nextPiggyGuide);
   });
   onUnmounted(function callback() {
-
     if (transferTimer !== undefined) {
       window.clearTimeout(transferTimer);
     }
