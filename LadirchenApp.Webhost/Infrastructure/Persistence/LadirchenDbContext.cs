@@ -150,7 +150,7 @@ public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
     outbox.Property(item => item.AggregateType).HasMaxLength(100);
     outbox.Property(item => item.UpdatedBy).HasMaxLength(128);
     outbox.Property(item => item.LastError).HasMaxLength(2000);
-    outbox.HasIndex(item => new { item.FamilyId, item.AggregateType, item.Revision }).IsUnique();
+    outbox.HasIndex(item => new { item.FamilyId, item.AggregateType, item.Revision });
     outbox.HasIndex(item => new { item.PublishedAt, item.NextAttemptAt });
     outbox
       .HasOne<FamilyCommandReceiptEntity>()

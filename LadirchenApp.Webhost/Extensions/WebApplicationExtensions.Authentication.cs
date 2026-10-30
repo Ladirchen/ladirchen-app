@@ -45,8 +45,8 @@ public static partial class WebApplicationExtensions
       .WithName("GetAuthenticationRegistrationStatus")
       .Produces<AuthenticationRegistrationStatusResponse>();
     group
-      .MapGet("/session", GetCurrentAuthenticationSessionAsync)
-      .WithName("GetCurrentAuthenticationSession")
+      .MapPost("/restore", GetCurrentAuthenticationSessionAsync)
+      .WithName("RestoreCurrentAuthenticationSession")
       .RequireAuthorization()
       .Produces<AuthenticationSessionResponse>()
       .Produces(StatusCodes.Status401Unauthorized);

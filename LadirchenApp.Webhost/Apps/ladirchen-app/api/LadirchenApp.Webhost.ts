@@ -232,12 +232,12 @@ export class Client {
     return Promise.resolve<AuthenticationRegistrationStatusResponse>(null as any);
   }
 
-  getCurrentAuthenticationSession(signal?: AbortSignal): Promise<AuthenticationSessionResponse> {
-    let url_ = this.baseUrl + "/api/auth/session";
+  restoreCurrentAuthenticationSession(signal?: AbortSignal): Promise<AuthenticationSessionResponse> {
+    let url_ = this.baseUrl + "/api/auth/restore";
     url_ = url_.replace(/[?&]$/, "");
 
     let options_: RequestInit = {
-      method: "GET",
+      method: "POST",
       signal,
       headers: {
         Accept: "application/json",
@@ -245,11 +245,11 @@ export class Client {
     };
 
     return this.http.fetch(url_, options_).then((_response: Response) => {
-      return this.processGetCurrentAuthenticationSession(_response);
+      return this.processRestoreCurrentAuthenticationSession(_response);
     });
   }
 
-  protected processGetCurrentAuthenticationSession(response: Response): Promise<AuthenticationSessionResponse> {
+  protected processRestoreCurrentAuthenticationSession(response: Response): Promise<AuthenticationSessionResponse> {
     const status = response.status;
     let _headers: any = {};
     if (response.headers && response.headers.forEach) {
@@ -1442,7 +1442,7 @@ export interface MemberAccountInvitationResponse {
 
 export interface CreateMemberInvitationRequest {
   email: string;
-  guardianAccess: string | null;
+  guardianAccess?: string | null;
   name: string;
   role: string;
 }

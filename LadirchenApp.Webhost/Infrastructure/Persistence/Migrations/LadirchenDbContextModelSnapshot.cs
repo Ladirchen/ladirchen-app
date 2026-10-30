@@ -155,8 +155,7 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PublishedAt", "NextAttemptAt");
 
-                    b.HasIndex("FamilyId", "AggregateType", "Revision")
-                        .IsUnique();
+                    b.HasIndex("FamilyId", "AggregateType", "Revision");
 
                     b.ToTable("FamilyAggregateOutboxMessages", (string)null);
                 });

@@ -114,10 +114,10 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async getCurrentSession(): Promise<AuthenticationSession | null> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/session`, {
+    const response = await fetch(`${this.#baseUrl}/api/auth/restore`, {
       cache: "no-store",
       credentials: "include",
-      method: "GET",
+      method: "POST",
     });
 
     if (response.status === 401) {

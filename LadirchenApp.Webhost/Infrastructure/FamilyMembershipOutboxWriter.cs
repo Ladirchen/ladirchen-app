@@ -1,5 +1,4 @@
 using System;
-
 using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Shared;
@@ -61,4 +60,5 @@ public sealed class FamilyMembershipOutboxWriter
       }
     );
   }
+
 }
