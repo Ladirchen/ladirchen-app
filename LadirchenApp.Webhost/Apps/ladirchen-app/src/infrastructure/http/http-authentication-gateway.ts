@@ -115,6 +115,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
 
   async getCurrentSession(): Promise<AuthenticationSession | null> {
     const response = await fetch(`${this.#baseUrl}/api/auth/session`, {
+      cache: "no-store",
       credentials: "include",
       method: "GET",
     });
@@ -138,6 +139,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
 
   async getRegistrationStatus(): Promise<RegistrationStatus> {
     const response = await fetch(`${this.#baseUrl}/api/auth/registration-status`, {
+      cache: "no-store",
       credentials: "include",
       method: "GET",
     });

@@ -22,6 +22,7 @@ describe("HttpAuthenticationGateway", () => {
 
     await expect(gateway.getRegistrationStatus()).resolves.toEqual({ registrationAvailable: true });
     expect(fetchMock).toHaveBeenCalledWith("/api/auth/registration-status", {
+      cache: "no-store",
       credentials: "include",
       method: "GET",
     });
@@ -58,6 +59,7 @@ describe("HttpAuthenticationGateway", () => {
 
     await expect(gateway.getCurrentSession()).resolves.toEqual(session);
     expect(fetchMock).toHaveBeenCalledWith("/api/auth/session", {
+      cache: "no-store",
       credentials: "include",
       method: "GET",
     });
