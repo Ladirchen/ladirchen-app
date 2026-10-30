@@ -58,10 +58,10 @@ describe("HttpAuthenticationGateway", () => {
     const gateway = new HttpAuthenticationGateway("");
 
     await expect(gateway.getCurrentSession()).resolves.toEqual(session);
-    expect(fetchMock).toHaveBeenCalledWith("/api/auth/session", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/restore", {
       cache: "no-store",
       credentials: "include",
-      method: "GET",
+      method: "POST",
     });
   });
 

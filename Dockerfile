@@ -27,16 +27,16 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
   dotnet publish "LadirchenApp.Webhost/LadirchenApp.Webhost.csproj" \
   --configuration $BUILD_CONFIGURATION \
   --output /app/publish \
-  --no-restore \
   /p:UseAppHost=false \
   /p:Version=$BUILD_VERSION
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.14-alpine3.24@sha256:254fe017495996d3abcc487ffacdcce2b73affb380d3af87af12c8dff41fe0b0 AS final
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
+  DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
   PORT=8080
 EXPOSE 8080 8081
-RUN apk add --no-cache krb5-libs
+RUN apk add --no-cache icu-data-full icu-libs krb5-libs tzdata
 COPY --from=build /app/publish .
 USER $APP_UID
 ENTRYPOINT ["dotnet", "LadirchenApp.Webhost.dll"]

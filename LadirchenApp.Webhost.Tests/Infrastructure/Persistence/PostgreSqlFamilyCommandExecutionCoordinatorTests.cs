@@ -82,6 +82,49 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
   }
 
   [Test]
+  public async Task DifferentChangesMayPublishTheSameReadModelRevision()
+  {
+    await using var postgres = await StartPostgreSqlAsync();
+    var options = CreateOptions(postgres.GetConnectionString());
+    var command = CreateCommand();
+
+    await using var database = new LadirchenDbContext(options);
+    await database.Database.MigrateAsync();
+    database.FamilyAggregateOutboxMessages.Add(
+      new FamilyAggregateOutboxMessageEntity
+      {
+        AggregateType = "savings",
+        FamilyId = command.FamilyId.Value,
+        MessageId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        Revision = 2,
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = command.ActorId.Value,
+      }
+    );
+    await database.SaveChangesAsync();
+    var coordinator = new PostgreSqlFamilyCommandExecutionCoordinator(
+      database,
+      TimeProvider.System
+    );
+
+    var result = await coordinator.ExecuteOnceAsync(
+      command,
+      _ => Task.FromResult(CreateResult(command)),
+      CancellationToken.None
+    );
+
+    await Assert.That(result.ChangedAggregates.Count).IsEqualTo(1);
+    await Assert.That(
+      await database.FamilyAggregateOutboxMessages.CountAsync(message =>
+        message.FamilyId == command.FamilyId.Value
+        && message.AggregateType == "savings"
+        && message.Revision == 2
+      )
+    ).IsEqualTo(2);
+  }
+
+  [Test]
   public async Task ConcurrentDeliveryOfTheSameCommandExecutesOnlyOnce()
   {
     await using var postgres = await StartPostgreSqlAsync();

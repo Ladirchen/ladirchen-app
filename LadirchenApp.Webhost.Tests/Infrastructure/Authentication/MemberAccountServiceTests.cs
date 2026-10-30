@@ -88,6 +88,19 @@ public sealed class MemberAccountServiceTests
       pendingProgression.Root.StoredLevel,
       CancellationToken.None
     ) ?? throw new InvalidOperationException();
+    database.FamilyAggregateOutboxMessages.Add(
+      new FamilyAggregateOutboxMessageEntity
+      {
+        AggregateType = "savings",
+        FamilyId = familyId,
+        MessageId = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        Revision = checked(pendingEconomy.Revision + 1),
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = administratorId.Value,
+      }
+    );
+    await database.SaveChangesAsync();
     var rejected = await memberAccounts.ActivateAsync(
       new ActivateMemberAccountRequest(
         "incorrect-code",

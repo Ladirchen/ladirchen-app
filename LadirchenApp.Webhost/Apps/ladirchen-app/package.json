@@ -49,6 +49,7 @@
     "unocss": "catalog:devDependencies",
     "unocss-preset-vuetify": "catalog:devDependencies",
     "vite": "catalog:devDependencies",
+    "vite-plugin-pwa": "^2.0.0",
     "vite-plugin-vuetify": "catalog:devDependencies",
     "vite-plus": "catalog:devDependencies",
     "vue-tsc": "catalog:devDependencies"

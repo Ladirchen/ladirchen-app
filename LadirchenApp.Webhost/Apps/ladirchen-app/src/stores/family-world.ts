@@ -6,6 +6,7 @@ import type { FurnitureSetId } from "@/domain/house";
 import { NO_FAMILY_PERMISSIONS } from "@/domain/family/permissions";
 import type { FamilyPermissions } from "@/domain/family/permissions";
 import type { Contribution, WorldEffect } from "@/domain/contributions/types";
+import { totalEarnedContributionReward } from "@/domain/contributions/rating";
 import type { FamilyMember } from "@/domain/family/types";
 import type { SavingGoal } from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
@@ -117,7 +118,15 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
         return (contributionId: ContributionId): number => {
           const contribution = state.contributions.find((item) => item.id === contributionId);
 
-          return contribution?.projectedReward ?? contribution?.earnedReward ?? contribution?.reward ?? 0;
+          if (!contribution) {
+            return 0;
+          }
+
+          if (contribution.status === "approved") {
+            return totalEarnedContributionReward(contribution);
+          }
+
+          return contribution.projectedReward ?? contribution.reward;
         };
       },
       activeGoal(state): SavingGoal | undefined {

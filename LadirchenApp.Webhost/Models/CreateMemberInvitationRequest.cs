@@ -4,7 +4,7 @@ namespace LadirchenApp.Webhost.Models;
 
 public sealed record CreateMemberInvitationRequest(
   [property: JsonRequired] string Email,
-  [property: JsonRequired] string? GuardianAccess,
+  string? GuardianAccess,
   [property: JsonRequired] string Name,
   [property: JsonRequired] string Role
 );

@@ -57,6 +57,20 @@ Feature: Contributions and rewards
     When the child approves the guardian contribution
     Then the guardian wallet contains 21 Ladirchen
 
+  Scenario: A guardian administrator can review another guardian contribution
+    Given a core economy
+    And a submitted guardian contribution worth 20 Ladirchen
+    When the guardian administrator approves it with 5 stars
+    Then the guardian wallet contains 21 Ladirchen
+
+  Scenario: A guardian cannot review their own contribution
+    Given a core economy
+    And a submitted guardian contribution worth 20 Ladirchen
+    When the guardian tries to approve their own contribution
+    Then the economy command fails with "Forbidden"
+    And the guardian wallet contains 0 Ladirchen
+    And the rejected command left the economy unchanged
+
   Scenario: A supporter cannot review child contributions
     Given a core economy
     And a submitted child contribution worth 10 Ladirchen
