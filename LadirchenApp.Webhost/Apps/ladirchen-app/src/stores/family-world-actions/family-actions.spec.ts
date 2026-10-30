@@ -78,7 +78,7 @@ describe("restoreAuthenticatedSession", () => {
     expect(context.sessionRestorationFailed).toBe(false);
   });
 
-  it("keeps the login screen available when the initial session check fails", async () => {
+  it("keeps an initial session failure retryable instead of treating it as a logout", async () => {
     const baseDependencies = createFamilyWorldTestDependencies();
     const context = createFamilyWorldTestStore(
       createFamilyWorldTestDependencies({
@@ -92,7 +92,7 @@ describe("restoreAuthenticatedSession", () => {
     await expect(context.restoreAuthenticatedSession()).resolves.toBe(false);
 
     expect(context.isAuthenticated).toBe(false);
-    expect(context.sessionRestorationFailed).toBe(false);
+    expect(context.sessionRestorationFailed).toBe(true);
   });
 
   it("preserves the current UI state and exposes a retryable failure when the session endpoint is unavailable", async () => {

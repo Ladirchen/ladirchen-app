@@ -40,11 +40,7 @@ export const familyActions = {
         return restored;
       }
     } catch {
-      if (this.isAuthenticated) {
-        this.sessionRestorationFailed = true;
-      } else {
-        this.$reset();
-      }
+      this.sessionRestorationFailed = true;
 
       return false;
     }
