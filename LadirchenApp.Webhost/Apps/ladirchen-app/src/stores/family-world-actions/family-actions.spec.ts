@@ -78,6 +78,23 @@ describe("restoreAuthenticatedSession", () => {
     expect(context.sessionRestorationFailed).toBe(false);
   });
 
+  it("keeps the login screen available when the initial session check fails", async () => {
+    const baseDependencies = createFamilyWorldTestDependencies();
+    const context = createFamilyWorldTestStore(
+      createFamilyWorldTestDependencies({
+        authentication: {
+          ...baseDependencies.authentication,
+          getCurrentSession: vi.fn().mockRejectedValue(new Error("Session endpoint unavailable")),
+        },
+      }),
+    );
+
+    await expect(context.restoreAuthenticatedSession()).resolves.toBe(false);
+
+    expect(context.isAuthenticated).toBe(false);
+    expect(context.sessionRestorationFailed).toBe(false);
+  });
+
   it("preserves the current UI state and exposes a retryable failure when the session endpoint is unavailable", async () => {
     const baseDependencies = createFamilyWorldTestDependencies();
     const getCurrentSession = vi
