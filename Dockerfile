@@ -36,6 +36,7 @@ WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
   PORT=8080
 EXPOSE 8080 8081
+RUN apk add --no-cache krb5-libs
 COPY --from=build /app/publish .
 USER $APP_UID
 ENTRYPOINT ["dotnet", "LadirchenApp.Webhost.dll"]

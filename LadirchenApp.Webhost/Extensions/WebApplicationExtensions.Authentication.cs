@@ -32,6 +32,14 @@ public static partial class WebApplicationExtensions
   public static WebApplication MapAuthenticationApi(this WebApplication app)
   {
     var group = app.MapGroup("/api/auth").WithTags("Authentication");
+    group.AddEndpointFilter(
+      async (invocationContext, next) =>
+      {
+        invocationContext.HttpContext.Response.Headers.CacheControl = "no-store";
+
+        return await next(invocationContext);
+      }
+    );
     group
       .MapGet("/registration-status", GetRegistrationStatusAsync)
       .WithName("GetAuthenticationRegistrationStatus")
