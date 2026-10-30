@@ -1,4 +1,5 @@
 import type { Contribution, NewContribution, NewPromotion } from "@/domain/contributions/types";
+import { totalEarnedContributionReward } from "@/domain/contributions/rating";
 import { createDomainId } from "@/domain/shared/identifiers";
 import type { ContributionId, FamilyMemberId, PromotionId } from "@/domain/shared/identifiers";
 import { REWARD_REVEAL_DELAY_MS } from "@/shared/runtime-timing";
@@ -148,7 +149,7 @@ export const contributionsActions = {
   },
   playRewardAnimation(this: FamilyWorldStoreContext, contribution: Contribution) {
     this.rewardAnimation.contributionId = contribution.id;
-    this.rewardAnimation.value = contribution.earnedReward ?? contribution.reward;
+    this.rewardAnimation.value = totalEarnedContributionReward(contribution);
     this.rewardAnimation.energy = contribution.kind === "basic" ? contribution.energy : 0;
     this.rewardAnimation.multiplier = contribution.earnedPromotionMultiplier ?? 1;
     this.rewardAnimation.stars = contribution.stars ?? 0;

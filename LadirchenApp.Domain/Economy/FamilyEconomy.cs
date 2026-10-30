@@ -401,9 +401,10 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     var assignee = ActiveMember(assigneeId);
     Rules.Require(
       (assignee.Role == MemberRole.Child && reviewer.IsAdministrator)
-        || (assignee.Role == MemberRole.Guardian && reviewer.Role == MemberRole.Child),
+        || (assignee.Role == MemberRole.Guardian
+          && (reviewer.Role == MemberRole.Child || (reviewer.IsAdministrator && reviewer.Id != assigneeId))),
       DomainError.Forbidden,
-      "Administrators review children; children review guardians."
+      "Administrators review children and other guardians; children review guardians."
     );
   }
 

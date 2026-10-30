@@ -107,11 +107,12 @@ export function useContributionsPage() {
       return contribution.status === "pending" && assignee?.role === "guardian";
     }),
   );
-  const childTasksToReview = computed(() =>
+  const reviewableTasks = computed(() =>
     localizedContributions.value.filter(
       (contribution) =>
         contribution.status === "pending" &&
-        store.members.some((member) => member.id === contribution.assigneeId && member.role === "child"),
+        contribution.assigneeId !== store.signedInMemberId &&
+        store.members.some((member) => member.id === contribution.assigneeId),
     ),
   );
   const openContributionCount = computed(
@@ -307,7 +308,7 @@ export function useContributionsPage() {
     approveWithRating,
     assignContribution,
     assignmentOptions,
-    childTasksToReview,
+    reviewableTasks,
     confirmContributionDelete,
     confirmPromotionDelete,
     contributionTip,

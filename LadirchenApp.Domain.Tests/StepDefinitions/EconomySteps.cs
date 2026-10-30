@@ -84,6 +84,12 @@ public sealed partial class EconomySteps
     _economy.ApproveContribution(_child, _contributionId, new(5), NextOperation(), _now);
   }
 
+  [When("the guardian tries to approve their own contribution")]
+  public void GuardianApprovesOwnContribution()
+  {
+    Try(() => _economy.ApproveContribution(_supporter, _contributionId, new(5), NextOperation(), _now));
+  }
+
   [When("the supporter tries to approve the child contribution")]
   public void SupporterApproval()
   {

@@ -158,6 +158,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import { totalEarnedContributionReward } from "@/domain/contributions/rating";
 import type { Contribution, Promotion } from "@/domain/contributions/types";
 import type { FamilyMember, IanaTimeZone } from "@/domain/family/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
@@ -222,7 +223,7 @@ const canClaim = computed(() => !assignedMember.value && isAvailable.value);
 const canInvite = computed(() => props.allowInvite && props.contribution.kind === "extra" && isAvailable.value);
 const activePromotion = computed(() => (props.contribution.status === "approved" ? undefined : props.promotion));
 const earnedStars = computed(() => props.contribution.stars ?? 1);
-const earnedReward = computed(() => props.contribution.earnedReward ?? props.reward);
+const earnedReward = computed(() => totalEarnedContributionReward(props.contribution));
 const invitedPartnerNames = computed(() =>
   (props.contribution.invitedChildIds ?? [])
     .map((id) => props.familyMembers.find((member) => member.id === id)?.name)

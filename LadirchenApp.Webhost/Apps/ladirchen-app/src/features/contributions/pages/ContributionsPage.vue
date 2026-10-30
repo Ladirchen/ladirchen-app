@@ -39,6 +39,7 @@
               </v-avatar>
               <div class="flex-grow-1">
                 <strong>{{ contribution.title }}</strong>
+                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
                 <p class="text-caption text-medium-emphasis">{{ completedByLabel }}</p>
               </div>
             </div>
@@ -132,6 +133,7 @@
               </v-avatar>
               <div class="flex-grow-1 min-w-0">
                 <strong class="text-body-small">{{ contribution.title }}</strong>
+                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
                 <p class="text-caption text-medium-emphasis">{{ statusDescription }}</p>
               </div>
               <v-btn
@@ -155,15 +157,15 @@
         </BrandedCard>
       </section>
 
-      <section v-if="showChildTaskReview" class="mb-6">
+      <section v-if="showReviewableTasks" class="mb-6">
         <SectionHeader :description="t('contributions.review.description')" :title="t('contributions.review.title')">
           <template #action>
-            <v-chip color="warning" size="small">{{ childTasksToReview.length }}</v-chip>
+            <v-chip color="warning" size="small">{{ reviewableTasks.length }}</v-chip>
           </template>
         </SectionHeader>
         <div class="d-flex flex-column ga-3">
           <BrandedCard
-            v-for="{ contribution, metaLabel } in childTaskReviewCards"
+            v-for="{ contribution, metaLabel } in reviewableTaskCards"
             :key="contribution.id"
             class="review-card pa-4"
             tone="contributions"
@@ -179,6 +181,7 @@
               </v-avatar>
               <div class="flex-grow-1">
                 <strong>{{ contribution.title }}</strong>
+                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
                 <p class="text-caption text-medium-emphasis">{{ metaLabel }}</p>
               </div>
             </div>
@@ -312,6 +315,7 @@
               </v-avatar>
               <div class="flex-grow-1 min-w-0">
                 <strong class="text-body-small">{{ contribution.title }}</strong>
+                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
                 <p class="text-caption text-medium-emphasis">{{ metaLabel }}</p>
               </div>
               <v-select
@@ -576,7 +580,7 @@ const {
   approveWithRating,
   assignContribution,
   assignmentOptions,
-  childTasksToReview,
+  reviewableTasks,
   confirmContributionDelete,
   confirmPromotionDelete,
   contributionTip,
@@ -648,9 +652,9 @@ const guardianOwnCards = computed(() =>
     };
   }),
 );
-const showChildTaskReview = computed(() => store.permissions.canManageContent && childTasksToReview.value.length > 0);
-const childTaskReviewCards = computed(() =>
-  childTasksToReview.value.map((contribution) => ({
+const showReviewableTasks = computed(() => store.permissions.canManageContent && reviewableTasks.value.length > 0);
+const reviewableTaskCards = computed(() =>
+  reviewableTasks.value.map((contribution) => ({
     contribution,
     metaLabel: `${memberName(contribution.assigneeId)} · +${t("contributions.reward.coins", { value: store.rewardForContribution(contribution.id) })}`,
   })),
