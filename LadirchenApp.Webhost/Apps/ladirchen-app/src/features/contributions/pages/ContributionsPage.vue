@@ -1,7 +1,7 @@
 <template>
   <div class="page page-padding contributions-page">
     <v-alert
-      v-if="store.permissions.canManageContent"
+      v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
       class="guardian-context mb-5"
       color="info"
       density="compact"
@@ -102,7 +102,7 @@
     </template>
 
     <template v-else>
-      <section class="guardian-own-tasks mb-6">
+      <section v-if="store.signedInMember?.guardianAccess !== 'external'" class="guardian-own-tasks mb-6">
         <SectionHeader
           :description="t('contributions.guardianOwn.description')"
           :title="t('contributions.guardianOwn.title')"
@@ -211,7 +211,7 @@
       </section>
 
       <BrandedCard
-        v-else-if="store.permissions.canManageContent"
+        v-else-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
         class="empty-review pa-5 mb-6 text-center"
         tone="contributions"
       >
@@ -220,86 +220,88 @@
         <p class="text-caption text-medium-emphasis mt-1">{{ t("contributions.review.emptyDescription") }}</p>
       </BrandedCard>
 
-      <template v-if="store.permissions.canManageContent">
-        <SectionHeader
-          :description="t('contributions.promotions.description')"
-          :title="t('contributions.promotions.title')"
-        >
-          <template #action>
-            <v-btn
-              :aria-label="t('contributions.promotions.add')"
-              color="warning"
-              icon="i-mdi:lightning-bolt"
-              size="small"
-              variant="tonal"
-              @click="promotionDialog = true"
-            />
-          </template>
-        </SectionHeader>
-        <div class="d-flex flex-column ga-2 mb-6">
-          <BrandedCard
-            v-for="promotion in activePromotions"
-            :key="promotion.id"
-            class="promotion-row pa-3"
-            interactive
-            tone="contributions"
-            role="button"
-            tabindex="0"
-            @click="selectedPromotion = promotion"
-            @keydown.enter="selectedPromotion = promotion"
+      <template v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks">
+        <template v-if="store.permissions.canManageContent">
+          <SectionHeader
+            :description="t('contributions.promotions.description')"
+            :title="t('contributions.promotions.title')"
           >
-            <div class="d-flex align-center ga-3">
-              <v-avatar color="warning" size="40" variant="tonal">⚡</v-avatar>
-              <div class="flex-grow-1">
-                <strong class="text-body-small">{{ promotion.title }}</strong>
-                <p class="text-caption text-medium-emphasis">
-                  {{ contributionTitle(promotion.contributionId) }} ·
-                  {{ t("contributions.promotions.includingTeamwork", { value: promotion.teamworkBonus }) }}
-                </p>
-                <PromotionCountdown class="mt-1" :deadline="promotion.deadline" :time-zone="store.familyTimeZone" />
-              </div>
-              <v-chip color="warning" size="small">×{{ promotion.multiplier }}</v-chip>
+            <template #action>
               <v-btn
-                :aria-label="t('contributions.promotions.deleteAria', { title: promotion.title })"
-                color="error"
-                icon="i-mdi:delete-outline"
+                :aria-label="t('contributions.promotions.add')"
+                color="warning"
+                icon="i-mdi:lightning-bolt"
                 size="small"
                 variant="tonal"
-                @click.stop="promotionToDelete = promotion"
+                @click="promotionDialog = true"
               />
+            </template>
+          </SectionHeader>
+          <div class="d-flex flex-column ga-2 mb-6">
+            <BrandedCard
+              v-for="promotion in activePromotions"
+              :key="promotion.id"
+              class="promotion-row pa-3"
+              interactive
+              tone="contributions"
+              role="button"
+              tabindex="0"
+              @click="selectedPromotion = promotion"
+              @keydown.enter="selectedPromotion = promotion"
+            >
+              <div class="d-flex align-center ga-3">
+                <v-avatar color="warning" size="40" variant="tonal">⚡</v-avatar>
+                <div class="flex-grow-1">
+                  <strong class="text-body-small">{{ promotion.title }}</strong>
+                  <p class="text-caption text-medium-emphasis">
+                    {{ contributionTitle(promotion.contributionId) }} ·
+                    {{ t("contributions.promotions.includingTeamwork", { value: promotion.teamworkBonus }) }}
+                  </p>
+                  <PromotionCountdown class="mt-1" :deadline="promotion.deadline" :time-zone="store.familyTimeZone" />
+                </div>
+                <v-chip color="warning" size="small">×{{ promotion.multiplier }}</v-chip>
+                <v-btn
+                  :aria-label="t('contributions.promotions.deleteAria', { title: promotion.title })"
+                  color="error"
+                  icon="i-mdi:delete-outline"
+                  size="small"
+                  variant="tonal"
+                  @click.stop="promotionToDelete = promotion"
+                />
+              </div>
+            </BrandedCard>
+          </div>
+
+          <BrandedCard class="rating-setting pa-4 mb-6" tone="contributions">
+            <div class="d-flex align-start ga-3">
+              <v-avatar color="warning" variant="tonal">★</v-avatar>
+              <div class="flex-grow-1">
+                <div class="d-flex align-center justify-space-between ga-3">
+                  <div>
+                    <strong>{{ t("contributions.ratingBonus.title") }}</strong>
+                    <p class="text-caption text-medium-emphasis">{{ t("contributions.ratingBonus.description") }}</p>
+                  </div>
+                  <strong class="bonus-value">{{ store.perfectRatingBonusPercent }} %</strong>
+                </div>
+                <v-slider
+                  :model-value="store.perfectRatingBonusPercent"
+                  class="mt-3"
+                  color="warning"
+                  hide-details
+                  max="25"
+                  min="0"
+                  step="1"
+                  thumb-label
+                  @end="store.setPerfectRatingBonusPercent(Number($event))"
+                />
+              </div>
             </div>
           </BrandedCard>
-        </div>
-
-        <BrandedCard class="rating-setting pa-4 mb-6" tone="contributions">
-          <div class="d-flex align-start ga-3">
-            <v-avatar color="warning" variant="tonal">★</v-avatar>
-            <div class="flex-grow-1">
-              <div class="d-flex align-center justify-space-between ga-3">
-                <div>
-                  <strong>{{ t("contributions.ratingBonus.title") }}</strong>
-                  <p class="text-caption text-medium-emphasis">{{ t("contributions.ratingBonus.description") }}</p>
-                </div>
-                <strong class="bonus-value">{{ store.perfectRatingBonusPercent }} %</strong>
-              </div>
-              <v-slider
-                :model-value="store.perfectRatingBonusPercent"
-                class="mt-3"
-                color="warning"
-                hide-details
-                max="25"
-                min="0"
-                step="1"
-                thumb-label
-                @end="store.setPerfectRatingBonusPercent(Number($event))"
-              />
-            </div>
-          </div>
-        </BrandedCard>
+        </template>
 
         <SectionHeader :description="t('contributions.manage.description')" :title="t('contributions.manage.title')">
           <template #action>
-            <v-btn color="primary" icon="i-mdi:plus" size="small" variant="tonal" @click="addDialog = true" />
+            <v-btn color="primary" icon="i-mdi:plus" size="small" variant="tonal" @click="openContributionDialog" />
           </template>
         </SectionHeader>
         <div class="d-flex flex-column ga-2">
@@ -331,6 +333,21 @@
                 @update:model-value="assignContribution(contribution.id, $event)"
               />
               <v-btn
+                :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
+                icon="i-mdi:content-copy"
+                size="small"
+                variant="tonal"
+                @click="copyContribution(contribution)"
+              />
+              <v-btn
+                v-if="contribution.status === 'available'"
+                :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
+                icon="i-mdi:pencil-outline"
+                size="small"
+                variant="tonal"
+                @click="openContributionEditor(contribution)"
+              />
+              <v-btn
                 :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
                 color="error"
                 icon="i-mdi:delete-outline"
@@ -346,13 +363,21 @@
 
     <v-dialog v-model="addDialog" max-width="440">
       <v-card class="pa-5" rounded="xl">
-        <v-card-title class="pa-0 mb-1">{{ t("contributions.form.title") }}</v-card-title>
+        <v-card-title class="pa-0 mb-1">
+          {{ contributionDialogTitle }}
+        </v-card-title>
         <v-card-subtitle class="pa-0 mb-4">{{ t("contributions.form.prototypeHint") }}</v-card-subtitle>
         <v-text-field v-model="newContribution.title" :label="t('common.title')" variant="outlined" />
         <v-textarea
           v-model="newContribution.description"
           :label="t('contributions.form.shortDescription')"
           rows="2"
+          variant="outlined"
+        />
+        <v-text-field
+          v-model="newContribution.icon"
+          :label="t('contributions.form.icon')"
+          maxlength="4"
           variant="outlined"
         />
         <v-select
@@ -380,13 +405,6 @@
             variant="outlined"
           />
         </div>
-        <v-text-field
-          v-model.number="newPromotion.teamworkBonus"
-          :label="t('contributions.form.teamworkBonus')"
-          min="0"
-          type="number"
-          variant="outlined"
-        />
         <v-slider
           v-if="newContribution.kind === 'basic'"
           v-model="newContribution.energy"
@@ -398,9 +416,9 @@
           thumb-label
         />
         <div class="d-flex justify-end ga-2 mt-2">
-          <v-btn rounded="lg" variant="text" @click="addDialog = false">{{ t("common.cancel") }}</v-btn>
-          <v-btn color="primary" :disabled="!canAddContribution" rounded="lg" variant="flat" @click="addContribution">
-            {{ t("common.add") }}
+          <v-btn rounded="lg" variant="text" @click="closeContributionDialog">{{ t("common.cancel") }}</v-btn>
+          <v-btn color="primary" :disabled="!canSaveContribution" rounded="lg" variant="flat" @click="saveContribution">
+            {{ contributionSubmitLabel }}
           </v-btn>
         </div>
       </v-card>
@@ -574,17 +592,19 @@ import { useContributionsPage } from "@/features/contributions/composables/use-c
 import type { Contribution } from "@/domain/contributions/types";
 const {
   activePromotions,
-  addContribution,
   addDialog,
   addPromotion,
   approveWithRating,
   assignContribution,
   assignmentOptions,
+  closeContributionDialog,
+  copyContribution,
   reviewableTasks,
   confirmContributionDelete,
   confirmPromotionDelete,
   contributionTip,
   contributionTitle,
+  contributionToEdit,
   contributionToDelete,
   filter,
   filteredContributions,
@@ -598,6 +618,8 @@ const {
   newContribution,
   newPromotion,
   openContributionCount,
+  openContributionDialog,
+  openContributionEditor,
   openOwnTaskDialog,
   openTeamInvite,
   promotionContributionOptions,
@@ -606,6 +628,7 @@ const {
   promotionToDelete,
   ratings,
   requestContributionDelete,
+  saveContribution,
   saveTeamInvite,
   scopeFilter,
   selectedPromotion,
@@ -617,6 +640,10 @@ const {
   teamDialog,
 } = useContributionsPage();
 const { t } = useI18n();
+const contributionDialogTitle = computed(() =>
+  t(contributionToEdit.value ? "contributions.form.editTitle" : "contributions.form.title"),
+);
+const contributionSubmitLabel = computed(() => t(contributionToEdit.value ? "common.save" : "common.add"));
 const emptyStateIsOpen = computed(() => statusFilter.value === "open");
 const emptyStateTitle = computed(() =>
   t(emptyStateIsOpen.value ? "contributions.empty.openTitle" : "contributions.empty.completedTitle"),
@@ -652,7 +679,10 @@ const guardianOwnCards = computed(() =>
     };
   }),
 );
-const showReviewableTasks = computed(() => store.permissions.canManageContent && reviewableTasks.value.length > 0);
+const showReviewableTasks = computed(
+  () =>
+    (store.permissions.canManageContent || store.permissions.canReviewChildTasks) && reviewableTasks.value.length > 0,
+);
 const reviewableTaskCards = computed(() =>
   reviewableTasks.value.map((contribution) => ({
     contribution,
@@ -665,7 +695,15 @@ const managedContributionCards = computed(() =>
     metaLabel: `${managedContributionDescription(contribution)} · ${t("contributions.reward.coins", { value: contribution.reward })}`,
   })),
 );
-const canAddContribution = computed(() => Boolean(newContribution.title.trim()));
+const canSaveContribution = computed(() =>
+  Boolean(
+    newContribution.description.trim() &&
+    newContribution.icon.trim() &&
+    newContribution.title.trim() &&
+    newContribution.reward >= 0 &&
+    (newContribution.kind === "extra" || newContribution.energy >= 1),
+  ),
+);
 const canStartPromotion = computed(() => Boolean(newPromotion.contributionId && newPromotion.deadline));
 function toggleEmptyStateFilter() {
   statusFilter.value = emptyStateIsOpen.value ? "completed" : "open";

@@ -49,14 +49,7 @@ export const lifecycleActions = {
 
     const familyId = familyContext.activeFamilyId;
     const viewerMemberId = readModelViewerId(this);
-    const [profileResult, contributionsResult, savingsResult, rewardShopResult, progressionResult] =
-      await Promise.allSettled([
-        familyProfileService.load(familyId, viewerMemberId),
-        contributionsService.load(familyId, viewerMemberId),
-        savingsService.load(familyId, viewerMemberId),
-        rewardShopService.load(familyId, viewerMemberId),
-        familyProgressionService.load(familyId, viewerMemberId),
-      ]);
+    const [profileResult] = await Promise.allSettled([familyProfileService.load(familyId, viewerMemberId)]);
     const profileLoaded = applySettledLoad(profileResult, (profile) => {
       if (profile) {
         this.members = normalizeFamilyMembers([...profile.state.members]);
@@ -67,6 +60,13 @@ export const lifecycleActions = {
         this.avatarCatalog = profile.state.avatarCatalog;
       }
     });
+    const externalGuardian = this.signedInMember?.guardianAccess === "external";
+    const [contributionsResult, savingsResult, rewardShopResult, progressionResult] = await Promise.allSettled([
+      contributionsService.load(familyId, viewerMemberId),
+      externalGuardian ? Promise.resolve(undefined) : savingsService.load(familyId, viewerMemberId),
+      externalGuardian ? Promise.resolve(undefined) : rewardShopService.load(familyId, viewerMemberId),
+      externalGuardian ? Promise.resolve(undefined) : familyProgressionService.load(familyId, viewerMemberId),
+    ]);
     const contributionsLoaded = applySettledLoad(contributionsResult, (contributions) => {
       if (contributions) {
         this.contributions = [...contributions.state.contributions];
@@ -123,14 +123,21 @@ export const lifecycleActions = {
     }
 
     const hydrationSucceeded =
-      profileLoaded && contributionsLoaded && savingsLoaded && rewardShopLoaded && progressionLoaded;
+      profileLoaded &&
+      contributionsLoaded &&
+      (externalGuardian || (savingsLoaded && rewardShopLoaded && progressionLoaded));
     this.familyReadModelsHydrated = hydrationSucceeded;
 
     if (!hydrationSucceeded) {
       this.notify("notifications.load.family");
+    } else {
+      this.revealNextContributionReward();
+      this.revealNextGuardianGift();
     }
 
-    await this.hydrateHomeCustomization();
+    if (!externalGuardian) {
+      await this.hydrateHomeCustomization();
+    }
 
     try {
       await this.$familyWorld.familyAggregateUpdates.connect(
@@ -198,6 +205,7 @@ export const lifecycleActions = {
           this.currentWeekApprovedContributionCountByMember = {
             ...snapshot.state.currentWeekApprovedContributionCountByMember,
           };
+          this.revealNextContributionReward();
         }
 
         return;
@@ -215,6 +223,7 @@ export const lifecycleActions = {
           this.pendingGuardianGifts = [...snapshot.state.pendingGuardianGifts];
           this.savingsVouchers = [...snapshot.state.vouchers];
           this.sharedSavedBalances = { ...snapshot.state.sharedSavedBalances };
+          this.revealNextGuardianGift();
         }
 
         return;
@@ -238,6 +247,7 @@ export const lifecycleActions = {
           this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
           this.savingsVouchers = [...savingsSnapshot.state.vouchers];
           this.sharedSavedBalances = { ...savingsSnapshot.state.sharedSavedBalances };
+          this.revealNextGuardianGift();
         }
 
         return;
@@ -269,6 +279,7 @@ export const lifecycleActions = {
           this.pendingGuardianGifts = [...savingsSnapshot.state.pendingGuardianGifts];
           this.savingsVouchers = [...savingsSnapshot.state.vouchers];
           this.sharedSavedBalances = { ...savingsSnapshot.state.sharedSavedBalances };
+          this.revealNextGuardianGift();
         }
 
         this.homeCustomizationHydrated = false;

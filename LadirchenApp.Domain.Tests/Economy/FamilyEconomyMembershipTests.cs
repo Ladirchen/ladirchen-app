@@ -39,6 +39,51 @@ public sealed class FamilyEconomyMembershipTests
   }
 
   [Test]
+  public async Task ExternalGuardianHasNoWalletAndMayCreateOnlyAssignedChildTasks()
+  {
+    var family = EstablishedFamily();
+    var externalId = new FamilyMemberId("external-guardian");
+    family.AddMember(
+      _administratorId,
+      externalId,
+      "External Guardian",
+      MemberRole.Guardian,
+      GuardianAccess.External,
+      false,
+      _now
+    );
+    var economy = new FamilyEconomy(family);
+
+    economy.AddContribution(
+      externalId,
+      new ContributionId("external-child-task"),
+      new ContributionDefinition(
+        "External child task",
+        ContributionKind.Basic,
+        new LadirchenAmount(2),
+        new Percentage(10),
+        _remainingChildId
+      ),
+      _now
+    );
+
+    await Assert.That(economy.Wallets.Select(item => item.Id)).DoesNotContain(externalId);
+    await Assert.That(economy.Contributions.Single().CreatorId).IsEqualTo(externalId);
+    await Assert.That(() => economy.AddContribution(
+      externalId,
+      new ContributionId("external-own-task"),
+      new ContributionDefinition(
+        "External own task",
+        ContributionKind.Basic,
+        new LadirchenAmount(2),
+        new Percentage(10),
+        externalId
+      ),
+      _now
+    )).Throws<DomainRuleException>();
+  }
+
+  [Test]
   public async Task SynchronizationRejectsAMemberWithAnActiveSavingsGoal()
   {
     var family = EstablishedFamily();

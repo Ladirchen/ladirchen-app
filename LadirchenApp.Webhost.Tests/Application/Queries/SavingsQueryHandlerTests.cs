@@ -74,6 +74,7 @@ public sealed class SavingsQueryHandlerTests
       .IsFalse();
     await Assert.That(result.CalculatedState.Goals.Keys.Any(id => id.Value == "guardian-private"))
       .IsTrue();
+    await Assert.That(result.CalculatedState.Balances[_childId]).IsEqualTo(100);
     var familyGoal = result.CalculatedState.Goals[new SavingGoalId("family-cancellation")];
     var limits = familyGoal.CommandLimits[_guardianId];
     await Assert.That(limits.CanRequestCancellation).IsFalse();

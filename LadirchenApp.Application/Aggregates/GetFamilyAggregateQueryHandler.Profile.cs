@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Avatar;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
@@ -38,6 +39,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       family.ActiveMember(authenticatedMemberId)
     );
     var viewerPermissions = permissionPolicy.Resolve(family.ActiveMember(viewerId));
+    var externalViewer = family.ActiveMember(viewerId).Access == GuardianAccess.External;
     var canManageInvitations = (
       authenticatedPermissions.InviteMembers && viewerPermissions.InviteMembers
     ) || (
@@ -45,6 +47,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
     );
     var members = family.Members
       .Where(member => canManageInvitations || !member.InvitationPending)
+      .Where(member => !externalViewer || member.Id == viewerId || member.Role == MemberRole.Child)
       .ToArray();
     var emailVisibleMemberIds = canManageInvitations
       ? members.Select(member => member.Id).ToHashSet()
@@ -56,7 +59,11 @@ public sealed partial class GetFamilyAggregateQueryHandler
       viewerPermissions.ManageFamily && authenticatedPermissions.ManageFamily,
       viewerPermissions.SupportGoals && authenticatedPermissions.SupportGoals,
       viewerPermissions.ViewFamilyGoals && authenticatedPermissions.ViewFamilyGoals,
-      viewerPermissions.ViewGuardianGoals && authenticatedPermissions.ViewGuardianGoals
+      viewerPermissions.ViewGuardianGoals && authenticatedPermissions.ViewGuardianGoals,
+      viewerPermissions.ManageChildTasks && authenticatedPermissions.ManageChildTasks,
+      viewerPermissions.ReviewChildTasks && authenticatedPermissions.ReviewChildTasks,
+      viewerPermissions.ViewTaskAssignments && authenticatedPermissions.ViewTaskAssignments,
+      viewerPermissions.ViewHouse && authenticatedPermissions.ViewHouse
     );
     var weeklyStreaks = members.ToDictionary(
       member => member.Id,

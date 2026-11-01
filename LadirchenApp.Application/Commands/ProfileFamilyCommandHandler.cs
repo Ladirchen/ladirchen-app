@@ -337,6 +337,7 @@ internal sealed class ProfileFamilyCommandHandler : TypedFamilyCommandAreaHandle
     {
       "admin" => GuardianAccess.Admin,
       "supporter" => GuardianAccess.Supporter,
+      "external" => GuardianAccess.External,
       _ => throw new FamilyCommandException("The guardian access level is invalid."),
     };
   }

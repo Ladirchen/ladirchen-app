@@ -35,6 +35,7 @@
             :publication-status="rewardPublicationStatus(reward)"
             :reward="reward"
             @delete="rewardToDelete = $event"
+            @edit="openRewardEditor"
           />
         </div>
       </template>
@@ -237,7 +238,9 @@
 
       <v-dialog v-model="rewardDialog" max-width="430">
         <v-card class="pa-5" rounded="xl">
-          <v-card-title class="pa-0 mb-1">{{ t("shop.form.title") }}</v-card-title>
+          <v-card-title class="pa-0 mb-1">
+            {{ rewardDialogTitle }}
+          </v-card-title>
           <v-card-subtitle class="pa-0 mb-4">{{ t("shop.form.description") }}</v-card-subtitle>
           <div id="icon-picker-label" class="field-label">{{ t("shop.form.selectIcon") }}</div>
           <div class="icon-picker mt-2 mb-4" aria-labelledby="icon-picker-label">
@@ -306,8 +309,8 @@
             variant="outlined"
           />
           <div class="d-flex justify-end ga-2">
-            <v-btn rounded="lg" variant="text" @click="rewardDialog = false">{{ t("common.cancel") }}</v-btn>
-            <v-btn color="primary" :disabled="!canAddReward" rounded="lg" variant="flat" @click="addReward">
+            <v-btn rounded="lg" variant="text" @click="closeRewardDialog">{{ t("common.cancel") }}</v-btn>
+            <v-btn color="primary" :disabled="!canSaveReward" rounded="lg" variant="flat" @click="saveReward">
               {{ t("shop.form.save") }}
             </v-btn>
           </div>
@@ -347,8 +350,7 @@ type FurnitureSetStatus = "owned" | "locked" | "buy" | "childPurchase";
 const { t } = useI18n();
 const {
   activeTab,
-  addReward,
-  canAddReward,
+  canSaveReward,
   canRequest,
   categoryOptions,
   confirmRewardDeletion,
@@ -361,13 +363,17 @@ const {
   iconOptions,
   minimumAvailableDate,
   newReward,
+  closeRewardDialog,
+  openRewardEditor,
   ownsEdition,
   ownsSet,
   furnitureSetAreaLabel,
   publicationModeOptions,
   rewardDialog,
+  rewardToEdit,
   rewardPublicationStatus,
   rewardToDelete,
+  saveReward,
   setPreviewAccessories,
   shopViewOptions,
   store,
@@ -377,6 +383,7 @@ const {
   catalogItemsTitle,
 } = useShopPage();
 const canViewShop = computed(() => store.viewerRole === "child" || store.permissions.canManageContent);
+const rewardDialogTitle = computed(() => t(rewardToEdit.value ? "shop.form.editTitle" : "shop.form.title"));
 const editionCards = computed(() =>
   houseEditions.value.map(function callback(edition) {
     const isActive = edition.id === store.houseThemeId;

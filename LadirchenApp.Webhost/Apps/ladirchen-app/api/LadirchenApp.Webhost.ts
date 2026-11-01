@@ -54,6 +54,50 @@ export class Client {
     return Promise.resolve<AboutInfo>(null as any);
   }
 
+  getCurrentAuthenticationSession(signal?: AbortSignal): Promise<AuthenticationSessionResponse> {
+    let url_ = this.baseUrl + "/session/current";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetCurrentAuthenticationSession(_response);
+    });
+  }
+
+  protected processGetCurrentAuthenticationSession(response: Response): Promise<AuthenticationSessionResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as AuthenticationSessionResponse);
+        return result200;
+      });
+    } else if (status === 204) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<AuthenticationSessionResponse>(null as any);
+  }
+
   executeFamilyCommand(
     familyId: string,
     request: ExecuteFamilyCommandRequest,
@@ -930,6 +974,12 @@ export interface Version {
   minorRevision?: number;
 }
 
+export interface AuthenticationSessionResponse {
+  familyId: string;
+  familyName: string;
+  memberId: string;
+}
+
 export interface ExecuteFamilyCommandResponse {
   changedReadModelTypes?: string[];
 }
@@ -971,6 +1021,15 @@ export interface AddContributionPayload {
   energy: number;
   kind: string;
   assigneeId?: string | null;
+}
+
+export interface ContributionsCopyCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: CopyContributionPayload;
+}
+
+export interface CopyContributionPayload {
+  id: string;
+  sourceId: string;
 }
 
 export interface ContributionsAddPromotionCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1038,6 +1097,10 @@ export interface PercentageFamilyCommandPayload {
 
 export interface ContributionsSubmitCommandRequest extends ExecuteFamilyCommandRequest {
   payload: IdFamilyCommandPayload;
+}
+
+export interface ContributionsUpdateCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddContributionPayload;
 }
 
 export interface HomeMoveEntityCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1245,6 +1308,10 @@ export interface RewardVisibilityPayload {
   isVisible: boolean;
 }
 
+export interface RewardShopUpdateCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddShopRewardPayload;
+}
+
 export interface SavingsAddGoalCommandRequest extends ExecuteFamilyCommandRequest {
   payload: AddSavingsGoalPayload;
 }
@@ -1403,12 +1470,6 @@ export interface SimulateSavingsInterestRequest {
 
 export interface AuthenticationRegistrationStatusResponse {
   registrationAvailable: boolean;
-}
-
-export interface AuthenticationSessionResponse {
-  familyId: string;
-  familyName: string;
-  memberId: string;
 }
 
 export interface AuthenticateAccountRequest {
@@ -1574,6 +1635,10 @@ export interface FamilyPermissionsReadModel {
   canSupportChildGoals: boolean;
   canViewFamilyGoals: boolean;
   canViewGuardianGoals: boolean;
+  canManageChildTasks: boolean;
+  canReviewChildTasks: boolean;
+  canViewTaskAssignments: boolean;
+  canViewHouse: boolean;
 }
 
 export interface FamilyPetReadModel {

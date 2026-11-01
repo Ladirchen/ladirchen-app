@@ -20,6 +20,15 @@
       </span>
       <span class="reward-admin-actions d-flex">
         <button
+          v-if="reward.status !== 'requested'"
+          :aria-label="t('shop.rewards.editAria', { title: reward.title })"
+          class="reward-edit-button d-grid place-center cursor-pointer"
+          type="button"
+          @click="emit('edit', reward)"
+        >
+          <v-icon :icon="editActionIcon" />
+        </button>
+        <button
           :aria-label="visibilityActionLabel"
           class="reward-visibility-button d-grid place-center cursor-pointer"
           type="button"
@@ -88,6 +97,17 @@
             @click="store.decideShopReward(reward.id, true)"
           />
         </div>
+        <v-btn
+          v-else-if="rewardIsRedeemed"
+          color="primary"
+          prepend-icon="i-mdi:restore"
+          rounded="lg"
+          size="small"
+          variant="tonal"
+          @click="emit('edit', reward)"
+        >
+          {{ t("shop.rewards.reactivate") }}
+        </v-btn>
         <v-chip v-else :color="guardianStatusColor" size="small" variant="tonal">{{ guardianStatusLabel }}</v-chip>
       </template>
     </div>
@@ -104,6 +124,7 @@ import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import type { ShopRewardPublicationStatus } from "@/features/shop/shop-view-models";
 export interface Emits {
   delete: [reward: ShopReward];
+  edit: [reward: ShopReward];
 }
 export interface Props {
   readonly canRequest: boolean;
@@ -125,6 +146,7 @@ const visibilityActionLabel = computed(() =>
   t(rewardIsHidden.value ? "shop.rewards.show" : "shop.rewards.hide", { title: props.reward.title }),
 );
 const visibilityActionIcon = computed(() => (rewardIsHidden.value ? "i-mdi:eye-outline" : "i-mdi:eye-off-outline"));
+const editActionIcon = computed(() => (rewardIsRedeemed.value ? "i-mdi:restore" : "i-mdi:pencil-outline"));
 const childStatusColor = computed(() => (rewardIsRedeemed.value ? "success" : "warning"));
 const childStatusLabel = computed(() => t(rewardIsRedeemed.value ? "shop.rewards.redeemed" : "shop.rewards.requested"));
 const guardianStatusColor = computed(() => (rewardIsRedeemed.value ? "success" : "primary"));
@@ -172,6 +194,7 @@ const guardianStatusLabel = computed(() =>
   gap: rem(4);
 }
 .reward-visibility-button,
+.reward-edit-button,
 .reward-delete-button {
   width: rem(28);
   height: rem(28);

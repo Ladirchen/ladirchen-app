@@ -389,6 +389,10 @@ public sealed class Family : AggregateRoot<FamilyId>
       "The family must retain an active administrator."
     );
     member.ChangeAccess(access);
+    if (access == GuardianAccess.External)
+    {
+      member.SetWeeklyGoalParticipation(false);
+    }
     AddDomainEvent(new FamilyMemberChanged(Id, memberId, "AccessChanged", now));
   }
 

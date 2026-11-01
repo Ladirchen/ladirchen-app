@@ -428,11 +428,21 @@ public sealed partial class FamilyEconomy
     Rules.Require(member.Role == MemberRole.Guardian, DomainError.Forbidden, "Only guardians may issue goal support.");
     var goal = GoalFor(actor, id);
     RequireNoPendingGoalCancellation(goal);
+    var createsPersonalGift = false;
 
     if (!goal.Owner.IsFamily)
     {
-      RequireChild(goal.Owner.MemberId!);
-      RequireNewPendingGiftId(giftId);
+      var owner = ActiveMember(goal.Owner.MemberId!);
+
+      if (owner.Role == MemberRole.Child)
+      {
+        RequireNewPendingGiftId(giftId);
+        createsPersonalGift = true;
+      }
+      else
+      {
+        Rules.Require(giftId is null, DomainError.InvalidValue, "Guardian goal support does not create a child gift.");
+      }
     }
 
     var value = Math.Min(Rules.Round(Rules.Positive(amount)), goal.Target - goal.Saved);
@@ -441,7 +451,7 @@ public sealed partial class FamilyEconomy
     var saved = checked(goal.Saved + value);
     goal.SetSaved(saved);
 
-    if (!goal.Owner.IsFamily)
+    if (createsPersonalGift)
     {
       AddPendingGift(
         new GuardianGoalGift(giftId, goal.Owner.MemberId!, actor, value, goal.Id, GiftDestination.Goal)
@@ -610,8 +620,8 @@ public sealed partial class FamilyEconomy
 
   private static bool CanViewGoal(FamilyEconomyMember member, SavingGoal goal)
   {
-    return goal.Owner.MemberId == member.Id
+    return !member.IsExternalGuardian && (goal.Owner.MemberId == member.Id
       || goal.Visibility == GoalVisibility.Family
-      || goal.Visibility == GoalVisibility.Guardians && member.IsAdministrator;
+      || goal.Visibility == GoalVisibility.Guardians && member.IsAdministrator);
   }
 }

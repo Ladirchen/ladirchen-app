@@ -99,6 +99,7 @@ const roleOptions = computed(() => [
   { title: t("family.roles.guardian"), value: "guardian" satisfies ViewerRole },
 ]);
 const guardianAccessOptions = computed(() => [
+  { title: t("family.permissions.external"), value: "external" satisfies GuardianAccessLevel },
   { title: t("family.permissions.supporter"), value: "supporter" satisfies GuardianAccessLevel },
   { title: t("family.permissions.admin"), value: "admin" satisfies GuardianAccessLevel },
 ]);

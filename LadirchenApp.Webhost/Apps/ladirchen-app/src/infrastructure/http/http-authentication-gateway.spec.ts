@@ -58,15 +58,15 @@ describe("HttpAuthenticationGateway", () => {
     const gateway = new HttpAuthenticationGateway("");
 
     await expect(gateway.getCurrentSession()).resolves.toEqual(session);
-    expect(fetchMock).toHaveBeenCalledWith("/api/auth/restore", {
+    expect(fetchMock).toHaveBeenCalledWith("/session/current", {
       cache: "no-store",
       credentials: "include",
-      method: "POST",
+      method: "GET",
     });
   });
 
   it("returns no current session when the cookie is missing or expired", async () => {
-    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 401 })));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 })));
     const gateway = new HttpAuthenticationGateway("");
 
     await expect(gateway.getCurrentSession()).resolves.toBeNull();

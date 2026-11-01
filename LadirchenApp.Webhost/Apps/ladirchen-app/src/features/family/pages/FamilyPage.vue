@@ -172,6 +172,7 @@ const guardianAccessOptions = computed<
     value: GuardianAccessLevel;
   }>
 >(() => [
+  { title: t("family.permissions.external"), value: "external" },
   { title: t("family.permissions.supporter"), value: "supporter" },
   { title: t("family.permissions.admin"), value: "admin" },
 ]);
@@ -206,7 +207,11 @@ function appearanceFor(member: FamilyMember): AvatarAppearance {
   return resolveFamilyMemberAvatarAppearance(member, store.members);
 }
 function accessLabel(access?: GuardianAccessLevel) {
-  return t(access === "admin" ? "family.permissions.admin" : "family.permissions.supporter");
+  if (access === "admin") {
+    return t("family.permissions.admin");
+  }
+
+  return t(access === "external" ? "family.permissions.external" : "family.permissions.supporter");
 }
 function goalTitle(memberId: FamilyMemberId) {
   const goal = store.goals.find((item) => item.ownerId === memberId);
@@ -216,8 +221,12 @@ function goalTitle(memberId: FamilyMemberId) {
 function memberSubtitle(member: FamilyMember) {
   return member.role === "guardian" ? t("family.roles.guardian") : goalTitle(member.id);
 }
-function guardianAccessColor(access?: GuardianAccessLevel): "info" | "primary" {
-  return access === "admin" ? "info" : "primary";
+function guardianAccessColor(access?: GuardianAccessLevel): "info" | "primary" | "warning" {
+  if (access === "admin") {
+    return "info";
+  }
+
+  return access === "external" ? "warning" : "primary";
 }
 function participationLabel(member: FamilyMember) {
   return t(member.participatesInWeeklyGoal ? "family.weekly.active" : "family.weekly.inactive");

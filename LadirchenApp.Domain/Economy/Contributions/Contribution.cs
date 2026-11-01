@@ -9,7 +9,7 @@ namespace LadirchenApp.Domain.Economy;
 public sealed class Contribution : Entity<ContributionId>
 {
   internal Contribution(ContributionId id, string title, ContributionKind kind, LadirchenAmount reward,
-    Percentage energy, FamilyMemberId? assignee) : base(id)
+    Percentage energy, FamilyMemberId? assignee, FamilyMemberId? creatorId = null) : base(id)
   {
     ArgumentNullException.ThrowIfNull(reward);
     ArgumentNullException.ThrowIfNull(energy);
@@ -18,27 +18,32 @@ public sealed class Contribution : Entity<ContributionId>
     Reward = reward;
     Energy = energy;
     AssigneeId = assignee;
+    CreatorId = creatorId;
   }
 
   public string Title
   {
-    get;
+    get; private set;
   }
   public ContributionKind Kind
   {
-    get;
+    get; private set;
   }
   public LadirchenAmount Reward
   {
-    get;
+    get; private set;
   }
   public Percentage Energy
   {
-    get;
+    get; private set;
   }
   public FamilyMemberId? AssigneeId
   {
     get; private set;
+  }
+  public FamilyMemberId? CreatorId
+  {
+    get;
   }
   public ContributionStatus Status
   {
@@ -61,6 +66,22 @@ public sealed class Contribution : Entity<ContributionId>
   internal void Assign(FamilyMemberId? member)
   {
     AssigneeId = member;
+    InvitedPartners = Array.Empty<FamilyMemberId>();
+  }
+
+  internal void Update(ContributionDefinition definition)
+  {
+    ArgumentNullException.ThrowIfNull(definition);
+    Rules.Require(
+      Status == ContributionStatus.Available,
+      DomainError.InvalidState,
+      "Only available contributions may be edited."
+    );
+    Title = Rules.Text(definition.Title);
+    Kind = Rules.Defined(definition.Kind);
+    Reward = definition.Reward ?? throw new ArgumentNullException(nameof(definition));
+    Energy = definition.Energy ?? throw new ArgumentNullException(nameof(definition));
+    AssigneeId = definition.AssigneeId;
     InvitedPartners = Array.Empty<FamilyMemberId>();
   }
   internal void SetPartners(FamilyMemberId[] partners)

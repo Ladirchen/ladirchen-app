@@ -677,6 +677,32 @@ public sealed partial class EconomySteps
     await Assert.That(_economy.GuardianGoalGifts).IsEmpty();
   }
 
+  [Given("a visible personal savings goal owned by a guardian")]
+  public void GuardianOwnedVisibleGoal()
+  {
+    CreateEconomy();
+    _economy.AddGoal(
+      _supporter,
+      _goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Member(_supporter),
+        "Guardian goal",
+        new LadirchenAmount(100),
+        GoalVisibility.Family
+      ),
+      NextOperation(),
+      _now
+    );
+  }
+
+  [When("another guardian supports the goal with {float} Ladirchen")]
+  public void AnotherGuardianSupportsGoal(decimal amount)
+  {
+    var before = _economy.GoalFor(_admin, _goalId).Saved;
+    _economy.SupportGoal(_admin, _goalId, new LadirchenAmount(amount), NextOperation(), _now);
+    _supportIncrease = _economy.GoalFor(_admin, _goalId).Saved - before;
+  }
+
   [Given("a personal savings goal is one Ladirchen below its target")]
   public void PersonalGoalBelowTarget()
   {

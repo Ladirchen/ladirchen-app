@@ -24,6 +24,7 @@ export function useContributionsPage() {
   const scopeFilter = ref<"all" | "mine" | "open">("mine");
   const statusFilter = ref<"open" | "completed">("open");
   const addDialog = ref(false);
+  const contributionToEdit = ref<Contribution>();
   const promotionDialog = ref(false);
   const teamDialog = ref(false);
   const teamContributionId = ref<ContributionId>();
@@ -50,7 +51,13 @@ export function useContributionsPage() {
     { title: t("contributions.kind.extraOptional"), value: "extra" },
   ]);
   const assignmentOptions = computed(function callback() {
-    if (!store.permissions.canManageContent) {
+    if (store.permissions.canManageChildTasks && !store.permissions.canManageContent) {
+      return store.members
+        .filter((member) => member.role === "child")
+        .map((member) => ({ title: member.name, value: member.id }));
+    }
+
+    if (!store.permissions.canManageContent && !store.permissions.canManageChildTasks) {
       return [
         {
           title: t("contributions.assignment.own", { name: store.signedInMember?.name ?? "" }),
@@ -166,7 +173,30 @@ export function useContributionsPage() {
     void store.assignContribution(contributionId, member?.id);
   }
   function openOwnTaskDialog() {
+    resetContributionDraft();
     Object.assign(newContribution, { assigneeId: store.signedInMemberId });
+    addDialog.value = true;
+  }
+  function openContributionDialog() {
+    resetContributionDraft();
+
+    if (store.permissions.canManageChildTasks && !store.permissions.canManageContent) {
+      Object.assign(newContribution, { assigneeId: store.members.find((member) => member.role === "child")?.id ?? "" });
+    }
+
+    addDialog.value = true;
+  }
+  function openContributionEditor(contribution: Contribution) {
+    contributionToEdit.value = contribution;
+    Object.assign(newContribution, {
+      assigneeId: contribution.assigneeId ?? "",
+      description: contribution.description,
+      energy: contribution.energy,
+      icon: contribution.icon,
+      kind: contribution.kind,
+      reward: contribution.reward,
+      title: contribution.title,
+    });
     addDialog.value = true;
   }
   function requestContributionDelete(contribution: Contribution) {
@@ -234,9 +264,12 @@ export function useContributionsPage() {
     void store.setContributionPartners(teamContributionId.value, selectedPartnerIds.value);
     teamDialog.value = false;
   }
-  function addContribution() {
-    void store.addContribution({ ...newContribution, assigneeId: newContribution.assigneeId || undefined });
+  function closeContributionDialog() {
     addDialog.value = false;
+    resetContributionDraft();
+  }
+  function resetContributionDraft() {
+    contributionToEdit.value = undefined;
     Object.assign(newContribution, {
       title: "",
       description: "",
@@ -246,6 +279,20 @@ export function useContributionsPage() {
       kind: "basic",
       assigneeId: "",
     });
+  }
+  function saveContribution() {
+    const input = { ...newContribution, assigneeId: newContribution.assigneeId || undefined };
+
+    if (contributionToEdit.value) {
+      void store.updateContribution(contributionToEdit.value.id, input);
+    } else {
+      void store.addContribution(input);
+    }
+
+    closeContributionDialog();
+  }
+  function copyContribution(contribution: Contribution) {
+    void store.copyContribution(contribution.id);
   }
   function addPromotion() {
     const contributionId = newPromotion.contributionId;
@@ -284,8 +331,8 @@ export function useContributionsPage() {
   watch(
     () => route.query.new,
     function callback(value) {
-      if (value === "1" && store.permissions.canManageContent) {
-        addDialog.value = true;
+      if (value === "1" && (store.permissions.canManageContent || store.permissions.canManageChildTasks)) {
+        openContributionDialog();
       }
     },
     { immediate: true },
@@ -293,7 +340,7 @@ export function useContributionsPage() {
   watch(
     () => route.query.promotion,
     function callback(value) {
-      if (value === "1" && store.permissions.canManageContent) {
+      if (value === "1" && (store.permissions.canManageContent || store.permissions.canManageChildTasks)) {
         promotionDialog.value = true;
       }
     },
@@ -302,17 +349,19 @@ export function useContributionsPage() {
 
   return {
     activePromotions,
-    addContribution,
     addDialog,
     addPromotion,
     approveWithRating,
     assignContribution,
     assignmentOptions,
+    closeContributionDialog,
+    copyContribution,
     reviewableTasks,
     confirmContributionDelete,
     confirmPromotionDelete,
     contributionTip,
     contributionTitle,
+    contributionToEdit,
     contributionToDelete,
     filter,
     filteredContributions,
@@ -326,6 +375,8 @@ export function useContributionsPage() {
     newContribution,
     newPromotion,
     openContributionCount,
+    openContributionDialog,
+    openContributionEditor,
     openOwnTaskDialog,
     openTeamInvite,
     promotionContributionOptions,
@@ -334,6 +385,7 @@ export function useContributionsPage() {
     promotionToDelete,
     ratings,
     requestContributionDelete,
+    saveContribution,
     saveTeamInvite,
     scopeFilter,
     selectedPromotion,

@@ -61,6 +61,7 @@ export function useShopPage() {
   const activeTab = ref<"family" | "house">("family");
   const houseArea = ref<HouseCatalogArea>("inside");
   const rewardDialog = ref(false);
+  const rewardToEdit = ref<ShopReward | null>(null);
   const rewardToDelete = ref<ShopReward | null>(null);
   const currentTime = computed(() => new Date(store.currentTimeMilliseconds));
   const iconOptions = ["🎁", "🎮", "🍿", "🎨", "🎟️", "🧁", "🚲", "🌙", "💵", "🛍️"];
@@ -132,7 +133,7 @@ export function useShopPage() {
   ]);
   const newReward = reactive(createEmptyReward());
   const minimumAvailableDate = computed(() => calendarDateInTimeZone(currentTime.value, store.familyTimeZone));
-  const canAddReward = computed(() =>
+  const canSaveReward = computed(() =>
     Boolean(
       newReward.icon.trim() &&
       newReward.title.trim() &&
@@ -268,8 +269,8 @@ export function useShopPage() {
 
     return { icon: "i-mdi:eye-outline", label: t("shop.publication.visible"), tone: "visible" };
   }
-  function addReward() {
-    void store.addShopReward({
+  function rewardInput() {
+    return {
       title: newReward.title.trim(),
       description: newReward.description.trim(),
       icon: newReward.icon.trim(),
@@ -280,9 +281,51 @@ export function useShopPage() {
       availableFrom: newReward.publicationMode === "scheduled" ? newReward.availableFrom : undefined,
       availableUntil: newReward.unlimited ? undefined : newReward.availableUntil,
       isVisible: newReward.publicationMode !== "hidden",
-    });
+    };
+  }
+  function closeRewardDialog() {
     Object.assign(newReward, createEmptyReward());
+    rewardToEdit.value = null;
     rewardDialog.value = false;
+  }
+  function openRewardEditor(reward: ShopReward) {
+    rewardToEdit.value = reward;
+    Object.assign(newReward, {
+      availableFrom: reward.publicationStatus === "scheduled" ? (reward.availableFrom ?? "") : "",
+      availableUntil: reward.availableUntil ?? "",
+      category: reward.category,
+      conditions: reward.conditions,
+      description: reward.description,
+      icon: reward.icon,
+      price: reward.price,
+      publicationMode: publicationModeFor(reward),
+      quantity: Math.max(1, reward.quantity),
+      title: reward.title,
+      unlimited: reward.availableUntil === undefined,
+    });
+    rewardDialog.value = true;
+  }
+  function publicationModeFor(reward: ShopReward): PublicationMode {
+    if (!reward.isVisible) {
+      return "hidden";
+    }
+
+    if (reward.publicationStatus === "scheduled") {
+      return "scheduled";
+    }
+
+    return "now";
+  }
+  function saveReward() {
+    const input = rewardInput();
+
+    if (rewardToEdit.value) {
+      void store.updateShopReward(rewardToEdit.value.id, input);
+    } else {
+      void store.addShopReward(input);
+    }
+
+    closeRewardDialog();
   }
   function confirmRewardDeletion() {
     if (!rewardToDelete.value) {
@@ -321,8 +364,7 @@ export function useShopPage() {
 
   return {
     activeTab,
-    addReward,
-    canAddReward,
+    canSaveReward,
     canRequest,
     catalogItemsEyebrow,
     catalogItemsTitle,
@@ -337,13 +379,17 @@ export function useShopPage() {
     iconOptions,
     minimumAvailableDate,
     newReward,
+    closeRewardDialog,
+    openRewardEditor,
     ownsEdition,
     ownsSet,
     furnitureSetAreaLabel,
     publicationModeOptions,
     rewardDialog,
+    rewardToEdit,
     rewardPublicationStatus,
     rewardToDelete,
+    saveReward,
     setPreviewAccessories,
     shopViewOptions,
     store,

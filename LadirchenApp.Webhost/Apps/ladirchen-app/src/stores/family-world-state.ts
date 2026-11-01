@@ -59,6 +59,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     amount: number;
     version: number;
   } = { visible: false, guardianName: "", goalTitle: "", destination: "goal", amount: 0, version: 0 };
+  const guardianGiftRevealInProgress = false;
   const pendingGuardianGifts: GuardianGift[] = [];
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
@@ -119,6 +120,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     piggyBankOpen: false,
     rewardAnimation,
     guardianGiftAnimation,
+    guardianGiftRevealInProgress,
     pendingGuardianGifts,
     savingsVouchers,
     completedWeeklyStreak: 0,

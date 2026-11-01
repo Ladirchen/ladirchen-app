@@ -32,7 +32,8 @@ public sealed partial class FamilyEconomy
     ContributionRewardBreakdown? earnedReward,
     DateTimeOffset? approvedAt,
     IReadOnlyCollection<FamilyMemberId> invitedPartners,
-    bool requireActiveReferences = true
+    bool requireActiveReferences = true,
+    FamilyMemberId? creatorId = null
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -49,7 +50,8 @@ public sealed partial class FamilyEconomy
       definition.Kind,
       definition.Reward,
       definition.Energy,
-      definition.AssigneeId
+      definition.AssigneeId,
+      creatorId
     );
 
     if (requireActiveReferences && definition.AssigneeId is not null)

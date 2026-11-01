@@ -28,6 +28,7 @@ export const familyActions = {
     }
   },
   async restoreAuthenticatedSession(this: FamilyWorldStoreContext): Promise<boolean> {
+    const hasHydratedFamilyState = this.isAuthenticated || this.familyReadModelsHydrated || this.members.length > 0;
     this.sessionRestorationFailed = false;
 
     try {
@@ -40,7 +41,11 @@ export const familyActions = {
         return restored;
       }
     } catch {
-      this.sessionRestorationFailed = true;
+      if (hasHydratedFamilyState) {
+        this.sessionRestorationFailed = true;
+      } else {
+        this.$reset();
+      }
 
       return false;
     }

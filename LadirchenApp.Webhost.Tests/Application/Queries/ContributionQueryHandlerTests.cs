@@ -21,6 +21,7 @@ public sealed class ContributionQueryHandlerTests
   private static readonly FamilyMemberId _assigneeId = new("assignee");
   private static readonly FamilyMemberId _supporterId = new("supporter");
   private static readonly FamilyMemberId _siblingId = new("sibling");
+  private static readonly FamilyMemberId _externalId = new("external");
 
   [Test]
   public async Task QueryProjectsContributionRulesFromTypedFamilyEconomyState()
@@ -57,6 +58,29 @@ public sealed class ContributionQueryHandlerTests
     ).IsEqualTo(2);
   }
 
+  [Test]
+  public async Task ExternalGuardianReceivesOnlyOwnChildTasks()
+  {
+    var store = CreateStore();
+    var handler = new GetFamilyAggregateQueryHandler(
+      store,
+      store,
+      store,
+      store,
+      new FixedTimeProvider(new DateTimeOffset(2026, 10, 29, 10, 0, 0, TimeSpan.Zero))
+    );
+
+    var result = await handler.HandleAsync(
+      new GetFamilyAggregateQuery(_familyId, "contributions", _externalId),
+      CancellationToken.None
+    ) as ContributionsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The contribution read model is missing.");
+
+    await Assert.That(result.CalculatedState.Contributions.Keys.Select(item => item.Value))
+      .IsEquivalentTo(["external-child-task"]);
+    await Assert.That(result.CalculatedState.TodayEarnedByMember).IsEmpty();
+  }
+
   private static TestTypedAggregateStore CreateStore()
   {
     var family = Family.Reconstitute(new FamilyState(
@@ -70,6 +94,7 @@ public sealed class ContributionQueryHandlerTests
         Member(_administratorId, "Administrator", MemberRole.Guardian, GuardianAccess.Admin),
         Member(_assigneeId, "Assignee", MemberRole.Child, GuardianAccess.Supporter),
         Member(_supporterId, "Supporter", MemberRole.Guardian, GuardianAccess.Supporter),
+        Member(_externalId, "External", MemberRole.Guardian, GuardianAccess.External),
         Member(_siblingId, "Sibling", MemberRole.Child, GuardianAccess.Supporter),
         new FamilyMemberState(
           new FamilyMemberId("pending-guardian"),
@@ -86,6 +111,16 @@ public sealed class ContributionQueryHandlerTests
     ));
     var contributions = new[]
     {
+      Contribution(
+        "external-child-task",
+        "External child task",
+        ContributionKind.Basic,
+        4,
+        10,
+        _assigneeId,
+        ContributionStatus.Available,
+        creatorId: _externalId
+      ),
       Contribution(
         "extra-task",
         "Extra task",
@@ -204,7 +239,8 @@ public sealed class ContributionQueryHandlerTests
     ContributionStatus status,
     int? stars = null,
     ContributionRewardBreakdown? earnedReward = null,
-    DateTimeOffset? approvedAt = null
+    DateTimeOffset? approvedAt = null,
+    FamilyMemberId? creatorId = null
   )
   {
     return new ContributionState(
@@ -218,14 +254,15 @@ public sealed class ContributionQueryHandlerTests
       stars is null ? null : new StarRating(stars.Value),
       earnedReward,
       approvedAt,
-      []
+      [],
+      creatorId
     );
   }
 
   private static MemberWalletState[] ActiveWallets(Family family)
   {
     return family.Members
-      .Where(member => !member.InvitationPending)
+      .Where(member => !member.InvitationPending && member.Access != GuardianAccess.External)
       .Select(member => new MemberWalletState(member.Id, 0, 0))
       .ToArray();
   }

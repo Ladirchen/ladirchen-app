@@ -27,7 +27,7 @@ import type {
 import { isIanaTimeZone } from "@/domain/family/time-zone";
 const viewerRoles = exhaustiveValues<ViewerRole>({ child: true, guardian: true });
 const subscriptionTiers = exhaustiveValues<SubscriptionTier>({ free: true, pro: true });
-const guardianAccessLevels = exhaustiveValues<GuardianAccessLevel>({ admin: true, supporter: true });
+const guardianAccessLevels = exhaustiveValues<GuardianAccessLevel>({ admin: true, external: true, supporter: true });
 const familyPetKinds = exhaustiveValues<FamilyPetKindId>({
   bird: true,
   cat: true,
@@ -51,12 +51,16 @@ function isFamilyPermissions(value: unknown): value is FamilyPermissions {
   return (
     isRecord(value) &&
     typeof value.canInviteMembers === "boolean" &&
+    typeof value.canManageChildTasks === "boolean" &&
     typeof value.canManageContent === "boolean" &&
     typeof value.canManageFamily === "boolean" &&
     typeof value.canManageGoals === "boolean" &&
     typeof value.canSupportChildGoals === "boolean" &&
+    typeof value.canReviewChildTasks === "boolean" &&
+    typeof value.canViewHouse === "boolean" &&
     typeof value.canViewFamilyGoals === "boolean" &&
-    typeof value.canViewGuardianGoals === "boolean"
+    typeof value.canViewGuardianGoals === "boolean" &&
+    typeof value.canViewTaskAssignments === "boolean"
   );
 }
 function isAvatarProfileCatalog(value: unknown): value is AvatarProfileCatalog {

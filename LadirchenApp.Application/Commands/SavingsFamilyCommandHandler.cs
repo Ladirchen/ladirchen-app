@@ -349,7 +349,10 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
   )
   {
     var goal = economy.GoalFor(actorId, GoalId(payload));
-    var giftId = goal.Owner.IsFamily ? null : GiftId(payload);
+    var giftId = goal.Owner.MemberId is not null
+      && family.ActiveMember(goal.Owner.MemberId).Role == MemberRole.Child
+        ? GiftId(payload)
+        : null;
     _ = economy.SupportGoal(
       actorId,
       goal.Id,

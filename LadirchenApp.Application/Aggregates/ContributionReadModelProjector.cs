@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 
 using LadirchenApp.Domain.Economy;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
@@ -10,16 +11,29 @@ internal static class ContributionReadModelProjector
 {
   public static ContributionReadModelProjection Project(
     ContributionReadModelState state,
+    FamilyMemberId viewerId,
     DateTimeOffset now
   )
   {
     ArgumentNullException.ThrowIfNull(state);
-    var activeMembers = state.Family.Members.Where(member => !member.InvitationPending).ToArray();
+    ArgumentNullException.ThrowIfNull(viewerId);
+    var viewer = state.Family.ActiveMember(viewerId);
+    var externalViewer = viewer.Role == MemberRole.Guardian
+      && viewer.Access == GuardianAccess.External;
+    var activeMembers = state.Family.Members
+      .Where(member => !member.InvitationPending && member.Access != GuardianAccess.External)
+      .ToArray();
     var promotionAvailability = state.Economy.Promotions.ToDictionary(
       promotion => promotion.Id,
       promotion => promotion.Active && promotion.Deadline.IsOpen(now, state.Family.TimeZone)
     );
-    var contributions = state.Economy.Contributions.ToDictionary(
+    var visibleContributions = state.Economy.Contributions
+      .Where(contribution => !externalViewer
+        || contribution.CreatorId == viewerId
+          && contribution.AssigneeId is not null
+          && state.Family.ActiveMember(contribution.AssigneeId).Role == MemberRole.Child)
+      .ToArray();
+    var contributions = visibleContributions.ToDictionary(
       contribution => contribution.Id,
       contribution =>
       {
@@ -44,7 +58,7 @@ internal static class ContributionReadModelProjector
         return new ContributionReadProjection(projectedReward, partnerableMemberIds);
       }
     );
-    var approvedContributions = state.Economy.Contributions
+    var approvedContributions = visibleContributions
       .Where(contribution => contribution.Status == ContributionStatus.Approved)
       .Where(contribution => contribution.AssigneeId is not null)
       .Where(contribution => contribution.ApprovedAt is not null)

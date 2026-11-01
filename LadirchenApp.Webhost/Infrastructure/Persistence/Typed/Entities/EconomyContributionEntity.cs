@@ -12,6 +12,7 @@ public sealed class EconomyContributionEntity
   public decimal Reward { get; set; }
   public decimal EnergyPercent { get; set; }
   public string? AssigneeId { get; set; }
+  public string? CreatorId { get; set; }
   public int Status { get; set; }
   public int? Rating { get; set; }
   public decimal? EarnedBaseReward { get; set; }

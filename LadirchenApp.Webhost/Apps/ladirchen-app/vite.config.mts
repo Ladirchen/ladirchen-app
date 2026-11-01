@@ -28,25 +28,27 @@ export default defineConfig({
     }),
     UnoCSS(),
     VitePWA({
-      includeAssets: ["favicon.ico", "ladirchen-logo.png"],
+      includeAssets: ["apple-touch-icon.png", "favicon.ico", "ladirchen-logo.png"],
       manifest: {
         background_color: "#f7fbf9",
         description: "Die gemeinsame Familienwelt für Aufgaben, Wünsche, Sparziele und Belohnungen.",
         display: "standalone",
         icons: [
           {
-            src: "/pwa-192x192.png",
+            purpose: "any",
+            src: "/ladirli-icon-192x192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "/pwa-512x512.png",
+            purpose: "any",
+            src: "/ladirli-icon-512x512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
             purpose: "maskable",
-            src: "/pwa-maskable-512x512.png",
+            src: "/ladirli-icon-maskable-512x512.png",
             sizes: "512x512",
             type: "image/png",
           },

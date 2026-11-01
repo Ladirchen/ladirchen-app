@@ -35,7 +35,7 @@
         :house-layout="store.houseLayout"
         :house-theme-id="store.houseThemeId"
         :ladi-stage-id="store.memberProgressions[store.activeChildId]?.ladiStageId ?? 'idle-ladi'"
-        :members="store.members"
+        :members="worldMembers"
         :pets="store.pets"
         :room-designs="activeRoomDesigns"
         :rooms="store.unlockedHouseRooms"
@@ -457,6 +457,7 @@ const promotionRewardTotal = computed(function callback() {
   return baseReward * activePromotion.value.multiplier + activePromotion.value.teamworkBonus;
 });
 const childMembers = computed(() => store.members.filter((member) => member.role === "child"));
+const worldMembers = computed(() => store.members.filter((member) => member.guardianAccess !== "external"));
 const childOptions = computed(() =>
   childMembers.value.map((child) => ({ title: `${child.avatar} ${child.name}`, value: child.id })),
 );

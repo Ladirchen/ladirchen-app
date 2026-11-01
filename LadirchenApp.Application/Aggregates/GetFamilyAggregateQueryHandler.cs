@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.Family.Permissions;
+using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
@@ -55,10 +57,17 @@ public sealed partial class GetFamilyAggregateQueryHandler
 
     var family = loadedFamily.Root;
     family.RequireActorAccess(query.AuthenticatedMemberId, query.ViewerId);
+    var permissions = new FamilyPermissionPolicy().Resolve(family.ActiveMember(query.ViewerId));
+    Rules.Require(
+      permissions.ViewHouse
+        || query.AggregateType is "contributions" or "family-profile",
+      DomainError.Forbidden,
+      "External guardians can access only child tasks and the limited family profile."
+    );
 
     return query.AggregateType switch
     {
-      "contributions" => await ProjectContributionsAsync(family, cancellationToken),
+      "contributions" => await ProjectContributionsAsync(family, query.ViewerId, cancellationToken),
       "family-profile" => await ProjectFamilyProfileAsync(
         loadedFamily,
         query.AuthenticatedMemberId,

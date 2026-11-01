@@ -30,7 +30,7 @@ public sealed class ShopReward : Entity<ShopRewardId>
   }
   public ShopRewardCategory Category
   {
-    get;
+    get; private set;
   }
   public LadirchenAmount Price
   {
@@ -121,6 +121,19 @@ public sealed class ShopReward : Entity<ShopRewardId>
     Price = price;
     Quantity = quantity;
     Window = window;
+    Release();
+  }
+
+  internal void Update(ShopRewardDefinition definition)
+  {
+    ArgumentNullException.ThrowIfNull(definition);
+    Title = Rules.Text(definition.Title);
+    Category = Rules.Defined(definition.Category);
+    Price = definition.Price ?? throw new ArgumentNullException(nameof(definition));
+    ArgumentOutOfRangeException.ThrowIfNegative(definition.Quantity);
+    Quantity = definition.Quantity;
+    IsVisible = definition.IsVisible;
+    Window = definition.Window ?? throw new ArgumentNullException(nameof(definition));
     Release();
   }
 

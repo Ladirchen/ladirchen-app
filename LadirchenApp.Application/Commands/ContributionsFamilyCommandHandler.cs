@@ -42,6 +42,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var now = TimeProvider.GetUtcNow();
     var operationId = OperationId(command);
     ContributionPresentationState? addedContribution = null;
+    ContributionPresentationState? updatedContribution = null;
     ContributionId? celebratedContributionId = null;
 
     switch (command.CommandType)
@@ -82,6 +83,18 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       case "contributions.add":
         addedContribution = AddContribution(economy, command.ActorId, payload, now);
         break;
+      case "contributions.update":
+        updatedContribution = UpdateContribution(economy, command.ActorId, payload, now);
+        break;
+      case "contributions.copy":
+        addedContribution = CopyContribution(
+          economy,
+          loadedEconomy.Presentation,
+          command.ActorId,
+          payload,
+          now
+        );
+        break;
       case "contributions.delete":
         economy.DeleteContribution(command.ActorId, ContributionId(payload), now);
         break;
@@ -120,6 +133,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       loadedEconomy.Presentation,
       economy,
       addedContribution,
+      updatedContribution,
       celebratedContributionId
     );
     var saved = await UnitOfWork.SaveAsync(
@@ -159,24 +173,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
   )
   {
     var id = ContributionId(payload);
-    var kind = RequiredString(payload, "kind") switch
-    {
-      "basic" => ContributionKind.Basic,
-      "extra" => ContributionKind.Extra,
-      _ => throw new FamilyCommandException("The contribution kind is invalid."),
-    };
-    economy.AddContribution(
-      actorId,
-      id,
-      new ContributionDefinition(
-        RequiredString(payload, "title"),
-        kind,
-        new LadirchenAmount(RequiredDecimal(payload, "reward")),
-        new Percentage(RequiredDecimal(payload, "energy")),
-        CreateOptionalMemberId(OptionalString(payload, "assigneeId"))
-      ),
-      now
-    );
+    economy.AddContribution(actorId, id, ContributionDefinition(payload), now);
 
     return new ContributionPresentationState(
       id,
@@ -209,6 +206,59 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     );
   }
 
+  private static ContributionPresentationState UpdateContribution(
+    FamilyEconomy economy,
+    FamilyMemberId actorId,
+    JsonElement payload,
+    DateTimeOffset now
+  )
+  {
+    var id = ContributionId(payload);
+    economy.UpdateContribution(actorId, id, ContributionDefinition(payload), now);
+
+    return new ContributionPresentationState(
+      id,
+      RequiredString(payload, "description"),
+      RequiredString(payload, "icon"),
+      false
+    );
+  }
+
+  private static ContributionPresentationState CopyContribution(
+    FamilyEconomy economy,
+    FamilyEconomyPresentationState presentation,
+    FamilyMemberId actorId,
+    JsonElement payload,
+    DateTimeOffset now
+  )
+  {
+    var sourceId = new ContributionId(RequiredString(payload, "sourceId"));
+    var copyId = ContributionId(payload);
+    economy.CopyContribution(actorId, sourceId, copyId, now);
+    var sourcePresentation = presentation.Contributions.SingleOrDefault(item => item.ContributionId == sourceId)
+      ?? throw new FamilyCommandException("Presentation data for the source contribution is missing.");
+
+    return sourcePresentation with { ContributionId = copyId, RewardCelebrated = false };
+  }
+
+  private static ContributionDefinition ContributionDefinition(JsonElement payload)
+  {
+    var kind = RequiredString(payload, "kind") switch
+    {
+      "basic" => ContributionKind.Basic,
+      "extra" => ContributionKind.Extra,
+      _ => throw new FamilyCommandException("The contribution kind is invalid."),
+    };
+
+    return new ContributionDefinition(
+      RequiredString(payload, "title"),
+      kind,
+      new LadirchenAmount(RequiredDecimal(payload, "reward")),
+      new Percentage(RequiredDecimal(payload, "energy")),
+      CreateOptionalMemberId(OptionalString(payload, "assigneeId"))
+    );
+  }
+
   private static ContributionId ValidateRewardAcknowledgement(
     FamilyEconomy economy,
     FamilyMemberId actorId,
@@ -230,6 +280,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     FamilyEconomyPresentationState presentation,
     FamilyEconomy economy,
     ContributionPresentationState? addedContribution,
+    ContributionPresentationState? updatedContribution,
     ContributionId? celebratedContributionId
   )
   {
@@ -248,6 +299,13 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
         "Presentation data for the contribution already exists."
       );
       contributions.Add(addedContribution);
+    }
+
+    if (updatedContribution is not null)
+    {
+      var index = contributions.FindIndex(item => item.ContributionId == updatedContribution.ContributionId);
+      Require(index >= 0, "Presentation data for the contribution is missing.");
+      contributions[index] = updatedContribution;
     }
 
     Require(

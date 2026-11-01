@@ -35,7 +35,8 @@ public sealed class FamilyPermissionSteps
 
     var memberId = new FamilyMemberId("member");
     var memberRole = role == "child" ? MemberRole.Child : MemberRole.Guardian;
-    _family.AddMember(adminId, memberId, "Member", memberRole, GuardianAccess.Supporter, false, DateTimeOffset.UtcNow);
+    var access = role == "guardian external" ? GuardianAccess.External : GuardianAccess.Supporter;
+    _family.AddMember(adminId, memberId, "Member", memberRole, access, false, DateTimeOffset.UtcNow);
     _member = _family.ActiveMember(memberId);
   }
 
@@ -91,6 +92,30 @@ public sealed class FamilyPermissionSteps
   public Task GuardianGoalVisibility(string expected)
   {
     return AssertPermission(_permissions.ViewGuardianGoals, expected);
+  }
+
+  [Then("child-task management is {word}")]
+  public Task ChildTaskManagement(string expected)
+  {
+    return AssertPermission(_permissions.ManageChildTasks, expected);
+  }
+
+  [Then("child-task review is {word}")]
+  public Task ChildTaskReview(string expected)
+  {
+    return AssertPermission(_permissions.ReviewChildTasks, expected);
+  }
+
+  [Then("task-assignment visibility is {word}")]
+  public Task TaskAssignmentVisibility(string expected)
+  {
+    return AssertPermission(_permissions.ViewTaskAssignments, expected);
+  }
+
+  [Then("house visibility is {word}")]
+  public Task HouseVisibility(string expected)
+  {
+    return AssertPermission(_permissions.ViewHouse, expected);
   }
 
   [Then("every family capability is denied")]

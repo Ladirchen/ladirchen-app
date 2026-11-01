@@ -30,7 +30,8 @@ internal static partial class FamilyEconomyPersistenceMapper
         item.InvitedPartners
           .OrderBy(partner => partner.MemberId, StringComparer.Ordinal)
           .Select(partner => new FamilyMemberId(partner.MemberId))
-          .ToArray()
+          .ToArray(),
+        OptionalMemberId(item.CreatorId)
       ))
       .ToArray();
   }
@@ -77,6 +78,7 @@ internal static partial class FamilyEconomyPersistenceMapper
         Reward = contribution.Reward.Value,
         EnergyPercent = contribution.Energy.Value,
         AssigneeId = contribution.AssigneeId?.Value,
+        CreatorId = contribution.CreatorId?.Value,
         Status = (int)contribution.Status,
         Rating = contribution.Rating?.Value,
         EarnedBaseReward = contribution.EarnedReward?.BaseReward,

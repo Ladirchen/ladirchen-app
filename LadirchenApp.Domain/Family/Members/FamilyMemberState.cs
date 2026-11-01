@@ -35,6 +35,11 @@ public sealed record FamilyMemberState
     Nickname = NormalizeNickname(nickname);
     EmailAddress = emailAddress is null ? null : Family.NormalizeEmailAddress(emailAddress);
     ParticipatesInWeeklyGoal = participatesInWeeklyGoal;
+    Rules.Require(
+      access != GuardianAccess.External || !participatesInWeeklyGoal,
+      DomainError.InvalidValue,
+      "External guardians cannot participate in the weekly goal."
+    );
     Avatar = NormalizeOptionalText(avatar);
     Color = NormalizeOptionalText(color);
 

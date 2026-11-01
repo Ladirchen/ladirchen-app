@@ -31,6 +31,21 @@ public static partial class WebApplicationExtensions
 {
   public static WebApplication MapAuthenticationApi(this WebApplication app)
   {
+    app
+      .MapGet("/session/current", GetCurrentAuthenticationSessionOrNoContentAsync)
+      .WithTags("Session")
+      .WithName("GetCurrentAuthenticationSession")
+      .AddEndpointFilter(
+        async (invocationContext, next) =>
+        {
+          invocationContext.HttpContext.Response.Headers.CacheControl = "no-store";
+
+          return await next(invocationContext);
+        }
+      )
+      .Produces<AuthenticationSessionResponse>()
+      .Produces(StatusCodes.Status204NoContent);
+
     var group = app.MapGroup("/api/auth").WithTags("Authentication");
     group.AddEndpointFilter(
       async (invocationContext, next) =>
@@ -109,6 +124,31 @@ public static partial class WebApplicationExtensions
     CurrentAuthenticationSessionReader sessions,
     HttpContext context,
     CancellationToken cancellationToken
+  ) =>
+    await ReadCurrentAuthenticationSessionAsync(
+      sessions,
+      context,
+      StatusCodes.Status401Unauthorized,
+      cancellationToken
+    );
+
+  private static async Task<IResult> GetCurrentAuthenticationSessionOrNoContentAsync(
+    CurrentAuthenticationSessionReader sessions,
+    HttpContext context,
+    CancellationToken cancellationToken
+  ) =>
+    await ReadCurrentAuthenticationSessionAsync(
+      sessions,
+      context,
+      StatusCodes.Status204NoContent,
+      cancellationToken
+    );
+
+  private static async Task<IResult> ReadCurrentAuthenticationSessionAsync(
+    CurrentAuthenticationSessionReader sessions,
+    HttpContext context,
+    int missingSessionStatusCode,
+    CancellationToken cancellationToken
   )
   {
     if (
@@ -116,12 +156,12 @@ public static partial class WebApplicationExtensions
       || !FamilySessionIdentity.TryGetMemberId(context.User, out var memberId)
     )
     {
-      return Results.Unauthorized();
+      return Results.StatusCode(missingSessionStatusCode);
     }
 
     var session = await sessions.ReadAsync(familyId!, memberId!, cancellationToken);
 
-    return session is null ? Results.Unauthorized() : Results.Ok(session);
+    return session is null ? Results.StatusCode(missingSessionStatusCode) : Results.Ok(session);
   }
 
   private static async Task<IResult> AuthenticateAccount(

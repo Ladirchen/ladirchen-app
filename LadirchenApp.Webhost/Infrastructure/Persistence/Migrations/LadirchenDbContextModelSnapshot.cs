@@ -395,6 +395,10 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<string>("CreatorId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<decimal?>("EarnedBaseReward")
                         .HasColumnType("numeric");
 
@@ -1086,7 +1090,7 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
 
                     b.ToTable("FamilyMembers", null, t =>
                         {
-                            t.HasCheckConstraint("CK_FamilyMembers_GuardianAccess", "\"GuardianAccess\" >= 0 AND \"GuardianAccess\" <= 1");
+                            t.HasCheckConstraint("CK_FamilyMembers_GuardianAccess", "\"GuardianAccess\" >= 0 AND \"GuardianAccess\" <= 2");
 
                             t.HasCheckConstraint("CK_FamilyMembers_Role", "\"Role\" >= 0 AND \"Role\" <= 1");
 

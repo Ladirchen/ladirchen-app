@@ -34,6 +34,11 @@ export const shopActions = {
       () => this.notify(isVisible ? "notifications.shop.visible" : "notifications.shop.hidden", { title }),
     );
   },
+  async updateShopReward(this: FamilyWorldStoreContext, id: ShopRewardId, input: NewShopReward) {
+    await executeBackendFamilyCommand(this, "reward-shop.update", { id, ...input }, "notifications.save.shop", () =>
+      this.notify("notifications.shop.updated", { title: input.title }),
+    );
+  },
   async deleteShopReward(this: FamilyWorldStoreContext, id: ShopRewardId) {
     const title = this.shopRewards.find((item) => item.id === id)?.title ?? "";
     await executeBackendFamilyCommand(this, "reward-shop.delete", { id }, "notifications.save.shop", () =>

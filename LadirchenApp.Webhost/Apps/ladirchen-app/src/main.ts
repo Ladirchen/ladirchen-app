@@ -20,6 +20,11 @@ import "@/theme/color-palette.css";
 import "@/styles/fonts.scss";
 import "@/styles/main.scss";
 
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 const app = createApp(App);
 
 registerPlugins(app);

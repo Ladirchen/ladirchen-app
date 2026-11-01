@@ -7,7 +7,7 @@ export type { IanaTimeZone } from "./time-zone";
 
 export type ViewerRole = "child" | "guardian";
 export type SubscriptionTier = "free" | "pro";
-export type GuardianAccessLevel = "admin" | "supporter";
+export type GuardianAccessLevel = "admin" | "external" | "supporter";
 export type FamilyPetKindId = "cat" | "dog" | "rabbit" | "bird" | "other";
 
 export interface FamilyMember {

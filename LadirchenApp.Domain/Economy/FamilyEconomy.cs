@@ -28,7 +28,10 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     _members = family.Members
       .Select(item => new FamilyEconomyMember(item.Id, item.Role, item.Access, item.InvitationPending))
       .ToArray();
-    _wallets = _members.Where(item => !item.InvitationPending).Select(item => new MemberWallet(item.Id)).ToList();
+    _wallets = _members
+      .Where(item => !item.InvitationPending && !item.IsExternalGuardian)
+      .Select(item => new MemberWallet(item.Id))
+      .ToList();
   }
 
   public IReadOnlyList<MemberWallet> Wallets
@@ -92,7 +95,8 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   public void OpenWallet(FamilyMemberId actor, FamilyMemberId memberId)
   {
     RequireAdministrator(actor);
-    ActiveMember(memberId);
+    var member = ActiveMember(memberId);
+    Rules.Require(!member.IsExternalGuardian, DomainError.Forbidden, "External guardians do not have a wallet.");
     Rules.Require(_wallets.All(item => item.Id != memberId), DomainError.Duplicate, "The wallet is already open.");
     _wallets.Add(new MemberWallet(memberId));
   }
@@ -143,16 +147,19 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   {
     ArgumentNullException.ThrowIfNull(definition);
     var member = ActiveMember(actor);
+    var assignee = definition.AssigneeId is null ? null : ActiveMember(definition.AssigneeId);
     Rules.Require(
-      member.IsAdministrator || (member.Role == MemberRole.Guardian && actor == definition.AssigneeId),
+      member.IsAdministrator
+        || (member.Role == MemberRole.Guardian && !member.IsExternalGuardian && actor == definition.AssigneeId)
+        || (member.IsExternalGuardian && assignee?.Role == MemberRole.Child),
       DomainError.Forbidden,
-      "Only administrators or guardians creating their own contributions may create contributions."
+      "Only administrators, guardians creating their own tasks, or external guardians creating child tasks may create contributions."
     );
-
-    if (definition.AssigneeId is not null)
-    {
-      ActiveMember(definition.AssigneeId);
-    }
+    Rules.Require(
+      !member.IsExternalGuardian || definition.AssigneeId is not null,
+      DomainError.InvalidValue,
+      "External guardians must assign every task to a child."
+    );
 
     Rules.Require(
       !_usedContributionIds.Contains(id),
@@ -165,11 +172,56 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
       definition.Kind,
       definition.Reward,
       definition.Energy,
-      definition.AssigneeId
+      definition.AssigneeId,
+      actor
     );
     _contributions.Add(contribution);
     _usedContributionIds.Add(id);
     AddDomainEvent(new ContributionCreated(Id, id, now));
+  }
+
+  public void UpdateContribution(
+    FamilyMemberId actor,
+    ContributionId id,
+    ContributionDefinition definition,
+    DateTimeOffset now
+  )
+  {
+    ArgumentNullException.ThrowIfNull(definition);
+    var contribution = FindContribution(id);
+    RequireContributionManager(actor, contribution);
+    var assignee = definition.AssigneeId is null ? null : ActiveMember(definition.AssigneeId);
+    Rules.Require(
+      !ActiveMember(actor).IsExternalGuardian || assignee?.Role == MemberRole.Child,
+      DomainError.Forbidden,
+      "External guardians may assign only children."
+    );
+    contribution.Update(definition);
+    AddDomainEvent(new ContributionChanged(Id, id, "Updated", now));
+  }
+
+  public void CopyContribution(
+    FamilyMemberId actor,
+    ContributionId sourceId,
+    ContributionId copyId,
+    DateTimeOffset now
+  )
+  {
+    var source = FindContribution(sourceId);
+    RequireContributionManager(actor, source);
+    var actorMember = ActiveMember(actor);
+    AddContribution(
+      actor,
+      copyId,
+      new ContributionDefinition(
+        source.Title,
+        source.Kind,
+        source.Reward,
+        source.Energy,
+        actorMember.IsExternalGuardian ? source.AssigneeId : null
+      ),
+      now
+    );
   }
 
   public void ClaimContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
@@ -188,14 +240,24 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void AssignContribution(FamilyMemberId actor, ContributionId id, FamilyMemberId? memberId, DateTimeOffset now)
   {
-    RequireAdministrator(actor);
     var contribution = FindContribution(id);
+    RequireContributionManager(actor, contribution);
     RequireAvailable(contribution);
 
     if (memberId is not null)
     {
-      ActiveMember(memberId);
+      var assignee = ActiveMember(memberId);
+      Rules.Require(
+        !ActiveMember(actor).IsExternalGuardian || assignee.Role == MemberRole.Child,
+        DomainError.Forbidden,
+        "External guardians may assign only children."
+      );
     }
+    Rules.Require(
+      !ActiveMember(actor).IsExternalGuardian || memberId is not null,
+      DomainError.InvalidValue,
+      "External guardian tasks must remain assigned to a child."
+    );
 
     contribution.Assign(memberId);
     AddDomainEvent(new ContributionChanged(Id, id, "Assigned", now));
@@ -308,8 +370,8 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
 
   public void DeleteContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
   {
-    RequireAdministrator(actor);
     var contribution = FindContribution(id);
+    RequireContributionManager(actor, contribution);
     _contributions.Remove(contribution);
     _promotions.RemoveAll(item => item.ContributionId == id);
     AddDomainEvent(new ContributionChanged(Id, id, "Deleted", now));
@@ -400,11 +462,23 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
       contribution.AssigneeId ?? throw new DomainRuleException(DomainError.InvalidState, "An assignee is required.");
     var assignee = ActiveMember(assigneeId);
     Rules.Require(
-      (assignee.Role == MemberRole.Child && reviewer.IsAdministrator)
+      (assignee.Role == MemberRole.Child
+        && (reviewer.IsAdministrator
+          || reviewer.IsExternalGuardian && contribution.CreatorId == reviewer.Id))
         || (assignee.Role == MemberRole.Guardian
           && (reviewer.Role == MemberRole.Child || (reviewer.IsAdministrator && reviewer.Id != assigneeId))),
       DomainError.Forbidden,
       "Administrators review children and other guardians; children review guardians."
+    );
+  }
+
+  private void RequireContributionManager(FamilyMemberId actor, Contribution contribution)
+  {
+    var member = ActiveMember(actor);
+    Rules.Require(
+      member.IsAdministrator || member.IsExternalGuardian && contribution.CreatorId == actor,
+      DomainError.Forbidden,
+      "Only administrators or the external guardian who created the child task may manage it."
     );
   }
 

@@ -44,7 +44,7 @@ internal static partial class TypedAggregatePersistenceModel
         table.HasCheckConstraint("CK_FamilyMembers_Role", "\"Role\" >= 0 AND \"Role\" <= 1");
         table.HasCheckConstraint(
           "CK_FamilyMembers_GuardianAccess",
-          "\"GuardianAccess\" >= 0 AND \"GuardianAccess\" <= 1"
+          "\"GuardianAccess\" >= 0 AND \"GuardianAccess\" <= 2"
         );
         table.HasCheckConstraint(
           "CK_FamilyMembers_RoleAccess",

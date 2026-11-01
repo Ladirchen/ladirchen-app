@@ -7,12 +7,14 @@ import type {
   ContributionsApproveCommandRequest,
   ContributionsAssignCommandRequest,
   ContributionsClaimCommandRequest,
+  ContributionsCopyCommandRequest,
   ContributionsDeleteCommandRequest,
   ContributionsDeletePromotionCommandRequest,
   ContributionsReturnCommandRequest,
   ContributionsSetPartnersCommandRequest,
   ContributionsSetPerfectRatingBonusCommandRequest,
   ContributionsSubmitCommandRequest,
+  ContributionsUpdateCommandRequest,
   HomeMoveEntityCommandRequest,
   HomePlaceAccessoryCommandRequest,
   HomePurchaseAccessoryCommandRequest,
@@ -39,6 +41,7 @@ import type {
   RewardShopDeleteCommandRequest,
   RewardShopRequestCommandRequest,
   RewardShopSetVisibilityCommandRequest,
+  RewardShopUpdateCommandRequest,
   SavingsAddGoalCommandRequest,
   SavingsCancelGoalCommandRequest,
   SavingsConsentVoucherCommandRequest,
@@ -68,12 +71,14 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "contributions.approve": ContributionsApproveCommandRequest;
   readonly "contributions.assign": ContributionsAssignCommandRequest;
   readonly "contributions.claim": ContributionsClaimCommandRequest;
+  readonly "contributions.copy": ContributionsCopyCommandRequest;
   readonly "contributions.delete": ContributionsDeleteCommandRequest;
   readonly "contributions.delete-promotion": ContributionsDeletePromotionCommandRequest;
   readonly "contributions.return": ContributionsReturnCommandRequest;
   readonly "contributions.set-partners": ContributionsSetPartnersCommandRequest;
   readonly "contributions.set-perfect-rating-bonus": ContributionsSetPerfectRatingBonusCommandRequest;
   readonly "contributions.submit": ContributionsSubmitCommandRequest;
+  readonly "contributions.update": ContributionsUpdateCommandRequest;
   readonly "home.move-entity": HomeMoveEntityCommandRequest;
   readonly "home.place-accessory": HomePlaceAccessoryCommandRequest;
   readonly "home.purchase-accessory": HomePurchaseAccessoryCommandRequest;
@@ -100,6 +105,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "reward-shop.delete": RewardShopDeleteCommandRequest;
   readonly "reward-shop.request": RewardShopRequestCommandRequest;
   readonly "reward-shop.set-visibility": RewardShopSetVisibilityCommandRequest;
+  readonly "reward-shop.update": RewardShopUpdateCommandRequest;
   readonly "savings.add-goal": SavingsAddGoalCommandRequest;
   readonly "savings.cancel-goal": SavingsCancelGoalCommandRequest;
   readonly "savings.consent-voucher": SavingsConsentVoucherCommandRequest;

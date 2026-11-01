@@ -20,7 +20,7 @@ public sealed partial class FamilyEconomy
     );
     var nextMembers = SnapshotMembers(family);
     var nextActiveMemberIds = nextMembers
-      .Where(item => !item.InvitationPending)
+      .Where(item => !item.InvitationPending && !item.IsExternalGuardian)
       .Select(item => item.Id)
       .ToHashSet();
     var departingMemberIds = _members

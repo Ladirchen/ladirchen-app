@@ -48,6 +48,7 @@ internal static partial class TypedAggregatePersistenceModel
     contribution.Property(item => item.Reward).HasColumnType("numeric");
     contribution.Property(item => item.EnergyPercent).HasColumnType("numeric");
     contribution.Property(item => item.AssigneeId).HasMaxLength(128);
+    contribution.Property(item => item.CreatorId).HasMaxLength(128);
     contribution.Property(item => item.EarnedBaseReward).HasColumnType("numeric");
     contribution.Property(item => item.EarnedRatingBonus).HasColumnType("numeric");
     contribution.Property(item => item.EarnedPromotionMultiplier).HasColumnType("numeric");

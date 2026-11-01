@@ -120,12 +120,16 @@ describe("hydrateFamilyReadModels", () => {
             ...member,
             permissions: {
               canInviteMembers: false,
+              canManageChildTasks: false,
               canManageContent: false,
               canManageFamily: false,
               canManageGoals: false,
               canSupportChildGoals: true,
+              canReviewChildTasks: false,
               canViewFamilyGoals: true,
               canViewGuardianGoals: false,
+              canViewHouse: true,
+              canViewTaskAssignments: false,
             },
           }
         : member,
@@ -250,5 +254,56 @@ describe("hydrateHomeCustomization", () => {
       "living-room": "living-ladi-classic",
       kitchen: "kitchen-halloween-night",
     });
+  });
+});
+
+describe("refreshFamilyReadModel", () => {
+  it("reveals a newly approved contribution after a live update", async () => {
+    const contributions = createContributions();
+    serviceMocks.contributionsLoad.mockResolvedValue({
+      readModelType: "contributions",
+      revision: 4,
+      state: {
+        contributions,
+        currentWeekApprovedContributionCountByMember: {},
+        currentWeekEarnedByMember: {},
+        perfectRatingBonusPercent: 5,
+        promotions: [],
+        todayEarnedByMember: {},
+      },
+    });
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    const revealNextContributionReward = vi
+      .spyOn(context, "revealNextContributionReward")
+      .mockImplementation(() => undefined);
+
+    await context.refreshFamilyReadModel("contributions");
+
+    expect(revealNextContributionReward).toHaveBeenCalledOnce();
+  });
+
+  it("reveals a newly received guardian gift after a live update", async () => {
+    const initialData = createFamilyWorldInitialData();
+    serviceMocks.savingsLoad.mockResolvedValue({
+      readModelType: "savings",
+      revision: 5,
+      state: {
+        availableBalances: initialData.balances,
+        balances: initialData.balances,
+        familyCurrencyCode: "CHF",
+        goals: initialData.goals,
+        ladirchenPerCurrencyUnit: 1,
+        pendingGuardianGifts: [],
+        settledInterestPeriods: [],
+        sharedSavedBalances: {},
+        vouchers: [],
+      },
+    });
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    const revealNextGuardianGift = vi.spyOn(context, "revealNextGuardianGift").mockResolvedValue(undefined);
+
+    await context.refreshFamilyReadModel("savings");
+
+    expect(revealNextGuardianGift).toHaveBeenCalledOnce();
   });
 });

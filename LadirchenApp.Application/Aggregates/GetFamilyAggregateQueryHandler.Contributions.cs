@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
 
@@ -9,6 +10,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
 {
   private async Task<ContributionsFamilyReadModelProjection?> ProjectContributionsAsync(
     Family family,
+    FamilyMemberId viewerId,
     CancellationToken cancellationToken
   )
   {
@@ -21,6 +23,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
 
     var calculatedState = ContributionReadModelProjector.Project(
       new ContributionReadModelState(family, loadedEconomy.Root),
+      viewerId,
       _timeProvider.GetUtcNow()
     );
 

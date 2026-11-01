@@ -43,4 +43,5 @@ internal sealed record FamilyEconomyMember
       return !InvitationPending && Role == MemberRole.Guardian && Access == GuardianAccess.Admin;
     }
   }
+  public bool IsExternalGuardian => Role == MemberRole.Guardian && Access == GuardianAccess.External;
 }

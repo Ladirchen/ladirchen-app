@@ -33,7 +33,7 @@ public sealed partial class FamilyEconomy
     _timeZone = family.TimeZone;
     _members = SnapshotMembers(family);
     _wallets = _members
-      .Where(item => !item.InvitationPending)
+      .Where(item => !item.InvitationPending && !item.IsExternalGuardian)
       .Select(item => new MemberWallet(item.Id))
       .ToList();
     _contributionSettings = state.ContributionSettings;
@@ -106,7 +106,7 @@ public sealed partial class FamilyEconomy
       "Wallet member identifiers must be unique."
     );
     var expectedMemberIds = _members
-      .Where(item => !item.InvitationPending)
+      .Where(item => !item.InvitationPending && !item.IsExternalGuardian)
       .Select(item => item.Id)
       .ToHashSet();
     Rules.Require(
@@ -183,7 +183,8 @@ public sealed partial class FamilyEconomy
         state.EarnedReward,
         state.ApprovedAt,
         state.InvitedPartnerIds,
-        state.Status != ContributionStatus.Approved
+        state.Status != ContributionStatus.Approved,
+        state.CreatorId
       );
     }
 
@@ -569,7 +570,8 @@ public sealed partial class FamilyEconomy
       contribution.Rating,
       contribution.EarnedReward,
       contribution.ApprovedAt,
-      contribution.InvitedPartners.ToArray()
+      contribution.InvitedPartners.ToArray(),
+      contribution.CreatorId
     );
   }
 

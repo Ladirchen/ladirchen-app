@@ -7,5 +7,9 @@ public sealed record FamilyPermissions(
   bool ManageFamily,
   bool SupportGoals,
   bool ViewFamilyGoals,
-  bool ViewGuardianGoals
+  bool ViewGuardianGoals,
+  bool ManageChildTasks,
+  bool ReviewChildTasks,
+  bool ViewTaskAssignments,
+  bool ViewHouse
 );

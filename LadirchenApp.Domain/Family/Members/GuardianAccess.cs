@@ -11,4 +11,5 @@ public enum GuardianAccess
 {
   Admin,
   Supporter,
+  External,
 }

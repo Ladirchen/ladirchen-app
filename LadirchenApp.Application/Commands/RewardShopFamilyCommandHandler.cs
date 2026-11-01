@@ -41,11 +41,15 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var now = TimeProvider.GetUtcNow();
     var operationId = OperationId(command);
     ShopRewardPresentationState? addedReward = null;
+    ShopRewardPresentationState? updatedReward = null;
 
     switch (command.CommandType)
     {
       case "reward-shop.add":
         addedReward = AddShopReward(economy, command.ActorId, payload, now);
+        break;
+      case "reward-shop.update":
+        updatedReward = UpdateShopReward(economy, command.ActorId, payload, now);
         break;
       case "reward-shop.set-visibility":
         economy.SetShopRewardVisibility(
@@ -85,7 +89,8 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var presentation = UpdatePresentation(
       loadedEconomy.Presentation,
       economy,
-      addedReward
+      addedReward,
+      updatedReward
     );
     var saved = await UnitOfWork.SaveAsync(
       new TypedAggregateSaveBatch(
@@ -122,6 +127,31 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
   )
   {
     var id = RewardId(payload);
+    var (definition, presentation) = ReadShopReward(id, payload);
+    economy.AddShopReward(actorId, id, definition, now);
+
+    return presentation;
+  }
+
+  private static ShopRewardPresentationState UpdateShopReward(
+    FamilyEconomy economy,
+    FamilyMemberId actorId,
+    JsonElement payload,
+    DateTimeOffset now
+  )
+  {
+    var id = RewardId(payload);
+    var (definition, presentation) = ReadShopReward(id, payload);
+    economy.UpdateShopReward(actorId, id, definition, now);
+
+    return presentation;
+  }
+
+  private static (ShopRewardDefinition Definition, ShopRewardPresentationState Presentation) ReadShopReward(
+    ShopRewardId id,
+    JsonElement payload
+  )
+  {
     var icon = RequiredString(payload, "icon").Trim();
     var title = RequiredString(payload, "title").Trim();
     var description = RequiredString(payload, "description").Trim();
@@ -148,9 +178,7 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
       throw new FamilyCommandException("The shop reward data is invalid.");
     }
 
-    economy.AddShopReward(
-      actorId,
-      id,
+    return (
       new ShopRewardDefinition(
         title,
         ParseShopRewardCategory(RequiredString(payload, "category")),
@@ -159,10 +187,8 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
         OptionalBool(payload, "isVisible") ?? true,
         new AvailabilityWindow(from, until)
       ),
-      now
+      new ShopRewardPresentationState(id, description, icon, conditions)
     );
-
-    return new ShopRewardPresentationState(id, description, icon, conditions);
   }
 
   private static void DecideShopReward(
@@ -188,7 +214,8 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
   private static FamilyEconomyPresentationState UpdatePresentation(
     FamilyEconomyPresentationState presentation,
     FamilyEconomy economy,
-    ShopRewardPresentationState? addedReward
+    ShopRewardPresentationState? addedReward,
+    ShopRewardPresentationState? updatedReward
   )
   {
     var liveRewardIds = economy.ShopRewards.Select(item => item.Id).ToHashSet();
@@ -203,6 +230,13 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
         "Presentation data for the shop reward already exists."
       );
       rewards.Add(addedReward);
+    }
+
+    if (updatedReward is not null)
+    {
+      var index = rewards.FindIndex(item => item.RewardId == updatedReward.RewardId);
+      Require(index >= 0, "Presentation data for the shop reward is missing.");
+      rewards[index] = updatedReward;
     }
 
     Require(

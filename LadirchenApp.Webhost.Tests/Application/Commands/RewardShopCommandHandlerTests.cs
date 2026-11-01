@@ -193,6 +193,57 @@ public sealed class RewardShopCommandHandlerTests
     await Assert.That(economy.WalletFor(_childId).Reserved).IsEqualTo(0);
   }
 
+  [Test]
+  public async Task RedeemedRewardCanBeEditedAndReactivated()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var rewardId = new ShopRewardId("cinema");
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.add", new
+    {
+      id = rewardId.Value,
+      title = "Cinema",
+      description = "Original description",
+      icon = "ticket",
+      price = 20,
+      category = "activity",
+      quantity = 1,
+      conditions = "Original conditions",
+      isVisible = true,
+    });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new { id = rewardId.Value });
+    await ExecuteAsync(handler, _administratorId, "reward-shop.decide", new
+    {
+      id = rewardId.Value,
+      approved = true,
+    });
+
+    await Assert.That(Reward(store, rewardId).Status).IsEqualTo(ShopRewardStatus.Redeemed);
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.update", new
+    {
+      id = rewardId.Value,
+      title = "Cinema of choice",
+      description = "Updated description",
+      icon = "popcorn",
+      price = 30,
+      category = "privilege",
+      quantity = 2,
+      conditions = "Updated conditions",
+      isVisible = true,
+    });
+
+    var reward = Reward(store, rewardId);
+    var presentation = store.EconomyPresentation.ShopRewards.Single(item => item.RewardId == rewardId);
+    await Assert.That(reward.Status).IsEqualTo(ShopRewardStatus.Available);
+    await Assert.That(reward.Quantity).IsEqualTo(2);
+    await Assert.That(reward.Title).IsEqualTo("Cinema of choice");
+    await Assert.That(presentation.Description).IsEqualTo("Updated description");
+    await Assert.That(presentation.Icon).IsEqualTo("popcorn");
+    await Assert.That(presentation.Conditions).IsEqualTo("Updated conditions");
+  }
+
   private static TestTypedAggregateStore CreateStore()
   {
     var family = new Family(

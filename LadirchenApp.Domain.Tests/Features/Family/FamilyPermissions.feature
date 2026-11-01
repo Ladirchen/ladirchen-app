@@ -38,3 +38,14 @@ Feature: Family role permissions
     Given no signed-in family member can be resolved
     When family permissions are resolved
     Then every family capability is denied
+
+  Scenario: External guardians manage only their own child tasks
+    Given the signed-in member is a "guardian external"
+    When family permissions are resolved
+    Then content management is denied
+    And child-task management is allowed
+    And child-task review is allowed
+    And task-assignment visibility is allowed
+    And family-goal visibility is denied
+    And guardian-goal visibility is denied
+    And house visibility is denied

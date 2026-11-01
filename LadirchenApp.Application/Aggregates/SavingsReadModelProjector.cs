@@ -20,6 +20,14 @@ internal static class SavingsReadModelProjector
     var viewer = state.Family.ActiveMember(viewerId);
     var activeMembers = state.Family.Members.Where(member => !member.InvitationPending).ToArray();
     var visibleBalanceMemberIds = new HashSet<FamilyMemberId> { viewerId };
+
+    if (viewer.IsAdministrator)
+    {
+      visibleBalanceMemberIds.UnionWith(
+        activeMembers.Where(member => member.Role == MemberRole.Child).Select(member => member.Id)
+      );
+    }
+
     var visibleGoals = state.Economy.GoalsFor(viewerId);
     var allVouchers = state.Economy.SavingsVouchers.ToDictionary(voucher => voucher.Id);
     var balances = state.Economy.Wallets

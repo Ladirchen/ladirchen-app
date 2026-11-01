@@ -426,6 +426,7 @@ public sealed class MemberAccountService
     {
       null or "" or "supporter" => GuardianAccess.Supporter,
       "admin" => GuardianAccess.Admin,
+      "external" => GuardianAccess.External,
       _ => throw new ArgumentException("The guardian access level is invalid.", nameof(value)),
     };
   }

@@ -16,5 +16,6 @@ internal sealed record ContributionState(
   StarRating? Rating,
   ContributionRewardBreakdown? EarnedReward,
   DateTimeOffset? ApprovedAt,
-  IReadOnlyList<FamilyMemberId> InvitedPartnerIds
+  IReadOnlyList<FamilyMemberId> InvitedPartnerIds,
+  FamilyMemberId? CreatorId = null
 );

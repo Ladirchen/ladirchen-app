@@ -107,7 +107,12 @@ export const savingsActions = {
     );
   },
   async revealNextGuardianGift(this: FamilyWorldStoreContext) {
-    if (this.viewerRole !== "child" || this.guardianGiftAnimation.visible) {
+    if (
+      this.viewerRole !== "child" ||
+      this.rewardAnimation.visible ||
+      this.guardianGiftAnimation.visible ||
+      this.guardianGiftRevealInProgress
+    ) {
       return;
     }
 
@@ -117,26 +122,35 @@ export const savingsActions = {
       return;
     }
 
-    await executeBackendFamilyCommand(
-      this,
-      "savings.consume-guardian-gift",
-      { giftId: gift.id },
-      "notifications.save.savings",
-      () => {
-        this.guardianGiftAnimation = {
-          amount: gift.amount,
-          destination: gift.destination ?? "goal",
-          goalTitle: gift.goalTitle,
-          guardianName: gift.guardianName,
-          version: this.guardianGiftAnimation.version + 1,
-          visible: true,
-        };
-      },
-    );
+    this.guardianGiftRevealInProgress = true;
+
+    try {
+      await executeBackendFamilyCommand(
+        this,
+        "savings.consume-guardian-gift",
+        { giftId: gift.id },
+        "notifications.save.savings",
+        () => {
+          this.guardianGiftAnimation = {
+            amount: gift.amount,
+            destination: gift.destination ?? "goal",
+            goalTitle: gift.goalTitle,
+            guardianName: gift.guardianName,
+            version: this.guardianGiftAnimation.version + 1,
+            visible: true,
+          };
+        },
+      );
+    } finally {
+      this.guardianGiftRevealInProgress = false;
+    }
   },
   dismissGuardianGift(this: FamilyWorldStoreContext) {
     this.guardianGiftAnimation.visible = false;
-    this.$familyWorld.scheduler.schedule(() => this.revealNextGuardianGift(), REWARD_REVEAL_DELAY_MS);
+    this.$familyWorld.scheduler.schedule(() => {
+      this.revealNextContributionReward();
+      this.revealNextGuardianGift();
+    }, REWARD_REVEAL_DELAY_MS);
   },
   async saveToGoal(this: FamilyWorldStoreContext, id: SavingGoalId, amount: number) {
     const before = this.goals.find((item) => item.id === id)?.saved ?? 0;

@@ -63,6 +63,42 @@ public sealed class ProgressionAndContributionCommandHandlerTests
   }
 
   [Test]
+  public async Task AvailableContributionsCanBeEditedAndCopiedWithoutAnAssignment()
+  {
+    var store = CreateStore(Contribution("family-project", ContributionKind.Extra, _childId));
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.update", new
+    {
+      id = "family-project",
+      title = "Updated family project",
+      description = "Updated presentation",
+      icon = "updated-icon",
+      kind = "basic",
+      reward = 25,
+      energy = 30,
+      assigneeId = _supporterId.Value,
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.copy", new
+    {
+      id = "family-project-copy",
+      sourceId = "family-project",
+    });
+
+    var economy = store.RequiredEconomy();
+    var updated = economy.Contributions.Single(item => item.Id.Value == "family-project");
+    var copy = economy.Contributions.Single(item => item.Id.Value == "family-project-copy");
+    var copiedPresentation = store.EconomyPresentation.Contributions
+      .Single(item => item.ContributionId == copy.Id);
+    await Assert.That(updated.Title).IsEqualTo("Updated family project");
+    await Assert.That(updated.AssigneeId).IsEqualTo(_supporterId);
+    await Assert.That(copy.Title).IsEqualTo(updated.Title);
+    await Assert.That(copy.AssigneeId).IsNull();
+    await Assert.That(copiedPresentation.Description).IsEqualTo("Updated presentation");
+    await Assert.That(copiedPresentation.Icon).IsEqualTo("updated-icon");
+  }
+
+  [Test]
   public async Task SupporterCannotActAsAChildInsideTheCommandUnitOfWork()
   {
     var store = CreateStore();

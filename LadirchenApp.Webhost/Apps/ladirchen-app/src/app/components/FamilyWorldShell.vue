@@ -38,7 +38,7 @@
             :class="{ 'header-stats--guardian': store.viewerRole === 'guardian' }"
           >
             <button
-              v-if="store.viewerRole === 'guardian'"
+              v-if="store.viewerRole === 'guardian' && store.signedInMember?.guardianAccess !== 'external'"
               class="header-stat header-guardian-week d-flex align-center cursor-pointer"
               :aria-label="guardianWeekAriaLabel"
               aria-haspopup="dialog"
@@ -56,7 +56,7 @@
                 <i>{{ t("shell.week.assets", { assets: childrenFamilyCurrency, balance: headerBalance }) }}</i>
               </span>
             </button>
-            <template v-else>
+            <template v-else-if="store.viewerRole === 'child'">
               <button
                 class="header-stat header-streak d-flex align-center justify-center cursor-pointer"
                 :aria-label="t('shell.streak.aria', { days: store.currentParticipationStreakDays })"
@@ -264,6 +264,7 @@
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute, useRouter } from "vue-router";
 import { useDisplay } from "vuetify";
 import LadirchenIntro from "@/features/onboarding/components/LadirchenIntro.vue";
 import AnimatedStreakFlame from "@/features/streaks/components/AnimatedStreakFlame.vue";
@@ -289,6 +290,8 @@ const AsyncWeeklyStreakDialog = defineAsyncComponent(
 );
 let clockTimer: ReturnType<typeof window.setInterval> | undefined;
 const store = useFamilyWorldStore();
+const currentRoute = useRoute();
+const router = useRouter();
 const { locale, t } = useI18n();
 const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
 const appHydrated = ref(false);
@@ -371,11 +374,17 @@ const navigationItems = computed<NavigationItem[]>(() => [
   { to: "/family", icon: "family", label: t("navigation.family.label"), tip: t("navigation.family.tip") },
   { to: "/profile", icon: "profile", label: t("navigation.profile.label"), tip: t("navigation.profile.tip") },
 ]);
-const navigation = computed(() =>
-  store.viewerRole === "guardian" && !store.permissions.canManageContent
-    ? navigationItems.value.filter((item) => !["/contributions", "/shop"].includes(item.to))
-    : navigationItems.value,
-);
+const navigation = computed(() => {
+  if (store.signedInMember?.guardianAccess === "external") {
+    return navigationItems.value.filter((item) => ["/contributions", "/family", "/profile"].includes(item.to));
+  }
+
+  if (store.viewerRole === "guardian" && !store.permissions.canManageContent) {
+    return navigationItems.value.filter((item) => !["/contributions", "/shop"].includes(item.to));
+  }
+
+  return navigationItems.value;
+});
 function handleIntroFinished() {
   introFinished.value = true;
   store.revealNextContributionReward();
@@ -418,6 +427,15 @@ onBeforeUnmount(function callback() {
   }
 });
 watch(isLandscape, resetContentScroll);
+watch(
+  () => [store.signedInMember?.guardianAccess, currentRoute.path] as const,
+  ([access, path]) => {
+    if (access === "external" && !["/contributions", "/family", "/profile"].includes(path)) {
+      void router.replace("/contributions");
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style src="@/styles/family-world.scss"></style>

@@ -82,6 +82,25 @@ export const contributionsActions = {
       () => this.notify("notifications.contributions.added"),
     );
   },
+  async updateContribution(this: FamilyWorldStoreContext, id: ContributionId, input: NewContribution) {
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.update",
+      { id, ...input },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.updated"),
+    );
+  },
+  async copyContribution(this: FamilyWorldStoreContext, sourceId: ContributionId) {
+    const id = createDomainId.contribution(createUuid());
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.copy",
+      { id, sourceId },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.copied"),
+    );
+  },
   async deleteContribution(this: FamilyWorldStoreContext, id: ContributionId) {
     const contribution = this.contributions.find((item) => item.id === id);
     await executeBackendFamilyCommand(this, "contributions.delete", { id }, "notifications.save.contributions", () =>
@@ -131,7 +150,7 @@ export const contributionsActions = {
     );
   },
   revealNextContributionReward(this: FamilyWorldStoreContext) {
-    if (this.rewardAnimation.visible) {
+    if (this.rewardAnimation.visible || this.guardianGiftAnimation.visible) {
       return;
     }
 
@@ -160,6 +179,9 @@ export const contributionsActions = {
   async dismissRewardAnimation(this: FamilyWorldStoreContext) {
     const contribution = this.contributions.find((item) => item.id === this.rewardAnimation.contributionId);
 
+    this.rewardAnimation.visible = false;
+    this.rewardAnimation.contributionId = undefined;
+
     if (contribution) {
       await executeBackendFamilyCommand(
         this,
@@ -169,8 +191,9 @@ export const contributionsActions = {
       );
     }
 
-    this.rewardAnimation.visible = false;
-    this.rewardAnimation.contributionId = undefined;
-    this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), REWARD_REVEAL_DELAY_MS);
+    this.$familyWorld.scheduler.schedule(() => {
+      this.revealNextContributionReward();
+      this.revealNextGuardianGift();
+    }, REWARD_REVEAL_DELAY_MS);
   },
 } satisfies FamilyWorldActionGroup;

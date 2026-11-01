@@ -9,5 +9,9 @@ public sealed record FamilyPermissionsReadModel(
   [property: JsonRequired] bool CanManageGoals,
   [property: JsonRequired] bool CanSupportChildGoals,
   [property: JsonRequired] bool CanViewFamilyGoals,
-  [property: JsonRequired] bool CanViewGuardianGoals
+  [property: JsonRequired] bool CanViewGuardianGoals,
+  [property: JsonRequired] bool CanManageChildTasks,
+  [property: JsonRequired] bool CanReviewChildTasks,
+  [property: JsonRequired] bool CanViewTaskAssignments,
+  [property: JsonRequired] bool CanViewHouse
 );

@@ -25,7 +25,9 @@ internal static class FamilyReadModelResponseMapper
     var presentations = source.Presentation.Contributions.ToDictionary(
       item => item.ContributionId
     );
-    var contributions = source.Economy.Contributions.Select(contribution =>
+    var contributions = source.Economy.Contributions
+      .Where(contribution => source.CalculatedState.Contributions.ContainsKey(contribution.Id))
+      .Select(contribution =>
     {
       var presentation = Required(
         presentations,
@@ -68,7 +70,9 @@ internal static class FamilyReadModelResponseMapper
           : null
       );
     }).ToArray();
-    var promotions = source.Economy.Promotions.Select(promotion =>
+    var promotions = source.Economy.Promotions
+      .Where(promotion => source.CalculatedState.Contributions.ContainsKey(promotion.ContributionId))
+      .Select(promotion =>
       new ContributionPromotionReadModelItem(
         promotion.Id.Value,
         null,
@@ -595,7 +599,11 @@ internal static class FamilyReadModelResponseMapper
       permissions.ManageGoals,
       permissions.SupportGoals,
       permissions.ViewFamilyGoals,
-      permissions.ViewGuardianGoals
+      permissions.ViewGuardianGoals,
+      permissions.ManageChildTasks,
+      permissions.ReviewChildTasks,
+      permissions.ViewTaskAssignments,
+      permissions.ViewHouse
     );
   }
 
@@ -636,6 +644,7 @@ internal static class FamilyReadModelResponseMapper
     {
       GuardianAccess.Admin => "admin",
       GuardianAccess.Supporter => "supporter",
+      GuardianAccess.External => "external",
       _ => throw new ArgumentOutOfRangeException(nameof(access)),
     };
   }

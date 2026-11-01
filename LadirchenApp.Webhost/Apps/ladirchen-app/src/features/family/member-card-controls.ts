@@ -17,6 +17,7 @@ export function familyMemberCardControls(
 
   return {
     canEditAccess: !isPending && canManageFamily && isGuardian && !isSignedIn,
-    showParticipation: !isPending && isGuardian && (canManageFamily || isSignedIn),
+    showParticipation:
+      !isPending && isGuardian && member.guardianAccess !== "external" && (canManageFamily || isSignedIn),
   };
 }

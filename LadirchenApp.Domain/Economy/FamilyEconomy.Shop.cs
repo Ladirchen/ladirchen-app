@@ -65,6 +65,25 @@ public sealed partial class FamilyEconomy
     AddDomainEvent(new ShopCatalogChanged(Id, id, "Updated", now));
   }
 
+  public void UpdateShopReward(
+    FamilyMemberId actor,
+    ShopRewardId id,
+    ShopRewardDefinition definition,
+    DateTimeOffset now
+  )
+  {
+    ArgumentNullException.ThrowIfNull(definition);
+    RequireAdministrator(actor);
+    var reward = FindShopReward(id);
+    Rules.Require(
+      reward.Status != ShopRewardStatus.Requested,
+      DomainError.InvalidState,
+      "Pending requests lock reward changes."
+    );
+    reward.Update(definition);
+    AddDomainEvent(new ShopCatalogChanged(Id, id, "Updated", now));
+  }
+
   public void SetShopRewardVisibility(FamilyMemberId actor, ShopRewardId id, bool visible, DateTimeOffset now)
   {
     RequireAdministrator(actor);

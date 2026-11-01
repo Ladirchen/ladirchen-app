@@ -116,3 +116,9 @@ Feature: Savings-goal ownership, editing and visibility
     When the support is accepted
     Then the family goal balance increases
     And no personal guardian-gift record is created
+
+  Scenario: Guardians can support one another's visible personal goals
+    Given a visible personal savings goal owned by a guardian
+    When another guardian supports the goal with 12 Ladirchen
+    Then the goal balance increases by 12 Ladirchen
+    And no personal guardian-gift record is created

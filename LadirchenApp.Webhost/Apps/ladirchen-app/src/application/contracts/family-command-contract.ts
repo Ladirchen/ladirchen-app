@@ -23,6 +23,7 @@ type FamilySetupPetPayload = Readonly<FamilyPet>;
 export interface FamilyCommandPayloadMap {
   readonly "contributions.acknowledge-reward": IdFamilyCommandPayload<ContributionId>;
   readonly "contributions.add": Readonly<{ id: ContributionId } & NewContribution>;
+  readonly "contributions.copy": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
   readonly "contributions.add-promotion": Readonly<{ id: PromotionId } & NewPromotion>;
   readonly "contributions.approve": Readonly<{ id: ContributionId; stars: number }>;
   readonly "contributions.assign": Readonly<{ id: ContributionId; memberId?: FamilyMemberId }>;
@@ -36,6 +37,7 @@ export interface FamilyCommandPayloadMap {
   }>;
   readonly "contributions.set-perfect-rating-bonus": PercentageFamilyCommandPayload;
   readonly "contributions.submit": IdFamilyCommandPayload<ContributionId>;
+  readonly "contributions.update": Readonly<{ id: ContributionId } & NewContribution>;
   readonly "home.move-entity": Readonly<{
     placementId: HouseLayoutPlacementId;
     zoneId: HouseZoneId;
@@ -76,6 +78,7 @@ export interface FamilyCommandPayloadMap {
   readonly "reward-shop.delete": IdFamilyCommandPayload<ShopRewardId>;
   readonly "reward-shop.request": IdFamilyCommandPayload<ShopRewardId>;
   readonly "reward-shop.set-visibility": Readonly<{ id: ShopRewardId; isVisible: boolean }>;
+  readonly "reward-shop.update": Readonly<{ id: ShopRewardId } & NewShopReward>;
   readonly "savings.add-goal": Readonly<{ id: SavingGoalId; ownerId: SavingGoalOwnerId } & NewGoal>;
   readonly "savings.cancel-goal": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.consent-voucher": IdFamilyCommandPayload<SavingGoalId>;
