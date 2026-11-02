@@ -23,13 +23,13 @@ public sealed partial class EconomySteps
   private decimal _requestSnapshotBalance;
   private decimal _requestSnapshotReserved;
 
-  [When("the member attempts to add, hide or delete a shop reward")]
+  [When("the child attempts to add a shop reward")]
   public void UnauthorizedCatalogChange()
   {
     _catalogCountBefore = _economy.ShopRewards.Count;
     Try(() =>
       _economy.AddShopReward(
-        _supporter,
+        _child,
         _rewardId,
         new ShopRewardDefinition("Reward", ShopRewardCategory.Gift, new LadirchenAmount(10), 1, true, new AvailabilityWindow()),
         _now

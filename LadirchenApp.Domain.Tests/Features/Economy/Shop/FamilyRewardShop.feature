@@ -85,9 +85,9 @@ Feature: Family reward shop
     Then the economy command fails with "InvalidState"
     And the rejected command left the economy unchanged
 
-  Scenario: Only family members who can manage content can change the reward catalog
-    Given a family member cannot manage content
-    When the member attempts to add, hide or delete a shop reward
+  Scenario: Children cannot change the reward catalog
+    Given a core economy
+    When the child attempts to add a shop reward
     Then the reward catalog remains unchanged
 
   Scenario: A reward must be visible and within its publication dates [visibility=hidden; availability=current date; result=rejected]
