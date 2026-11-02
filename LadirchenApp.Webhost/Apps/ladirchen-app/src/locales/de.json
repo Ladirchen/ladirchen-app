@@ -603,6 +603,8 @@
   "navigation.wishes.tip": "Hier warten eure Wünsche und gemeinsamen Sparziele.",
   "navigation.world.label": "Unsere Welt",
   "navigation.world.tip": "Zurück in eure Familienwelt – hier kannst du Haus und Garten entdecken.",
+  "notifications.auth.sessionChanged": "Die aktive Sitzung wurde in einem anderen Tab geändert. Die richtige Familienansicht ist jetzt geladen; bitte versuche die Aktion erneut.",
+  "notifications.auth.sessionExpired": "Deine Anmeldung ist nicht mehr gültig. Bitte melde dich erneut an.",
   "notifications.contributions.added": "Beitrag wurde lokal hinzugefügt.",
   "notifications.contributions.assigned": "„{title}“ wurde {name} zugewiesen.",
   "notifications.contributions.childSubmitted": "Beitrag eingereicht. Die Welt reagiert nach der Bestätigung.",

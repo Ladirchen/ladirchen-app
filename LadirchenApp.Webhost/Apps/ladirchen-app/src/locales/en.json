@@ -603,6 +603,8 @@
   "navigation.wishes.tip": "See your wishes and shared savings goals.",
   "navigation.world.label": "Our world",
   "navigation.world.tip": "Return to your family world and explore the house and garden.",
+  "notifications.auth.sessionChanged": "The active session was changed in another tab. The correct family view is now loaded; please try the action again.",
+  "notifications.auth.sessionExpired": "Your sign-in is no longer valid. Please sign in again.",
   "notifications.contributions.added": "The task was added locally.",
   "notifications.contributions.assigned": "“{title}” was assigned to {name}.",
   "notifications.contributions.childSubmitted": "Task submitted. The world reacts after confirmation.",
