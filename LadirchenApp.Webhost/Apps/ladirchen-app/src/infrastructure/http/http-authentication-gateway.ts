@@ -61,14 +61,14 @@ function isRegistrationStatus(value: unknown): value is RegistrationStatus {
 }
 
 export class HttpAuthenticationGateway implements AuthenticationGateway {
-  readonly #baseUrl: string;
+  private readonly baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.#baseUrl = baseUrl.replace(/\/+$/u, "");
+    this.baseUrl = baseUrl.replace(/\/+$/u, "");
   }
 
   async activate(command: ActivateMemberAccountCommand): Promise<AuthenticationSession> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/activate`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/activate`, {
       body: JSON.stringify(command),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -89,7 +89,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async authenticate(identifier: string, password: string): Promise<AuthenticationSession | null> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/login`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/login`, {
       body: JSON.stringify({ identifier, password }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -114,7 +114,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async getCurrentSession(): Promise<AuthenticationSession | null> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/restore`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/restore`, {
       cache: "no-store",
       credentials: "include",
       method: "POST",
@@ -138,7 +138,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async getRegistrationStatus(): Promise<RegistrationStatus> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/registration-status`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/registration-status`, {
       cache: "no-store",
       credentials: "include",
       method: "GET",
@@ -158,7 +158,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async inviteMember(command: InviteFamilyMemberCommand): Promise<MemberAccountInvitation> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/member-invitations`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/member-invitations`, {
       body: JSON.stringify(command),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -184,7 +184,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async register(command: RegisterAccountCommand): Promise<AuthenticationSession> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/register`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/register`, {
       body: JSON.stringify(command),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -205,7 +205,7 @@ export class HttpAuthenticationGateway implements AuthenticationGateway {
   }
 
   async signOut(): Promise<void> {
-    const response = await fetch(`${this.#baseUrl}/api/auth/logout`, {
+    const response = await fetch(`${this.baseUrl}/api/auth/logout`, {
       credentials: "include",
       method: "POST",
     });

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { reactive } from "vue";
 
 import { createDomainId } from "@/domain/shared/identifiers";
 import { HttpAuthenticationGateway } from "./http-authentication-gateway";
@@ -63,6 +64,21 @@ describe("HttpAuthenticationGateway", () => {
       credentials: "include",
       method: "POST",
     });
+  });
+
+  it("restores the authenticated session when Vue wraps the gateway in a proxy", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify(session), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        }),
+      ),
+    );
+    const gateway = reactive(new HttpAuthenticationGateway(""));
+
+    await expect(gateway.getCurrentSession()).resolves.toEqual(session);
   });
 
   it("returns no current session when the cookie is missing or expired", async () => {

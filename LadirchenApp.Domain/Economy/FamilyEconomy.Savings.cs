@@ -365,6 +365,7 @@ public sealed partial class FamilyEconomy
     }).ToArray();
     var saved = goal.Saved;
     goal.Cancel();
+    _guardianGifts.RemoveAll(gift => gift.GoalId == goal.Id);
     var entries = new List<LedgerEntry>
     {
       new LedgerEntry(

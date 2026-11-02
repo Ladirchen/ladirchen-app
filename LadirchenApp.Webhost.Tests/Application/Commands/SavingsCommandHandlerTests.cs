@@ -216,6 +216,42 @@ public sealed class SavingsCommandHandlerTests
   }
 
   [Test]
+  public async Task CancellingGoalRemovesPendingGoalGiftAndPresentation()
+  {
+    var store = CreateStore(0);
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _childId, "savings.add-goal", new
+    {
+      id = "supported-goal",
+      ownerId = _childId.Value,
+      title = "Supported goal",
+      icon = "goal-icon",
+      target = 100,
+      visibility = "family",
+    });
+    await ExecuteAsync(handler, _guardianId, "savings.support-goal", new
+    {
+      id = "supported-goal",
+      amount = 10,
+      giftId = "pending-gift",
+    });
+
+    await Assert.That(store.RequiredEconomy().GuardianGoalGifts).Count().IsEqualTo(1);
+    await Assert.That(store.EconomyPresentation.GuardianGifts).Count().IsEqualTo(1);
+
+    await ExecuteAsync(handler, _childId, "savings.cancel-goal", new
+    {
+      id = "supported-goal",
+    });
+
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.SavingsGoals.Single().Cancelled).IsTrue();
+    await Assert.That(economy.GuardianGoalGifts).IsEmpty();
+    await Assert.That(store.EconomyPresentation.GuardianGifts).IsEmpty();
+  }
+
+  [Test]
   public async Task FamilyGoalCancellationRequestPersistsAndRequiresUnanimousApproval()
   {
     var store = CreateStore(100);
