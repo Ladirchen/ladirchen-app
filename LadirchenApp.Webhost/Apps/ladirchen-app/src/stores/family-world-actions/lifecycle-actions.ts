@@ -63,8 +63,8 @@ export const lifecycleActions = {
     const externalGuardian = this.signedInMember?.guardianAccess === "external";
     const [contributionsResult, savingsResult, rewardShopResult, progressionResult] = await Promise.allSettled([
       contributionsService.load(familyId, viewerMemberId),
-      externalGuardian ? Promise.resolve(undefined) : savingsService.load(familyId, viewerMemberId),
-      externalGuardian ? Promise.resolve(undefined) : rewardShopService.load(familyId, viewerMemberId),
+      savingsService.load(familyId, viewerMemberId),
+      rewardShopService.load(familyId, viewerMemberId),
       externalGuardian ? Promise.resolve(undefined) : familyProgressionService.load(familyId, viewerMemberId),
     ]);
     const contributionsLoaded = applySettledLoad(contributionsResult, (contributions) => {
@@ -125,7 +125,9 @@ export const lifecycleActions = {
     const hydrationSucceeded =
       profileLoaded &&
       contributionsLoaded &&
-      (externalGuardian || (savingsLoaded && rewardShopLoaded && progressionLoaded));
+      savingsLoaded &&
+      rewardShopLoaded &&
+      (externalGuardian || progressionLoaded);
     this.familyReadModelsHydrated = hydrationSucceeded;
 
     if (!hydrationSucceeded) {

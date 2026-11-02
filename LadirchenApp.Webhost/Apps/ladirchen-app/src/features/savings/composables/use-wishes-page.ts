@@ -34,7 +34,8 @@ export function useWishesPage() {
   const route = useRoute();
   const { locale, t } = useI18n();
   const localize = useLocalizedDomainContent();
-  const activeTab = ref<WishView>("own");
+  const externalGuardian = computed(() => store.signedInMember?.guardianAccess === "external");
+  const activeTab = ref<WishView>(externalGuardian.value ? "children" : "own");
   const saveDialog = ref(false);
   const goalDialog = ref(false);
   const newGoalOwnerId = ref<SavingGoalOwnerId>(store.activeChildId);
@@ -76,14 +77,16 @@ export function useWishesPage() {
   );
   const wishViewOptions = computed<Array<PageViewOption<WishView>>>(() => {
     const ownGoals = localizedGoals.value.filter((goal) => goal.ownerId === store.signedInMemberId);
-    const options: Array<PageViewOption<WishView>> = [
-      {
+    const options: Array<PageViewOption<WishView>> = [];
+
+    if (!externalGuardian.value) {
+      options.push({
         id: "own",
         icon: "i-mdi:account-star-outline",
         subtitle: t("wishes.views.ownCount", { count: ownGoals.length }),
         title: t("wishes.views.own"),
-      },
-    ];
+      });
+    }
 
     if (store.viewerRole === "guardian") {
       options.push({
@@ -94,7 +97,7 @@ export function useWishesPage() {
       });
     }
 
-    if (store.permissions.canViewFamilyGoals) {
+    if (store.permissions.canViewFamilyGoals && !externalGuardian.value) {
       options.push({
         id: "family",
         icon: "i-mdi:account-group-outline",

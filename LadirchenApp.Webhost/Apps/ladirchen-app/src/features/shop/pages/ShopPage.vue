@@ -15,7 +15,7 @@
             <h2 class="section-title">{{ t("shop.rewards.title") }}</h2>
           </div>
           <v-btn
-            v-if="store.permissions.canManageContent"
+            v-if="store.viewerRole === 'guardian'"
             color="primary"
             prepend-icon="i-mdi:plus"
             rounded="lg"
@@ -382,7 +382,7 @@ const {
   catalogItemsEyebrow,
   catalogItemsTitle,
 } = useShopPage();
-const canViewShop = computed(() => store.viewerRole === "child" || store.permissions.canManageContent);
+const canViewShop = computed(() => store.viewerRole === "child" || store.viewerRole === "guardian");
 const rewardDialogTitle = computed(() => t(rewardToEdit.value ? "shop.form.editTitle" : "shop.form.title"));
 const editionCards = computed(() =>
   houseEditions.value.map(function callback(edition) {

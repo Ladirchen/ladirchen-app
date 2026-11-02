@@ -60,9 +60,9 @@ public sealed partial class GetFamilyAggregateQueryHandler
     var permissions = new FamilyPermissionPolicy().Resolve(family.ActiveMember(query.ViewerId));
     Rules.Require(
       permissions.ViewHouse
-        || query.AggregateType is "contributions" or "family-profile",
+        || query.AggregateType is "contributions" or "family-profile" or "reward-shop" or "savings",
       DomainError.Forbidden,
-      "External guardians can access only child tasks and the limited family profile."
+      "External guardians cannot access family or house administration data."
     );
 
     return query.AggregateType switch

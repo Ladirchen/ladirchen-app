@@ -618,10 +618,19 @@ public sealed partial class FamilyEconomy
       ?? throw new DomainRuleException(DomainError.NotFound, "The goal does not exist or was cancelled.");
   }
 
-  private static bool CanViewGoal(FamilyEconomyMember member, SavingGoal goal)
+  private bool CanViewGoal(FamilyEconomyMember member, SavingGoal goal)
   {
-    return !member.IsExternalGuardian && (goal.Owner.MemberId == member.Id
+    if (member.IsExternalGuardian)
+    {
+      var owner = goal.Owner.MemberId is null
+        ? null
+        : _members.FirstOrDefault(item => item.Id == goal.Owner.MemberId && !item.InvitationPending);
+
+      return owner?.Role == MemberRole.Child && goal.Visibility == GoalVisibility.Family;
+    }
+
+    return goal.Owner.MemberId == member.Id
       || goal.Visibility == GoalVisibility.Family
-      || goal.Visibility == GoalVisibility.Guardians && member.IsAdministrator);
+      || goal.Visibility == GoalVisibility.Guardians && member.IsAdministrator;
   }
 }

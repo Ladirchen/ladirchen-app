@@ -19,6 +19,7 @@ public sealed class RewardShopQueryHandlerTests
   );
   private static readonly FamilyMemberId _administratorId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
+  private static readonly FamilyMemberId _externalGuardianId = new("external-guardian");
 
   [Test]
   public async Task QueryProjectsCapabilitiesFromTypedFamilyEconomyState()
@@ -72,6 +73,18 @@ public sealed class RewardShopQueryHandlerTests
       .IsEquivalentTo([_childId.Value]);
   }
 
+  [Test]
+  public async Task ExternalGuardianCanRetrieveTheCompleteRewardCatalog()
+  {
+    var response = await QueryAsync(
+      _externalGuardianId,
+      new DateTimeOffset(2026, 10, 10, 10, 0, 0, TimeSpan.Zero)
+    );
+
+    await Assert.That(Reward(response, "scheduled").PublicationStatus)
+      .IsEqualTo("scheduled");
+  }
+
   private static async Task<RewardShopReadModelResponse> QueryAsync(
     FamilyMemberId actorId,
     DateTimeOffset now
@@ -111,6 +124,7 @@ public sealed class RewardShopQueryHandlerTests
         Member(supporterId, "Supporter", MemberRole.Guardian, GuardianAccess.Supporter),
         Member(_childId, "Child", MemberRole.Child, GuardianAccess.Supporter),
         Member(siblingId, "Sibling", MemberRole.Child, GuardianAccess.Supporter),
+        Member(_externalGuardianId, "External guardian", MemberRole.Guardian, GuardianAccess.External),
         new FamilyMemberState(
           invitedGuardianId,
           "Invited guardian",

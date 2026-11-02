@@ -37,6 +37,7 @@
           <v-icon :icon="visibilityActionIcon" />
         </button>
         <button
+          v-if="canAdministerShop"
           :aria-label="t('shop.rewards.deleteAria', { title: reward.title })"
           class="reward-delete-button d-grid place-center cursor-pointer"
           type="button"
@@ -78,7 +79,7 @@
         <v-chip v-else :color="childStatusColor" size="small" variant="tonal">{{ childStatusLabel }}</v-chip>
       </template>
       <template v-else>
-        <div v-if="reward.status === 'requested'" class="d-flex ga-1">
+        <div v-if="reward.status === 'requested' && canAdministerShop" class="d-flex ga-1">
           <v-btn
             :aria-label="t('shop.rewards.reject')"
             :disabled="!store.permissions.canManageContent"
@@ -97,17 +98,27 @@
             @click="store.decideShopReward(reward.id, true)"
           />
         </div>
-        <v-btn
-          v-else-if="rewardIsRedeemed"
-          color="primary"
-          prepend-icon="i-mdi:restore"
-          rounded="lg"
-          size="small"
-          variant="tonal"
-          @click="emit('edit', reward)"
-        >
-          {{ t("shop.rewards.reactivate") }}
-        </v-btn>
+        <div v-else-if="rewardIsRedeemed" class="d-flex flex-wrap justify-end ga-1">
+          <v-btn
+            prepend-icon="i-mdi:pencil-outline"
+            rounded="lg"
+            size="small"
+            variant="text"
+            @click="emit('edit', reward)"
+          >
+            {{ t("shop.rewards.edit") }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            prepend-icon="i-mdi:restore"
+            rounded="lg"
+            size="small"
+            variant="tonal"
+            @click="store.republishShopReward(reward.id)"
+          >
+            {{ t("shop.rewards.reactivate") }}
+          </v-btn>
+        </div>
         <v-chip v-else :color="guardianStatusColor" size="small" variant="tonal">{{ guardianStatusLabel }}</v-chip>
       </template>
     </div>
@@ -137,6 +148,7 @@ const store = useFamilyWorldStore();
 const { t } = useI18n();
 const rewardIsHidden = computed(() => props.reward.isVisible === false);
 const rewardIsRedeemed = computed(() => props.reward.status === "redeemed");
+const canAdministerShop = computed(() => store.signedInMember?.guardianAccess === "admin");
 const cardClasses = computed(() => ({
   "reward-card--hidden": rewardIsHidden.value,
   "reward-card--scheduled": props.publicationStatus.tone === "scheduled",
@@ -146,7 +158,7 @@ const visibilityActionLabel = computed(() =>
   t(rewardIsHidden.value ? "shop.rewards.show" : "shop.rewards.hide", { title: props.reward.title }),
 );
 const visibilityActionIcon = computed(() => (rewardIsHidden.value ? "i-mdi:eye-outline" : "i-mdi:eye-off-outline"));
-const editActionIcon = computed(() => (rewardIsRedeemed.value ? "i-mdi:restore" : "i-mdi:pencil-outline"));
+const editActionIcon = "i-mdi:pencil-outline";
 const childStatusColor = computed(() => (rewardIsRedeemed.value ? "success" : "warning"));
 const childStatusLabel = computed(() => t(rewardIsRedeemed.value ? "shop.rewards.redeemed" : "shop.rewards.requested"));
 const guardianStatusColor = computed(() => (rewardIsRedeemed.value ? "success" : "primary"));

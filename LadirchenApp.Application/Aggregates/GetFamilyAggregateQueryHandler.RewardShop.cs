@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
-using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Aggregates;
@@ -26,19 +25,16 @@ public sealed partial class GetFamilyAggregateQueryHandler
     }
 
     var now = _timeProvider.GetUtcNow();
-    var permissionPolicy = new FamilyPermissionPolicy();
-    var authenticatedPermissions = permissionPolicy.Resolve(
-      family.ActiveMember(authenticatedMemberId)
-    );
-    var viewerPermissions = permissionPolicy.Resolve(family.ActiveMember(viewerId));
-    var mayManageContent = authenticatedPermissions.ManageContent
-      && viewerPermissions.ManageContent;
+    var authenticatedMember = family.ActiveMember(authenticatedMemberId);
+    var viewer = family.ActiveMember(viewerId);
+    var mayManageShop = authenticatedMember.Role == MemberRole.Guardian
+      && viewer.Role == MemberRole.Guardian;
     var availability = loadedEconomy.Root.ShopRewards.ToDictionary(
       reward => reward.Id,
       reward => loadedEconomy.Root.GetShopRewardAvailability(reward.Id, now)
     );
     var visibleRewardIds = loadedEconomy.Root.ShopRewards
-      .Where(reward => mayManageContent
+      .Where(reward => mayManageShop
         || availability[reward.Id].PublicationStatus == ShopRewardPublicationStatus.Visible)
       .Select(reward => reward.Id)
       .ToHashSet();

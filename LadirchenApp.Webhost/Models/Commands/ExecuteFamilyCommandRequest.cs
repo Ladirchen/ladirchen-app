@@ -44,6 +44,7 @@ namespace LadirchenApp.Webhost.Models.Commands;
 [JsonDerivedType(typeof(RewardShopDecideCommandRequest), "reward-shop.decide")]
 [JsonDerivedType(typeof(RewardShopDeleteCommandRequest), "reward-shop.delete")]
 [JsonDerivedType(typeof(RewardShopRequestCommandRequest), "reward-shop.request")]
+[JsonDerivedType(typeof(RewardShopRepublishCommandRequest), "reward-shop.republish")]
 [JsonDerivedType(typeof(RewardShopSetVisibilityCommandRequest), "reward-shop.set-visibility")]
 [JsonDerivedType(typeof(RewardShopUpdateCommandRequest), "reward-shop.update")]
 [JsonDerivedType(typeof(SavingsAddGoalCommandRequest), "savings.add-goal")]

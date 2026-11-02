@@ -376,7 +376,7 @@ const navigationItems = computed<NavigationItem[]>(() => [
 ]);
 const navigation = computed(() => {
   if (store.signedInMember?.guardianAccess === "external") {
-    return navigationItems.value.filter((item) => ["/contributions", "/family", "/profile"].includes(item.to));
+    return navigationItems.value.filter((item) => ["/contributions", "/wishes", "/shop", "/profile"].includes(item.to));
   }
 
   if (store.viewerRole === "guardian" && !store.permissions.canManageContent) {
@@ -430,7 +430,7 @@ watch(isLandscape, resetContentScroll);
 watch(
   () => [store.signedInMember?.guardianAccess, currentRoute.path] as const,
   ([access, path]) => {
-    if (access === "external" && !["/contributions", "/family", "/profile"].includes(path)) {
+    if (access === "external" && !["/contributions", "/wishes", "/shop", "/profile"].includes(path)) {
       void router.replace("/contributions");
     }
   },

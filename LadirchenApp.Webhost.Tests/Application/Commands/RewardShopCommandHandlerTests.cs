@@ -18,6 +18,8 @@ public sealed class RewardShopCommandHandlerTests
   private static readonly FamilyId _familyId = new(Guid.Parse("a01156a8-dd90-4bf4-beb5-527ff0b29040"));
   private static readonly FamilyMemberId _administratorId = new("guardian");
   private static readonly FamilyMemberId _childId = new("child");
+  private static readonly FamilyMemberId _externalGuardianId = new("external-guardian");
+  private static readonly FamilyMemberId _supporterId = new("supporter");
   private static readonly DateTimeOffset _now = new(2026, 10, 10, 15, 0, 0, TimeSpan.Zero);
 
   [Test]
@@ -244,6 +246,55 @@ public sealed class RewardShopCommandHandlerTests
     await Assert.That(presentation.Conditions).IsEqualTo("Updated conditions");
   }
 
+  [Test]
+  public async Task EveryGuardianCanManageAndRepublishShopRewards()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var rewardId = new ShopRewardId("shared-voucher");
+
+    await ExecuteAsync(handler, _externalGuardianId, "reward-shop.add", new
+    {
+      id = rewardId.Value,
+      title = "Shared voucher",
+      description = "Created externally",
+      icon = "gift",
+      price = 20,
+      category = "gift",
+      quantity = 1,
+      conditions = "Available once",
+      isVisible = true,
+    });
+    await ExecuteAsync(handler, _supporterId, "reward-shop.update", new
+    {
+      id = rewardId.Value,
+      title = "Updated voucher",
+      description = "Updated internally",
+      icon = "ticket",
+      price = 20,
+      category = "privilege",
+      quantity = 1,
+      conditions = "Available once",
+      isVisible = true,
+    });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new { id = rewardId.Value });
+    await ExecuteAsync(handler, _administratorId, "reward-shop.decide", new
+    {
+      id = rewardId.Value,
+      approved = true,
+    });
+
+    await Assert.That(Reward(store, rewardId).Status).IsEqualTo(ShopRewardStatus.Redeemed);
+
+    await ExecuteAsync(handler, _externalGuardianId, "reward-shop.republish", new { id = rewardId.Value });
+
+    var reward = Reward(store, rewardId);
+    await Assert.That(reward.Status).IsEqualTo(ShopRewardStatus.Available);
+    await Assert.That(reward.Quantity).IsEqualTo(1);
+    await Assert.That(reward.IsVisible).IsTrue();
+    await Assert.That(reward.Window).IsEqualTo(new AvailabilityWindow());
+  }
+
   private static TestTypedAggregateStore CreateStore()
   {
     var family = new Family(
@@ -258,6 +309,24 @@ public sealed class RewardShopCommandHandlerTests
       "Child",
       MemberRole.Child,
       GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    family.AddMember(
+      _administratorId,
+      _supporterId,
+      "Supporter",
+      MemberRole.Guardian,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    family.AddMember(
+      _administratorId,
+      _externalGuardianId,
+      "External guardian",
+      MemberRole.Guardian,
+      GuardianAccess.External,
       false,
       _now
     );

@@ -77,6 +77,7 @@ export interface FamilyCommandPayloadMap {
   readonly "reward-shop.decide": Readonly<{ id: ShopRewardId; approved: boolean }>;
   readonly "reward-shop.delete": IdFamilyCommandPayload<ShopRewardId>;
   readonly "reward-shop.request": IdFamilyCommandPayload<ShopRewardId>;
+  readonly "reward-shop.republish": IdFamilyCommandPayload<ShopRewardId>;
   readonly "reward-shop.set-visibility": Readonly<{ id: ShopRewardId; isVisible: boolean }>;
   readonly "reward-shop.update": Readonly<{ id: ShopRewardId } & NewShopReward>;
   readonly "savings.add-goal": Readonly<{ id: SavingGoalId; ownerId: SavingGoalOwnerId } & NewGoal>;

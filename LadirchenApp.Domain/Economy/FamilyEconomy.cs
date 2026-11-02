@@ -510,6 +510,15 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     );
   }
 
+  private void RequireGuardian(FamilyMemberId actor)
+  {
+    Rules.Require(
+      ActiveMember(actor).Role == MemberRole.Guardian,
+      DomainError.Forbidden,
+      "Only a guardian may manage the family shop."
+    );
+  }
+
   private void Record(TransactionId operationId, params LedgerEntry[] entries)
   {
     _operations.Add(operationId);

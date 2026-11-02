@@ -102,6 +102,25 @@
     </template>
 
     <template v-else>
+      <div class="guardian-status-filter d-flex align-center justify-space-between ga-3 mb-5">
+        <strong class="text-body-small">{{ t("contributions.filter.status") }}</strong>
+        <v-btn-toggle
+          v-model="statusFilter"
+          color="primary"
+          density="compact"
+          mandatory
+          rounded="lg"
+          variant="outlined"
+        >
+          <v-btn prepend-icon="i-mdi:progress-clock" value="open">
+            {{ t("contributions.filter.statuses.open") }}
+          </v-btn>
+          <v-btn prepend-icon="i-mdi:check-circle-outline" value="completed">
+            {{ t("contributions.filter.statuses.completed") }}
+          </v-btn>
+        </v-btn-toggle>
+      </div>
+
       <section v-if="store.signedInMember?.guardianAccess !== 'external'" class="guardian-own-tasks mb-6">
         <SectionHeader
           :description="t('contributions.guardianOwn.description')"

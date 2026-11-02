@@ -147,6 +147,7 @@ public sealed class ExecuteFamilyCommandRequestTests
       ["reward-shop.decide"] = (typeof(RewardShopDecideCommandRequest), """{"id":"reward","approved":true}"""),
       ["reward-shop.delete"] = (typeof(RewardShopDeleteCommandRequest), Id()),
       ["reward-shop.request"] = (typeof(RewardShopRequestCommandRequest), Id()),
+      ["reward-shop.republish"] = (typeof(RewardShopRepublishCommandRequest), Id()),
       ["reward-shop.set-visibility"] = (typeof(RewardShopSetVisibilityCommandRequest), """{"id":"reward","isVisible":true}"""),
       ["reward-shop.update"] = (typeof(RewardShopUpdateCommandRequest), """{"id":"reward","title":"Cinema","description":"Film","icon":"ticket","price":20,"category":"activity","quantity":2,"conditions":"Weekend"}"""),
       ["savings.add-goal"] = (typeof(SavingsAddGoalCommandRequest), """{"id":"goal","ownerId":"child","title":"Bike","icon":"bike","target":100,"visibility":"private"}"""),

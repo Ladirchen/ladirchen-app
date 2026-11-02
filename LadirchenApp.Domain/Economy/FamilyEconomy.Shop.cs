@@ -29,7 +29,7 @@ public sealed partial class FamilyEconomy
   public void AddShopReward(FamilyMemberId actor, ShopRewardId id, ShopRewardDefinition definition, DateTimeOffset now)
   {
     ArgumentNullException.ThrowIfNull(definition);
-    RequireAdministrator(actor);
+    RequireGuardian(actor);
     Rules.Require(
       _shopRewards.All(item => item.Id != id),
       DomainError.Duplicate,
@@ -50,7 +50,7 @@ public sealed partial class FamilyEconomy
     DateTimeOffset now
   )
   {
-    RequireAdministrator(actor);
+    RequireGuardian(actor);
     var reward = FindShopReward(id);
     Rules.Require(
       reward.Status != ShopRewardStatus.Requested,
@@ -73,7 +73,7 @@ public sealed partial class FamilyEconomy
   )
   {
     ArgumentNullException.ThrowIfNull(definition);
-    RequireAdministrator(actor);
+    RequireGuardian(actor);
     var reward = FindShopReward(id);
     Rules.Require(
       reward.Status != ShopRewardStatus.Requested,
@@ -86,10 +86,23 @@ public sealed partial class FamilyEconomy
 
   public void SetShopRewardVisibility(FamilyMemberId actor, ShopRewardId id, bool visible, DateTimeOffset now)
   {
-    RequireAdministrator(actor);
+    RequireGuardian(actor);
     var reward = FindShopReward(id);
     reward.SetVisibility(visible);
     AddDomainEvent(new ShopCatalogChanged(Id, id, "VisibilityChanged", now));
+  }
+
+  public void RepublishShopReward(FamilyMemberId actor, ShopRewardId id, DateTimeOffset now)
+  {
+    RequireGuardian(actor);
+    var reward = FindShopReward(id);
+    Rules.Require(
+      reward.Status == ShopRewardStatus.Redeemed,
+      DomainError.InvalidState,
+      "Only a redeemed reward may be republished."
+    );
+    reward.Republish();
+    AddDomainEvent(new ShopCatalogChanged(Id, id, "Republished", now));
   }
 
   public void RequestShopReward(

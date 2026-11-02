@@ -40,6 +40,7 @@ import type {
   RewardShopDecideCommandRequest,
   RewardShopDeleteCommandRequest,
   RewardShopRequestCommandRequest,
+  RewardShopRepublishCommandRequest,
   RewardShopSetVisibilityCommandRequest,
   RewardShopUpdateCommandRequest,
   SavingsAddGoalCommandRequest,
@@ -104,6 +105,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "reward-shop.decide": RewardShopDecideCommandRequest;
   readonly "reward-shop.delete": RewardShopDeleteCommandRequest;
   readonly "reward-shop.request": RewardShopRequestCommandRequest;
+  readonly "reward-shop.republish": RewardShopRepublishCommandRequest;
   readonly "reward-shop.set-visibility": RewardShopSetVisibilityCommandRequest;
   readonly "reward-shop.update": RewardShopUpdateCommandRequest;
   readonly "savings.add-goal": SavingsAddGoalCommandRequest;

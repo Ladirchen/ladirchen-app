@@ -65,20 +65,27 @@ export function useShopPage() {
   const rewardToDelete = ref<ShopReward | null>(null);
   const currentTime = computed(() => new Date(store.currentTimeMilliseconds));
   const iconOptions = ["🎁", "🎮", "🍿", "🎨", "🎟️", "🧁", "🚲", "🌙", "💵", "🛍️"];
-  const shopViewOptions = computed<ReadonlyArray<PageViewOption<"family" | "house">>>(() => [
-    {
-      id: "family",
-      icon: UI_ICONS.shopView.family,
-      subtitle: t("shop.views.family.subtitle"),
-      title: t("shop.views.family.title"),
-    },
-    {
-      id: "house",
-      icon: UI_ICONS.shopView.house,
-      subtitle: t("shop.views.house.subtitle"),
-      title: t("shop.views.house.title"),
-    },
-  ]);
+  const shopViewOptions = computed<ReadonlyArray<PageViewOption<"family" | "house">>>(() => {
+    const options: Array<PageViewOption<"family" | "house">> = [
+      {
+        id: "family",
+        icon: UI_ICONS.shopView.family,
+        subtitle: t("shop.views.family.subtitle"),
+        title: t("shop.views.family.title"),
+      },
+    ];
+
+    if (store.signedInMember?.guardianAccess !== "external") {
+      options.push({
+        id: "house",
+        icon: UI_ICONS.shopView.house,
+        subtitle: t("shop.views.house.subtitle"),
+        title: t("shop.views.house.title"),
+      });
+    }
+
+    return options;
+  });
   const houseAreaOptions = computed<ReadonlyArray<PageViewOption<HouseCatalogArea>>>(() => [
     {
       id: "inside",
@@ -338,7 +345,7 @@ export function useShopPage() {
   watch(
     () => route.query.new,
     function callback(value) {
-      if (value === "1" && store.permissions.canManageContent) {
+      if (value === "1" && store.viewerRole === "guardian") {
         activeTab.value = "family";
         rewardDialog.value = true;
       }

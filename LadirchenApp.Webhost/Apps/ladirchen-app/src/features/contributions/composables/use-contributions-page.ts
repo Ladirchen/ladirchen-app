@@ -100,12 +100,18 @@ export function useContributionsPage() {
     ),
   );
   const managedContributions = computed(() =>
-    [...localizedContributions.value].sort(
-      (left, right) => Number(Boolean(left.assigneeId)) - Number(Boolean(right.assigneeId)),
-    ),
+    localizedContributions.value
+      .filter((contribution) =>
+        statusFilter.value === "completed" ? contribution.status === "approved" : contribution.status !== "approved",
+      )
+      .sort((left, right) => Number(Boolean(left.assigneeId)) - Number(Boolean(right.assigneeId))),
   );
   const guardianOwnContributions = computed(() =>
-    localizedContributions.value.filter((contribution) => contribution.assigneeId === store.signedInMemberId),
+    localizedContributions.value.filter(
+      (contribution) =>
+        contribution.assigneeId === store.signedInMemberId &&
+        (statusFilter.value === "completed" ? contribution.status === "approved" : contribution.status !== "approved"),
+    ),
   );
   const guardianTasksToRate = computed(() =>
     localizedContributions.value.filter(function callback(contribution) {

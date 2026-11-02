@@ -1299,6 +1299,10 @@ export interface RewardShopRequestCommandRequest extends ExecuteFamilyCommandReq
   payload: IdFamilyCommandPayload;
 }
 
+export interface RewardShopRepublishCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
 export interface RewardShopSetVisibilityCommandRequest extends ExecuteFamilyCommandRequest {
   payload: RewardVisibilityPayload;
 }

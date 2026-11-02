@@ -110,6 +110,13 @@ public sealed class ShopReward : Entity<ShopRewardId>
     Quantity--;
     Release();
   }
+  internal void Republish()
+  {
+    Quantity = Math.Max(1, Quantity);
+    IsVisible = true;
+    Window = new AvailabilityWindow();
+    Release();
+  }
   internal void Delete()
   {
     Deleted = true;

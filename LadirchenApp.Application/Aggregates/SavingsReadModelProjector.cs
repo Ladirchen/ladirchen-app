@@ -128,14 +128,15 @@ internal static class SavingsReadModelProjector
     bool isVisible
   )
   {
-    var availableBalance = economy.WalletFor(member.Id).Available;
+    var externalGuardian = member.Role == MemberRole.Guardian && member.Access == GuardianAccess.External;
+    var availableBalance = externalGuardian ? 0 : economy.WalletFor(member.Id).Available;
     var ownsGoal = goal.Owner.MemberId == member.Id;
     var isCancellationParticipant = goal.Participants.Contains(member.Id);
     var cancellationPending = goal.CancellationRequest is not null;
     var canDecideCancellation = cancellationPending
       && isCancellationParticipant
       && !goal.CancellationRequest!.ConsentedMemberIds.Contains(member.Id);
-    var supportsAsGuardian = member.Role == MemberRole.Guardian && isVisible;
+    var supportsAsGuardian = member.Role == MemberRole.Guardian && !externalGuardian && isVisible;
     var supportsAsChild = member.Role == MemberRole.Child
       && !ownsGoal
       && goal.Visibility == GoalVisibility.Family;

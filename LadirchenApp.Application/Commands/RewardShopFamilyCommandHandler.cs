@@ -59,6 +59,9 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
           now
         );
         break;
+      case "reward-shop.republish":
+        economy.RepublishShopReward(command.ActorId, RewardId(payload), now);
+        break;
       case "reward-shop.delete":
         economy.DeleteShopReward(command.ActorId, RewardId(payload), operationId, now);
         break;
