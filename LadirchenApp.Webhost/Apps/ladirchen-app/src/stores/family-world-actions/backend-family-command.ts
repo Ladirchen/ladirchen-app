@@ -3,7 +3,10 @@ import { FamilyCommandHttpError } from "@/infrastructure/http/http-family-comman
 import type { FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 
 function isAuthenticationFailure(error: unknown): error is FamilyCommandHttpError {
-  return error instanceof FamilyCommandHttpError && (error.status === 401 || error.status === 403);
+  return (
+    error instanceof FamilyCommandHttpError &&
+    (error.status === 401 || (error.status === 403 && error.message === "Family command failed with HTTP 403."))
+  );
 }
 
 export async function executeBackendFamilyCommand<TCommandType extends FamilyCommandType>(

@@ -9,7 +9,7 @@ describe("executeBackendFamilyCommand", () => {
   it("restores a server session changed in another browser tab without replaying the command", async () => {
     const originalMemberId = createDomainId.familyMember("original-member");
     const currentMemberId = createDomainId.familyMember("current-member");
-    const execute = vi.fn().mockRejectedValue(new FamilyCommandHttpError(403, "Forbidden"));
+    const execute = vi.fn().mockRejectedValue(new FamilyCommandHttpError(403, "Family command failed with HTTP 403."));
     const context = createFamilyWorldTestStore(createFamilyWorldTestDependencies({ familyCommands: { execute } }));
     context.signedInMemberId = originalMemberId;
     vi.spyOn(context, "restoreAuthenticatedSession").mockImplementation(async () => {
@@ -48,8 +48,10 @@ describe("executeBackendFamilyCommand", () => {
     expect(notify).toHaveBeenCalledWith("notifications.auth.sessionExpired");
   });
 
-  it("keeps the command-specific notification for a valid session", async () => {
-    const execute = vi.fn().mockRejectedValue(new FamilyCommandHttpError(403, "Forbidden"));
+  it("does not replace a domain authorization error with a session error", async () => {
+    const execute = vi
+      .fn()
+      .mockRejectedValue(new FamilyCommandHttpError(403, "Only guardians may manage shop rewards."));
     const context = createFamilyWorldTestStore(createFamilyWorldTestDependencies({ familyCommands: { execute } }));
     vi.spyOn(context, "restoreAuthenticatedSession").mockResolvedValue(true);
     const notify = vi.spyOn(context, "notify").mockImplementation(() => undefined);
@@ -61,6 +63,7 @@ describe("executeBackendFamilyCommand", () => {
       "notifications.save.shop",
     );
 
+    expect(context.restoreAuthenticatedSession).not.toHaveBeenCalled();
     expect(notify).toHaveBeenCalledWith("notifications.save.shop");
   });
 });
