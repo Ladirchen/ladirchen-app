@@ -323,59 +323,63 @@
             <v-btn color="primary" icon="i-mdi:plus" size="small" variant="tonal" @click="openContributionDialog" />
           </template>
         </SectionHeader>
-        <div class="d-flex flex-column ga-2">
-          <BrandedCard
-            v-for="{ contribution, metaLabel } in managedContributionCards"
+        <div class="contribution-card-list d-flex flex-column ga-3">
+          <ChildContributionCard
+            v-for="contribution in managedContributions"
             :key="contribution.id"
-            class="basic-row pa-3"
-            tone="contributions"
+            :active-child-id="store.activeChildId"
+            :allow-invite="false"
+            :contribution="contribution"
+            :family-members="store.members"
+            :family-time-zone="store.familyTimeZone"
+            :personalize-assignee="false"
+            :promotion="promotionFor(contribution.id)"
+            :reward="store.rewardForContribution(contribution.id)"
+            :show-participant-actions="false"
+            :tip="contributionTip(contribution)"
           >
-            <div class="d-flex align-center ga-3">
-              <v-avatar class="task-icon-avatar task-icon-avatar--small" color="surface-variant" rounded="lg" size="44">
-                {{ contribution.icon }}
-              </v-avatar>
-              <div class="flex-grow-1 min-w-0">
-                <strong class="text-body-small">{{ contribution.title }}</strong>
-                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
-                <p class="text-caption text-medium-emphasis">{{ metaLabel }}</p>
+            <template #actions>
+              <div class="management-actions">
+                <v-select
+                  class="assignment-select"
+                  density="compact"
+                  hide-details
+                  :disabled="contribution.status !== 'available'"
+                  :items="assignmentOptions"
+                  item-title="title"
+                  item-value="value"
+                  :model-value="contribution.assigneeId ?? ''"
+                  variant="outlined"
+                  @update:model-value="assignContribution(contribution.id, $event)"
+                />
+                <div class="management-action-buttons">
+                  <v-btn
+                    :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
+                    icon="i-mdi:content-copy"
+                    size="small"
+                    variant="tonal"
+                    @click="copyContribution(contribution)"
+                  />
+                  <v-btn
+                    v-if="contribution.status === 'available'"
+                    :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
+                    icon="i-mdi:pencil-outline"
+                    size="small"
+                    variant="tonal"
+                    @click="openContributionEditor(contribution)"
+                  />
+                  <v-btn
+                    :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
+                    color="error"
+                    icon="i-mdi:delete-outline"
+                    size="small"
+                    variant="tonal"
+                    @click="requestContributionDelete(contribution)"
+                  />
+                </div>
               </div>
-              <v-select
-                class="assignment-select"
-                density="compact"
-                hide-details
-                :disabled="contribution.status !== 'available'"
-                :items="assignmentOptions"
-                item-title="title"
-                item-value="value"
-                :model-value="contribution.assigneeId ?? ''"
-                variant="outlined"
-                @update:model-value="assignContribution(contribution.id, $event)"
-              />
-              <v-btn
-                :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
-                icon="i-mdi:content-copy"
-                size="small"
-                variant="tonal"
-                @click="copyContribution(contribution)"
-              />
-              <v-btn
-                v-if="contribution.status === 'available'"
-                :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
-                icon="i-mdi:pencil-outline"
-                size="small"
-                variant="tonal"
-                @click="openContributionEditor(contribution)"
-              />
-              <v-btn
-                :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
-                color="error"
-                icon="i-mdi:delete-outline"
-                size="small"
-                variant="tonal"
-                @click="requestContributionDelete(contribution)"
-              />
-            </div>
-          </BrandedCard>
+            </template>
+          </ChildContributionCard>
         </div>
       </template>
     </template>
@@ -608,7 +612,6 @@ import PromotionCountdown from "@/shared/components/contributions/PromotionCount
 import SectionHeader from "@/shared/components/ui/SectionHeader.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { useContributionsPage } from "@/features/contributions/composables/use-contributions-page";
-import type { Contribution } from "@/domain/contributions/types";
 const {
   activePromotions,
   addDialog,
@@ -708,12 +711,6 @@ const reviewableTaskCards = computed(() =>
     metaLabel: `${memberName(contribution.assigneeId)} · +${t("contributions.reward.coins", { value: store.rewardForContribution(contribution.id) })}`,
   })),
 );
-const managedContributionCards = computed(() =>
-  managedContributions.value.map((contribution) => ({
-    contribution,
-    metaLabel: `${managedContributionDescription(contribution)} · ${t("contributions.reward.coins", { value: contribution.reward })}`,
-  })),
-);
 const canSaveContribution = computed(() =>
   Boolean(
     newContribution.description.trim() &&
@@ -727,11 +724,6 @@ const canStartPromotion = computed(() => Boolean(newPromotion.contributionId && 
 function toggleEmptyStateFilter() {
   statusFilter.value = emptyStateIsOpen.value ? "completed" : "open";
   filter.value = "all";
-}
-function managedContributionDescription(contribution: Contribution) {
-  return contribution.kind === "basic"
-    ? t("contributions.manage.energyPoints", { value: contribution.energy })
-    : t("contributions.kind.extra");
 }
 </script>
 
@@ -875,9 +867,20 @@ function managedContributionDescription(contribution: Contribution) {
 }
 
 .assignment-select {
-  max-width: 150px;
-  flex: 0 0 150px;
+  min-width: 0;
   font-size: rem(10);
+}
+
+.management-actions {
+  width: 100%;
+  --uno: d-grid align-center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.management-action-buttons {
+  --uno: d-flex align-center flex-wrap justify-end;
+  gap: 6px;
 }
 
 .list-enter-active,
@@ -918,6 +921,14 @@ function managedContributionDescription(contribution: Contribution) {
 @include respond-down(compact) {
   .form-columns {
     grid-template-columns: 1fr;
+  }
+
+  .management-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .management-action-buttons {
+    justify-content: flex-start;
   }
 }
 </style>

@@ -82,74 +82,77 @@
         </div>
       </div>
     </div>
-    <div class="d-flex align-center justify-end flex-wrap ga-2 mt-3">
-      <v-btn
-        v-if="canClaim"
-        class="claim-button"
-        color="primary"
-        rounded="lg"
-        variant="flat"
-        @click="emit('claim', contribution)"
-      >
-        <span class="claim-button-icon" aria-hidden="true"><v-icon icon="i-mdi:rocket-launch-outline" /></span>
-        <span>{{ t("contributions.claim") }}</span>
-        <i aria-hidden="true">✦</i>
-      </v-btn>
-      <template v-else-if="isAssignedToActiveChild">
+    <div v-if="showParticipantActions || $slots.actions" class="d-flex align-center justify-end flex-wrap ga-2 mt-3">
+      <template v-if="showParticipantActions">
         <v-btn
-          v-if="canInvite"
-          prepend-icon="i-mdi:account-multiple-plus-outline"
-          rounded="lg"
-          size="small"
-          variant="tonal"
-          @click="emit('invite', contribution)"
-        >
-          {{ t("contributions.invitePartners") }}
-        </v-btn>
-        <div
-          v-if="contribution.status === 'approved'"
-          class="approved-celebration"
-          :aria-label="t('contributions.starsReceived', { value: earnedStars })"
-        >
-          <span class="approved-badge">{{ approvalMessage }}</span>
-          <span class="earned-stars" aria-hidden="true">
-            <v-icon
-              v-for="star in 5"
-              :key="star"
-              class="earned-star"
-              :class="{ active: star <= earnedStars }"
-              icon="i-mdi:star"
-              size="20"
-              :style="{ '--star-index': star }"
-            />
-          </span>
-        </div>
-        <output v-else-if="contribution.status === 'pending'" class="pending-celebration">
-          <span class="pending-celebration-icon" aria-hidden="true">✨</span>
-          <span>
-            <strong>{{ t("contributions.pending.title") }}</strong>
-            <small>{{ t("contributions.pending.description") }}</small>
-          </span>
-        </output>
-        <v-btn
-          v-else
-          class="finish-button"
-          color="info"
+          v-if="canClaim"
+          class="claim-button"
+          color="primary"
           rounded="lg"
           variant="flat"
-          @click="emit('submit', contribution)"
+          @click="emit('claim', contribution)"
         >
-          <span class="finish-check" aria-hidden="true"><v-icon icon="i-mdi:check" size="24" /></span>
-          <span>{{ t("contributions.finish") }}</span>
+          <span class="claim-button-icon" aria-hidden="true"><v-icon icon="i-mdi:rocket-launch-outline" /></span>
+          <span>{{ t("contributions.claim") }}</span>
+          <i aria-hidden="true">✦</i>
         </v-btn>
+        <template v-else-if="isAssignedToActiveChild">
+          <v-btn
+            v-if="canInvite"
+            prepend-icon="i-mdi:account-multiple-plus-outline"
+            rounded="lg"
+            size="small"
+            variant="tonal"
+            @click="emit('invite', contribution)"
+          >
+            {{ t("contributions.invitePartners") }}
+          </v-btn>
+          <div
+            v-if="contribution.status === 'approved'"
+            class="approved-celebration"
+            :aria-label="t('contributions.starsReceived', { value: earnedStars })"
+          >
+            <span class="approved-badge">{{ approvalMessage }}</span>
+            <span class="earned-stars" aria-hidden="true">
+              <v-icon
+                v-for="star in 5"
+                :key="star"
+                class="earned-star"
+                :class="{ active: star <= earnedStars }"
+                icon="i-mdi:star"
+                size="20"
+                :style="{ '--star-index': star }"
+              />
+            </span>
+          </div>
+          <output v-else-if="contribution.status === 'pending'" class="pending-celebration">
+            <span class="pending-celebration-icon" aria-hidden="true">✨</span>
+            <span>
+              <strong>{{ t("contributions.pending.title") }}</strong>
+              <small>{{ t("contributions.pending.description") }}</small>
+            </span>
+          </output>
+          <v-btn
+            v-else
+            class="finish-button"
+            color="info"
+            rounded="lg"
+            variant="flat"
+            @click="emit('submit', contribution)"
+          >
+            <span class="finish-check" aria-hidden="true"><v-icon icon="i-mdi:check" size="24" /></span>
+            <span>{{ t("contributions.finish") }}</span>
+          </v-btn>
+        </template>
+        <div v-else-if="assignedMember && assignedMemberAppearance" class="assigned-member">
+          <AvatarFigure :appearance="assignedMemberAppearance" :size="34" />
+          <span>
+            <small>{{ t("contributions.assignedTo") }}</small>
+            <strong>{{ assignedMember.name }}</strong>
+          </span>
+        </div>
       </template>
-      <div v-else-if="assignedMember && assignedMemberAppearance" class="assigned-member">
-        <AvatarFigure :appearance="assignedMemberAppearance" :size="34" />
-        <span>
-          <small>{{ t("contributions.assignedTo") }}</small>
-          <strong>{{ assignedMember.name }}</strong>
-        </span>
-      </div>
+      <slot name="actions"></slot>
     </div>
   </BrandedCard>
 </template>
@@ -173,8 +176,10 @@ export interface Props {
   contribution: Contribution;
   familyMembers: ReadonlyArray<FamilyMember>;
   familyTimeZone: IanaTimeZone;
+  personalizeAssignee?: boolean;
   promotion?: Promotion;
   reward: number;
+  showParticipantActions?: boolean;
   tip: string;
 }
 export interface Emits {
@@ -184,13 +189,17 @@ export interface Emits {
 }
 const props = withDefaults(defineProps<Props>(), {
   allowInvite: true,
+  personalizeAssignee: true,
+  showParticipantActions: true,
 });
 const emit = defineEmits<Emits>();
 const { t } = useI18n();
 const assignedMember = computed(() =>
   props.familyMembers.find((member) => member.id === props.contribution.assigneeId),
 );
-const isAssignedToActiveChild = computed(() => props.contribution.assigneeId === props.activeChildId);
+const isAssignedToActiveChild = computed(
+  () => props.personalizeAssignee && props.contribution.assigneeId === props.activeChildId,
+);
 const kindLabelClass = computed(() =>
   props.contribution.kind === "basic" ? "contribution-label--basic" : "contribution-label--special",
 );
