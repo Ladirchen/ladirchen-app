@@ -16,6 +16,10 @@ internal static partial class FamilyEconomyPersistenceMapper
   {
     ArgumentNullException.ThrowIfNull(entity);
     ArgumentNullException.ThrowIfNull(family);
+    var activeWalletMemberIds = family.Members
+      .Where(item => !item.InvitationPending && item.Access != GuardianAccess.External)
+      .Select(item => item.Id.Value)
+      .ToHashSet(StringComparer.Ordinal);
     // Reservations are authoritative pending requests, not a second persisted wallet balance.
     var pendingReservations = entity.RedemptionRequests
       .Where(item => (RedemptionStatus)item.Status == RedemptionStatus.Pending)
@@ -25,6 +29,7 @@ internal static partial class FamilyEconomyPersistenceMapper
       new FamilyId(entity.FamilyId),
       new ContributionSettings(new Percentage(entity.PerfectRatingBonusPercent)),
       entity.Wallets
+        .Where(item => activeWalletMemberIds.Contains(item.MemberId))
         .OrderBy(item => item.MemberId, StringComparer.Ordinal)
         .Select(item => new MemberWalletState(
           new FamilyMemberId(item.MemberId),
