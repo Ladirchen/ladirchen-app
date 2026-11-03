@@ -86,7 +86,9 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
           return state.simulatedEnergy;
         }
 
-        return state.memberProgressions[state.activeChildId]?.completionPercent ?? 0;
+        const memberId = state.viewerRole === "guardian" ? state.signedInMemberId : state.activeChildId;
+
+        return state.memberProgressions[memberId]?.completionPercent ?? 0;
       },
       pendingContributions(state): Contribution[] {
         return state.contributions.filter((contribution) => contribution.status === "pending");
@@ -109,10 +111,14 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
           : this.familyEnergy >= this.minimumSuccessfulWeekEnergy;
       },
       currentWeekDays(state): number {
-        return state.memberProgressions[state.activeChildId]?.approvedDates.length ?? 0;
+        const memberId = state.viewerRole === "guardian" ? state.signedInMemberId : state.activeChildId;
+
+        return state.memberProgressions[memberId]?.approvedDates.length ?? 0;
       },
-      currentParticipationStreakDays(): number {
-        return this.memberProgressions[this.activeChildId]?.streakDays ?? 0;
+      currentParticipationStreakDays(state): number {
+        const memberId = state.viewerRole === "guardian" ? state.signedInMemberId : state.activeChildId;
+
+        return state.memberProgressions[memberId]?.streakDays ?? 0;
       },
       rewardForContribution(this: void, state) {
         return (contributionId: ContributionId): number => {

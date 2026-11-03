@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
@@ -44,6 +45,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     ContributionPresentationState? addedContribution = null;
     ContributionPresentationState? updatedContribution = null;
     ContributionId? celebratedContributionId = null;
+    var notifications = new List<FamilyUserNotification>();
 
     switch (command.CommandType)
     {
@@ -67,21 +69,25 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           CreateOptionalMemberId(OptionalString(payload, "memberId")),
           now
         );
+        AddAssignmentNotification(economy, payload, notifications);
         break;
       case "contributions.approve":
-        _ = economy.ApproveContribution(
+        var approvedContribution = economy.Contributions.Single(item => item.Id == ContributionId(payload));
+        var reward = economy.ApproveContribution(
           command.ActorId,
           ContributionId(payload),
           new StarRating(RequiredInt(payload, "stars")),
           operationId,
           now
         );
+        notifications.Add(RewardNotification(approvedContribution, reward.Total));
         break;
       case "contributions.return":
         economy.ReturnContribution(command.ActorId, ContributionId(payload), now);
         break;
       case "contributions.add":
         addedContribution = AddContribution(economy, command.ActorId, payload, now);
+        AddAssignmentNotification(economy, payload, notifications);
         break;
       case "contributions.update":
         updatedContribution = UpdateContribution(economy, command.ActorId, payload, now);
@@ -162,7 +168,50 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       Change(command.FamilyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
       Change(command.FamilyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
       Change(command.FamilyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
-    ]);
+    ], notifications);
+  }
+
+  private static void AddAssignmentNotification(
+    FamilyEconomy economy,
+    JsonElement payload,
+    ICollection<FamilyUserNotification> notifications
+  )
+  {
+    var contribution = economy.Contributions.Single(item => item.Id == ContributionId(payload));
+
+    if (contribution.AssigneeId is null)
+    {
+      return;
+    }
+
+    notifications.Add(new FamilyUserNotification(
+      contribution.AssigneeId,
+      "Neue Aufgabe",
+      $"Dir wurde die Aufgabe „{contribution.Title}“ zugewiesen.",
+      "New task",
+      $"The task “{contribution.Title}” was assigned to you.",
+      "/#/contributions",
+      $"contribution-{contribution.Id.Value}"
+    ));
+  }
+
+  private static FamilyUserNotification RewardNotification(
+    Contribution contribution,
+    decimal amount
+  )
+  {
+    var recipientId = contribution.AssigneeId
+      ?? throw new InvalidOperationException("An approved contribution requires an assignee.");
+
+    return new FamilyUserNotification(
+      recipientId,
+      "Ladirchen erhalten",
+      $"Du hast {amount:0.##} Ladirchen für „{contribution.Title}“ erhalten.",
+      "Ladirchen received",
+      $"You received {amount:0.##} Ladirchen for “{contribution.Title}”.",
+      "/#/contributions",
+      $"contribution-reward-{contribution.Id.Value}"
+    );
   }
 
   private static ContributionPresentationState AddContribution(

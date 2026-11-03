@@ -11,6 +11,9 @@ export interface FamilyPermissions {
   canReviewChildTasks: boolean;
   canViewTaskAssignments: boolean;
   canViewHouse: boolean;
+  canPurchaseHouseContentWithoutBalance: boolean;
+  canManageShop: boolean;
+  canReceivePushNotifications: boolean;
 }
 export const NO_FAMILY_PERMISSIONS: FamilyPermissions = {
   canInviteMembers: false,
@@ -24,4 +27,7 @@ export const NO_FAMILY_PERMISSIONS: FamilyPermissions = {
   canReviewChildTasks: false,
   canViewTaskAssignments: false,
   canViewHouse: false,
+  canPurchaseHouseContentWithoutBalance: false,
+  canManageShop: false,
+  canReceivePushNotifications: false,
 };

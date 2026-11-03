@@ -227,6 +227,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   public void ClaimContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
   {
     RequireChild(actor);
+    RequireTasksAvailableFor(actor, now);
     var contribution = FindContribution(id);
     RequireAvailable(contribution);
     Rules.Require(
@@ -303,6 +304,7 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
   public void SubmitContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
   {
     ActiveMember(actor);
+    RequireTasksAvailableFor(actor, now);
     var contribution = FindContribution(id);
     RequireAvailable(contribution);
     Rules.Require(

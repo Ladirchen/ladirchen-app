@@ -25,7 +25,9 @@ internal static partial class FamilyEconomyPersistenceMapper
         item.IsVisible,
         new AvailabilityWindow(item.AvailableFrom, item.AvailableUntil),
         (ShopRewardStatus)item.Status,
-        item.Deleted
+        item.Deleted,
+        item.PromotionalPrice is null ? null : new LadirchenAmount(item.PromotionalPrice.Value),
+        item.PromotionUntil
       ))
       .ToArray();
   }
@@ -63,6 +65,8 @@ internal static partial class FamilyEconomyPersistenceMapper
         Title = reward.Title,
         Category = (int)reward.Category,
         Price = reward.Price.Value,
+        PromotionalPrice = reward.PromotionalPrice?.Value,
+        PromotionUntil = reward.PromotionUntil,
         Quantity = reward.Quantity,
         IsVisible = reward.IsVisible,
         AvailableFrom = reward.Window.From,

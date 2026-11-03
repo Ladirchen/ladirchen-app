@@ -1,7 +1,6 @@
-/** Result shape produced by `import.meta.glob(pattern, { import: "default" })`. */
-export type AssetGlobModules = Record<string, () => Promise<string>>;
+/** Result shape produced by eager and lazy URL-only `import.meta.glob` calls. */
+export type AssetGlobModules = Record<string, string | (() => Promise<string>)>;
 function fileNameOf(path: string): string {
-
   return path.split("/").pop() ?? path;
 }
 /** Wraps a glob result into a filename-keyed async loader, caching in-flight/resolved promises so repeated lookups dedupe. */
@@ -13,7 +12,6 @@ export function createRawAssetLoader(modules: AssetGlobModules): (fileName: stri
     const cached = cache.get(fileName);
 
     if (cached !== undefined) {
-
       return cached;
     }
 
@@ -23,7 +21,7 @@ export function createRawAssetLoader(modules: AssetGlobModules): (fileName: stri
       throw new Error(`No bundled asset found for file "${fileName}"`);
     }
 
-    const promise = load();
+    const promise = typeof load === "string" ? Promise.resolve(load) : load();
     cache.set(fileName, promise);
 
     return promise;

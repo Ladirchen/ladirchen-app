@@ -5,6 +5,7 @@ import type { FurnitureSetId, HouseAccessoryId, HouseThemeId, HouseZoneId, RoomD
 import type { FamilyCurrency, NewGoal, SavingGoalOwnerId } from "@/domain/savings/types";
 import type {
   ContributionId,
+  BehaviorIncidentId,
   FamilyMemberId,
   GuardianGiftId,
   HouseLayoutPlacementId,
@@ -81,6 +82,7 @@ export interface FamilyCommandPayloadMap {
   readonly "reward-shop.set-visibility": Readonly<{ id: ShopRewardId; isVisible: boolean }>;
   readonly "reward-shop.update": Readonly<{ id: ShopRewardId } & NewShopReward>;
   readonly "savings.add-goal": Readonly<{ id: SavingGoalId; ownerId: SavingGoalOwnerId } & NewGoal>;
+  readonly "savings.acknowledge-behavior-notice": Readonly<{ incidentId: BehaviorIncidentId }>;
   readonly "savings.cancel-goal": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.consent-voucher": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.consume-guardian-gift": Readonly<{ giftId: GuardianGiftId }>;
@@ -98,8 +100,15 @@ export interface FamilyCommandPayloadMap {
     giftId: GuardianGiftId;
     senderName?: string;
   }>;
+  readonly "savings.issue-behavior-warning": Readonly<{
+    childId: FamilyMemberId;
+    deduction: number;
+    incidentId: BehaviorIncidentId;
+    reason: string;
+  }>;
   readonly "savings.redeem-voucher": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.request-goal-cancellation": IdFamilyCommandPayload<SavingGoalId>;
+  readonly "savings.reset-behavior-status": Readonly<{ childId: FamilyMemberId }>;
   readonly "savings.set-currency": Readonly<{ currency: FamilyCurrency }>;
   readonly "savings.set-exchange-rate": Readonly<{ rate: number }>;
   readonly "savings.settle-weekly-interest": Readonly<{ year: number; week: number }>;

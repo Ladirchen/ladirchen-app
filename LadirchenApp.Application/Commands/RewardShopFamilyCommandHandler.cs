@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
@@ -42,6 +43,15 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var operationId = OperationId(command);
     ShopRewardPresentationState? addedReward = null;
     ShopRewardPresentationState? updatedReward = null;
+
+    if (command.CommandType is "reward-shop.add"
+      or "reward-shop.update"
+      or "reward-shop.set-visibility"
+      or "reward-shop.republish"
+      or "reward-shop.delete")
+    {
+      RequireCanManageShop(family.Root, command.ActorId);
+    }
 
     switch (command.CommandType)
     {
@@ -132,6 +142,7 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var id = RewardId(payload);
     var (definition, presentation) = ReadShopReward(id, payload);
     economy.AddShopReward(actorId, id, definition, now);
+    ApplyShopPromotion(economy, actorId, id, payload, now);
 
     return presentation;
   }
@@ -146,8 +157,49 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var id = RewardId(payload);
     var (definition, presentation) = ReadShopReward(id, payload);
     economy.UpdateShopReward(actorId, id, definition, now);
+    ApplyShopPromotion(economy, actorId, id, payload, now);
 
     return presentation;
+  }
+
+  private static void ApplyShopPromotion(
+    FamilyEconomy economy,
+    FamilyMemberId actorId,
+    ShopRewardId rewardId,
+    JsonElement payload,
+    DateTimeOffset now
+  )
+  {
+    var promotionalPrice = OptionalDecimal(payload, "promotionalPrice");
+    var promotionUntil = OptionalCalendarDate(payload, "promotionUntil");
+    economy.SetShopRewardPromotion(
+      actorId,
+      rewardId,
+      promotionalPrice is null ? null : new LadirchenAmount(promotionalPrice.Value),
+      promotionUntil,
+      now
+    );
+  }
+
+  private static decimal? OptionalDecimal(JsonElement source, string property)
+  {
+    if (!source.TryGetProperty(property, out var value) || value.ValueKind == JsonValueKind.Null)
+    {
+      return null;
+    }
+
+    if (value.ValueKind != JsonValueKind.Number || !value.TryGetDecimal(out var result))
+    {
+      throw new FamilyCommandException("The promotional price is invalid.");
+    }
+
+    return result;
+  }
+
+  private static void RequireCanManageShop(Family family, FamilyMemberId actorId)
+  {
+    var permissions = new FamilyPermissionPolicy().Resolve(family.ActiveMember(actorId));
+    Require(permissions.ManageShop, "The family member may not manage the reward shop.");
   }
 
   private static (ShopRewardDefinition Definition, ShopRewardPresentationState Presentation) ReadShopReward(

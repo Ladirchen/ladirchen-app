@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -70,6 +72,7 @@ public static class WebApplicationBuilderExtensions
       shutdownTimeout: _daemonShutdownTimeout
     );
     webApplicationBuilder.Services.AddHostedService<FamilyAggregateOutboxDispatcher>();
+    webApplicationBuilder.Services.AddHostedService<WebPushNotificationDispatcher>();
     webApplicationBuilder.Services.AddHostedService<WeeklyInterestSettlementService>();
   }
 
@@ -199,6 +202,20 @@ public static class WebApplicationBuilderExtensions
 
   private static void ConfigureWebServices(WebApplicationBuilder webApplicationBuilder)
   {
+    webApplicationBuilder.Services.AddResponseCompression(options =>
+    {
+      options.EnableForHttps = true;
+      options.Providers.Add<BrotliCompressionProvider>();
+      options.Providers.Add<GzipCompressionProvider>();
+    });
+    webApplicationBuilder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+    {
+      options.Level = CompressionLevel.Fastest;
+    });
+    webApplicationBuilder.Services.Configure<GzipCompressionProviderOptions>(options =>
+    {
+      options.Level = CompressionLevel.Fastest;
+    });
     webApplicationBuilder.Services
       .AddAuthentication(FamilySessionIdentity.AuthenticationScheme)
       .AddCookie(

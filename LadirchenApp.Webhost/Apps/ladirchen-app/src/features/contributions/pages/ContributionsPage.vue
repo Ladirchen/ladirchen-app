@@ -323,63 +323,74 @@
             <v-btn color="primary" icon="i-mdi:plus" size="small" variant="tonal" @click="openContributionDialog" />
           </template>
         </SectionHeader>
-        <div class="contribution-card-list d-flex flex-column ga-3">
-          <ChildContributionCard
-            v-for="contribution in managedContributions"
-            :key="contribution.id"
-            :active-child-id="store.activeChildId"
-            :allow-invite="false"
-            :contribution="contribution"
-            :family-members="store.members"
-            :family-time-zone="store.familyTimeZone"
-            :personalize-assignee="false"
-            :promotion="promotionFor(contribution.id)"
-            :reward="store.rewardForContribution(contribution.id)"
-            :show-participant-actions="false"
-            :tip="contributionTip(contribution)"
-          >
-            <template #actions>
-              <div class="management-actions">
-                <v-select
-                  class="assignment-select"
-                  density="compact"
-                  hide-details
-                  :disabled="contribution.status !== 'available'"
-                  :items="assignmentOptions"
-                  item-title="title"
-                  item-value="value"
-                  :model-value="contribution.assigneeId ?? ''"
-                  variant="outlined"
-                  @update:model-value="assignContribution(contribution.id, $event)"
-                />
-                <div class="management-action-buttons">
-                  <v-btn
-                    :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
-                    icon="i-mdi:content-copy"
-                    size="small"
-                    variant="tonal"
-                    @click="copyContribution(contribution)"
-                  />
-                  <v-btn
-                    v-if="contribution.status === 'available'"
-                    :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
-                    icon="i-mdi:pencil-outline"
-                    size="small"
-                    variant="tonal"
-                    @click="openContributionEditor(contribution)"
-                  />
-                  <v-btn
-                    :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
-                    color="error"
-                    icon="i-mdi:delete-outline"
-                    size="small"
-                    variant="tonal"
-                    @click="requestContributionDelete(contribution)"
-                  />
-                </div>
-              </div>
-            </template>
-          </ChildContributionCard>
+        <div class="contribution-card-list d-flex flex-column ga-5">
+          <section v-for="group in managedContributionGroups" :key="group.memberId ?? 'open'">
+            <div class="member-task-heading d-flex align-center ga-2 mb-2">
+              <v-avatar color="primary" size="30" variant="tonal">
+                {{ store.members.find((member) => member.id === group.memberId)?.avatar ?? "✨" }}
+              </v-avatar>
+              <strong>{{ group.title }}</strong>
+              <v-chip size="x-small" variant="tonal">{{ group.contributions.length }}</v-chip>
+            </div>
+            <div class="d-flex flex-column ga-3">
+              <ChildContributionCard
+                v-for="contribution in group.contributions"
+                :key="contribution.id"
+                :active-child-id="store.activeChildId"
+                :allow-invite="false"
+                :contribution="contribution"
+                :family-members="store.members"
+                :family-time-zone="store.familyTimeZone"
+                :personalize-assignee="false"
+                :promotion="promotionFor(contribution.id)"
+                :reward="store.rewardForContribution(contribution.id)"
+                :show-participant-actions="false"
+                :tip="contributionTip(contribution)"
+              >
+                <template #actions>
+                  <div class="management-actions">
+                    <v-select
+                      class="assignment-select"
+                      density="compact"
+                      hide-details
+                      :disabled="contribution.status !== 'available'"
+                      :items="assignmentOptions"
+                      item-title="title"
+                      item-value="value"
+                      :model-value="contribution.assigneeId ?? ''"
+                      variant="outlined"
+                      @update:model-value="assignContribution(contribution.id, $event)"
+                    />
+                    <div class="management-action-buttons">
+                      <v-btn
+                        :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
+                        icon="i-mdi:content-copy"
+                        size="small"
+                        variant="tonal"
+                        @click="copyContribution(contribution)"
+                      />
+                      <v-btn
+                        v-if="contribution.status === 'available'"
+                        :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
+                        icon="i-mdi:pencil-outline"
+                        size="small"
+                        variant="tonal"
+                        @click="openContributionEditor(contribution)"
+                      />
+                      <v-btn
+                        :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
+                        color="error"
+                        icon="i-mdi:delete-outline"
+                        size="small"
+                        variant="tonal"
+                        @click="requestContributionDelete(contribution)"
+                      />
+                    </div>
+                  </div>
+                </template>
+              </ChildContributionCard>
+            </div>
+          </section>
         </div>
       </template>
     </template>
@@ -634,7 +645,7 @@ const {
   guardianOwnContributions,
   guardianTasksToRate,
   kindOptions,
-  managedContributions,
+  managedContributionGroups,
   memberName,
   multiplierOptions,
   newContribution,

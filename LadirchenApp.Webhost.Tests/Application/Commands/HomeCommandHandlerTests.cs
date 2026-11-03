@@ -18,6 +18,8 @@ public sealed class HomeCommandHandlerTests
 {
   private static readonly FamilyId _familyId = new(Guid.Parse("cbe09dd1-2036-4e47-865b-da4cf973392a"));
   private static readonly FamilyMemberId _administratorId = new("guardian");
+  private static readonly FamilyMemberId _supporterId = new("supporter");
+  private static readonly FamilyMemberId _externalGuardianId = new("external-guardian");
   private static readonly FamilyMemberId _childId = new("child");
   private static readonly DateTimeOffset _now = new(2026, 10, 10, 15, 0, 0, TimeSpan.Zero);
 
@@ -111,7 +113,7 @@ public sealed class HomeCommandHandlerTests
   }
 
   [Test]
-  public async Task PurchasesAndArrangementEnforceRoleLevelAndSubscriptionInTheDomain()
+  public async Task ChildPurchasesAndArrangementEnforceLevelAndSubscriptionInTheDomain()
   {
     var store = CreateStore(500, null, HouseSubscriptionTier.Free);
     var handler = store.CreateCommandHandler();
@@ -132,13 +134,36 @@ public sealed class HomeCommandHandlerTests
         id = "bookshelf",
       })
     ).Throws<FamilyCommandException>();
+  }
+
+  [Test]
+  public async Task InternalGuardiansPurchaseWithoutBalanceAndExternalGuardiansCannotPurchase()
+  {
+    var store = CreateStore(1, null, HouseSubscriptionTier.Pro);
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _administratorId, "home.purchase-theme", new
+    {
+      id = "halloween-night",
+    });
+    await ExecuteAsync(handler, _supporterId, "home.purchase-accessory", new
+    {
+      id = "wall-art",
+    });
+
+    await Assert.That(store.RequiredHouse().Themes.Single(item => item.Id == "halloween-night").Owned)
+      .IsTrue();
+    await Assert.That(Accessory(store, "wall-art").Owned).IsTrue();
+    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(1);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(1);
 
     await Assert.That(async () =>
-      await ExecuteAsync(handler, _administratorId, "home.purchase-accessory", new
+      await ExecuteAsync(handler, _externalGuardianId, "home.purchase-accessory", new
       {
-        id = "wall-art",
+        id = "floor-lamp",
       })
-    ).Throws<FamilyCommandException>();
+    ).Throws<DomainRuleException>();
+    await Assert.That(Accessory(store, "floor-lamp").Owned).IsFalse();
   }
 
   private static TestTypedAggregateStore CreateStore(
@@ -160,6 +185,24 @@ public sealed class HomeCommandHandlerTests
       "Child",
       MemberRole.Child,
       GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    family.AddMember(
+      _administratorId,
+      _supporterId,
+      "Supporter",
+      MemberRole.Guardian,
+      GuardianAccess.Supporter,
+      false,
+      _now
+    );
+    family.AddMember(
+      _administratorId,
+      _externalGuardianId,
+      "External guardian",
+      MemberRole.Guardian,
+      GuardianAccess.External,
       false,
       _now
     );

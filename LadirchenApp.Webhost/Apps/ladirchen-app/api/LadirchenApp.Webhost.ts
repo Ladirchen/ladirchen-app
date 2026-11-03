@@ -604,6 +604,65 @@ export class Client {
     return Promise.resolve<void>(null as any);
   }
 
+  getFamilyBootstrapReadModel(
+    familyId: string,
+    viewerMemberId?: string | null | undefined,
+    signal?: AbortSignal,
+  ): Promise<FamilyBootstrapReadModelResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/read-models/bootstrap?";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (viewerMemberId !== undefined && viewerMemberId !== null)
+      url_ += "viewerMemberId=" + encodeURIComponent("" + viewerMemberId) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetFamilyBootstrapReadModel(_response);
+    });
+  }
+
+  protected processGetFamilyBootstrapReadModel(response: Response): Promise<FamilyBootstrapReadModelResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as FamilyBootstrapReadModelResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException("A server side error occurred.", status, _responseText, _headers);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<FamilyBootstrapReadModelResponse>(null as any);
+  }
+
   getContributionsReadModel(
     familyId: string,
     viewerMemberId?: string | null | undefined,
@@ -955,6 +1014,132 @@ export class Client {
     }
     return Promise.resolve<SavingsReadModelResponse>(null as any);
   }
+
+  getWebPushConfiguration(signal?: AbortSignal): Promise<WebPushConfigurationResponse> {
+    let url_ = this.baseUrl + "/api/push/configuration";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processGetWebPushConfiguration(_response);
+    });
+  }
+
+  protected processGetWebPushConfiguration(response: Response): Promise<WebPushConfigurationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as WebPushConfigurationResponse);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<WebPushConfigurationResponse>(null as any);
+  }
+
+  saveWebPushSubscription(request: WebPushSubscriptionRequest, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/push/subscriptions";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processSaveWebPushSubscription(_response);
+    });
+  }
+
+  protected processSaveWebPushSubscription(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
+    } else if (status === 503) {
+      return response.text().then((_responseText) => {
+        let result503: any = null;
+        result503 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result503);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  deleteWebPushSubscription(endpoint: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/push/subscriptions?";
+    if (endpoint === undefined || endpoint === null)
+      throw new globalThis.Error("The parameter 'endpoint' must be defined and cannot be null.");
+    else url_ += "endpoint=" + encodeURIComponent("" + endpoint) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processDeleteWebPushSubscription(_response);
+    });
+  }
+
+  protected processDeleteWebPushSubscription(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
 }
 
 export interface AboutInfo {
@@ -1006,6 +1191,33 @@ export interface ContributionsAcknowledgeRewardCommandRequest extends ExecuteFam
 
 export interface IdFamilyCommandPayload {
   id: string;
+}
+
+export interface BehaviorAcknowledgeNoticeCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: BehaviorIncidentPayload;
+}
+
+export interface BehaviorIncidentPayload {
+  incidentId: string;
+}
+
+export interface BehaviorIssueWarningCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: BehaviorWarningPayload;
+}
+
+export interface BehaviorWarningPayload {
+  childId: string;
+  deduction: number;
+  incidentId: string;
+  reason: string;
+}
+
+export interface BehaviorResetStatusCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: BehaviorChildPayload;
+}
+
+export interface BehaviorChildPayload {
+  childId: string;
 }
 
 export interface ContributionsAddCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1276,6 +1488,8 @@ export interface AddShopRewardPayload {
   availableFrom?: string | null;
   availableUntil?: string | null;
   isVisible?: boolean | null;
+  promotionalPrice?: number | null;
+  promotionUntil?: string | null;
 }
 
 export interface RewardShopCancelCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1512,6 +1726,15 @@ export interface CreateMemberInvitationRequest {
   role: string;
 }
 
+export interface FamilyBootstrapReadModelResponse {
+  contributions: ContributionsReadModelResponse;
+  familyProfile: FamilyProfileReadModelResponse;
+  familyProgression?: FamilyProgressionReadModelResponse | null;
+  homeCustomization?: HomeCustomizationReadModelResponse | null;
+  rewardShop: RewardShopReadModelResponse;
+  savings: SavingsReadModelResponse;
+}
+
 export interface ContributionsReadModelResponse {
   readModelType: string;
   revision: number;
@@ -1643,6 +1866,9 @@ export interface FamilyPermissionsReadModel {
   canReviewChildTasks: boolean;
   canViewTaskAssignments: boolean;
   canViewHouse: boolean;
+  canPurchaseHouseContentWithoutBalance: boolean;
+  canManageShop: boolean;
+  canReceivePushNotifications: boolean;
 }
 
 export interface FamilyPetReadModel {
@@ -1816,6 +2042,9 @@ export interface ShopRewardReadModel {
   description: string;
   icon: string;
   price: number;
+  regularPrice?: number | null;
+  promotionActive?: boolean | null;
+  promotionUntil?: string | null;
   category: string;
   quantity: number;
   conditions: string;
@@ -1841,13 +2070,24 @@ export interface SavingsReadModelResponse {
 export interface SavingsReadModelState {
   availableBalances: { [key: string]: number };
   balances: { [key: string]: number };
+  behaviorStatuses: { [key: string]: ChildBehaviorStatusReadModel };
   familyCurrencyCode: string;
   goals: SavingGoalReadModel[];
   ladirchenPerCurrencyUnit: number;
   pendingGuardianGifts: GuardianGiftReadModel[];
+  pendingBehaviorNotices: BehaviorNoticeReadModel[];
   settledInterestPeriods: string[];
   sharedSavedBalances: { [key: string]: number };
   vouchers: SavingsVoucherReadModel[];
+}
+
+export interface ChildBehaviorStatusReadModel {
+  childId: string;
+  level: string;
+  warningCount: number;
+  tasksBlocked: boolean;
+  lastReason?: string | null;
+  updatedAtUtc?: string | null;
 }
 
 export interface SavingGoalReadModel {
@@ -1899,6 +2139,16 @@ export interface GuardianGiftReadModel {
   amount: number;
 }
 
+export interface BehaviorNoticeReadModel {
+  id: string;
+  childId: string;
+  guardianId: string;
+  level: string;
+  deductedAmount: number;
+  reason: string;
+  occurredAtUtc: string;
+}
+
 export interface SavingsVoucherReadModel {
   id: string;
   goalId: string;
@@ -1911,6 +2161,18 @@ export interface SavingsVoucherReadModel {
   visibleToMemberIds: string[];
   consentableByMemberIds: string[];
   redeemableByMemberIds: string[];
+}
+
+export interface WebPushConfigurationResponse {
+  configured?: boolean;
+  publicKey?: string | null;
+}
+
+export interface WebPushSubscriptionRequest {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  locale?: string | null;
 }
 
 export class ApiException extends Error {

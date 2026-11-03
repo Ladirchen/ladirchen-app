@@ -29,6 +29,15 @@ const categories = exhaustiveValues<ShopRewardCategory>({
 function isUniqueDomainIdArray(value: unknown): boolean {
   return isArrayOf(value, isDomainId) && new Set(value).size === value.length;
 }
+function hasValidPromotion(value: Record<string, unknown>): boolean {
+  return (
+    isFiniteNumber(value.price) &&
+    value.price >= 0 &&
+    (value.regularPrice === undefined || (isFiniteNumber(value.regularPrice) && value.regularPrice > value.price)) &&
+    typeof value.promotionActive === "boolean" &&
+    (value.promotionUntil === undefined || isCalendarDate(value.promotionUntil))
+  );
+}
 function isShopReward(value: unknown): value is ShopReward {
   return (
     isRecord(value) &&
@@ -37,8 +46,7 @@ function isShopReward(value: unknown): value is ShopReward {
     hasLocalizedValue(value, "title") &&
     typeof value.description === "string" &&
     isNonEmptyString(value.icon) &&
-    isFiniteNumber(value.price) &&
-    value.price >= 0 &&
+    hasValidPromotion(value) &&
     isKnownString(value.category, categories) &&
     isNonNegativeInteger(value.quantity) &&
     typeof value.conditions === "string" &&

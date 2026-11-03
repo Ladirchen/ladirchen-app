@@ -15,7 +15,7 @@
             <h2 class="section-title">{{ t("shop.rewards.title") }}</h2>
           </div>
           <v-btn
-            v-if="store.viewerRole === 'guardian'"
+            v-if="store.permissions.canManageShop"
             color="primary"
             prepend-icon="i-mdi:plus"
             rounded="lg"
@@ -219,7 +219,7 @@
             <div v-if="!accessory.owned" class="catalog-actions accessory-actions ga-2">
               <span class="price"><LadirchenAmount :value="accessory.price" /></span>
               <v-btn
-                v-if="store.viewerRole === 'child'"
+                v-if="canPurchaseHouseContent"
                 class="catalog-buy-button catalog-buy-button--compact"
                 color="info"
                 :disabled="!affordable"
@@ -283,6 +283,24 @@
             />
           </div>
           <v-textarea v-model="newReward.conditions" :label="t('shop.form.conditions')" rows="2" variant="outlined" />
+          <v-switch v-model="newReward.promotionEnabled" color="warning" inset :label="t('shop.form.promotion')" />
+          <div v-if="newReward.promotionEnabled" class="d-grid reward-form ga-3">
+            <v-text-field
+              v-model.number="newReward.promotionalPrice"
+              :label="t('shop.form.promotionalPrice')"
+              min="0"
+              suffix="L"
+              type="number"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model="newReward.promotionUntil"
+              :label="t('shop.form.promotionUntil')"
+              :min="minimumAvailableDate"
+              type="date"
+              variant="outlined"
+            />
+          </div>
           <v-select
             v-model="newReward.publicationMode"
             :items="publicationModeOptions"
@@ -383,6 +401,9 @@ const {
   catalogItemsTitle,
 } = useShopPage();
 const canViewShop = computed(() => store.viewerRole === "child" || store.viewerRole === "guardian");
+const canPurchaseHouseContent = computed(
+  () => store.viewerRole === "child" || store.permissions.canPurchaseHouseContentWithoutBalance,
+);
 const rewardDialogTitle = computed(() => t(rewardToEdit.value ? "shop.form.editTitle" : "shop.form.title"));
 const editionCards = computed(() =>
   houseEditions.value.map(function callback(edition) {
@@ -417,7 +438,7 @@ const accessoryCards = computed(() =>
 );
 function editionAction(owned: boolean, isActive: boolean): EditionAction {
   if (!owned) {
-    return store.viewerRole === "child" ? "buy" : "childPurchase";
+    return canPurchaseHouseContent.value ? "buy" : "childPurchase";
   }
 
   return isActive ? "selected" : "use";
@@ -431,7 +452,7 @@ function furnitureSetStatus(owned: boolean, available: boolean): FurnitureSetSta
     return "locked";
   }
 
-  return store.viewerRole === "child" ? "buy" : "childPurchase";
+  return canPurchaseHouseContent.value ? "buy" : "childPurchase";
 }
 function onDeleteDialogToggle(open: boolean) {
   if (!open) {

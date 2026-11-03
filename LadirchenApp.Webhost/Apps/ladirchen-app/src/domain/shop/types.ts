@@ -13,6 +13,9 @@ export interface ShopReward {
   description: string;
   icon: string;
   price: number;
+  regularPrice?: number;
+  promotionActive?: boolean;
+  promotionUntil?: string;
   category: ShopRewardCategory;
   quantity: number;
   conditions: string;
@@ -40,4 +43,6 @@ export interface NewShopReward {
   availableFrom?: string;
   availableUntil?: string;
   isVisible?: boolean;
+  promotionalPrice?: number;
+  promotionUntil?: string;
 }

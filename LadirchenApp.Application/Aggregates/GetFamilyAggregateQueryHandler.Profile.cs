@@ -34,6 +34,25 @@ public sealed partial class GetFamilyAggregateQueryHandler
       ),
       "home customization"
     );
+
+    return ProjectFamilyProfile(
+      loadedFamily,
+      loadedProgression,
+      loadedCustomization,
+      authenticatedMemberId,
+      viewerId
+    );
+  }
+
+  private static FamilyProfileReadModelProjection ProjectFamilyProfile(
+    LoadedAggregate<Domain.Family.Family> loadedFamily,
+    LoadedAggregate<Domain.House.FamilyHouse> loadedProgression,
+    LoadedAggregate<FamilyHouseShop> loadedCustomization,
+    FamilyMemberId authenticatedMemberId,
+    FamilyMemberId viewerId
+  )
+  {
+    var family = loadedFamily.Root;
     var permissionPolicy = new FamilyPermissionPolicy();
     var authenticatedPermissions = permissionPolicy.Resolve(
       family.ActiveMember(authenticatedMemberId)
@@ -63,7 +82,12 @@ public sealed partial class GetFamilyAggregateQueryHandler
       viewerPermissions.ManageChildTasks && authenticatedPermissions.ManageChildTasks,
       viewerPermissions.ReviewChildTasks && authenticatedPermissions.ReviewChildTasks,
       viewerPermissions.ViewTaskAssignments && authenticatedPermissions.ViewTaskAssignments,
-      viewerPermissions.ViewHouse && authenticatedPermissions.ViewHouse
+      viewerPermissions.ViewHouse && authenticatedPermissions.ViewHouse,
+      viewerPermissions.PurchaseHouseContentWithoutBalance
+        && authenticatedPermissions.PurchaseHouseContentWithoutBalance,
+      viewerPermissions.ManageShop && authenticatedPermissions.ManageShop,
+      viewerPermissions.ReceivePushNotifications
+        && authenticatedPermissions.ReceivePushNotifications
     );
     var weeklyStreaks = members.ToDictionary(
       member => member.Id,

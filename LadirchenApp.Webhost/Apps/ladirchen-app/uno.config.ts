@@ -7,6 +7,7 @@ const vuetifyIconSafelist = Object.values(vuetifyIconAliases).filter(
 );
 
 const applicationIconSafelist = [
+  "i-mdi:account-child-outline",
   "i-mdi:account-star-outline",
   "i-mdi:calendar-star",
   "i-mdi:chart-line",

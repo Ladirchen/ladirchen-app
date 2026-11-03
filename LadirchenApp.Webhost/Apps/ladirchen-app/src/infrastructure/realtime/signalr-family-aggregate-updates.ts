@@ -1,4 +1,4 @@
-import { HttpTransportType, HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
+import { HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
 import type { HubConnection } from "@microsoft/signalr";
 import type {
   FamilyAggregateChanged,
@@ -14,6 +14,8 @@ import {
 } from "@/application/contracts/validation/runtime-validation";
 import { isFamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 import type { FamilyId } from "@/domain/shared/identifiers";
+
+const initialConnectionRetryDelays = [0, 1_000, 3_000] as const;
 
 function parseChange(value: unknown): FamilyAggregateChanged | null {
   if (!isRecord(value)) {
@@ -46,15 +48,14 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
   private activeFamilyId: FamilyId | null = null;
   private onChanged: FamilyAggregateChangedHandler | null = null;
   private onReconnected: FamilyAggregateReconnectedHandler | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   public constructor(apiBaseUrl: string) {
     this.connection = new HubConnectionBuilder()
       .withUrl(`${apiBaseUrl}/hubs/family-updates`, {
-        skipNegotiation: true,
-        transport: HttpTransportType.WebSockets,
         withCredentials: true,
       })
-      .withAutomaticReconnect()
+      .withAutomaticReconnect([0, 2_000, 10_000, 30_000])
       .configureLogging(LogLevel.Warning)
       .build();
     this.connection.on("FamilyAggregateChanged", (value: unknown) => {
@@ -66,6 +67,9 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
     });
     this.connection.onreconnected(() => {
       void this.resubscribeAndRefresh().catch(() => undefined);
+    });
+    this.connection.onclose(() => {
+      this.scheduleReconnect();
     });
   }
 
@@ -80,7 +84,7 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
     this.onReconnected = onReconnected;
 
     if (this.connection.state === HubConnectionState.Disconnected) {
-      await this.connection.start();
+      await this.startWithRetry();
     }
 
     if (previousFamilyId && previousFamilyId !== familyId && this.connection.state === HubConnectionState.Connected) {
@@ -94,6 +98,7 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
     this.activeFamilyId = null;
     this.onChanged = null;
     this.onReconnected = null;
+    this.clearReconnectTimer();
 
     if (this.connection.state !== HubConnectionState.Disconnected) {
       await this.connection.stop();
@@ -111,5 +116,64 @@ export class SignalRFamilyAggregateUpdatesGateway implements FamilyAggregateUpda
   private async resubscribeAndRefresh(): Promise<void> {
     await this.subscribeToActiveFamily();
     await this.onReconnected?.();
+  }
+
+  private scheduleReconnect(): void {
+    if (!this.activeFamilyId || this.reconnectTimer) {
+      return;
+    }
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.restartAfterDisconnect();
+    }, 30_000);
+  }
+
+  private async restartAfterDisconnect(): Promise<void> {
+    if (!this.activeFamilyId || this.connection.state !== HubConnectionState.Disconnected) {
+      return;
+    }
+
+    try {
+      await this.connection.start();
+      await this.resubscribeAndRefresh();
+    } catch {
+      this.scheduleReconnect();
+    }
+  }
+
+  private async startWithRetry(): Promise<void> {
+    let lastError: unknown;
+
+    for (const retryDelay of initialConnectionRetryDelays) {
+      if (retryDelay > 0) {
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, retryDelay);
+        });
+      }
+
+      if (!this.activeFamilyId) {
+        return;
+      }
+
+      try {
+        await this.connection.start();
+
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError;
+  }
+
+  private clearReconnectTimer(): void {
+    if (!this.reconnectTimer) {
+      return;
+    }
+
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
   }
 }

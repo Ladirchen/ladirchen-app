@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Application.Commands;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
@@ -27,6 +28,17 @@ public sealed partial class GetFamilyAggregateQueryHandler
       await _progressionRepository.LoadAsync(family, cancellationToken),
       "family progression"
     );
+
+    return ProjectSavings(family, loadedEconomy, loadedProgression, viewerId);
+  }
+
+  private SavingsFamilyReadModelProjection ProjectSavings(
+    Family family,
+    LoadedFamilyEconomy loadedEconomy,
+    LoadedAggregate<Domain.House.FamilyHouse> loadedProgression,
+    FamilyMemberId viewerId
+  )
+  {
     var period = IsoWeekPeriod.For(family.TimeZone.LocalDate(_timeProvider.GetUtcNow()));
     var progression = FamilyProgressionEvaluator.Evaluate(
       family,
@@ -45,6 +57,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       new SavingsReadModelState(
         family,
         loadedEconomy.Root,
+        _timeProvider.GetUtcNow(),
         loadedProgression.Root.MaximumSavingsInterestRate,
         stages,
         storedBalanceMemberIds

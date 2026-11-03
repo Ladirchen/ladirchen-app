@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Commands;
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
+using LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -115,6 +117,40 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
         );
       }
 
+      foreach (var notification in result.UserNotifications)
+      {
+        var subscriptions = await _database.WebPushSubscriptions
+          .Where(item =>
+            item.FamilyId == command.FamilyId.Value
+            && item.MemberId == notification.RecipientId.Value
+            && _database.Set<FamilyMemberEntity>().Any(member =>
+              member.FamilyId == item.FamilyId
+              && member.MemberId == item.MemberId
+              && !member.InvitationPending
+              && member.GuardianAccess != (int)GuardianAccess.External
+            )
+          )
+          .ToArrayAsync(cancellationToken);
+
+        foreach (var subscription in subscriptions)
+        {
+          _database.WebPushNotifications.Add(new WebPushNotificationEntity
+          {
+            BodyDe = notification.BodyDe,
+            BodyEn = notification.BodyEn,
+            FamilyId = command.FamilyId.Value,
+            MemberId = notification.RecipientId.Value,
+            MessageId = Guid.NewGuid(),
+            OccurredAt = receipt.CompletedAt.Value,
+            SubscriptionId = subscription.SubscriptionId,
+            Tag = notification.Tag,
+            TitleDe = notification.TitleDe,
+            TitleEn = notification.TitleEn,
+            Url = notification.Url,
+          });
+        }
+      }
+
       await _database.SaveChangesAsync(cancellationToken);
       await transaction.CommitAsync(cancellationToken);
 
@@ -203,6 +239,17 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
           change.UpdatedAt,
           change.UpdatedBy.Value
         ))
+        .ToArray(),
+      result.UserNotifications
+        .Select(notification => new StoredFamilyUserNotification(
+          notification.RecipientId.Value,
+          notification.TitleDe,
+          notification.BodyDe,
+          notification.TitleEn,
+          notification.BodyEn,
+          notification.Url,
+          notification.Tag
+        ))
         .ToArray()
     );
 
@@ -223,7 +270,19 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
       ))
       .ToArray();
 
-    return new FamilyCommandResult(changes);
+    var notifications = (stored.UserNotifications ?? Array.Empty<StoredFamilyUserNotification>())
+      .Select(notification => new FamilyUserNotification(
+        new FamilyMemberId(notification.RecipientId),
+        notification.TitleDe,
+        notification.BodyDe,
+        notification.TitleEn,
+        notification.BodyEn,
+        notification.Url,
+        notification.Tag
+      ))
+      .ToArray();
+
+    return new FamilyCommandResult(changes, notifications);
   }
 
   private static bool IsUniqueConstraintViolation(DbUpdateException exception)
@@ -244,7 +303,18 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinator : IFamilyCommand
   }
 
   private sealed record StoredFamilyCommandResult(
-    IReadOnlyList<StoredFamilyAggregateChange> ChangedAggregates
+    IReadOnlyList<StoredFamilyAggregateChange> ChangedAggregates,
+    IReadOnlyList<StoredFamilyUserNotification>? UserNotifications
+  );
+
+  private sealed record StoredFamilyUserNotification(
+    string RecipientId,
+    string TitleDe,
+    string BodyDe,
+    string TitleEn,
+    string BodyEn,
+    string Url,
+    string Tag
   );
 
   private sealed record StoredFamilyAggregateChange(

@@ -150,7 +150,7 @@ export const contributionsActions = {
     );
   },
   revealNextContributionReward(this: FamilyWorldStoreContext) {
-    if (this.rewardAnimation.visible || this.guardianGiftAnimation.visible) {
+    if (this.rewardAnimation.visible || this.guardianGiftAnimation.visible || this.behaviorNoticeAnimation.visible) {
       return;
     }
 
@@ -192,6 +192,7 @@ export const contributionsActions = {
     }
 
     this.$familyWorld.scheduler.schedule(() => {
+      this.revealNextBehaviorNotice();
       this.revealNextContributionReward();
       this.revealNextGuardianGift();
     }, REWARD_REVEAL_DELAY_MS);

@@ -39,6 +39,7 @@ public static partial class WebApplicationExtensions
       app.UseForwardedHeaders();
     }
 
+    app.UseResponseCompression();
     app.UseSerilogRequestLogging();
     app.UseNswag();
     app.UseWhenDev(appLogger);
@@ -52,6 +53,7 @@ public static partial class WebApplicationExtensions
     app.MapFamilyReadModelApi();
     app.MapFamilyCommandApi();
     app.MapFamilyProjectionApi();
+    app.MapWebPushApi();
     app.MapHub<FamilyUpdatesHub>("/hubs/family-updates");
     app.MapSinglePageApps(appSettings);
   }

@@ -43,12 +43,14 @@ public sealed partial class FamilyHouseShop
   public bool CanPurchaseAccessory(
     string accessoryId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     return CanPurchaseAccessory(
       RequireAccessory(accessoryId),
       actorIsChild,
+      canPurchaseWithoutBalance,
       availableBalance
     );
   }
@@ -56,12 +58,14 @@ public sealed partial class FamilyHouseShop
   public bool CanPurchaseFurnitureSet(
     string furnitureSetId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     return CanPurchaseSet(
       RequireFurnitureSet(furnitureSetId),
       actorIsChild,
+      canPurchaseWithoutBalance,
       availableBalance
     );
   }
@@ -69,15 +73,22 @@ public sealed partial class FamilyHouseShop
   public bool CanPurchaseTheme(
     string themeId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
-    return CanPurchaseTheme(RequireTheme(themeId), actorIsChild, availableBalance);
+    return CanPurchaseTheme(
+      RequireTheme(themeId),
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    );
   }
 
   public bool CanPurchaseRoomDesign(
     string designId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
@@ -87,14 +98,25 @@ public sealed partial class FamilyHouseShop
       design,
       RequireTheme(design.ThemeId),
       actorIsChild,
+      canPurchaseWithoutBalance,
       availableBalance
     );
   }
 
-  public bool PurchaseAccessory(string accessoryId, bool actorIsChild, decimal availableBalance)
+  public bool PurchaseAccessory(
+    string accessoryId,
+    bool actorIsChild,
+    bool canPurchaseWithoutBalance,
+    decimal availableBalance
+  )
   {
     var accessory = RequireAccessory(accessoryId);
-    var purchased = PurchaseAccessory(accessory, actorIsChild, availableBalance);
+    var purchased = PurchaseAccessory(
+      accessory,
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    );
 
     if (purchased)
     {
@@ -107,12 +129,18 @@ public sealed partial class FamilyHouseShop
   public HousePurchase? PurchaseAccessoryContent(
     string accessoryId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     var accessory = RequireAccessory(accessoryId);
 
-    return PurchaseAccessory(accessoryId, actorIsChild, availableBalance)
+    return PurchaseAccessory(
+      accessoryId,
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    )
       ? new HousePurchase(accessory.Id, accessory.Price)
       : null;
   }
@@ -120,11 +148,12 @@ public sealed partial class FamilyHouseShop
   public bool PurchaseFurnitureSet(
     string furnitureSetId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     var set = RequireFurnitureSet(furnitureSetId);
-    var purchased = PurchaseSet(set, actorIsChild, availableBalance);
+    var purchased = PurchaseSet(set, actorIsChild, canPurchaseWithoutBalance, availableBalance);
 
     if (purchased)
     {
@@ -140,12 +169,18 @@ public sealed partial class FamilyHouseShop
   public HousePurchase? PurchaseFurnitureSetContent(
     string furnitureSetId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     var set = RequireFurnitureSet(furnitureSetId);
 
-    return PurchaseFurnitureSet(furnitureSetId, actorIsChild, availableBalance)
+    return PurchaseFurnitureSet(
+      furnitureSetId,
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    )
       ? new HousePurchase(set.Id, set.Price)
       : null;
   }
@@ -215,12 +250,18 @@ public sealed partial class FamilyHouseShop
     return reset;
   }
 
-  public bool PurchaseTheme(string themeId, bool actorIsChild, decimal availableBalance)
+  public bool PurchaseTheme(
+    string themeId,
+    bool actorIsChild,
+    bool canPurchaseWithoutBalance,
+    decimal availableBalance
+  )
   {
     return PurchaseTheme(
       RequireTheme(themeId),
       _stateRoomDesigns.Values,
       actorIsChild,
+      canPurchaseWithoutBalance,
       availableBalance
     );
   }
@@ -228,12 +269,13 @@ public sealed partial class FamilyHouseShop
   public HousePurchase? PurchaseThemeContent(
     string themeId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     var theme = RequireTheme(themeId);
 
-    return PurchaseTheme(themeId, actorIsChild, availableBalance)
+    return PurchaseTheme(themeId, actorIsChild, canPurchaseWithoutBalance, availableBalance)
       ? new HousePurchase(theme.Id, theme.Price)
       : null;
   }
@@ -246,6 +288,7 @@ public sealed partial class FamilyHouseShop
   public bool PurchaseRoomDesign(
     string designId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
@@ -256,6 +299,7 @@ public sealed partial class FamilyHouseShop
       RequireTheme(design.ThemeId),
       _stateRoomDesigns.Values,
       actorIsChild,
+      canPurchaseWithoutBalance,
       availableBalance
     );
   }
@@ -263,12 +307,18 @@ public sealed partial class FamilyHouseShop
   public HousePurchase? PurchaseRoomDesignContent(
     string designId,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     var design = RequireRoomDesign(designId);
 
-    return PurchaseRoomDesign(designId, actorIsChild, availableBalance)
+    return PurchaseRoomDesign(
+      designId,
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    )
       ? new HousePurchase(design.Id, design.Price)
       : null;
   }

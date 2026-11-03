@@ -420,6 +420,7 @@ public sealed partial class FamilyEconomy
           state.Window
         )
       );
+      reward.SetPromotion(state.PromotionalPrice, state.PromotionUntil);
       reward.Restore(state.Status, state.Deleted);
       _shopRewards.Add(reward);
     }
@@ -483,7 +484,7 @@ public sealed partial class FamilyEconomy
       if (pendingRequest is not null)
       {
         Rules.Require(
-          pendingRequest.Price == reward.Price,
+          pendingRequest.Price == reward.EffectivePrice(_timeZone.LocalDate(pendingRequest.RequestedAt)),
           DomainError.InvalidState,
           "A pending request must retain the current reward price."
         );
@@ -672,7 +673,9 @@ public sealed partial class FamilyEconomy
       reward.IsVisible,
       reward.Window,
       reward.Status,
-      reward.Deleted
+      reward.Deleted,
+      reward.PromotionalPrice,
+      reward.PromotionUntil
     );
   }
 
@@ -698,6 +701,7 @@ public sealed partial class FamilyEconomy
       HouseContentId id => new LedgerSourceState(LedgerSourceKind.HouseContent, id.Value),
       RedemptionRequestId id => new LedgerSourceState(LedgerSourceKind.RedemptionRequest, id.Value),
       SavingGoalId id => new LedgerSourceState(LedgerSourceKind.SavingGoal, id.Value),
+      BehaviorIncidentId id => new LedgerSourceState(LedgerSourceKind.BehaviorIncident, id.Value),
       _ => throw new DomainRuleException(DomainError.InvalidState, "The ledger source type is unsupported."),
     };
   }
@@ -711,6 +715,7 @@ public sealed partial class FamilyEconomy
       LedgerSourceKind.HouseContent => new HouseContentId(source.Id),
       LedgerSourceKind.RedemptionRequest => new RedemptionRequestId(source.Id),
       LedgerSourceKind.SavingGoal => new SavingGoalId(source.Id),
+      LedgerSourceKind.BehaviorIncident => new BehaviorIncidentId(source.Id),
       _ => throw new DomainRuleException(DomainError.InvalidState, "The ledger source type is invalid."),
     };
   }

@@ -1,7 +1,10 @@
 import { createLazyAssetLoader, createRawAssetLoader } from "@/shared/assets/lazy-asset-loader";
 import type { AssetGlobModules } from "@/shared/assets/lazy-asset-loader";
 import type { FurnitureVisualId } from "@/domain/house";
-const modules = import.meta.glob("../../../assets/furniture/*.webp", { import: "default" }) as AssetGlobModules;
+const modules = import.meta.glob("../../../assets/furniture/*.webp", {
+  eager: true,
+  import: "default",
+}) as AssetGlobModules;
 const getFurnitureSpriteUrl = createLazyAssetLoader<FurnitureVisualId>(modules);
 const loadFurnitureAsset = createRawAssetLoader(modules);
 // retro-fridge has distinct closed/open artwork that doesn't follow the "<id>.webp" convention
@@ -11,9 +14,7 @@ export interface FurnitureSpriteUrls {
   readonly openUrl?: Promise<string>;
 }
 export function getFurnitureSpriteUrls(visual: FurnitureVisualId): FurnitureSpriteUrls {
-
   if (visual === "retro-fridge") {
-
     return {
       closedUrl: loadFurnitureAsset(RETRO_FRIDGE_FILE_NAMES.closed),
       openUrl: loadFurnitureAsset(RETRO_FRIDGE_FILE_NAMES.open),

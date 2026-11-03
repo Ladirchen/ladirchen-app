@@ -295,6 +295,37 @@ public sealed class RewardShopCommandHandlerTests
     await Assert.That(reward.Window).IsEqualTo(new AvailabilityWindow());
   }
 
+  [Test]
+  public async Task ActivePromotionReservesTheReducedPrice()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var rewardId = new ShopRewardId("promotional-voucher");
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.add", new
+    {
+      id = rewardId.Value,
+      title = "Promotional voucher",
+      description = "Available at a reduced price",
+      icon = "gift",
+      price = 80,
+      promotionalPrice = 60,
+      promotionUntil = "2026-10-11",
+      category = "gift",
+      quantity = 1,
+      conditions = "Available once",
+      isVisible = true,
+    });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new { id = rewardId.Value });
+
+    var reward = Reward(store, rewardId);
+    var request = store.RequiredEconomy().RedemptionRequests.Single();
+    await Assert.That(reward.Price.Value).IsEqualTo(80);
+    await Assert.That(reward.PromotionalPrice?.Value).IsEqualTo(60);
+    await Assert.That(request.Price.Value).IsEqualTo(60);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Reserved).IsEqualTo(60);
+  }
+
   private static TestTypedAggregateStore CreateStore()
   {
     var family = new Family(

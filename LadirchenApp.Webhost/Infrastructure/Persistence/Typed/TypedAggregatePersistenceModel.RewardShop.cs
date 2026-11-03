@@ -15,6 +15,11 @@ internal static partial class TypedAggregatePersistenceModel
       {
         table.HasCheckConstraint("CK_FamilyEconomyShopRewards_Category", "\"Category\" >= 0 AND \"Category\" <= 5");
         table.HasCheckConstraint("CK_FamilyEconomyShopRewards_Price", "\"Price\" >= 0");
+        table.HasCheckConstraint(
+          "CK_FamilyEconomyShopRewards_Promotion",
+          "(\"PromotionalPrice\" IS NULL AND \"PromotionUntil\" IS NULL) OR "
+          + "(\"PromotionalPrice\" >= 0 AND \"PromotionalPrice\" < \"Price\" AND \"PromotionUntil\" IS NOT NULL)"
+        );
         table.HasCheckConstraint("CK_FamilyEconomyShopRewards_Quantity", "\"Quantity\" >= 0");
         table.HasCheckConstraint("CK_FamilyEconomyShopRewards_Status", "\"Status\" >= 0 AND \"Status\" <= 2");
         table.HasCheckConstraint(
@@ -26,6 +31,7 @@ internal static partial class TypedAggregatePersistenceModel
     reward.HasKey(item => new { item.FamilyId, item.RewardId });
     reward.Property(item => item.RewardId).HasMaxLength(128);
     reward.Property(item => item.Price).HasColumnType("numeric");
+    reward.Property(item => item.PromotionalPrice).HasColumnType("numeric");
 
     var request = modelBuilder.Entity<EconomyRedemptionRequestEntity>();
     request.ToTable(

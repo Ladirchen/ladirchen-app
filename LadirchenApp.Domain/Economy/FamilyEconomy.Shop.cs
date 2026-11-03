@@ -92,6 +92,30 @@ public sealed partial class FamilyEconomy
     AddDomainEvent(new ShopCatalogChanged(Id, id, "VisibilityChanged", now));
   }
 
+  public void SetShopRewardPromotion(
+    FamilyMemberId actor,
+    ShopRewardId id,
+    LadirchenAmount? promotionalPrice,
+    DateOnly? promotionUntil,
+    DateTimeOffset now
+  )
+  {
+    RequireGuardian(actor);
+    var reward = FindShopReward(id);
+    Rules.Require(
+      reward.Status != ShopRewardStatus.Requested,
+      DomainError.InvalidState,
+      "Pending requests lock promotion changes."
+    );
+    Rules.Require(
+      promotionUntil is null || promotionUntil >= _timeZone.LocalDate(now),
+      DomainError.Closed,
+      "The shop promotion cannot end in the past."
+    );
+    reward.SetPromotion(promotionalPrice, promotionUntil);
+    AddDomainEvent(new ShopCatalogChanged(Id, id, "PromotionChanged", now));
+  }
+
   public void RepublishShopReward(FamilyMemberId actor, ShopRewardId id, DateTimeOffset now)
   {
     RequireGuardian(actor);
@@ -130,13 +154,14 @@ public sealed partial class FamilyEconomy
     );
     RequireNewOperation(operationId);
     var wallet = WalletFor(actor);
+    var effectivePrice = reward.EffectivePrice(_timeZone.LocalDate(now));
     Rules.Require(
-      wallet.Available >= reward.Price.Value,
+      wallet.Available >= effectivePrice.Value,
       DomainError.InsufficientFunds,
       "The purchase exceeds available funds."
     );
-    var reserved = checked(wallet.Reserved + reward.Price.Value);
-    var request = new RedemptionRequest(requestId, rewardId, actor, reward.Price, now);
+    var reserved = checked(wallet.Reserved + effectivePrice.Value);
+    var request = new RedemptionRequest(requestId, rewardId, actor, effectivePrice, now);
     wallet.Set(wallet.Balance, reserved);
     reward.Reserve();
     _requests.Add(request);
@@ -147,13 +172,13 @@ public sealed partial class FamilyEconomy
         actor,
         null,
         LedgerKind.Reserve,
-        reward.Price.Value,
+        effectivePrice.Value,
         requestId,
         "Shop reservation",
         now.ToUniversalTime()
       )
     );
-    AddDomainEvent(new ShopRewardRequested(Id, requestId, actor, rewardId, reward.Price.Value, now));
+    AddDomainEvent(new ShopRewardRequested(Id, requestId, actor, rewardId, effectivePrice.Value, now));
   }
 
   public void CancelShopRewardRequest(

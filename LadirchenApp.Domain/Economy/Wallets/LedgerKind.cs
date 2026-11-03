@@ -7,5 +7,15 @@ namespace LadirchenApp.Domain.Economy;
 
 public enum LedgerKind
 {
-  Credit, Debit, Reserve, Release, Capture, GoalCredit, GoalDebit, BonusForfeited
+  Credit,
+  Debit,
+  Reserve,
+  Release,
+  Capture,
+  GoalCredit,
+  GoalDebit,
+  BonusForfeited,
+  BehaviorWarning,
+  BehaviorNoticeAcknowledged,
+  BehaviorStatusReset,
 }

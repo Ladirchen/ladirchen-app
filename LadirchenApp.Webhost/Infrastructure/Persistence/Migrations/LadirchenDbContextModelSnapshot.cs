@@ -606,9 +606,9 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_Amount", "\"Amount\" >= 0");
 
-                            t.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 7");
+                            t.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 10");
 
-                            t.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_SourceKind", "\"SourceKind\" >= 0 AND \"SourceKind\" <= 4");
+                            t.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_SourceKind", "\"SourceKind\" >= 0 AND \"SourceKind\" <= 5");
                         });
                 });
 
@@ -923,6 +923,12 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
+                    b.Property<DateOnly?>("PromotionUntil")
+                        .HasColumnType("date");
+
+                    b.Property<decimal?>("PromotionalPrice")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -942,6 +948,8 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Category", "\"Category\" >= 0 AND \"Category\" <= 5");
 
                             t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Price", "\"Price\" >= 0");
+
+                            t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Promotion", "(\"PromotionalPrice\" IS NULL AND \"PromotionUntil\" IS NULL) OR (\"PromotionalPrice\" >= 0 AND \"PromotionalPrice\" < \"Price\" AND \"PromotionUntil\" IS NOT NULL)");
 
                             t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Quantity", "\"Quantity\" >= 0");
 
@@ -1445,6 +1453,133 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.ToTable("ShopRewardPresentations", (string)null);
                 });
 
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.WebPushNotificationEntity", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BodyDe")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("BodyEn")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PublishAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Tag")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TitleDe")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TitleEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.HasIndex("PublishedAt", "NextAttemptAt");
+
+                    b.ToTable("WebPushNotifications", (string)null);
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.WebPushSubscriptionEntity", b =>
+                {
+                    b.Property<Guid>("SubscriptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("EndpointHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SubscriptionId");
+
+                    b.HasIndex("EndpointHash")
+                        .IsUnique();
+
+                    b.HasIndex("FamilyId", "MemberId");
+
+                    b.ToTable("WebPushSubscriptions", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
                 {
                     b.Property<int>("Id")
@@ -1894,6 +2029,17 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Navigation("Economy");
                 });
 
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.WebPushNotificationEntity", b =>
+                {
+                    b.HasOne("LadirchenApp.Webhost.Infrastructure.Persistence.WebPushSubscriptionEntity", "Subscription")
+                        .WithMany("Notifications")
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subscription");
+                });
+
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.ClosedFamilyWeekEntity", b =>
                 {
                     b.Navigation("MemberEvaluations");
@@ -1983,6 +2129,11 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Navigation("RoomDesigns");
 
                     b.Navigation("Themes");
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.WebPushSubscriptionEntity", b =>
+                {
+                    b.Navigation("Notifications");
                 });
 #pragma warning restore 612, 618
         }

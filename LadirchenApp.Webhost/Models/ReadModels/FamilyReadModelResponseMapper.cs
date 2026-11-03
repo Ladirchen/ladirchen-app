@@ -348,7 +348,10 @@ internal static class FamilyReadModelResponseMapper
           reward.Title,
           presentation.Description,
           presentation.Icon,
-          reward.Price.Value,
+          reward.EffectivePrice(source.LocalDate).Value,
+          reward.PromotionIsActive(source.LocalDate) ? reward.Price.Value : null,
+          reward.PromotionIsActive(source.LocalDate),
+          FormatDate(reward.PromotionUntil),
           FormatRewardCategory(reward.Category),
           reward.Quantity,
           presentation.Conditions,
@@ -482,10 +485,31 @@ internal static class FamilyReadModelResponseMapper
       new SavingsReadModelState(
         DecimalMap(source.CalculatedState.AvailableBalances),
         DecimalMap(source.CalculatedState.Balances),
+        source.CalculatedState.BehaviorStatuses.ToDictionary(
+          item => item.Key.Value,
+          item => new ChildBehaviorStatusReadModel(
+            item.Key.Value,
+            item.Value.Level.ToString().ToLowerInvariant(),
+            item.Value.WarningCount,
+            item.Value.TasksBlocked,
+            item.Value.LastReason,
+            FormatInstant(item.Value.UpdatedAtUtc)
+          ),
+          StringComparer.Ordinal
+        ),
         source.Currency.ToString(),
         goals,
         source.ExchangeRate.LadirchenPerCurrencyUnit,
         gifts,
+        source.CalculatedState.PendingBehaviorNotices.Select(item => new BehaviorNoticeReadModel(
+          item.Id.Value,
+          item.ChildId.Value,
+          item.GuardianId.Value,
+          item.Level.ToString().ToLowerInvariant(),
+          item.DeductedAmount,
+          item.Reason,
+          FormatInstant(item.OccurredAtUtc)!
+        )).ToArray(),
         source.Economy.SettledInterestPeriods
           .OrderBy(item => item.Start)
           .Select(item => item.Key)
@@ -603,7 +627,10 @@ internal static class FamilyReadModelResponseMapper
       permissions.ManageChildTasks,
       permissions.ReviewChildTasks,
       permissions.ViewTaskAssignments,
-      permissions.ViewHouse
+      permissions.ViewHouse,
+      permissions.PurchaseHouseContentWithoutBalance,
+      permissions.ManageShop,
+      permissions.ReceivePushNotifications
     );
   }
 

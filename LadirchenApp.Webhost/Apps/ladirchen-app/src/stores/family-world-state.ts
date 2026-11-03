@@ -9,13 +9,20 @@ import type {
 } from "@/domain/house";
 import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from "@/domain/family/types";
 import { DEFAULT_FAMILY_TIME_ZONE } from "@/domain/family/time-zone";
-import type { FamilyCurrency, GuardianGift, SavingsVoucher } from "@/domain/savings/types";
+import type {
+  BehaviorNotice,
+  ChildBehaviorStatus,
+  FamilyCurrency,
+  GuardianGift,
+  SavingsVoucher,
+} from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 import type { MemberProgression } from "@/application/contracts/family-progression-contract";
 import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
 import type { AvatarProfileCatalog } from "@/application/contracts/family-profile-contract";
+import type { FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
 export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
   return members.map((member) => ({
     ...member,
@@ -61,6 +68,17 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   } = { visible: false, guardianName: "", goalTitle: "", destination: "goal", amount: 0, version: 0 };
   const guardianGiftRevealInProgress = false;
   const pendingGuardianGifts: GuardianGift[] = [];
+  const behaviorStatuses: Partial<Record<FamilyMemberId, ChildBehaviorStatus>> = {};
+  const pendingBehaviorNotices: BehaviorNotice[] = [];
+  const behaviorNoticeRevealInProgress = false;
+  const behaviorNoticeAnimation: {
+    visible: boolean;
+    level: ChildBehaviorStatus["level"];
+    deductedAmount: number;
+    reason: string;
+    guardianName: string;
+    version: number;
+  } = { visible: false, level: "green", deductedAmount: 0, reason: "", guardianName: "", version: 0 };
   const houseLevel = initialStateValue<HouseStageLevel>(0);
   const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
   const houseCatalog = initialStateValue<HouseCatalogState | undefined>(undefined);
@@ -78,6 +96,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const ownedRoomDesignIds: RoomDesignId[] = [];
   const selectedRoomDesignIds: Partial<Record<HouseZoneId, RoomDesignId>> = {};
   const snackbarParams: Record<string, number | string> = {};
+  const readModelRevisions: Partial<Record<FamilyReadModelType, number>> = {};
   const snackbar: {
     visible: boolean;
     messageKey: TranslationKey | "";
@@ -122,6 +141,10 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     guardianGiftAnimation,
     guardianGiftRevealInProgress,
     pendingGuardianGifts,
+    behaviorStatuses,
+    pendingBehaviorNotices,
+    behaviorNoticeRevealInProgress,
+    behaviorNoticeAnimation,
     savingsVouchers,
     completedWeeklyStreak: 0,
     currentWeekTarget: 0,
@@ -136,6 +159,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     houseLayout: initialData.houseLayout,
     homeCustomizationHydrated: false,
     familyReadModelsHydrated: false,
+    readModelRevisions,
     revealVersion: 0,
     snackbar,
     members: normalizeFamilyMembers(initialData.members),

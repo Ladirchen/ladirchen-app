@@ -59,6 +59,22 @@ public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
     }
   }
 
+  public DbSet<WebPushSubscriptionEntity> WebPushSubscriptions
+  {
+    get
+    {
+      return Set<WebPushSubscriptionEntity>();
+    }
+  }
+
+  public DbSet<WebPushNotificationEntity> WebPushNotifications
+  {
+    get
+    {
+      return Set<WebPushNotificationEntity>();
+    }
+  }
+
   public DbSet<FamilyRootEntity> Families
   {
     get
@@ -156,6 +172,36 @@ public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
       .HasOne<FamilyCommandReceiptEntity>()
       .WithMany()
       .HasForeignKey(item => item.CommandId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    var pushSubscription = modelBuilder.Entity<WebPushSubscriptionEntity>();
+    pushSubscription.ToTable("WebPushSubscriptions");
+    pushSubscription.HasKey(item => item.SubscriptionId);
+    pushSubscription.Property(item => item.MemberId).HasMaxLength(128);
+    pushSubscription.Property(item => item.EndpointHash).HasMaxLength(64);
+    pushSubscription.Property(item => item.Endpoint).HasMaxLength(2048);
+    pushSubscription.Property(item => item.P256dh).HasMaxLength(512);
+    pushSubscription.Property(item => item.Auth).HasMaxLength(256);
+    pushSubscription.Property(item => item.Locale).HasMaxLength(10);
+    pushSubscription.HasIndex(item => item.EndpointHash).IsUnique();
+    pushSubscription.HasIndex(item => new { item.FamilyId, item.MemberId });
+
+    var pushNotification = modelBuilder.Entity<WebPushNotificationEntity>();
+    pushNotification.ToTable("WebPushNotifications");
+    pushNotification.HasKey(item => item.MessageId);
+    pushNotification.Property(item => item.MemberId).HasMaxLength(128);
+    pushNotification.Property(item => item.TitleDe).HasMaxLength(200);
+    pushNotification.Property(item => item.BodyDe).HasMaxLength(500);
+    pushNotification.Property(item => item.TitleEn).HasMaxLength(200);
+    pushNotification.Property(item => item.BodyEn).HasMaxLength(500);
+    pushNotification.Property(item => item.Url).HasMaxLength(500);
+    pushNotification.Property(item => item.Tag).HasMaxLength(200);
+    pushNotification.Property(item => item.LastError).HasMaxLength(2000);
+    pushNotification.HasIndex(item => new { item.PublishedAt, item.NextAttemptAt });
+    pushNotification
+      .HasOne(item => item.Subscription)
+      .WithMany(item => item.Notifications)
+      .HasForeignKey(item => item.SubscriptionId)
       .OnDelete(DeleteBehavior.Cascade);
 
     TypedAggregatePersistenceModel.Configure(modelBuilder);

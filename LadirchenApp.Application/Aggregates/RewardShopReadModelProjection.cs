@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using LadirchenApp.Application.Persistence;
@@ -12,6 +13,7 @@ public sealed record RewardShopReadModelProjection(
   FamilyEconomyPresentationState Presentation,
   bool RedemptionOpen,
   IanaTimeZone TimeZone,
+  DateOnly LocalDate,
   FamilyMemberId ViewerId,
   IReadOnlyDictionary<ShopRewardId, ShopRewardAvailability> Availability,
   IReadOnlySet<ShopRewardId> VisibleRewardIds

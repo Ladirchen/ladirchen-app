@@ -122,9 +122,9 @@ public sealed class FamilyHouseShopStateTests
       HouseSubscriptionTier.Pro
     );
 
-    var purchased = shop.PurchaseAccessory("floor-lamp", true, 90);
+    var purchased = shop.PurchaseAccessory("floor-lamp", true, false, 90);
     var placed = shop.PlaceAccessory("floor-lamp", "living-room");
-    var themePurchased = shop.PurchaseTheme("halloween-night", true, 320);
+    var themePurchased = shop.PurchaseTheme("halloween-night", true, false, 320);
     var arranged = shop.ArrangeEntity("member-child", "living-room", 40, 90);
     var reset = shop.ResetEntity("member-child");
     var state = shop.CaptureState();

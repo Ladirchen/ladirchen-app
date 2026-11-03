@@ -95,10 +95,10 @@ internal static partial class TypedAggregatePersistenceModel
       table =>
       {
         table.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_Amount", "\"Amount\" >= 0");
-        table.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 7");
+        table.HasCheckConstraint("CK_FamilyEconomyLedgerEntries_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 10");
         table.HasCheckConstraint(
           "CK_FamilyEconomyLedgerEntries_SourceKind",
-          "\"SourceKind\" >= 0 AND \"SourceKind\" <= 4"
+          "\"SourceKind\" >= 0 AND \"SourceKind\" <= 5"
         );
       }
     );

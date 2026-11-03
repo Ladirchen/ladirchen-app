@@ -766,7 +766,7 @@ public sealed class HouseShopSteps
 
   private bool TryPurchaseAccessory(bool actorIsChild)
   {
-    var accepted = _shop.PurchaseAccessory(_item, actorIsChild, WalletBalance);
+    var accepted = _shop.PurchaseAccessory(_item, actorIsChild, false, WalletBalance);
 
     if (accepted)
     {
@@ -778,7 +778,7 @@ public sealed class HouseShopSteps
 
   private bool TryPurchaseSet()
   {
-    var accepted = _shop.PurchaseSet(_set, true, WalletBalance);
+    var accepted = _shop.PurchaseSet(_set, true, false, WalletBalance);
 
     if (accepted)
     {
@@ -790,7 +790,7 @@ public sealed class HouseShopSteps
 
   private bool TryPurchaseTheme()
   {
-    var accepted = _shop.PurchaseTheme(_theme, true, WalletBalance);
+    var accepted = _shop.PurchaseTheme(_theme, true, false, WalletBalance);
 
     if (accepted)
     {
@@ -802,7 +802,7 @@ public sealed class HouseShopSteps
 
   private bool TryPurchaseDesign()
   {
-    var accepted = _shop.PurchaseDesign(_design, _theme, true, WalletBalance);
+    var accepted = _shop.PurchaseDesign(_design, _theme, true, false, WalletBalance);
 
     if (accepted)
     {

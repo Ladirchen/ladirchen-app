@@ -8,7 +8,10 @@ import type {
   HouseStageId,
   HouseThemeId,
 } from "@/domain/house";
-const modules = import.meta.glob("../../../assets/room-designs/*.webp", { import: "default" }) as AssetGlobModules;
+const modules = import.meta.glob("../../../assets/room-designs/*.webp", {
+  eager: true,
+  import: "default",
+}) as AssetGlobModules;
 // Legacy/renamed art files: these ids don't follow the "<id>.webp" naming convention.
 const HOUSE_EXTERIOR_ASSET_FILE_NAMES = {
   "sunny-dollhouse-energy-1-exterior-background": "sunny-dollhouse-energy-1-exterior-background.webp",

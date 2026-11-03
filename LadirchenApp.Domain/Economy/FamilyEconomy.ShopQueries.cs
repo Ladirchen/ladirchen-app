@@ -25,7 +25,8 @@ public sealed partial class FamilyEconomy
     var requestableByMemberIds = RequestableMemberIds(
       reward,
       publicationStatus,
-      redemptionOpen
+      redemptionOpen,
+      localDate
     );
     IReadOnlyList<FamilyMemberId> cancellableByMemberIds = pendingRequest is null
       ? []
@@ -44,7 +45,8 @@ public sealed partial class FamilyEconomy
   private IReadOnlyList<FamilyMemberId> RequestableMemberIds(
     ShopReward reward,
     ShopRewardPublicationStatus publicationStatus,
-    bool redemptionOpen
+    bool redemptionOpen,
+    DateOnly localDate
   )
   {
     if (
@@ -59,7 +61,7 @@ public sealed partial class FamilyEconomy
 
     return _members
       .Where(member => !member.InvitationPending && member.Role == MemberRole.Child)
-      .Where(member => WalletFor(member.Id).Available >= reward.Price.Value)
+      .Where(member => WalletFor(member.Id).Available >= reward.EffectivePrice(localDate).Value)
       .Select(member => member.Id)
       .ToArray();
   }

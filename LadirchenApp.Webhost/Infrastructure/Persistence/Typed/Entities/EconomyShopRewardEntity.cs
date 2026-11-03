@@ -9,6 +9,8 @@ public sealed class EconomyShopRewardEntity
   public string Title { get; set; } = string.Empty;
   public int Category { get; set; }
   public decimal Price { get; set; }
+  public decimal? PromotionalPrice { get; set; }
+  public DateOnly? PromotionUntil { get; set; }
   public int Quantity { get; set; }
   public bool IsVisible { get; set; }
   public DateOnly? AvailableFrom { get; set; }

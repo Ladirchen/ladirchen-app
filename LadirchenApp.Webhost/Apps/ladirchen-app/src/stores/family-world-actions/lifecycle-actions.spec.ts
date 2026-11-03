@@ -2,12 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createContributions, createFamilyWorldInitialData } from "@/infrastructure/fixtures/family-world-fixtures";
 import { HOUSE_THEMES, ROOM_DESIGNS } from "@/domain/house";
+import type { FamilyBootstrapReadModel } from "@/application/contracts/family-bootstrap-contract";
 import type { FamilyWorldDependencies } from "@/application/ports/family-world-dependencies";
 import { createDomainId } from "@/domain/shared/identifiers";
 import { createFamilyWorldTestDependencies, createFamilyWorldTestStore } from "@/stores/family-world-test-support";
+import type { FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 
 const serviceMocks = vi.hoisted(() => ({
   contributionsLoad: vi.fn<FamilyWorldDependencies["contributionsService"]["load"]>(),
+  familyBootstrapLoad: vi.fn<FamilyWorldDependencies["familyBootstrapService"]["load"]>(),
   familyProfileLoad: vi.fn<FamilyWorldDependencies["familyProfileService"]["load"]>(),
   familyProgressionLoad: vi.fn<FamilyWorldDependencies["familyProgressionService"]["load"]>(),
   homeCustomizationLoad: vi.fn<FamilyWorldDependencies["homeCustomizationService"]["load"]>(),
@@ -18,6 +21,7 @@ const serviceMocks = vi.hoisted(() => ({
 
 const dependencies = createFamilyWorldTestDependencies({
   contributionsService: { load: serviceMocks.contributionsLoad },
+  familyBootstrapService: { load: serviceMocks.familyBootstrapLoad },
   familyAggregateUpdates: { connect: serviceMocks.updatesConnect, disconnect: vi.fn(async () => undefined) },
   familyContext: {
     activeFamilyId: createDomainId.family("c776a9b6-c37d-4a51-91ba-269a67274478"),
@@ -30,9 +34,84 @@ const dependencies = createFamilyWorldTestDependencies({
   savingsService: { load: serviceMocks.savingsLoad },
 });
 
+function createBootstrapReadModel(
+  context: FamilyWorldStoreContext,
+  contributions = context.contributions,
+): FamilyBootstrapReadModel {
+  return {
+    contributions: {
+      readModelType: "contributions",
+      revision: 1,
+      state: {
+        contributions,
+        currentWeekApprovedContributionCountByMember: context.currentWeekApprovedContributionCountByMember,
+        currentWeekEarnedByMember: context.currentWeekEarnedByMember,
+        perfectRatingBonusPercent: context.perfectRatingBonusPercent,
+        promotions: context.promotions,
+        todayEarnedByMember: context.todayEarnedByMember,
+      },
+    },
+    familyProfile: {
+      readModelType: "family-profile",
+      revision: 1,
+      state: {
+        avatarCatalog: context.avatarCatalog,
+        members: context.members,
+        onboardingCompleted: context.onboardingCompleted,
+        pets: context.pets,
+        subscriptionTier: context.subscriptionTier,
+        timeZone: context.familyTimeZone,
+      },
+    },
+    familyProgression: {
+      readModelType: "family-progression",
+      revision: 1,
+      state: {
+        canCloseWeekSuccessfully: context.canCloseWeekSuccessfully,
+        completedWeeklyStreak: context.completedWeeklyStreak,
+        currentWeekTarget: context.currentWeekTarget,
+        familyEnergy: context.familyEnergyReadModel,
+        houseAtmosphere: context.houseAtmosphere,
+        houseLevel: context.houseLevel,
+        houseVisualLevel: context.houseVisualLevel,
+        maximumSavingsInterestRate: context.maxSavingsRatePercent,
+        memberProgressions: context.memberProgressions,
+        minimumSuccessfulWeekEnergy: context.minimumSuccessfulWeekEnergy,
+      },
+    },
+    homeCustomization: null,
+    rewardShop: {
+      readModelType: "reward-shop",
+      revision: 1,
+      state: {
+        redemptionOpen: context.rewardShopRedemptionOpen,
+        rewards: context.shopRewards,
+      },
+    },
+    savings: {
+      readModelType: "savings",
+      revision: 1,
+      state: {
+        availableBalances: context.availableBalances,
+        balances: context.balances,
+        behaviorStatuses: context.behaviorStatuses,
+        familyCurrencyCode: context.familyCurrencyCode,
+        goals: context.goals,
+        ladirchenPerCurrencyUnit: context.ladirchenPerCurrencyUnit,
+        pendingBehaviorNotices: context.pendingBehaviorNotices,
+        pendingGuardianGifts: context.pendingGuardianGifts,
+        settledInterestPeriods: [],
+        sharedSavedBalances: context.sharedSavedBalances,
+        vouchers: context.savingsVouchers,
+      },
+    },
+  } as FamilyBootstrapReadModel;
+}
+
 describe("hydrateFamilyReadModels", () => {
   beforeEach(() => {
     serviceMocks.contributionsLoad.mockReset().mockResolvedValue(null);
+    serviceMocks.familyBootstrapLoad.mockReset().mockResolvedValue(null);
     serviceMocks.familyProfileLoad.mockReset().mockResolvedValue(null);
     serviceMocks.familyProgressionLoad.mockReset().mockResolvedValue(null);
     serviceMocks.homeCustomizationLoad.mockReset().mockResolvedValue(null);
@@ -41,42 +120,35 @@ describe("hydrateFamilyReadModels", () => {
     serviceMocks.updatesConnect.mockReset().mockResolvedValue(undefined);
   });
 
-  it("applies successful read-model loads and remains retryable after a partial failure", async () => {
+  it("keeps the current state and remains retryable when bootstrap loading fails", async () => {
     const contributions = createContributions();
     const firstContribution = contributions[0]!;
     firstContribution.title = "Loaded contribution";
-    serviceMocks.contributionsLoad.mockResolvedValue({
-      readModelType: "contributions",
-      revision: 3,
-      state: {
-        contributions,
-        currentWeekApprovedContributionCountByMember: {},
-        currentWeekEarnedByMember: {},
-        perfectRatingBonusPercent: 15,
-        promotions: [],
-        todayEarnedByMember: {},
-      },
-    });
-    serviceMocks.familyProfileLoad.mockRejectedValue(new Error("Profile endpoint unavailable"));
     const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
-    vi.spyOn(context, "hydrateHomeCustomization").mockResolvedValue(undefined);
+    const bootstrap = createBootstrapReadModel(context, contributions);
+    serviceMocks.familyBootstrapLoad.mockRejectedValue(new Error("Bootstrap endpoint unavailable"));
     const notify = vi.spyOn(context, "notify").mockImplementation(() => undefined);
 
     await context.hydrateFamilyReadModels();
 
-    expect(context.contributions[0]?.title).toBe("Loaded contribution");
-    expect(serviceMocks.familyProfileLoad).toHaveBeenCalledWith(
+    expect(context.contributions[0]?.title).not.toBe("Loaded contribution");
+    expect(serviceMocks.familyBootstrapLoad).toHaveBeenCalledWith(
       dependencies.familyContext.activeFamilyId,
       context.signedInMemberId,
     );
     expect(context.familyReadModelsHydrated).toBe(false);
     expect(notify).toHaveBeenCalledWith("notifications.load.family");
-    expect(context.hydrateHomeCustomization).toHaveBeenCalledOnce();
+
+    serviceMocks.familyBootstrapLoad.mockResolvedValue(bootstrap);
+    await context.hydrateFamilyReadModels();
+
+    expect(context.contributions[0]?.title).toBe("Loaded contribution");
+    expect(context.familyReadModelsHydrated).toBe(true);
   });
 
   it("marks hydration complete only when every aggregate load succeeds", async () => {
     const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
-    vi.spyOn(context, "hydrateHomeCustomization").mockResolvedValue(undefined);
+    serviceMocks.familyBootstrapLoad.mockResolvedValue(createBootstrapReadModel(context));
     const notify = vi.spyOn(context, "notify").mockImplementation(() => undefined);
     const refreshFamilyReadModel = vi.spyOn(context, "refreshFamilyReadModel").mockResolvedValue(undefined);
     const refreshAllFamilyReadModels = vi.spyOn(context, "refreshAllFamilyReadModels").mockResolvedValue(undefined);
@@ -98,7 +170,7 @@ describe("hydrateFamilyReadModels", () => {
       updatedAt: "2026-09-10T08:00:00.000Z",
       updatedBy: createDomainId.familyMember("other-member"),
     });
-    expect(refreshFamilyReadModel).toHaveBeenCalledWith("savings");
+    expect(refreshFamilyReadModel).toHaveBeenCalledWith("savings", 2);
     refreshFamilyReadModel.mockClear();
     onChanged?.({
       aggregateType: "savings",
@@ -107,7 +179,7 @@ describe("hydrateFamilyReadModels", () => {
       updatedAt: "2026-09-10T08:01:00.000Z",
       updatedBy: context.signedInMemberId,
     });
-    expect(refreshFamilyReadModel).not.toHaveBeenCalled();
+    expect(refreshFamilyReadModel).toHaveBeenCalledWith("savings", 3);
   });
 
   it("does not auto-open account setup for a viewer without the invitation capability", async () => {
@@ -129,12 +201,15 @@ describe("hydrateFamilyReadModels", () => {
               canViewFamilyGoals: true,
               canViewGuardianGoals: false,
               canViewHouse: true,
+              canPurchaseHouseContentWithoutBalance: true,
+              canManageShop: true,
+              canReceivePushNotifications: true,
               canViewTaskAssignments: false,
             },
           }
         : member,
     );
-    vi.spyOn(context, "hydrateHomeCustomization").mockResolvedValue(undefined);
+    serviceMocks.familyBootstrapLoad.mockResolvedValue(createBootstrapReadModel(context));
 
     await context.hydrateFamilyReadModels();
 
@@ -258,6 +333,34 @@ describe("hydrateHomeCustomization", () => {
 });
 
 describe("refreshFamilyReadModel", () => {
+  it("skips an event revision that is already applied", async () => {
+    serviceMocks.contributionsLoad.mockReset();
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+    context.readModelRevisions.contributions = 4;
+
+    await context.refreshFamilyReadModel("contributions", 4);
+
+    expect(serviceMocks.contributionsLoad).not.toHaveBeenCalled();
+  });
+
+  it("coalesces concurrent refreshes for the same read model", async () => {
+    let completeLoad: (() => void) | undefined;
+    serviceMocks.contributionsLoad.mockReset().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          completeLoad = () => resolve(null);
+        }),
+    );
+    const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });
+
+    const firstRefresh = context.refreshFamilyReadModel("contributions", 2);
+    const secondRefresh = context.refreshFamilyReadModel("contributions", 3);
+    completeLoad?.();
+    await Promise.all([firstRefresh, secondRefresh]);
+
+    expect(serviceMocks.contributionsLoad).toHaveBeenCalledOnce();
+  });
+
   it("reveals a newly approved contribution after a live update", async () => {
     const contributions = createContributions();
     serviceMocks.contributionsLoad.mockResolvedValue({
@@ -290,10 +393,12 @@ describe("refreshFamilyReadModel", () => {
       state: {
         availableBalances: initialData.balances,
         balances: initialData.balances,
+        behaviorStatuses: {},
         familyCurrencyCode: "CHF",
         goals: initialData.goals,
         ladirchenPerCurrencyUnit: 1,
         pendingGuardianGifts: [],
+        pendingBehaviorNotices: [],
         settledInterestPeriods: [],
         sharedSavedBalances: {},
         vouchers: [],

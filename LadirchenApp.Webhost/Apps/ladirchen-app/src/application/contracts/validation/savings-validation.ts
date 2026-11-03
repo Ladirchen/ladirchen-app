@@ -1,6 +1,8 @@
 import type { SavingsState } from "@/application/contracts/savings-contract";
 import type {
   FamilyCurrency,
+  BehaviorNotice,
+  ChildBehaviorStatus,
   GoalVisibility,
   GuardianGift,
   SavingGoal,
@@ -25,6 +27,39 @@ import {
 const familyCurrencies = exhaustiveValues<FamilyCurrency>({ CHF: true, EUR: true, HUF: true });
 const goalVisibilities = exhaustiveValues<GoalVisibility>({ family: true, guardians: true, private: true });
 const voucherStatuses = exhaustiveValues<SavingsVoucherStatus>({ pending: true, redeemable: true, redeemed: true });
+const behaviorLevels = exhaustiveValues<ChildBehaviorStatus["level"]>({
+  green: true,
+  yellow: true,
+  orange: true,
+  red: true,
+});
+function isChildBehaviorStatus(value: unknown): value is ChildBehaviorStatus {
+  return (
+    isRecord(value) &&
+    isFamilyMemberId(value.childId) &&
+    isKnownString(value.level, behaviorLevels) &&
+    isFiniteNumber(value.warningCount) &&
+    Number.isInteger(value.warningCount) &&
+    value.warningCount >= 0 &&
+    value.warningCount <= 3 &&
+    typeof value.tasksBlocked === "boolean" &&
+    isOptionalString(value.lastReason) &&
+    isOptionalString(value.updatedAtUtc)
+  );
+}
+function isBehaviorNotice(value: unknown): value is BehaviorNotice {
+  return (
+    isRecord(value) &&
+    isDomainId(value.id) &&
+    isFamilyMemberId(value.childId) &&
+    isFamilyMemberId(value.guardianId) &&
+    isKnownString(value.level, behaviorLevels) &&
+    isFiniteNumber(value.deductedAmount) &&
+    value.deductedAmount >= 0 &&
+    isNonEmptyString(value.reason) &&
+    isNonEmptyString(value.occurredAtUtc)
+  );
+}
 export function isFamilyCurrency(value: unknown): value is FamilyCurrency {
   return isKnownString(value, familyCurrencies);
 }
@@ -121,6 +156,10 @@ export function isSavingsState(value: unknown): value is SavingsState {
     Object.entries(value.availableBalances).every(
       ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
     ) &&
+    isRecord(value.behaviorStatuses) &&
+    Object.entries(value.behaviorStatuses).every(
+      ([memberId, status]) => isFamilyMemberId(memberId) && isChildBehaviorStatus(status),
+    ) &&
     isRecord(value.sharedSavedBalances) &&
     Object.entries(value.sharedSavedBalances).every(
       ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,
@@ -132,6 +171,8 @@ export function isSavingsState(value: unknown): value is SavingsState {
     value.ladirchenPerCurrencyUnit >= 1 &&
     isArrayOf(value.pendingGuardianGifts, isGuardianGift) &&
     hasUniqueIds(value.pendingGuardianGifts) &&
+    isArrayOf(value.pendingBehaviorNotices, isBehaviorNotice) &&
+    hasUniqueIds(value.pendingBehaviorNotices) &&
     isArrayOf(value.settledInterestPeriods, isNonEmptyString) &&
     isArrayOf(value.vouchers, isSavingsVoucher) &&
     hasUniqueIds(value.vouchers)

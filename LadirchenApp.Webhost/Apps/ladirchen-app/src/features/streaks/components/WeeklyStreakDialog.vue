@@ -130,7 +130,12 @@ const labels = computed(() => {
     };
   });
 });
-const completedDates = computed(() => new Set(store.memberProgressions[store.activeChildId]?.approvedDates ?? []));
+const progressionMemberId = computed(() =>
+  store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId,
+);
+const completedDates = computed(
+  () => new Set(store.memberProgressions[progressionMemberId.value]?.approvedDates ?? []),
+);
 const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
 const weekDays = computed(() =>
   labels.value.map((day) => ({
@@ -139,7 +144,7 @@ const weekDays = computed(() =>
   })),
 );
 const ladiStage = computed(() =>
-  ladiStageById(store.memberProgressions[store.activeChildId]?.ladiStageId ?? "idle-ladi"),
+  ladiStageById(store.memberProgressions[progressionMemberId.value]?.ladiStageId ?? "idle-ladi"),
 );
 const weekMessage = computed(() =>
   store.currentWeekDays >= store.currentWeekTarget

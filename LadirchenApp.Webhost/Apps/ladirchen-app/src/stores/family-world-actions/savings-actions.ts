@@ -106,11 +106,84 @@ export const savingsActions = {
       () => this.notify("notifications.goals.specialGifted", { amount: Math.round(amount), name }),
     );
   },
+  async issueBehaviorWarning(
+    this: FamilyWorldStoreContext,
+    childId: FamilyMemberId,
+    deduction: number,
+    reason: string,
+  ) {
+    const incidentId = createDomainId.behaviorIncident(createUuid());
+    await executeBackendFamilyCommand(
+      this,
+      "savings.issue-behavior-warning",
+      { childId, deduction, incidentId, reason },
+      "notifications.save.savings",
+      () => this.notify("notifications.behavior.warningSaved"),
+    );
+  },
+  async resetBehaviorStatus(this: FamilyWorldStoreContext, childId: FamilyMemberId) {
+    await executeBackendFamilyCommand(
+      this,
+      "savings.reset-behavior-status",
+      { childId },
+      "notifications.save.savings",
+      () => this.notify("notifications.behavior.statusReset"),
+    );
+  },
+  async revealNextBehaviorNotice(this: FamilyWorldStoreContext) {
+    if (
+      this.viewerRole !== "child" ||
+      this.rewardAnimation.visible ||
+      this.guardianGiftAnimation.visible ||
+      this.behaviorNoticeAnimation.visible ||
+      this.behaviorNoticeRevealInProgress
+    ) {
+      return;
+    }
+
+    const notice = this.pendingBehaviorNotices.find((item) => item.childId === this.signedInMemberId);
+
+    if (!notice) {
+      return;
+    }
+
+    this.behaviorNoticeRevealInProgress = true;
+
+    try {
+      await executeBackendFamilyCommand(
+        this,
+        "savings.acknowledge-behavior-notice",
+        { incidentId: notice.id },
+        "notifications.save.savings",
+        () => {
+          this.behaviorNoticeAnimation = {
+            deductedAmount: notice.deductedAmount,
+            guardianName: this.members.find((member) => member.id === notice.guardianId)?.name ?? "",
+            level: notice.level,
+            reason: notice.reason,
+            version: this.behaviorNoticeAnimation.version + 1,
+            visible: true,
+          };
+        },
+      );
+    } finally {
+      this.behaviorNoticeRevealInProgress = false;
+    }
+  },
+  dismissBehaviorNotice(this: FamilyWorldStoreContext) {
+    this.behaviorNoticeAnimation.visible = false;
+    this.$familyWorld.scheduler.schedule(() => {
+      this.revealNextBehaviorNotice();
+      this.revealNextContributionReward();
+      this.revealNextGuardianGift();
+    }, REWARD_REVEAL_DELAY_MS);
+  },
   async revealNextGuardianGift(this: FamilyWorldStoreContext) {
     if (
       this.viewerRole !== "child" ||
       this.rewardAnimation.visible ||
       this.guardianGiftAnimation.visible ||
+      this.behaviorNoticeAnimation.visible ||
       this.guardianGiftRevealInProgress
     ) {
       return;
@@ -148,6 +221,7 @@ export const savingsActions = {
   dismissGuardianGift(this: FamilyWorldStoreContext) {
     this.guardianGiftAnimation.visible = false;
     this.$familyWorld.scheduler.schedule(() => {
+      this.revealNextBehaviorNotice();
       this.revealNextContributionReward();
       this.revealNextGuardianGift();
     }, REWARD_REVEAL_DELAY_MS);

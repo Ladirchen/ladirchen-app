@@ -76,49 +76,55 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
   internal bool CanPurchaseAccessory(
     HouseItem item,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     ArgumentNullException.ThrowIfNull(item);
     Rules.Require(availableBalance >= 0, DomainError.InvalidValue, "An available balance cannot be negative.");
 
-    return actorIsChild
+    return (actorIsChild || canPurchaseWithoutBalance)
       && !item.Owned
       && IsAvailableAtCurrentLevel(item.MinimumLevel)
-      && item.Price <= availableBalance;
+      && (canPurchaseWithoutBalance || item.Price <= availableBalance);
   }
 
   internal bool CanPurchaseSet(
     FurnitureSet set,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     ArgumentNullException.ThrowIfNull(set);
     Rules.Require(availableBalance >= 0, DomainError.InvalidValue, "An available balance cannot be negative.");
 
-    return actorIsChild
+    return (actorIsChild || canPurchaseWithoutBalance)
       && !set.Owned
       && IsAvailableAtCurrentLevel(set.MinimumLevel)
-      && set.Price <= availableBalance;
+      && (canPurchaseWithoutBalance || set.Price <= availableBalance);
   }
 
   internal bool CanPurchaseTheme(
     HouseTheme theme,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     ArgumentNullException.ThrowIfNull(theme);
     Rules.Require(availableBalance >= 0, DomainError.InvalidValue, "An available balance cannot be negative.");
 
-    return actorIsChild && !theme.Owned && theme.Price <= availableBalance;
+    return (actorIsChild || canPurchaseWithoutBalance)
+      && !theme.Owned
+      && (canPurchaseWithoutBalance || theme.Price <= availableBalance);
   }
 
   internal bool CanPurchaseDesign(
     RoomDesign design,
     HouseTheme theme,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
@@ -126,19 +132,24 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
     ArgumentNullException.ThrowIfNull(theme);
     Rules.Require(availableBalance >= 0, DomainError.InvalidValue, "An available balance cannot be negative.");
 
-    return actorIsChild
+    return (actorIsChild || canPurchaseWithoutBalance)
       && !design.Owned
       && theme.Owned
       && theme.Id == design.ThemeId
       && IsAvailableAtCurrentLevel(design.MinimumLevel)
-      && design.Price <= availableBalance;
+      && (canPurchaseWithoutBalance || design.Price <= availableBalance);
   }
 
-  internal bool PurchaseAccessory(HouseItem item, bool actorIsChild, decimal availableBalance)
+  internal bool PurchaseAccessory(
+    HouseItem item,
+    bool actorIsChild,
+    bool canPurchaseWithoutBalance,
+    decimal availableBalance
+  )
   {
     ArgumentNullException.ThrowIfNull(item);
 
-    if (!CanPurchaseAccessory(item, actorIsChild, availableBalance))
+    if (!CanPurchaseAccessory(item, actorIsChild, canPurchaseWithoutBalance, availableBalance))
     {
       return false;
     }
@@ -148,11 +159,16 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
     return true;
   }
 
-  internal bool PurchaseSet(FurnitureSet set, bool actorIsChild, decimal availableBalance)
+  internal bool PurchaseSet(
+    FurnitureSet set,
+    bool actorIsChild,
+    bool canPurchaseWithoutBalance,
+    decimal availableBalance
+  )
   {
     ArgumentNullException.ThrowIfNull(set);
 
-    if (!CanPurchaseSet(set, actorIsChild, availableBalance))
+    if (!CanPurchaseSet(set, actorIsChild, canPurchaseWithoutBalance, availableBalance))
     {
       return false;
     }
@@ -165,24 +181,36 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
     return true;
   }
 
-  internal bool PurchaseTheme(HouseTheme theme, bool actorIsChild, decimal availableBalance)
+  internal bool PurchaseTheme(
+    HouseTheme theme,
+    bool actorIsChild,
+    bool canPurchaseWithoutBalance,
+    decimal availableBalance
+  )
   {
     ArgumentNullException.ThrowIfNull(theme);
 
-    return PurchaseTheme(theme, theme.Designs, actorIsChild, availableBalance);
+    return PurchaseTheme(
+      theme,
+      theme.Designs,
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    );
   }
 
   internal bool PurchaseTheme(
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
     ArgumentNullException.ThrowIfNull(theme);
     ArgumentNullException.ThrowIfNull(catalogDesigns);
 
-    if (!CanPurchaseTheme(theme, actorIsChild, availableBalance))
+    if (!CanPurchaseTheme(theme, actorIsChild, canPurchaseWithoutBalance, availableBalance))
     {
       return false;
     }
@@ -219,10 +247,18 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
     RoomDesign design,
     HouseTheme theme,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
-    return PurchaseDesign(design, theme, [design], actorIsChild, availableBalance);
+    return PurchaseDesign(
+      design,
+      theme,
+      [design],
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    );
   }
 
   internal bool PurchaseDesign(
@@ -230,6 +266,7 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
     HouseTheme theme,
     IEnumerable<RoomDesign> catalogDesigns,
     bool actorIsChild,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
@@ -237,7 +274,13 @@ public sealed partial class FamilyHouseShop : AggregateRoot<FamilyId>
     ArgumentNullException.ThrowIfNull(theme);
     ArgumentNullException.ThrowIfNull(catalogDesigns);
 
-    if (!CanPurchaseDesign(design, theme, actorIsChild, availableBalance))
+    if (!CanPurchaseDesign(
+      design,
+      theme,
+      actorIsChild,
+      canPurchaseWithoutBalance,
+      availableBalance
+    ))
     {
       return false;
     }

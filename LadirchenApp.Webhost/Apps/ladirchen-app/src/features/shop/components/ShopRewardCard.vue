@@ -7,7 +7,7 @@
     tone="shop"
   >
     <div
-      v-if="store.viewerRole === 'guardian'"
+      v-if="store.permissions.canManageShop"
       class="reward-admin-toolbar d-flex align-center justify-space-between"
       data-ladi-ignore
     >
@@ -51,7 +51,12 @@
     <strong class="d-block mt-3">{{ reward.title }}</strong>
     <p class="reward-description text-caption text-medium-emphasis mt-1">{{ reward.description }}</p>
     <div class="reward-actions d-flex align-center justify-space-between ga-2 mt-auto" data-ladi-ignore>
-      <span class="price d-flex align-center"><LadirchenAmount :value="reward.price" /></span>
+      <span class="price d-flex align-center">
+        <del v-if="reward.promotionActive && reward.regularPrice" class="regular-price">
+          {{ reward.regularPrice }}
+        </del>
+        <LadirchenAmount :value="reward.price" />
+      </span>
       <template v-if="store.viewerRole === 'child'">
         <v-btn
           v-if="reward.status === 'available'"
@@ -152,6 +157,7 @@ const canAdministerShop = computed(() => store.signedInMember?.guardianAccess ==
 const cardClasses = computed(() => ({
   "reward-card--hidden": rewardIsHidden.value,
   "reward-card--scheduled": props.publicationStatus.tone === "scheduled",
+  "reward-card--promotion": props.reward.promotionActive === true,
 }));
 const canCancelRequest = computed(() => props.reward.cancellableByMemberIds?.includes(store.signedInMemberId) ?? false);
 const visibilityActionLabel = computed(() =>

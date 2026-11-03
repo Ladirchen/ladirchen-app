@@ -117,11 +117,16 @@ Configure these Production environment variables in the Vercel project:
 | `PORT`                                 | Yes      | HTTP port for the web container; use `8080` to match the image default.                                  |
 | `DATA_PROTECTION_CERTIFICATE_BASE64`   | Yes      | Base64-encoded PKCS#12 certificate with its private key, used to encrypt persisted Data Protection keys. |
 | `DATA_PROTECTION_CERTIFICATE_PASSWORD` | Yes      | Password of the PKCS#12 certificate. Store it as a Vercel secret.                                        |
+| `WEB_PUSH_VAPID_SUBJECT`               | Yes      | Web Push contact URI, for example `mailto:admin@example.com`.                                            |
+| `WEB_PUSH_VAPID_PUBLIC_KEY`            | Yes      | Public VAPID key exposed to subscribed browsers.                                                         |
+| `WEB_PUSH_VAPID_PRIVATE_KEY`           | Yes      | Private VAPID key used by the daemon. Store it as a Vercel secret.                                       |
 
 Keep the same Data Protection certificate available across deployments and
 instances. Replacing it without a controlled key migration makes existing key
 ring entries unreadable and invalidates authentication cookies. The daemon's
 internal health endpoint uses the fixed port `8081`, matching `vercel.json`.
+Keep the same VAPID key pair in the web and daemon processes. Rotating it requires
+users to enable push notifications again on each device.
 
 Place PostgreSQL and Redis in, or as close as possible to, Vercel region
 `fra1`. If another data region is selected, update the daemon instance region

@@ -8,6 +8,7 @@ import { createEmptyFamilyWorldInitialData } from "@/infrastructure/empty-family
 import { createBundledLocaleMessagesSource } from "@/infrastructure/i18n/bundled-locale-messages-source";
 import { SignalRFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/signalr-family-aggregate-updates";
 import { HttpFamilyCommandGateway } from "@/infrastructure/http/http-family-command-gateway";
+import { HttpFamilyBootstrapService } from "@/infrastructure/http/http-family-bootstrap-service";
 import { HttpAuthenticationGateway } from "@/infrastructure/http/http-authentication-gateway";
 import { HttpSavingsInterestSimulationGateway } from "@/infrastructure/http/http-savings-interest-simulation-gateway";
 const repositories: FamilyReadModelRepositories = createHttpFamilyReadModelRepositories(
@@ -15,6 +16,7 @@ const repositories: FamilyReadModelRepositories = createHttpFamilyReadModelRepos
 );
 const familyAggregateUpdates = new SignalRFamilyAggregateUpdatesGateway(frontendRuntimeConfig.apiBaseUrl);
 const familyCommands = new HttpFamilyCommandGateway(frontendRuntimeConfig.apiBaseUrl);
+const familyBootstrapService = new HttpFamilyBootstrapService(frontendRuntimeConfig.apiBaseUrl);
 const initialDataFactory = { create: createEmptyFamilyWorldInitialData };
 export const familyContext = localFamilyContext;
 export const authenticationGateway = new HttpAuthenticationGateway(frontendRuntimeConfig.apiBaseUrl);
@@ -31,6 +33,7 @@ export const familyProgressionService = repositories.familyProgression;
 export const familyWorldDependencies: FamilyWorldDependencies = {
   authentication: authenticationGateway,
   contributionsService,
+  familyBootstrapService,
   familyAggregateUpdates,
   familyCommands,
   familyContext,

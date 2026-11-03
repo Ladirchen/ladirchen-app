@@ -188,7 +188,7 @@ const memberCards = computed(() =>
       member,
       appearance: appearanceFor(member),
       subtitle: memberSubtitle(member),
-      streakDays: member.weeklyStreak ?? 0,
+      streakDays: store.memberProgressions[member.id]?.streakDays ?? member.weeklyStreak ?? 0,
       access: member.guardianAccess ?? "supporter",
       accessColor: guardianAccessColor(member.guardianAccess),
       accessLabel: accessLabel(member.guardianAccess),

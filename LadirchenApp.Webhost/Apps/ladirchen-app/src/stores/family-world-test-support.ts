@@ -31,6 +31,7 @@ export function createFamilyWorldTestDependencies(
       signOut: async () => undefined,
     },
     contributionsService: emptyReadModelService,
+    familyBootstrapService: emptyReadModelService,
     familyAggregateUpdates: {
       connect: async () => undefined,
       disconnect: async () => undefined,

@@ -23,6 +23,12 @@ public static partial class WebApplicationExtensions
       .RequireAuthorization()
       .WithTags("Family read models");
     group
+      .MapGet("/bootstrap", GetFamilyBootstrapReadModelAsync)
+      .WithName("GetFamilyBootstrapReadModel")
+      .Produces<FamilyBootstrapReadModelResponse>()
+      .Produces(StatusCodes.Status404NotFound)
+      .ProducesProblem(StatusCodes.Status400BadRequest);
+    group
       .MapGet("/contributions", GetContributionsReadModelAsync)
       .WithName("GetContributionsReadModel")
       .Produces<ContributionsReadModelResponse>()
@@ -60,6 +66,64 @@ public static partial class WebApplicationExtensions
       .ProducesProblem(StatusCodes.Status400BadRequest);
 
     return app;
+  }
+
+  private static async Task<IResult> GetFamilyBootstrapReadModelAsync(
+    Guid familyId,
+    [FromQuery] string? viewerMemberId,
+    GetFamilyAggregateQueryHandler handler,
+    HttpContext context,
+    CancellationToken cancellationToken
+  )
+  {
+    if (!FamilySessionIdentity.BelongsToFamily(context.User, familyId))
+    {
+      return Results.Forbid();
+    }
+
+    if (
+      !FamilySessionIdentity.TryGetMemberId(context.User, out var authenticatedMemberId)
+      || authenticatedMemberId is null
+    )
+    {
+      return Results.Forbid();
+    }
+
+    try
+    {
+      var requestedViewerId = string.IsNullOrWhiteSpace(viewerMemberId)
+        ? null
+        : new FamilyMemberId(viewerMemberId);
+      var projection = await handler.HandleBootstrapAsync(
+        new GetFamilyBootstrapQuery(
+          new FamilyId(familyId),
+          authenticatedMemberId,
+          requestedViewerId
+        ),
+        cancellationToken
+      );
+
+      return projection is null
+        ? Results.NotFound()
+        : Results.Json(
+          FamilyBootstrapReadModelResponse.FromProjection(projection),
+          FamilyReadModelState.GetSerializerOptions()
+        );
+    }
+    catch (DomainRuleException exception) when (exception.Code == DomainError.Forbidden)
+    {
+      return Results.Forbid();
+    }
+    catch (ArgumentException exception)
+    {
+      return Results.BadRequest(
+        new ProblemDetails
+        {
+          Detail = exception.Message,
+          Title = "Invalid bootstrap read-model query",
+        }
+      );
+    }
   }
 
   private static Task<IResult> GetContributionsReadModelAsync(

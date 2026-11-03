@@ -149,7 +149,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     {
       id = "daily-basic",
     });
-    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    var result = await ExecuteAsync(handler, _guardianId, "contributions.approve", new
     {
       id = "daily-basic",
       stars = 5,
@@ -158,6 +158,28 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     var economy = store.RequiredEconomy();
     await Assert.That(economy.ContributionSettings.PerfectRatingBonus.Value).IsEqualTo(25);
     await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(13);
+    await Assert.That(result.UserNotifications).HasSingleItem();
+    var notification = result.UserNotifications.Single();
+    await Assert.That(notification.RecipientId).IsEqualTo(_childId);
+    await Assert.That(notification.BodyDe).Contains("13 Ladirchen");
+  }
+
+  [Test]
+  public async Task AssigningAContributionCreatesARecipientNotification()
+  {
+    var store = CreateStore(Contribution("daily-basic", ContributionKind.Basic, _childId));
+    var handler = store.CreateCommandHandler();
+
+    var result = await ExecuteAsync(handler, _guardianId, "contributions.assign", new
+    {
+      id = "daily-basic",
+      memberId = _supporterId.Value,
+    });
+
+    await Assert.That(result.UserNotifications).HasSingleItem();
+    var notification = result.UserNotifications.Single();
+    await Assert.That(notification.RecipientId).IsEqualTo(_supporterId);
+    await Assert.That(notification.BodyEn).Contains("Family contribution");
   }
 
   [Test]
@@ -334,7 +356,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     );
   }
 
-  private static async Task ExecuteAsync(
+  private static async Task<FamilyCommandResult> ExecuteAsync(
     ExecuteFamilyCommandHandler handler,
     FamilyMemberId actorId,
     string commandType,
@@ -343,7 +365,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     Guid? commandId = null
   )
   {
-    await handler.HandleAsync(
+    return await handler.HandleAsync(
       new FamilyCommand(
         commandId ?? Guid.NewGuid(),
         _familyId,

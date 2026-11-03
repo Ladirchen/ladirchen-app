@@ -11,5 +11,8 @@ public sealed record FamilyPermissions(
   bool ManageChildTasks,
   bool ReviewChildTasks,
   bool ViewTaskAssignments,
-  bool ViewHouse
+  bool ViewHouse,
+  bool PurchaseHouseContentWithoutBalance,
+  bool ManageShop,
+  bool ReceivePushNotifications
 );

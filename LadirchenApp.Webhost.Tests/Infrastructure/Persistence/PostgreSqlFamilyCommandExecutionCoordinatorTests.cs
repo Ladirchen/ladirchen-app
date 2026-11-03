@@ -10,6 +10,7 @@ using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Infrastructure.Persistence;
+using LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +34,41 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
     await using (var database = new LadirchenDbContext(options))
     {
       await database.Database.MigrateAsync();
+      database.Families.Add(new FamilyRootEntity
+      {
+        Currency = 0,
+        FamilyId = command.FamilyId.Value,
+        LadirchenPerCurrencyUnit = 1,
+        Revision = 1,
+        TimeZone = "Europe/Zurich",
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = command.ActorId.Value,
+        Members =
+        [
+          new FamilyMemberEntity
+          {
+            FamilyId = command.FamilyId.Value,
+            GuardianAccess = (int)GuardianAccess.Supporter,
+            MemberId = command.ActorId.Value,
+            Name = "Child",
+            Role = (int)MemberRole.Child,
+          },
+        ],
+      });
+      database.WebPushSubscriptions.Add(new WebPushSubscriptionEntity
+      {
+        Auth = "auth",
+        CreatedAt = DateTimeOffset.UtcNow,
+        Endpoint = "https://push.example.test/subscription",
+        EndpointHash = new string('A', 64),
+        FamilyId = command.FamilyId.Value,
+        Locale = "de",
+        MemberId = command.ActorId.Value,
+        P256dh = "p256dh",
+        SubscriptionId = Guid.NewGuid(),
+        UpdatedAt = DateTimeOffset.UtcNow,
+      });
+      await database.SaveChangesAsync();
       var coordinator = new PostgreSqlFamilyCommandExecutionCoordinator(database, TimeProvider.System);
       firstResult = await coordinator.ExecuteOnceAsync(
         command,
@@ -74,6 +110,8 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
       await Assert.That(executions).IsEqualTo(1);
       await Assert.That(await restartedDatabase.FamilyCommandReceipts.CountAsync()).IsEqualTo(1);
       await Assert.That(await restartedDatabase.FamilyAggregateOutboxMessages.CountAsync()).IsEqualTo(1);
+      await Assert.That(await restartedDatabase.WebPushNotifications.CountAsync()).IsEqualTo(1);
+      await Assert.That(replayedResult.UserNotifications).HasSingleItem();
       var outboxMessage = await restartedDatabase.FamilyAggregateOutboxMessages
         .AsNoTracking()
         .SingleAsync();
@@ -479,6 +517,17 @@ public sealed class PostgreSqlFamilyCommandExecutionCoordinatorTests
           2,
           command.ActorId,
           DateTimeOffset.Parse("2026-10-29T12:00:00Z")
+        ),
+      ],
+      [
+        new FamilyUserNotification(
+          command.ActorId,
+          "Neue Aufgabe",
+          "Eine Aufgabe wurde zugewiesen.",
+          "New task",
+          "A task was assigned.",
+          "/#/contributions",
+          "test-task"
         ),
       ]
     );

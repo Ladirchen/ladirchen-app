@@ -1,6 +1,9 @@
 import { describe, expectTypeOf, it } from "vite-plus/test";
 
 import type {
+  BehaviorAcknowledgeNoticeCommandRequest,
+  BehaviorIssueWarningCommandRequest,
+  BehaviorResetStatusCommandRequest,
   ContributionsAcknowledgeRewardCommandRequest,
   ContributionsAddCommandRequest,
   ContributionsAddPromotionCommandRequest,
@@ -108,6 +111,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "reward-shop.republish": RewardShopRepublishCommandRequest;
   readonly "reward-shop.set-visibility": RewardShopSetVisibilityCommandRequest;
   readonly "reward-shop.update": RewardShopUpdateCommandRequest;
+  readonly "savings.acknowledge-behavior-notice": BehaviorAcknowledgeNoticeCommandRequest;
   readonly "savings.add-goal": SavingsAddGoalCommandRequest;
   readonly "savings.cancel-goal": SavingsCancelGoalCommandRequest;
   readonly "savings.consent-voucher": SavingsConsentVoucherCommandRequest;
@@ -116,8 +120,10 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "savings.deposit": SavingsDepositCommandRequest;
   readonly "savings.gift-to-goal": SavingsGiftToGoalCommandRequest;
   readonly "savings.gift-to-member": SavingsGiftToMemberCommandRequest;
+  readonly "savings.issue-behavior-warning": BehaviorIssueWarningCommandRequest;
   readonly "savings.redeem-voucher": SavingsRedeemVoucherCommandRequest;
   readonly "savings.request-goal-cancellation": SavingsRequestGoalCancellationCommandRequest;
+  readonly "savings.reset-behavior-status": BehaviorResetStatusCommandRequest;
   readonly "savings.set-currency": SavingsSetCurrencyCommandRequest;
   readonly "savings.set-exchange-rate": SavingsSetExchangeRateCommandRequest;
   readonly "savings.settle-weekly-interest": SavingsSettleWeeklyInterestCommandRequest;

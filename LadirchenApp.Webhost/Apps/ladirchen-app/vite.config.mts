@@ -64,8 +64,55 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         cleanupOutdatedCaches: true,
+        globIgnores: [
+          "**/*Page-*.css",
+          "**/*Page-*.js",
+          "**/*Dialog-*.css",
+          "**/*Dialog-*.js",
+          "**/DevelopmentToolsPanel-*.css",
+          "**/DevelopmentToolsPanel-*.js",
+          "**/PixiRoomScene-*.js",
+          "**/CanvasPool-*.js",
+          "**/GraphicsContext-*.js",
+          "**/RenderTargetSystem-*.js",
+          "**/GCManagedHash-*.js",
+          "**/getTexelRangeRects-*.js",
+          "**/canvasUtils-*.js",
+        ],
+        importScripts: ["/push-notifications-sw.js"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//, /^\/health\//, /^\/hubs\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request, url }) =>
+              url.pathname.startsWith("/assets/") && ["font", "script", "style"].includes(request.destination),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "ladirli-runtime-code",
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              expiration: {
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+                maxEntries: 120,
+              },
+            },
+          },
+          {
+            urlPattern: ({ request, url }) => url.pathname.startsWith("/assets/") && request.destination === "image",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "ladirli-runtime-images",
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              expiration: {
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+                maxEntries: 160,
+              },
+            },
+          },
+        ],
       },
     }),
   ]),

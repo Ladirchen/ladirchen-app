@@ -7,4 +7,5 @@ internal enum LedgerSourceKind
   HouseContent,
   RedemptionRequest,
   SavingGoal,
+  BehaviorIncident,
 }

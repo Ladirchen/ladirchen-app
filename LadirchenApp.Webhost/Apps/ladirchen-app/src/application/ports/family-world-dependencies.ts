@@ -11,6 +11,7 @@ import type { FamilyWorldInitialDataFactory } from "./family-world-initial-data"
 import type { FamilyAggregateUpdatesGateway } from "./family-aggregate-updates";
 import type { FamilyCommandGateway } from "./family-command-gateway";
 import type { AuthenticationGateway } from "./authentication-gateway";
+import type { FamilyBootstrapService } from "./family-bootstrap-service";
 
 interface ReadModelServicePort<TReadModel> {
   load: (familyId: FamilyId, viewerMemberId?: FamilyMemberId) => Promise<TReadModel | null>;
@@ -18,6 +19,7 @@ interface ReadModelServicePort<TReadModel> {
 
 export interface FamilyWorldDependencies {
   readonly authentication: AuthenticationGateway;
+  readonly familyBootstrapService: FamilyBootstrapService;
   readonly contributionsService: ReadModelServicePort<ContributionsReadModel>;
   readonly familyAggregateUpdates: FamilyAggregateUpdatesGateway;
   readonly familyCommands: FamilyCommandGateway;

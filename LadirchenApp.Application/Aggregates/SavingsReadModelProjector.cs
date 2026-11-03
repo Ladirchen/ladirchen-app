@@ -51,6 +51,18 @@ internal static class SavingsReadModelProjector
       .Where(goal => activeMembers.Any(member => member.Id == goal.Owner.MemberId))
       .GroupBy(goal => goal.Owner.MemberId!)
       .ToDictionary(group => group.Key, group => group.Sum(goal => goal.Saved));
+    var visibleBehaviorChildren = viewer.Role == MemberRole.Child
+      ? activeMembers.Where(member => member.Id == viewer.Id)
+      : viewer.Access != GuardianAccess.External
+        ? activeMembers.Where(member => member.Role == MemberRole.Child)
+        : [];
+    var behaviorStatuses = visibleBehaviorChildren.ToDictionary(
+      member => member.Id,
+      member => state.Economy.BehaviorStatusFor(member.Id, state.Now)
+    );
+    IReadOnlyList<PendingBehaviorNotice> pendingBehaviorNotices = viewer.Role == MemberRole.Child
+      ? state.Economy.PendingBehaviorNoticesFor(viewer.Id, state.Now)
+      : [];
 
     return new SavingsReadModelProjection(
       balances,
@@ -58,7 +70,9 @@ internal static class SavingsReadModelProjector
       goalProjections,
       voucherProjections,
       sharedSavedBalances,
-      visibleBalanceMemberIds
+      visibleBalanceMemberIds,
+      behaviorStatuses,
+      pendingBehaviorNotices
     );
   }
 

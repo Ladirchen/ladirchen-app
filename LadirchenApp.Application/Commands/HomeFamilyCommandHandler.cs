@@ -9,6 +9,7 @@ using LadirchenApp.Application.Aggregates;
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
 
@@ -46,6 +47,16 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     ArgumentNullException.ThrowIfNull(command);
     ArgumentNullException.ThrowIfNull(loadedFamily);
     var family = loadedFamily.Root;
+    var isPurchase = IsHomePurchase(command.CommandType);
+    var actor = family.ActiveMember(command.ActorId);
+    var canPurchaseWithoutBalance = new FamilyPermissionPolicy()
+      .Resolve(actor)
+      .PurchaseHouseContentWithoutBalance;
+    Rules.Require(
+      !isPurchase || actor.Role == MemberRole.Child || canPurchaseWithoutBalance,
+      DomainError.Forbidden,
+      "The family member cannot purchase house content."
+    );
     var progression = await _progressionRepository.LoadAsync(family, cancellationToken)
       ?? throw new FamilyCommandException(
         "The family-progression aggregate has not been initialized."
@@ -57,11 +68,10 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     ) ?? throw new FamilyCommandException(
       "The home-customization aggregate has not been initialized."
     );
-    var isPurchase = IsHomePurchase(command.CommandType);
     LoadedFamilyEconomy? loadedEconomy = null;
     var availableBalance = 0m;
 
-    if (isPurchase)
+    if (isPurchase && actor.Role == MemberRole.Child)
     {
       loadedEconomy = await _economyRepository.LoadAsync(family, cancellationToken)
         ?? throw new FamilyCommandException(
@@ -75,10 +85,11 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
       family,
       command,
       RequiredObject(command.Payload),
+      canPurchaseWithoutBalance,
       availableBalance
     );
 
-    if (isPurchase)
+    if (isPurchase && actor.Role == MemberRole.Child)
     {
       if (purchase is null || loadedEconomy is null)
       {
@@ -163,6 +174,7 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     Family family,
     FamilyCommand command,
     JsonElement payload,
+    bool canPurchaseWithoutBalance,
     decimal availableBalance
   )
   {
@@ -175,6 +187,7 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
           house.PurchaseAccessoryContent(
             RequiredString(payload, "id"),
             actorIsChild,
+            canPurchaseWithoutBalance,
             availableBalance
           ),
           "The house accessory cannot be purchased."
@@ -184,6 +197,7 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
           house.PurchaseFurnitureSetContent(
             RequiredString(payload, "id"),
             actorIsChild,
+            canPurchaseWithoutBalance,
             availableBalance
           ),
           "The furniture set cannot be purchased."
@@ -214,6 +228,7 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
           house.PurchaseThemeContent(
             RequiredString(payload, "id"),
             actorIsChild,
+            canPurchaseWithoutBalance,
             availableBalance
           ),
           "The house theme cannot be purchased."
@@ -229,6 +244,7 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
           house.PurchaseRoomDesignContent(
             RequiredString(payload, "id"),
             actorIsChild,
+            canPurchaseWithoutBalance,
             availableBalance
           ),
           "The room design cannot be purchased."

@@ -401,6 +401,33 @@ public sealed class SavingsCommandHandlerTests
     await Assert.That(sourceTypes["stored-goal"]).IsEqualTo(typeof(SavingGoalId));
   }
 
+  [Test]
+  public async Task BehaviorWarningsCreatePushNotificationContentForTheChild()
+  {
+    var store = CreateStore(10);
+    var handler = store.CreateCommandHandler();
+
+    var first = await ExecuteAsync(handler, _guardianId, "savings.issue-behavior-warning", new
+    {
+      childId = _childId.Value,
+      deduction = 0,
+      incidentId = "warning-one",
+      reason = "Please listen",
+    });
+    var second = await ExecuteAsync(handler, _guardianId, "savings.issue-behavior-warning", new
+    {
+      childId = _childId.Value,
+      deduction = 3,
+      incidentId = "warning-two",
+      reason = "Repeated behavior",
+    });
+
+    await Assert.That(first.UserNotifications.Single().TitleDe).IsEqualTo("Gelbe Verwarnung");
+    var deduction = second.UserNotifications.Single();
+    await Assert.That(deduction.RecipientId).IsEqualTo(_childId);
+    await Assert.That(deduction.BodyDe).Contains("3 Ladirchen");
+  }
+
   private static TestTypedAggregateStore CreateStore(decimal childBalance)
   {
     var family = CreateFamily();
@@ -595,7 +622,7 @@ public sealed class SavingsCommandHandlerTests
     return family;
   }
 
-  private static async Task ExecuteAsync(
+  private static async Task<FamilyCommandResult> ExecuteAsync(
     ExecuteFamilyCommandHandler handler,
     FamilyMemberId actorId,
     string commandType,
@@ -604,7 +631,7 @@ public sealed class SavingsCommandHandlerTests
     Guid? commandId = null
   )
   {
-    await handler.HandleAsync(
+    return await handler.HandleAsync(
       new FamilyCommand(
         commandId ?? Guid.NewGuid(),
         _familyId,

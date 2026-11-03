@@ -63,14 +63,25 @@
           </button>
         </fieldset>
       </div>
-      <template v-if="store.viewerRole === 'child'">
-        <div class="setting-row">
+      <div v-if="store.permissions.canReceivePushNotifications" class="setting-row">
+        <span>
+          <i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:bell-outline" size="19" /></i>
           <span>
-            <i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:bell-outline" size="19" /></i>
-            {{ t("profile.settings.reminders") }}
+            {{ t("profile.settings.pushNotifications") }}
+            <small class="d-block text-medium-emphasis">{{ pushDescription }}</small>
           </span>
-          <v-switch color="primary" density="compact" hide-details inset model-value />
-        </div>
+        </span>
+        <v-switch
+          color="primary"
+          density="compact"
+          :disabled="pushBusy || pushState === 'unavailable'"
+          hide-details
+          inset
+          :model-value="pushState === 'enabled'"
+          @update:model-value="updatePushNotifications"
+        />
+      </div>
+      <template v-if="store.viewerRole === 'child'">
         <div class="setting-row">
           <span>
             <i class="setting-icon" aria-hidden="true"><v-icon icon="i-mdi:eye-outline" size="19" /></i>
@@ -178,7 +189,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
@@ -188,6 +199,12 @@ import { useFamilyWorldStore } from "@/stores/family-world";
 import { setActiveLocale } from "@/plugins/i18n";
 import type { SupportedLocale } from "@/plugins/i18n";
 import { DEFAULT_LOCALE, isSupportedLocale, localeOptions } from "@/locales";
+import {
+  disableWebPush,
+  enableWebPush,
+  readWebPushState,
+  type WebPushState,
+} from "@/infrastructure/push/web-push-notifications";
 const AsyncAvatarBuilderDialog = defineAsyncComponent(
   () => import("@/shared/components/avatar/AvatarBuilderDialog.vue"),
 );
@@ -205,6 +222,8 @@ const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const avatarBuilderOpen = ref(false);
 const profileEditorOpen = ref(false);
+const pushBusy = ref(false);
+const pushState = ref<WebPushState>("disabled");
 const nicknameDraft = ref(store.activeChild?.nickname ?? "");
 const activeLocale = computed<SupportedLocale>({
   get(this: void) {
@@ -224,10 +243,31 @@ const profileDescription = computed(function callback() {
 
   return store.isFamilyAdmin ? t("profile.editor.administratorDescription") : t("profile.editor.guardianDescription");
 });
+const pushDescription = computed(() =>
+  pushState.value === "unavailable" ? t("profile.settings.pushUnavailable") : t("profile.settings.pushDescription"),
+);
 const nicknameChanged = computed(() => nicknameDraft.value.trim() !== (store.activeChild?.nickname ?? ""));
 function saveNickname() {
   return store.setOwnNickname(nicknameDraft.value);
 }
+async function updatePushNotifications(enabled: boolean | null) {
+  pushBusy.value = true;
+
+  try {
+    pushState.value = enabled === true ? await enableWebPush(activeLocale.value) : await disableWebPush();
+  } catch {
+    pushState.value = "unavailable";
+  } finally {
+    pushBusy.value = false;
+  }
+}
+onMounted(async () => {
+  try {
+    pushState.value = await readWebPushState();
+  } catch {
+    pushState.value = "unavailable";
+  }
+});
 watch(
   () => store.activeChildId,
   () => {

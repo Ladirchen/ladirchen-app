@@ -116,4 +116,48 @@ describe("family world empty state", () => {
 
     expect(store.canInviteFamilyMembers).toBe(false);
   });
+
+  it("uses the signed-in guardian progression instead of the active child progression", () => {
+    const guardianId = createDomainId.familyMember("guardian");
+    const childId = createDomainId.familyMember("child");
+    const useStore = createFamilyWorldStoreDefinition({ create: createEmptyFamilyWorldInitialData });
+    const store = useStore();
+    store.viewerRole = "guardian";
+    store.signedInMemberId = guardianId;
+    store.activeChildId = childId;
+    store.memberProgressions = {
+      [guardianId]: {
+        approvedDates: ["2026-11-02", "2026-11-03"],
+        averageBasicRating: 4,
+        completionPercent: 40,
+        energyContribution: 10,
+        ladiStageId: "idle-ladi",
+        ladiStagePosition: 1,
+        participationValue: 2,
+        savingsInterestRate: 1,
+        streakDays: 9,
+      },
+      [childId]: {
+        approvedDates: ["2026-11-03"],
+        averageBasicRating: 5,
+        completionPercent: 20,
+        energyContribution: 5,
+        ladiStageId: "idle-ladi",
+        ladiStagePosition: 1,
+        participationValue: 1,
+        savingsInterestRate: 1,
+        streakDays: 3,
+      },
+    };
+
+    expect(store.dailyEnergy).toBe(40);
+    expect(store.currentWeekDays).toBe(2);
+    expect(store.currentParticipationStreakDays).toBe(9);
+
+    store.viewerRole = "child";
+
+    expect(store.dailyEnergy).toBe(20);
+    expect(store.currentWeekDays).toBe(1);
+    expect(store.currentParticipationStreakDays).toBe(3);
+  });
 });

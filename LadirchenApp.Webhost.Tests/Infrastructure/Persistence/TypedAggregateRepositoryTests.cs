@@ -280,7 +280,7 @@ public sealed class TypedAggregateRepositoryTests
         progression.StoredLevel,
         HouseSubscriptionTier.Pro
       );
-      await Assert.That(house.PurchaseTheme("halloween-night", true, 1_000)).IsTrue();
+      await Assert.That(house.PurchaseTheme("halloween-night", true, false, 1_000)).IsTrue();
       await Assert.That(house.MoveAccessory("flower-boxes", "garden", 35, 55)).IsTrue();
 
       var saved = await unitOfWork.SaveAsync(

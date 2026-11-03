@@ -1,7 +1,10 @@
 import { createLazyAssetLoader } from "@/shared/assets/lazy-asset-loader";
 import type { AssetGlobModules } from "@/shared/assets/lazy-asset-loader";
 import type { HouseEnergyVisualLevel, RoomBackgroundAssetId, RoomDesignDefinition } from "@/domain/house";
-const modules = import.meta.glob("../../../assets/room-designs/*.webp", { import: "default" }) as AssetGlobModules;
+const modules = import.meta.glob("../../../assets/room-designs/*.webp", {
+  eager: true,
+  import: "default",
+}) as AssetGlobModules;
 // ids carry a "-background" suffix the source files don't have (e.g. "kitchen-ladi-classic-background" -> "kitchen-ladi-classic.webp")
 export const getRoomDesignBackgroundUrl = createLazyAssetLoader<RoomBackgroundAssetId>(
   modules,

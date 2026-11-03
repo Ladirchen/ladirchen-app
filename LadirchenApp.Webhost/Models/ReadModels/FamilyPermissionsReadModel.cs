@@ -13,5 +13,8 @@ public sealed record FamilyPermissionsReadModel(
   [property: JsonRequired] bool CanManageChildTasks,
   [property: JsonRequired] bool CanReviewChildTasks,
   [property: JsonRequired] bool CanViewTaskAssignments,
-  [property: JsonRequired] bool CanViewHouse
+  [property: JsonRequired] bool CanViewHouse,
+  [property: JsonRequired] bool CanPurchaseHouseContentWithoutBalance,
+  [property: JsonRequired] bool CanManageShop,
+  [property: JsonRequired] bool CanReceivePushNotifications
 );

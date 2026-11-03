@@ -1,11 +1,31 @@
 import type { SavingGoalTranslationNamespaceKey } from "@/locales/translation-keys";
-import type { FamilyMemberId, GuardianGiftId, SavingGoalId } from "@/domain/shared/identifiers";
+import type { BehaviorIncidentId, FamilyMemberId, GuardianGiftId, SavingGoalId } from "@/domain/shared/identifiers";
 
 export type FamilyCurrency = "CHF" | "EUR" | "HUF";
 export type GoalVisibility = "family" | "guardians" | "private";
 export type SavingGoalOwnerId = FamilyMemberId | "family";
 export type FamilyGoalParticipantScope = "family" | "children" | "selected";
 export type SavingsVoucherStatus = "pending" | "redeemable" | "redeemed";
+export type BehaviorLightLevel = "green" | "yellow" | "orange" | "red";
+
+export interface ChildBehaviorStatus {
+  childId: FamilyMemberId;
+  level: BehaviorLightLevel;
+  warningCount: number;
+  tasksBlocked: boolean;
+  lastReason?: string;
+  updatedAtUtc?: string;
+}
+
+export interface BehaviorNotice {
+  id: BehaviorIncidentId;
+  childId: FamilyMemberId;
+  guardianId: FamilyMemberId;
+  level: BehaviorLightLevel;
+  deductedAmount: number;
+  reason: string;
+  occurredAtUtc: string;
+}
 
 export interface GuardianGift {
   id: GuardianGiftId;

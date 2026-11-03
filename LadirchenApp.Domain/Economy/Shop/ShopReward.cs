@@ -36,6 +36,14 @@ public sealed class ShopReward : Entity<ShopRewardId>
   {
     get; private set;
   }
+  public LadirchenAmount? PromotionalPrice
+  {
+    get; private set;
+  }
+  public DateOnly? PromotionUntil
+  {
+    get; private set;
+  }
   public int Quantity
   {
     get; private set;
@@ -59,6 +67,16 @@ public sealed class ShopReward : Entity<ShopRewardId>
   public bool IsPublished(DateTimeOffset now, IanaTimeZone zone)
   {
     return PublicationStatus(zone.LocalDate(now)) == ShopRewardPublicationStatus.Visible;
+  }
+
+  public bool PromotionIsActive(DateOnly localDate)
+  {
+    return PromotionalPrice is not null && PromotionUntil is not null && localDate <= PromotionUntil;
+  }
+
+  public LadirchenAmount EffectivePrice(DateOnly localDate)
+  {
+    return PromotionIsActive(localDate) ? PromotionalPrice! : Price;
   }
 
   public ShopRewardPublicationStatus PublicationStatus(DateOnly localDate)
@@ -93,6 +111,22 @@ public sealed class ShopReward : Entity<ShopRewardId>
   internal void SetVisibility(bool visible)
   {
     IsVisible = visible;
+  }
+
+  internal void SetPromotion(LadirchenAmount? price, DateOnly? until)
+  {
+    Rules.Require(
+      (price is null) == (until is null),
+      DomainError.InvalidState,
+      "A shop promotion requires both a price and an end date."
+    );
+    Rules.Require(
+      price is null || price.Value < Price.Value,
+      DomainError.InvalidState,
+      "A promotional price must be lower than the regular price."
+    );
+    PromotionalPrice = price;
+    PromotionUntil = until;
   }
 
   internal void Reserve()
@@ -141,6 +175,10 @@ public sealed class ShopReward : Entity<ShopRewardId>
     Quantity = definition.Quantity;
     IsVisible = definition.IsVisible;
     Window = definition.Window ?? throw new ArgumentNullException(nameof(definition));
+    if (PromotionalPrice?.Value >= Price.Value)
+    {
+      SetPromotion(null, null);
+    }
     Release();
   }
 

@@ -13,5 +13,7 @@ public sealed record AddShopRewardPayload(
   [property: JsonRequired] string Conditions,
   string? AvailableFrom,
   string? AvailableUntil,
-  bool? IsVisible
+  bool? IsVisible,
+  decimal? PromotionalPrice,
+  string? PromotionUntil
 );

@@ -2,7 +2,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
+using LadirchenApp.Domain.Family.Permissions;
 using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
 
@@ -35,8 +38,32 @@ public sealed partial class GetFamilyAggregateQueryHandler
       await _economyRepository.LoadAsync(family, cancellationToken),
       "family economy"
     );
+
+    return ProjectHomeCustomization(
+      family,
+      loadedProgression,
+      loadedCustomization,
+      loadedEconomy,
+      capabilityMemberId
+    );
+  }
+
+  private static HomeCustomizationReadModelProjection ProjectHomeCustomization(
+    Family family,
+    LoadedAggregate<FamilyHouse> loadedProgression,
+    LoadedAggregate<FamilyHouseShop> loadedCustomization,
+    LoadedFamilyEconomy loadedEconomy,
+    FamilyMemberId capabilityMemberId
+  )
+  {
+
     var member = family.ActiveMember(capabilityMemberId);
-    var availableBalance = loadedEconomy.Root.WalletFor(member.Id).Available;
+    var availableBalance = member.Role == MemberRole.Child
+      ? loadedEconomy.Root.WalletFor(member.Id).Available
+      : 0m;
+    var canPurchaseWithoutBalance = new FamilyPermissionPolicy()
+      .Resolve(member)
+      .PurchaseHouseContentWithoutBalance;
     var customization = loadedCustomization.Root;
     var accessories = customization.Accessories.ToDictionary(item => item.Id);
     var availableAccessoryIds = customization.Accessories
@@ -47,6 +74,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       .Where(item => customization.CanPurchaseAccessory(
         item.Id,
         member.Role == MemberRole.Child,
+        canPurchaseWithoutBalance,
         availableBalance
       ))
       .Select(item => item.Id)
@@ -67,6 +95,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       .Where(item => customization.CanPurchaseFurnitureSet(
         item.Key,
         member.Role == MemberRole.Child,
+        canPurchaseWithoutBalance,
         availableBalance
       ))
       .Select(item => item.Key)
@@ -75,6 +104,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       .Where(item => customization.CanPurchaseTheme(
         item.Id,
         member.Role == MemberRole.Child,
+        canPurchaseWithoutBalance,
         availableBalance
       ))
       .Select(item => item.Id)
@@ -87,6 +117,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       .Where(item => customization.CanPurchaseRoomDesign(
         item.Id,
         member.Role == MemberRole.Child,
+        canPurchaseWithoutBalance,
         availableBalance
       ))
       .Select(item => item.Id)

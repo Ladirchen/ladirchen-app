@@ -1,3 +1,5 @@
+using System;
+
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.Economy;
@@ -11,5 +13,7 @@ internal sealed record ShopRewardState(
   bool IsVisible,
   AvailabilityWindow Window,
   ShopRewardStatus Status,
-  bool Deleted
+  bool Deleted,
+  LadirchenAmount? PromotionalPrice = null,
+  DateOnly? PromotionUntil = null
 );

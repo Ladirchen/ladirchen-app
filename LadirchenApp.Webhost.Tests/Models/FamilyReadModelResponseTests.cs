@@ -81,9 +81,11 @@ public sealed class FamilyReadModelResponseTests
       new SavingsReadModelState(
         new Dictionary<string, decimal>(),
         new Dictionary<string, decimal>(),
+        new Dictionary<string, ChildBehaviorStatusReadModel>(),
         "CHF",
         [goal],
         1,
+        [],
         [],
         [],
         new Dictionary<string, decimal>(),
@@ -212,9 +214,11 @@ public sealed class FamilyReadModelResponseTests
     return new SavingsReadModelState(
       new Dictionary<string, decimal>(),
       new Dictionary<string, decimal>(),
+      new Dictionary<string, ChildBehaviorStatusReadModel>(),
       "CHF",
       [],
       1,
+      [],
       [],
       [],
       new Dictionary<string, decimal>(),

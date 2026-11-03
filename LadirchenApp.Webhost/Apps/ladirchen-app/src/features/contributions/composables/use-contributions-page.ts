@@ -106,6 +106,24 @@ export function useContributionsPage() {
       )
       .sort((left, right) => Number(Boolean(left.assigneeId)) - Number(Boolean(right.assigneeId))),
   );
+  const managedContributionGroups = computed(() => {
+    const memberIds = store.members.map((member) => member.id);
+    const groupIds: Array<FamilyMemberId | undefined> = [undefined, ...memberIds];
+
+    return groupIds.flatMap((memberId) => {
+      const contributions = managedContributions.value.filter((contribution) => contribution.assigneeId === memberId);
+
+      return contributions.length
+        ? [
+            {
+              memberId,
+              title: memberId ? memberName(memberId) : t("contributions.assignment.stillOpen"),
+              contributions,
+            },
+          ]
+        : [];
+    });
+  });
   const guardianOwnContributions = computed(() =>
     localizedContributions.value.filter(
       (contribution) =>
@@ -134,7 +152,9 @@ export function useContributionsPage() {
         .length,
   );
   const promotionContributionOptions = computed(() =>
-    localizedContributions.value.map((contribution) => ({ title: contribution.title, value: contribution.id })),
+    localizedContributions.value
+      .filter((contribution) => contribution.status === "available")
+      .map((contribution) => ({ title: contribution.title, value: contribution.id })),
   );
   const teamContribution = computed(() =>
     localizedContributions.value.find((contribution) => contribution.id === teamContributionId.value),
@@ -376,6 +396,7 @@ export function useContributionsPage() {
     guardianTasksToRate,
     kindOptions,
     managedContributions,
+    managedContributionGroups,
     memberName,
     multiplierOptions,
     newContribution,

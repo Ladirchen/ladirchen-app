@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
@@ -21,6 +22,15 @@ public sealed partial class GetFamilyAggregateQueryHandler
       return null;
     }
 
+    return ProjectContributions(family, loadedEconomy, viewerId);
+  }
+
+  private ContributionsFamilyReadModelProjection ProjectContributions(
+    Family family,
+    LoadedFamilyEconomy loadedEconomy,
+    FamilyMemberId viewerId
+  )
+  {
     var calculatedState = ContributionReadModelProjector.Project(
       new ContributionReadModelState(family, loadedEconomy.Root),
       viewerId,

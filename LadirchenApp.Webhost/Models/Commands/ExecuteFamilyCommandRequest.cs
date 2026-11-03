@@ -6,6 +6,9 @@ namespace LadirchenApp.Webhost.Models.Commands;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "commandType")]
 [JsonDerivedType(typeof(ContributionsAcknowledgeRewardCommandRequest), "contributions.acknowledge-reward")]
+[JsonDerivedType(typeof(BehaviorAcknowledgeNoticeCommandRequest), "savings.acknowledge-behavior-notice")]
+[JsonDerivedType(typeof(BehaviorIssueWarningCommandRequest), "savings.issue-behavior-warning")]
+[JsonDerivedType(typeof(BehaviorResetStatusCommandRequest), "savings.reset-behavior-status")]
 [JsonDerivedType(typeof(ContributionsAddCommandRequest), "contributions.add")]
 [JsonDerivedType(typeof(ContributionsCopyCommandRequest), "contributions.copy")]
 [JsonDerivedType(typeof(ContributionsAddPromotionCommandRequest), "contributions.add-promotion")]

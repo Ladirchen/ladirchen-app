@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using LadirchenApp.Domain.Economy;
@@ -10,6 +11,7 @@ namespace LadirchenApp.Application.Aggregates;
 internal sealed record SavingsReadModelState(
   Family Family,
   FamilyEconomy Economy,
+  DateTimeOffset Now,
   Percentage MaximumInterestRate,
   IReadOnlyDictionary<FamilyMemberId, LadiStage> LadiStages,
   IReadOnlySet<FamilyMemberId> StoredBalanceMemberIds

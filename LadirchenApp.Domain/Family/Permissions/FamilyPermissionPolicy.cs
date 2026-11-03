@@ -18,24 +18,24 @@ public sealed class FamilyPermissionPolicy
 
     if (role == MemberRole.Guardian && access == GuardianAccess.Admin)
     {
-      return new(true, true, true, true, true, true, true, true, true, true, true);
+      return new(true, true, true, true, true, true, true, true, true, true, true, true, true, true);
     }
 
     if (role == MemberRole.Guardian && access == GuardianAccess.External)
     {
-      return new(false, false, false, false, false, false, false, true, true, true, false);
+      return new(false, false, false, false, false, false, false, true, true, true, false, false, true, false);
     }
 
     if (role == MemberRole.Guardian)
     {
-      return new(false, false, false, false, true, true, false, false, false, false, true);
+      return new(false, false, false, false, true, true, false, false, false, false, true, true, true, true);
     }
 
-    return new(false, false, false, false, false, true, false, false, false, false, true);
+    return new(false, false, false, false, false, true, false, false, false, false, true, false, false, true);
   }
 
   private static FamilyPermissions None()
   {
-    return new(false, false, false, false, false, false, false, false, false, false, false);
+    return new(false, false, false, false, false, false, false, false, false, false, false, false, false, false);
   }
 }

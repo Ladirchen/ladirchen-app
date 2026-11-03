@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
@@ -73,6 +74,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
     SavingGoalPresentationState? goalPresentation = null;
     GuardianGiftPresentationState? giftPresentation = null;
     LoadedAggregate<FamilyHouse>? progression = null;
+    var notifications = new List<FamilyUserNotification>();
 
     switch (command.CommandType)
     {
@@ -93,6 +95,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
         goalPresentation = UpdateSavingsGoal(economy, command.ActorId, payload, now);
         break;
       case "savings.support-goal":
+        var supportedGoal = economy.GoalFor(command.ActorId, GoalId(payload));
         giftPresentation = SupportSavingsGoal(
           economy,
           family.Root,
@@ -101,8 +104,10 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
           operationId,
           now
         );
+        AddGoalGiftNotification(supportedGoal, payload, command.CommandId, notifications);
         break;
       case "savings.gift-to-goal":
+        var giftedGoal = economy.GoalFor(command.ActorId, GoalId(payload));
         giftPresentation = GiftToSavingsGoal(
           economy,
           family.Root,
@@ -111,6 +116,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
           operationId,
           now
         );
+        AddGoalGiftNotification(giftedGoal, payload, command.CommandId, notifications);
         break;
       case "savings.gift-to-member":
         giftPresentation = GiftToFamilyMember(
@@ -121,6 +127,11 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
           operationId,
           now
         );
+        notifications.Add(GiftNotification(
+          new FamilyMemberId(RequiredString(payload, "recipientId")),
+          RequiredDecimal(payload, "amount"),
+          RequiredString(payload, "giftId")
+        ));
         break;
       case "savings.special-gift":
         giftPresentation = GiveSpecialSavingsGift(
@@ -128,6 +139,46 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
           family.Root,
           command.ActorId,
           payload,
+          operationId,
+          now
+        );
+        notifications.Add(GiftNotification(
+          new FamilyMemberId(RequiredString(payload, "childId")),
+          RequiredDecimal(payload, "amount"),
+          RequiredString(payload, "giftId")
+        ));
+        break;
+      case "savings.issue-behavior-warning":
+        var childId = new FamilyMemberId(RequiredString(payload, "childId"));
+        var behaviorStatus = economy.IssueBehaviorWarning(
+          command.ActorId,
+          childId,
+          new LadirchenAmount(RequiredDecimal(payload, "deduction")),
+          RequiredString(payload, "reason"),
+          new BehaviorIncidentId(RequiredString(payload, "incidentId")),
+          operationId,
+          now
+        );
+        notifications.Add(BehaviorNotification(
+          childId,
+          behaviorStatus,
+          RequiredDecimal(payload, "deduction"),
+          RequiredString(payload, "reason"),
+          RequiredString(payload, "incidentId")
+        ));
+        break;
+      case "savings.reset-behavior-status":
+        _ = economy.ResetBehaviorStatus(
+          command.ActorId,
+          new FamilyMemberId(RequiredString(payload, "childId")),
+          operationId,
+          now
+        );
+        break;
+      case "savings.acknowledge-behavior-notice":
+        economy.AcknowledgeBehaviorNotice(
+          command.ActorId,
+          new BehaviorIncidentId(RequiredString(payload, "incidentId")),
           operationId,
           now
         );
@@ -230,7 +281,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
     var changedEconomy = saved.FamilyEconomy
       ?? throw new InvalidOperationException("The family economy was not saved.");
 
-    return EconomyResult(command.FamilyId, changedEconomy);
+    return EconomyResult(command.FamilyId, changedEconomy, notifications);
   }
 
   private async Task<FamilyCommandResult> UpdateFamilySettingsAsync(
@@ -546,7 +597,8 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
 
   private static FamilyCommandResult EconomyResult(
     FamilyId familyId,
-    LoadedFamilyEconomy changedEconomy
+    LoadedFamilyEconomy changedEconomy,
+    IReadOnlyList<FamilyUserNotification>? notifications = null
   )
   {
     return new FamilyCommandResult(
@@ -554,7 +606,80 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
       Change(familyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
       Change(familyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
       Change(familyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
-    ]);
+    ], notifications ?? Array.Empty<FamilyUserNotification>());
+  }
+
+  private static FamilyUserNotification GiftNotification(
+    FamilyMemberId recipientId,
+    decimal amount,
+    string giftId
+  )
+  {
+    return new FamilyUserNotification(
+      recipientId,
+      "Ladirchen erhalten",
+      $"Du hast {amount:0.##} Ladirchen geschenkt bekommen.",
+      "Ladirchen received",
+      $"You received a gift of {amount:0.##} Ladirchen.",
+      "/#/wishes",
+      $"ladirchen-gift-{giftId}"
+    );
+  }
+
+  private static void AddGoalGiftNotification(
+    SavingGoal goal,
+    JsonElement payload,
+    Guid commandId,
+    ICollection<FamilyUserNotification> notifications
+  )
+  {
+    if (goal.Owner.MemberId is null)
+    {
+      return;
+    }
+
+    notifications.Add(new FamilyUserNotification(
+      goal.Owner.MemberId,
+      "Ladirchen im Sparziel erhalten",
+      $"Dein Sparziel „{goal.Title}“ wurde mit {RequiredDecimal(payload, "amount"):0.##} Ladirchen unterstützt.",
+      "Ladirchen added to your goal",
+      $"Your savings goal “{goal.Title}” received {RequiredDecimal(payload, "amount"):0.##} Ladirchen.",
+      "/#/wishes",
+      $"goal-gift-{commandId:N}"
+    ));
+  }
+
+  private static FamilyUserNotification BehaviorNotification(
+    FamilyMemberId childId,
+    ChildBehaviorStatus status,
+    decimal deduction,
+    string reason,
+    string incidentId
+  )
+  {
+    var (titleDe, titleEn) = status.Level switch
+    {
+      BehaviorLightLevel.Yellow => ("Gelbe Verwarnung", "Yellow warning"),
+      BehaviorLightLevel.Orange => ("Ladirchen-Abzug", "Ladirchen deduction"),
+      BehaviorLightLevel.Red => ("Aufgaben heute gesperrt", "Tasks blocked today"),
+      _ => ("Verhaltensstatus", "Behavior status"),
+    };
+    var bodyDe = deduction > 0
+      ? $"{deduction:0.##} Ladirchen wurden abgezogen. Grund: {reason}"
+      : $"Grund: {reason}";
+    var bodyEn = deduction > 0
+      ? $"{deduction:0.##} Ladirchen were deducted. Reason: {reason}"
+      : $"Reason: {reason}";
+
+    return new FamilyUserNotification(
+      childId,
+      titleDe,
+      bodyDe,
+      titleEn,
+      bodyEn,
+      "/#/profile",
+      $"behavior-{incidentId}"
+    );
   }
 
   private static FamilyMemberId[] ResolveFamilyGoalParticipants(

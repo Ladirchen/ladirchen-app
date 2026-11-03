@@ -11,6 +11,8 @@ Feature: Family role permissions
     And child-goal support is denied
     And family-goal visibility is allowed
     And guardian-goal visibility is denied
+    And shop management is denied
+    And push notifications are allowed
 
   Scenario: Family roles receive their configured capabilities [role=guardian supporter; inviteMembers=denied; manageGoals=denied; manageContent=denied; manageFamily=denied; supportGoals=allowed; viewFamilyGoals=allowed; viewGuardianGoals=denied]
     Given the signed-in member is a "guardian supporter"
@@ -22,6 +24,8 @@ Feature: Family role permissions
     And child-goal support is allowed
     And family-goal visibility is allowed
     And guardian-goal visibility is denied
+    And shop management is allowed
+    And push notifications are allowed
 
   Scenario: Family roles receive their configured capabilities [role=guardian administrator; inviteMembers=allowed; manageGoals=allowed; manageContent=allowed; manageFamily=allowed; supportGoals=allowed; viewFamilyGoals=allowed; viewGuardianGoals=allowed]
     Given the signed-in member is a "guardian administrator"
@@ -33,6 +37,8 @@ Feature: Family role permissions
     And child-goal support is allowed
     And family-goal visibility is allowed
     And guardian-goal visibility is allowed
+    And shop management is allowed
+    And push notifications are allowed
 
   Scenario: A missing member receives no permissions
     Given no signed-in family member can be resolved
@@ -49,3 +55,5 @@ Feature: Family role permissions
     And family-goal visibility is denied
     And guardian-goal visibility is denied
     And house visibility is denied
+    And shop management is allowed
+    And push notifications are denied

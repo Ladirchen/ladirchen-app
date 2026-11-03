@@ -78,7 +78,11 @@ export const familyActions = {
     }
 
     this.isAuthenticated = true;
-    this.$familyWorld.scheduler.schedule(() => this.revealNextContributionReward(), FOLLOW_UP_REWARD_REVEAL_DELAY_MS);
+    this.$familyWorld.scheduler.schedule(() => {
+      this.revealNextBehaviorNotice();
+      this.revealNextContributionReward();
+      this.revealNextGuardianGift();
+    }, FOLLOW_UP_REWARD_REVEAL_DELAY_MS);
 
     return true;
   },

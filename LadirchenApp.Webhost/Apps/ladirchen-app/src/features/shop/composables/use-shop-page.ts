@@ -33,6 +33,9 @@ interface RewardDraft {
   availableFrom: string;
   unlimited: boolean;
   availableUntil: string;
+  promotionEnabled: boolean;
+  promotionalPrice: number;
+  promotionUntil: string;
 }
 interface HouseThemePreview {
   backgroundUrl?: string;
@@ -51,6 +54,9 @@ function createEmptyReward(): RewardDraft {
     availableFrom: "",
     unlimited: true,
     availableUntil: "",
+    promotionEnabled: false,
+    promotionalPrice: 50,
+    promotionUntil: "",
   };
 }
 export function useShopPage() {
@@ -150,7 +156,11 @@ export function useShopPage() {
       newReward.quantity >= 1 &&
       (newReward.publicationMode !== "scheduled" || newReward.availableFrom) &&
       (newReward.unlimited || newReward.availableUntil) &&
-      (!newReward.availableFrom || !newReward.availableUntil || newReward.availableFrom <= newReward.availableUntil),
+      (!newReward.availableFrom || !newReward.availableUntil || newReward.availableFrom <= newReward.availableUntil) &&
+      (!newReward.promotionEnabled ||
+        (newReward.promotionalPrice >= 0 &&
+          newReward.promotionalPrice < newReward.price &&
+          newReward.promotionUntil >= minimumAvailableDate.value)),
     ),
   );
   const displayedShopRewards = computed(() =>
@@ -288,6 +298,8 @@ export function useShopPage() {
       availableFrom: newReward.publicationMode === "scheduled" ? newReward.availableFrom : undefined,
       availableUntil: newReward.unlimited ? undefined : newReward.availableUntil,
       isVisible: newReward.publicationMode !== "hidden",
+      promotionalPrice: newReward.promotionEnabled ? newReward.promotionalPrice : undefined,
+      promotionUntil: newReward.promotionEnabled ? newReward.promotionUntil : undefined,
     };
   }
   function closeRewardDialog() {
@@ -304,7 +316,10 @@ export function useShopPage() {
       conditions: reward.conditions,
       description: reward.description,
       icon: reward.icon,
-      price: reward.price,
+      price: reward.regularPrice ?? reward.price,
+      promotionEnabled: reward.promotionActive === true,
+      promotionalPrice: reward.promotionActive ? reward.price : Math.max(0, Math.floor(reward.price * 0.8)),
+      promotionUntil: reward.promotionUntil ?? "",
       publicationMode: publicationModeFor(reward),
       quantity: Math.max(1, reward.quantity),
       title: reward.title,

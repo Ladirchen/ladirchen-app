@@ -118,6 +118,18 @@ public sealed class FamilyPermissionSteps
     return AssertPermission(_permissions.ViewHouse, expected);
   }
 
+  [Then("shop management is {word}")]
+  public Task ShopManagement(string expected)
+  {
+    return AssertPermission(_permissions.ManageShop, expected);
+  }
+
+  [Then("push notifications are {word}")]
+  public Task PushNotifications(string expected)
+  {
+    return AssertPermission(_permissions.ReceivePushNotifications, expected);
+  }
+
   [Then("every family capability is denied")]
   public async Task AllDenied()
   {

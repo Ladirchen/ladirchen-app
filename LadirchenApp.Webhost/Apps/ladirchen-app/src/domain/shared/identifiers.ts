@@ -9,6 +9,7 @@ export type SavingGoalId = DomainId<"saving-goal">;
 export type PromotionId = DomainId<"promotion">;
 export type ShopRewardId = DomainId<"shop-reward">;
 export type GuardianGiftId = DomainId<"guardian-gift">;
+export type BehaviorIncidentId = DomainId<"behavior-incident">;
 export type HouseLayoutPlacementId = DomainId<"house-layout-placement">;
 const domainIdPattern = /^\w[\w.:-]{0,127}$/u;
 const uuidPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/iu;
@@ -26,6 +27,9 @@ function domainId<Kind extends string>(value: string): DomainId<Kind> {
   return value as DomainId<Kind>;
 }
 export const createDomainId = {
+  behaviorIncident(this: void, value: string): BehaviorIncidentId {
+    return domainId<"behavior-incident">(value);
+  },
   contribution(this: void, value: string): ContributionId {
     return domainId<"contribution">(value);
   },

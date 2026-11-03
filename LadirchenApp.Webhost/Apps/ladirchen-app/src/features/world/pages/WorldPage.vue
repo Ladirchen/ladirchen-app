@@ -50,6 +50,65 @@
     </section>
 
     <div class="page-padding pt-5">
+      <BrandedCard
+        v-if="store.viewerRole === 'child' && activeChildBehaviorStatus"
+        class="behavior-status-card pa-4 mb-6"
+        :class="`behavior-status-card--${activeChildBehaviorStatus.level}`"
+        tone="world"
+      >
+        <div class="d-flex align-center ga-3">
+          <span
+            class="behavior-light"
+            :class="`behavior-light--${activeChildBehaviorStatus.level}`"
+            aria-hidden="true"
+          ></span>
+          <div>
+            <strong>{{ behaviorLevelLabel(activeChildBehaviorStatus.level) }}</strong>
+            <p class="text-caption text-medium-emphasis">
+              {{ behaviorChildStatusMessage(activeChildBehaviorStatus.level) }}
+            </p>
+          </div>
+        </div>
+      </BrandedCard>
+
+      <BrandedCard v-if="showBehaviorManagement" class="management-card pa-4 mb-6" tone="world">
+        <div class="d-flex align-center justify-space-between ga-3 mb-3">
+          <div>
+            <strong>{{ t("world.behavior.title") }}</strong>
+            <p class="text-caption text-medium-emphasis">{{ t("world.behavior.description") }}</p>
+          </div>
+          <v-icon color="warning">i-mdi:traffic-light-outline</v-icon>
+        </div>
+        <div class="d-flex flex-column ga-2">
+          <div v-for="child in childMembers" :key="child.id" class="behavior-child-row">
+            <span
+              class="behavior-light"
+              :class="`behavior-light--${behaviorLevelFor(child.id)}`"
+              aria-hidden="true"
+            ></span>
+            <strong class="flex-grow-1">{{ child.name }}</strong>
+            <span class="text-caption">{{ behaviorLevelLabel(behaviorLevelFor(child.id)) }}</span>
+            <v-btn
+              v-if="behaviorLevelFor(child.id) !== 'red'"
+              color="warning"
+              icon="i-mdi:alert-outline"
+              size="small"
+              variant="tonal"
+              @click="openBehaviorDialog(child.id)"
+            />
+            <v-btn
+              v-if="behaviorLevelFor(child.id) !== 'green'"
+              :aria-label="t('world.behavior.reset')"
+              color="success"
+              icon="i-mdi:restore"
+              size="small"
+              variant="tonal"
+              @click="store.resetBehaviorStatus(child.id)"
+            />
+          </div>
+        </div>
+      </BrandedCard>
+
       <template v-if="showGuardianManagement">
         <BrandedCard class="management-card pa-4 mb-6" tone="world">
           <div class="d-flex align-center justify-space-between ga-3 mb-3">
@@ -168,6 +227,27 @@
         </v-btn>
       </BrandedCard>
 
+      <BrandedCard v-if="activeShopPromotion" class="shop-promotion-banner pa-4 mb-6" tone="shop">
+        <div class="d-flex align-center ga-3">
+          <v-avatar color="warning" size="48" variant="tonal">{{ activeShopPromotion.icon }}</v-avatar>
+          <div class="flex-grow-1 min-w-0">
+            <p class="eyebrow mb-1">{{ t("shop.promotion.eyebrow") }}</p>
+            <strong>{{ activeShopPromotion.title }}</strong>
+            <p class="text-caption text-medium-emphasis">
+              {{
+                t("shop.promotion.message", {
+                  date: activeShopPromotion.promotionUntil,
+                  price: activeShopPromotion.price,
+                  regularPrice: activeShopPromotion.regularPrice,
+                  title: activeShopPromotion.title,
+                })
+              }}
+            </p>
+          </div>
+          <v-btn color="warning" icon="i-mdi:arrow-right" size="small" to="/shop" variant="tonal" />
+        </div>
+      </BrandedCard>
+
       <v-card
         v-if="bannerPromotion"
         class="promotion-banner pa-4 mb-6"
@@ -232,7 +312,17 @@
           </RouterLink>
         </div>
 
-        <div v-if="personalContributions.length" class="contribution-list">
+        <v-alert
+          v-if="activeChildBehaviorStatus?.tasksBlocked"
+          class="mb-4"
+          color="error"
+          icon="i-mdi:traffic-light"
+          variant="tonal"
+        >
+          {{ t("world.behavior.child.tasksBlocked") }}
+        </v-alert>
+
+        <div v-else-if="personalContributions.length" class="contribution-list">
           <ChildContributionCard
             v-for="contribution in personalContributions"
             :key="contribution.id"
@@ -309,6 +399,60 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="behaviorDialogOpen" max-width="420">
+      <v-card class="pa-5" rounded="xl">
+        <div class="d-flex align-center ga-3 mb-4">
+          <v-avatar color="warning" variant="tonal"><v-icon icon="i-mdi:traffic-light-outline" /></v-avatar>
+          <div>
+            <p class="eyebrow mb-1">{{ t("world.behavior.dialog.eyebrow") }}</p>
+            <h2 class="text-h6">{{ t("world.behavior.dialog.title") }}</h2>
+          </div>
+        </div>
+        <v-select
+          v-model="behavior.childId"
+          :items="childOptions"
+          item-title="title"
+          item-value="value"
+          :label="t('world.gift.child')"
+          variant="outlined"
+        />
+        <v-alert class="mb-4" :color="behaviorDialogColor" variant="tonal">
+          {{ behaviorDialogDescription }}
+        </v-alert>
+        <v-text-field
+          v-if="nextBehaviorWarning === 2"
+          v-model.number="behavior.deduction"
+          inputmode="numeric"
+          :label="t('world.behavior.dialog.deduction')"
+          :max="store.availableBalances[behavior.childId] ?? 0"
+          :min="0"
+          suffix="L"
+          type="number"
+          variant="outlined"
+        />
+        <v-textarea
+          v-model="behavior.reason"
+          :label="t('world.behavior.dialog.reason')"
+          :placeholder="t('world.behavior.dialog.reasonPlaceholder')"
+          rows="3"
+          variant="outlined"
+        />
+        <div class="d-flex justify-end ga-2 mt-2">
+          <v-btn rounded="lg" variant="text" @click="behaviorDialogOpen = false">{{ t("common.cancel") }}</v-btn>
+          <v-btn
+            :disabled="!canIssueBehaviorWarning"
+            color="warning"
+            prepend-icon="i-mdi:alert-outline"
+            rounded="lg"
+            variant="flat"
+            @click="issueBehaviorWarning"
+          >
+            {{ t("world.behavior.dialog.submit") }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="promoDetailsOpen" max-width="410">
       <v-card v-if="activePromotion" class="promotion-detail-card pa-5" rounded="xl">
         <v-btn
@@ -380,7 +524,8 @@ import ChildContributionCard from "@/shared/components/contributions/ChildContri
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
 import PromotionCountdown from "@/shared/components/contributions/PromotionCountdown.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
-import type { ContributionId } from "@/domain/shared/identifiers";
+import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
+import type { BehaviorLightLevel } from "@/domain/savings/types";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ROOM_DESIGNS } from "@/domain/house";
@@ -389,10 +534,13 @@ const { t } = useI18n();
 const localize = useLocalizedDomainContent();
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
+const behaviorDialogOpen = ref(false);
 const energyDialogOpen = ref(false);
 const gift = reactive({ childId: store.activeChildId, amount: 20, reason: "" });
+const behavior = reactive({ childId: store.activeChildId, deduction: 1, reason: "" });
 const localizedContributions = computed(() => store.contributions.map(localize.contribution));
 const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
+const localizedShopRewards = computed(() => store.shopRewards.map(localize.reward));
 const localizedAccessories = computed(() => store.accessories.map(localize.accessory));
 const activeRoomDesigns = computed(() =>
   ROOM_DESIGNS.filter(
@@ -443,7 +591,37 @@ const activePromotion = computed(() =>
       ),
   ),
 );
+const activeShopPromotion = computed(() =>
+  localizedShopRewards.value.find((reward) => reward.published && reward.promotionActive),
+);
 const showGuardianManagement = computed(() => store.viewerRole === "guardian" && store.permissions.canManageContent);
+const showBehaviorManagement = computed(
+  () => store.viewerRole === "guardian" && store.signedInMember?.guardianAccess !== "external",
+);
+const activeChildBehaviorStatus = computed(() => store.behaviorStatuses[store.activeChildId]);
+const nextBehaviorWarning = computed(() => (store.behaviorStatuses[behavior.childId]?.warningCount ?? 0) + 1);
+const behaviorDialogColor = computed(() => {
+  if (nextBehaviorWarning.value === 1) {
+    return "warning";
+  }
+
+  return nextBehaviorWarning.value === 2 ? "orange" : "error";
+});
+const behaviorDialogDescription = computed(() => {
+  if (nextBehaviorWarning.value === 1) {
+    return t("world.behavior.dialog.first");
+  }
+
+  return nextBehaviorWarning.value === 2 ? t("world.behavior.dialog.second") : t("world.behavior.dialog.third");
+});
+const canIssueBehaviorWarning = computed(() => {
+  const available = store.availableBalances[behavior.childId] ?? 0;
+  const validDeduction =
+    nextBehaviorWarning.value !== 2 ||
+    (behavior.deduction >= 0 && behavior.deduction <= available && (available === 0 || behavior.deduction > 0));
+
+  return behavior.reason.trim().length >= 3 && validDeduction;
+});
 const bannerPromotion = computed(() => (store.viewerRole === "child" ? activePromotion.value : undefined));
 const promotionRewardTotal = computed(function callback() {
   if (!activePromotion.value) {
@@ -477,6 +655,49 @@ function openGiftDialog() {
   Object.assign(gift, { childId: store.activeChildId, amount: 20, reason: "" });
   giftDialogOpen.value = true;
 }
+function behaviorLevelFor(childId: FamilyMemberId): BehaviorLightLevel {
+  return store.behaviorStatuses[childId]?.level ?? "green";
+}
+function behaviorLevelLabel(level: BehaviorLightLevel) {
+  if (level === "yellow") {
+    return t("world.behavior.level.yellow");
+  }
+
+  if (level === "orange") {
+    return t("world.behavior.level.orange");
+  }
+
+  if (level === "red") {
+    return t("world.behavior.level.red");
+  }
+
+  return t("world.behavior.level.green");
+}
+function behaviorChildStatusMessage(level: BehaviorLightLevel) {
+  if (level === "yellow") {
+    return t("world.behavior.child.yellow");
+  }
+
+  if (level === "orange") {
+    return t("world.behavior.child.orange");
+  }
+
+  if (level === "red") {
+    return t("world.behavior.child.red");
+  }
+
+  return t("world.behavior.child.green");
+}
+function openBehaviorDialog(childId: FamilyMemberId) {
+  const available = store.availableBalances[childId] ?? 0;
+  Object.assign(behavior, { childId, deduction: Math.min(1, available), reason: "" });
+  behaviorDialogOpen.value = true;
+}
+async function issueBehaviorWarning() {
+  const deduction = nextBehaviorWarning.value === 2 ? behavior.deduction : 0;
+  await store.issueBehaviorWarning(behavior.childId, deduction, behavior.reason);
+  behaviorDialogOpen.value = false;
+}
 function giveDirectGift() {
   store.giftLadirchenToChild(gift.childId, gift.amount, gift.reason);
   giftDialogOpen.value = false;
@@ -503,6 +724,48 @@ function giveDirectGift() {
   font-size: rem(23);
   line-height: 1.1;
   letter-spacing: -0.04em;
+}
+.behavior-child-row {
+  --uno: d-flex align-center;
+  min-width: 0;
+  gap: 10px;
+  padding: 8px 0;
+}
+.behavior-light {
+  width: 18px;
+  height: 18px;
+  --uno: d-inline-block flex-shrink-0;
+  border: 2px solid color-mix(in srgb, currentcolor 24%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 2px 7px color-mix(in srgb, currentcolor 32%, transparent);
+}
+.behavior-light--green {
+  color: var(--lad-color-primary-strong);
+  background: var(--lad-color-primary-highlight);
+}
+.behavior-light--yellow {
+  color: var(--lad-color-reward-deep);
+  background: var(--lad-color-reward-border);
+}
+.behavior-light--orange {
+  color: var(--lad-color-accent-warm-strong);
+  background: var(--lad-color-reward-accent);
+}
+.behavior-light--red {
+  color: var(--lad-color-danger);
+  background: var(--lad-color-danger-soft);
+}
+.behavior-status-card {
+  border: 2px solid color-mix(in srgb, currentcolor 18%, transparent);
+}
+.behavior-status-card--yellow {
+  color: var(--lad-color-reward-deep);
+}
+.behavior-status-card--orange {
+  color: var(--lad-color-accent-warm-strong);
+}
+.behavior-status-card--red {
+  color: var(--lad-color-danger);
 }
 .energy-value {
   --uno: d-block text-no-wrap;

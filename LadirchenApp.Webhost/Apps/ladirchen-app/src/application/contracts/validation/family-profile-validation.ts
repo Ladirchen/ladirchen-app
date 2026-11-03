@@ -58,6 +58,9 @@ function isFamilyPermissions(value: unknown): value is FamilyPermissions {
     typeof value.canSupportChildGoals === "boolean" &&
     typeof value.canReviewChildTasks === "boolean" &&
     typeof value.canViewHouse === "boolean" &&
+    typeof value.canPurchaseHouseContentWithoutBalance === "boolean" &&
+    typeof value.canManageShop === "boolean" &&
+    typeof value.canReceivePushNotifications === "boolean" &&
     typeof value.canViewFamilyGoals === "boolean" &&
     typeof value.canViewGuardianGoals === "boolean" &&
     typeof value.canViewTaskAssignments === "boolean"
