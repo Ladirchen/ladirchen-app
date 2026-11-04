@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
 using Mumrich.SpaDevMiddleware.Domain.Contracts;
@@ -56,6 +58,36 @@ public static partial class WebApplicationExtensions
     app.MapWebPushApi();
     app.MapHub<FamilyUpdatesHub>("/hubs/family-updates");
     app.MapSinglePageApps(appSettings);
+    app.MapSpaHistoryFallback(appSettings);
+  }
+
+  private static void MapSpaHistoryFallback(
+    this WebApplication app,
+    ISpaMiddlewareSettings appSettings
+  )
+  {
+    if (app.Environment.IsDevelopment())
+    {
+      return;
+    }
+
+    if (!appSettings.SinglePageApps.TryGetValue("/", out var spaSettings))
+    {
+      throw new InvalidOperationException("The root single-page application is not configured.");
+    }
+
+    var buildOutputPath = Path.Combine(spaSettings.SpaRootPath, spaSettings.NodeBuildOutputPath);
+    var staticFileOptions = new StaticFileOptions
+    {
+      FileProvider = new PhysicalFileProvider(buildOutputPath),
+    };
+
+    app.MapFallbackToFile(
+        "{*path:nonfile}",
+        spaSettings.AppIndexFileName,
+        staticFileOptions
+      )
+      .AllowAnonymous();
   }
 
   public static void ConfigLadierchenDaemonApp(this WebApplication app)

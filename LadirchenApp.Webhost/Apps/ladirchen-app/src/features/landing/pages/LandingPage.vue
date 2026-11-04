@@ -2,7 +2,7 @@
   <div class="landing-page">
     <header class="landing-header">
       <a :aria-label="t('landing.aria.home')" class="landing-brand" href="#top">
-        <span class="landing-brand__logo"><img alt="" height="58" src="/ladirchen-logo.png" width="58" /></span>
+        <span class="landing-brand__logo"><img alt="" height="58" src="/ladirli-icon-192x192.png" width="58" /></span>
         <strong>Ladirli</strong>
       </a>
       <nav :aria-label="t('landing.aria.navigation')" class="landing-nav">
@@ -155,13 +155,26 @@
           </div>
           <div class="world-preview" :aria-label="t('landing.aria.worldPreview')">
             <img
+              class="world-preview__background"
               :src="familyWorldBackground"
               :alt="t('landing.alt.familyWorld')"
               height="992"
               loading="lazy"
               width="1586"
             />
-            <span><v-icon icon="i-mdi:home-heart" /> 72 % Hausenergie</span>
+            <img class="world-preview__house" :src="starterHouse" alt="" loading="lazy" />
+            <div class="world-preview__family" aria-hidden="true">
+              <AvatarFigure
+                v-for="(appearance, index) in sampleAvatarAppearances"
+                :key="index"
+                :appearance="appearance"
+                calm
+                full-body
+                :size="46"
+              />
+            </div>
+            <AnimatedPet class="world-preview__pet" :pet="samplePet" :size="38" />
+            <span class="world-preview__energy"><v-icon icon="i-mdi:home-heart" /> 72 % Hausenergie</span>
           </div>
         </article>
       </section>
@@ -228,7 +241,7 @@
 
     <footer class="landing-footer">
       <div class="landing-brand">
-        <span class="landing-brand__logo"><img alt="" height="48" src="/ladirchen-logo.png" width="48" /></span>
+        <span class="landing-brand__logo"><img alt="" height="48" src="/ladirli-icon-192x192.png" width="48" /></span>
         <strong>Ladirli</strong>
       </div>
       <p>Familienaufgaben fair, übersichtlich und kindgerecht organisieren.</p>
@@ -237,7 +250,6 @@
         <a href="#fragen">FAQ</a>
         <a href="#installieren">App installieren</a>
       </nav>
-      <small>Rechtliche Seiten und Kontaktangaben werden vor der öffentlichen Freigabe ergänzt.</small>
     </footer>
 
     <v-dialog v-model="instructionsOpen" max-width="470">
@@ -268,13 +280,38 @@
 
 <script lang="ts" setup>
 import familyWorldBackground from "@/assets/room-designs/starter-home-ladi-background.webp";
+import starterHouse from "@/assets/room-designs/starter-home-ladi-house.webp";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import perchedLadi from "@/assets/ladi/perched-ladi.webp";
 import starterLadi from "@/assets/ladi/starter-ladi.webp";
 import sunLadi from "@/assets/ladi/sun-ladi.webp";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
+import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@/domain/avatar";
+import { createDomainId } from "@/domain/shared/identifiers";
 import { usePwaInstall } from "@/features/landing/use-pwa-install";
+import { familyMemberColorPalette } from "@/theme/color-palette";
+import type { AvatarAppearance } from "@/domain/avatar";
+import type { FamilyPet } from "@/domain/family/types";
+
+const sampleAvatarAppearances: AvatarAppearance[] = [
+  createGuardianAvatarAppearance("adult"),
+  createDefaultAvatarAppearance(),
+  {
+    ...createDefaultAvatarAppearance(),
+    hair: "ponytail",
+    outfitColorId: "outfit-blue",
+  },
+];
+const samplePet: FamilyPet = {
+  avatar: "🐱",
+  color: familyMemberColorPalette.petAnna,
+  id: createDomainId.familyPet("landing-sample-cat"),
+  kind: "cat",
+  name: "Milo",
+};
 
 const steps = [
   {
@@ -372,8 +409,17 @@ const installButtonLabel = computed(() =>
 }
 
 .landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
   min-height: 5rem;
+  padding-inline: max(1rem, calc((100% - 72rem) / 2));
   --uno: d-flex align-center justify-space-between ga-6;
+  border-bottom: 1px solid color-mix(in srgb, var(--lad-border-subtle) 75%, transparent);
+  background: color-mix(in srgb, var(--lad-surface) 94%, transparent);
+  box-shadow: 0 0.35rem 1.2rem color-mix(in srgb, var(--lad-shadow) 55%, transparent);
+  backdrop-filter: blur(0.8rem);
 }
 
 .landing-brand {
@@ -395,8 +441,9 @@ const installButtonLabel = computed(() =>
 }
 
 .landing-brand__logo img {
-  width: 5.8rem;
-  max-width: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .landing-nav {
@@ -877,13 +924,42 @@ const installButtonLabel = computed(() =>
   aspect-ratio: 1.48;
 }
 
-.world-preview img {
+.world-preview__background {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.world-preview span {
+.world-preview__house {
+  width: 58%;
+  --uno: position-absolute;
+  bottom: 2%;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 0.6rem 0.7rem color-mix(in srgb, var(--lad-text) 18%, transparent));
+}
+
+.world-preview__family {
+  width: 9rem;
+  height: 4.7rem;
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  bottom: 1%;
+  left: 4%;
+  z-index: 2;
+  gap: 0.1rem;
+}
+
+.world-preview__pet {
+  position: absolute;
+  right: 6%;
+  bottom: 2%;
+  z-index: 2;
+}
+
+.world-preview__energy {
   padding: 0.6rem 0.8rem;
   --uno: position-absolute d-flex align-center ga-2;
   top: 1rem;
@@ -1009,7 +1085,18 @@ const installButtonLabel = computed(() =>
 
 .landing-final img {
   width: min(100%, 22rem);
-  margin: -5rem auto -5rem;
+  max-height: 24rem;
+  margin: 0 auto -4rem;
+  align-self: end;
+  object-fit: contain;
+}
+
+.landing-final > div {
+  min-width: 0;
+}
+
+.landing-final h2 {
+  overflow-wrap: anywhere;
 }
 
 .landing-final .landing-button {
@@ -1149,7 +1236,7 @@ const installButtonLabel = computed(() =>
   }
 
   .landing-final img {
-    margin-bottom: -3rem;
+    margin-bottom: -2rem;
   }
 
   .landing-footer {
@@ -1166,6 +1253,11 @@ const installButtonLabel = computed(() =>
   .landing-section,
   .landing-footer {
     width: min(100% - 1.25rem, 72rem);
+  }
+
+  .landing-header {
+    width: 100%;
+    padding-inline: 0.625rem;
   }
 
   .landing-brand {
