@@ -94,7 +94,7 @@
           </div>
           <div class="product-phone" :aria-label="t('landing.aria.tasksPreview')">
             <div class="product-phone__top">
-              <span class="product-logo"><img alt="" src="/ladirchen-logo.png" /></span>
+              <span class="product-logo"><img alt="" src="/ladirli-icon-192x192.png" /></span>
               <strong>Unsere Aufgaben</strong>
               <span class="product-balance"><LadirchenCoin small /> 12</span>
             </div>
@@ -164,16 +164,15 @@
             />
             <img class="world-preview__house" :src="starterHouse" alt="" loading="lazy" />
             <div class="world-preview__family" aria-hidden="true">
-              <AvatarFigure
-                v-for="(appearance, index) in sampleAvatarAppearances"
-                :key="index"
-                :appearance="appearance"
-                calm
-                full-body
-                :size="46"
-              />
+              <span
+                v-for="avatar in sampleAvatars"
+                :key="avatar.emoji"
+                class="sample-avatar"
+                :class="`sample-avatar--${avatar.tone}`"
+                >{{ avatar.emoji }}</span
+              >
             </div>
-            <AnimatedPet class="world-preview__pet" :pet="samplePet" :size="38" />
+            <span class="world-preview__pet" aria-hidden="true">🐱</span>
             <span class="world-preview__energy"><v-icon icon="i-mdi:home-heart" /> 72 % Hausenergie</span>
           </div>
         </article>
@@ -287,31 +286,13 @@ import perchedLadi from "@/assets/ladi/perched-ladi.webp";
 import starterLadi from "@/assets/ladi/starter-ladi.webp";
 import sunLadi from "@/assets/ladi/sun-ladi.webp";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
-import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
-import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
-import { createDefaultAvatarAppearance, createGuardianAvatarAppearance } from "@/domain/avatar";
-import { createDomainId } from "@/domain/shared/identifiers";
 import { usePwaInstall } from "@/features/landing/use-pwa-install";
-import { familyMemberColorPalette } from "@/theme/color-palette";
-import type { AvatarAppearance } from "@/domain/avatar";
-import type { FamilyPet } from "@/domain/family/types";
 
-const sampleAvatarAppearances: AvatarAppearance[] = [
-  createGuardianAvatarAppearance("adult"),
-  createDefaultAvatarAppearance(),
-  {
-    ...createDefaultAvatarAppearance(),
-    hair: "ponytail",
-    outfitColorId: "outfit-blue",
-  },
-];
-const samplePet: FamilyPet = {
-  avatar: "🐱",
-  color: familyMemberColorPalette.petAnna,
-  id: createDomainId.familyPet("landing-sample-cat"),
-  kind: "cat",
-  name: "Milo",
-};
+const sampleAvatars = [
+  { emoji: "🧑🏽", tone: "mint" },
+  { emoji: "👧🏻", tone: "blue" },
+  { emoji: "👦🏾", tone: "gold" },
+] as const;
 
 const steps = [
   {
@@ -396,9 +377,24 @@ const installButtonLabel = computed(() =>
 
 .landing-page {
   color: var(--lad-text);
-  background: var(--lad-surface);
+  background:
+    radial-gradient(
+      circle at 8% 8%,
+      color-mix(in srgb, var(--lad-color-primary-soft) 45%, transparent),
+      transparent 22rem
+    ),
+    radial-gradient(
+      circle at 92% 24%,
+      color-mix(in srgb, var(--lad-color-info-soft) 55%, transparent),
+      transparent 28rem
+    ),
+    var(--lad-surface);
   font-family: var(--lad-font-body);
+}
+
+:global(html) {
   scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
 }
 
 .landing-header,
@@ -482,11 +478,16 @@ const installButtonLabel = computed(() =>
 
 .landing-section {
   padding-block: clamp(4rem, 8vw, 7rem);
-  scroll-margin-top: 1rem;
+  scroll-margin-top: 5.5rem;
+}
+
+.landing-section:not(.landing-hero) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 52rem;
 }
 
 .landing-hero {
-  min-height: min(47rem, calc(100dvh - 5rem));
+  min-height: min(43rem, calc(100dvh - 5rem));
   --uno: d-grid align-center;
   grid-template-columns: minmax(0, 1.04fr) minmax(20rem, 0.96fr);
   gap: clamp(2rem, 6vw, 5rem);
@@ -504,7 +505,7 @@ const installButtonLabel = computed(() =>
 .landing-hero h1 {
   max-width: 11ch;
   margin: 0;
-  font-size: clamp(3.1rem, 6.7vw, 5.8rem);
+  font-size: clamp(3rem, 5.8vw, 5.2rem);
   font-weight: var(--lad-font-weight-black);
   letter-spacing: -0.065em;
   line-height: 0.96;
@@ -585,18 +586,20 @@ const installButtonLabel = computed(() =>
 }
 
 .landing-hero__visual {
-  aspect-ratio: 1;
+  aspect-ratio: 1.08;
   --uno: position-relative d-grid place-center;
   border: 2px solid var(--lad-color-primary-soft);
-  border-radius: 43% 57% 52% 48% / 53% 44% 56% 47%;
+  border-radius: 2.75rem;
   background:
     radial-gradient(circle at 70% 20%, var(--lad-color-reward-soft), transparent 24%),
     linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-info-soft));
-  box-shadow: 0 1.5rem 4rem var(--lad-shadow);
+  box-shadow:
+    0 0 0 0.55rem color-mix(in srgb, var(--lad-surface-raised) 80%, transparent),
+    0 1.5rem 4rem var(--lad-shadow);
 }
 
 .landing-ladi {
-  width: 82%;
+  width: 68%;
   height: auto;
   filter: drop-shadow(0 1.2rem 1.2rem color-mix(in srgb, var(--lad-text) 18%, transparent));
   animation: ladi-float 4.5s ease-in-out infinite;
@@ -738,13 +741,30 @@ const installButtonLabel = computed(() =>
 
 .landing-showcase {
   --uno: d-flex flex-column;
-  gap: clamp(5rem, 10vw, 8rem);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .landing-feature {
+  padding: clamp(2rem, 5vw, 4rem);
   --uno: d-grid align-center;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(2.5rem, 7vw, 6rem);
+  gap: clamp(2.5rem, 6vw, 5rem);
+  border: 1px solid var(--lad-border-subtle);
+  border-radius: 2.5rem;
+  background: linear-gradient(
+    135deg,
+    var(--lad-surface-raised),
+    color-mix(in srgb, var(--lad-color-primary-soft) 22%, var(--lad-surface-raised))
+  );
+  box-shadow: 0 1rem 2.5rem color-mix(in srgb, var(--lad-shadow) 62%, transparent);
+}
+
+.landing-feature--reverse {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--lad-color-info-soft) 35%, var(--lad-surface-raised)),
+    var(--lad-surface-raised)
+  );
 }
 
 .landing-feature--reverse .landing-feature__copy {
@@ -803,8 +823,9 @@ const installButtonLabel = computed(() =>
 }
 
 .product-logo img {
-  width: 3.8rem;
-  max-width: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-balance {
@@ -931,9 +952,9 @@ const installButtonLabel = computed(() =>
 }
 
 .world-preview__house {
-  width: 58%;
+  width: 74%;
   --uno: position-absolute;
-  bottom: 2%;
+  bottom: -2%;
   left: 50%;
   z-index: 1;
   transform: translateX(-50%);
@@ -941,22 +962,56 @@ const installButtonLabel = computed(() =>
 }
 
 .world-preview__family {
-  width: 9rem;
-  height: 4.7rem;
+  width: 11rem;
+  height: 4.2rem;
   position: absolute;
   display: flex;
   align-items: flex-end;
-  bottom: 1%;
-  left: 4%;
+  bottom: 2%;
+  left: 2%;
   z-index: 2;
-  gap: 0.1rem;
+  gap: 0.3rem;
+}
+
+.sample-avatar {
+  width: 3.15rem;
+  height: 3.75rem;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid var(--lad-surface-raised);
+  border-radius: 1.2rem 1.2rem 0.8rem 0.8rem;
+  box-shadow: 0 0.35rem 0.8rem color-mix(in srgb, var(--lad-shadow) 72%, transparent);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.sample-avatar--mint {
+  background: var(--lad-color-primary-soft);
+}
+
+.sample-avatar--blue {
+  background: var(--lad-color-info-soft);
+}
+
+.sample-avatar--gold {
+  background: var(--lad-color-reward-soft);
 }
 
 .world-preview__pet {
+  width: 3.4rem;
+  height: 3.4rem;
   position: absolute;
   right: 6%;
   bottom: 2%;
   z-index: 2;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--lad-surface-raised);
+  border-radius: 50%;
+  background: var(--lad-color-reward-soft);
+  box-shadow: 0 0.35rem 0.8rem color-mix(in srgb, var(--lad-shadow) 72%, transparent);
+  font-size: 2rem;
 }
 
 .world-preview__energy {
@@ -1080,7 +1135,11 @@ const installButtonLabel = computed(() =>
   --uno: d-grid align-center overflow-hidden;
   grid-template-columns: 0.7fr 1.3fr;
   border-radius: 2.5rem;
-  background: linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-color-primary-soft));
+  border: 1px solid var(--lad-color-primary-soft);
+  background:
+    radial-gradient(circle at 12% 18%, var(--lad-surface-raised), transparent 24%),
+    linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-color-primary-soft));
+  box-shadow: 0 1.2rem 3rem color-mix(in srgb, var(--lad-shadow) 65%, transparent);
 }
 
 .landing-final img {
@@ -1172,13 +1231,28 @@ const installButtonLabel = computed(() =>
   }
 }
 
-@media (max-width: 60rem) {
+@media (max-width: 64rem) {
   .landing-nav {
     display: none;
   }
 
   .landing-steps {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .landing-feature {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-feature--reverse .landing-feature__copy {
+    order: 0;
+  }
+
+  .product-phone,
+  .goal-preview,
+  .world-preview {
+    width: min(100%, 34rem);
+    margin-inline: auto;
   }
 }
 
