@@ -3,4 +3,4 @@ Allow: /
 Disallow: /app
 Disallow: /login
 
-Sitemap: https://ladirli.ch/sitemap.xml
+Sitemap: https://www.ladirli.ch/sitemap.xml
