@@ -53,12 +53,12 @@ export default defineConfig({
             type: "image/png",
           },
         ],
-        id: "/",
+        id: "/app",
         lang: "de",
         name: "Ladirli – Familienwelt",
-        scope: "/",
+        scope: "/app",
         short_name: "Ladirli",
-        start_url: "/",
+        start_url: "/app",
         theme_color: "#08766a",
       },
       registerType: "autoUpdate",
@@ -81,7 +81,7 @@ export default defineConfig({
         ],
         importScripts: ["/push-notifications-sw.js"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/health\//, /^\/hubs\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/health\//, /^\/hubs\//, /^\/robots\.txt$/, /^\/sitemap\.xml$/],
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) =>

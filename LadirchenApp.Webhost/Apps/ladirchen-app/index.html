@@ -6,13 +6,112 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="192x192" href="/ladirli-icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="canonical" href="https://ladirli.ch/" />
     <meta name="theme-color" content="#08766a" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ladirli – Familienwelt</title>
+    <meta
+      name="description"
+      content="Ladirli hilft Familien, Haushaltsaufgaben und Verantwortung fair, übersichtlich und kindgerecht zu organisieren."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="de_CH" />
+    <meta property="og:site_name" content="Ladirli" />
+    <meta property="og:title" content="Ladirli – Gemeinsam anpacken. Fair verteilen." />
+    <meta
+      property="og:description"
+      content="Familienaufgaben, Verantwortung und Fortschritt gemeinsam organisieren – fair, übersichtlich und kindgerecht."
+    />
+    <meta property="og:url" content="https://ladirli.ch/" />
+    <meta property="og:image" content="https://ladirli.ch/og-ladirli.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Ladirli – Gemeinsam anpacken. Fair verteilen." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ladirli – Gemeinsam anpacken. Fair verteilen." />
+    <meta
+      name="twitter:description"
+      content="Familienaufgaben und Verantwortung gemeinsam organisieren – fair und kindgerecht."
+    />
+    <meta name="twitter:image" content="https://ladirli.ch/og-ladirli.png" />
+    <title>Ladirli – Familienaufgaben fair und kindgerecht organisieren</title>
+    <style>
+      .seo-fallback {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 5rem 1rem;
+        color: #233139;
+        font-family: system-ui, sans-serif;
+      }
+      .seo-fallback header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #287458;
+        font-size: 1.5rem;
+      }
+      .seo-fallback img {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 1rem;
+      }
+      .seo-fallback h1 {
+        max-width: 13ch;
+        margin: 5rem 0 1.5rem;
+        font-size: clamp(3rem, 7vw, 5.5rem);
+        line-height: 0.98;
+        letter-spacing: -0.06em;
+      }
+      .seo-fallback p {
+        max-width: 42rem;
+        color: #71808a;
+        font-size: 1.15rem;
+        line-height: 1.65;
+      }
+      .seo-fallback a {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.85rem 1.25rem;
+        color: white;
+        border-radius: 1rem;
+        background: #228d67;
+        font-weight: 800;
+        text-decoration: none;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ladirli",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web, Android, iOS, Windows, macOS",
+        "url": "https://ladirli.ch/",
+        "description": "Ladirli hilft Familien, Haushaltsaufgaben und Verantwortung fair, übersichtlich und kindgerecht zu organisieren."
+      }
+    </script>
     <script vite-ignore defer src="/_vercel/speed-insights/script.js"></script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <main class="seo-fallback">
+        <header><img alt="" src="/ladirli-icon-192x192.png" /><strong>Ladirli</strong></header>
+        <h1>Gemeinsam anpacken. Fair verteilen.</h1>
+        <p>
+          Ladirli hilft Familien, Aufgaben und Verantwortung im Alltag gemeinsam zu organisieren – fair, übersichtlich
+          und kindgerecht. Haushaltsaufgaben planen, gemeinsam erledigen, bestätigen und Fortschritte sichtbar machen.
+        </p>
+        <a href="/login">Jetzt starten</a>
+        <section>
+          <h2>Familienaufgaben übersichtlich organisieren</h2>
+          <p>
+            Bezugspersonen planen Aufgaben, Kinder sehen ihre Beiträge und berechtigte Familienmitglieder bestätigen
+            Erledigtes. Sparziele, Belohnungen und Hausenergie begleiten den gemeinsamen Fortschritt.
+          </p>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

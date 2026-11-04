@@ -1,9 +1,5 @@
 <template>
   <v-app>
-    <FamilyWorldShell />
+    <RouterView />
   </v-app>
 </template>
-
-<script lang="ts" setup>
-import FamilyWorldShell from "@/app/components/FamilyWorldShell.vue";
-</script>

@@ -126,7 +126,7 @@
               prepend-icon="i-mdi:plus"
               rounded="lg"
               size="small"
-              to="/contributions?new=1"
+              to="/app/contributions?new=1"
               variant="flat"
             >
               {{ t("world.management.contribution") }}
@@ -136,7 +136,7 @@
               prepend-icon="i-mdi:rocket-launch-outline"
               rounded="lg"
               size="small"
-              to="/contributions?promotion=1"
+              to="/app/contributions?promotion=1"
               variant="tonal"
             >
               {{ t("world.management.promotion") }}
@@ -146,7 +146,7 @@
               prepend-icon="i-mdi:target"
               rounded="lg"
               size="small"
-              to="/wishes?new=1"
+              to="/app/wishes?new=1"
               variant="tonal"
             >
               {{ t("world.management.childGoal") }}
@@ -156,7 +156,7 @@
               prepend-icon="i-mdi:account-group-outline"
               rounded="lg"
               size="small"
-              to="/wishes?family=1"
+              to="/app/wishes?family=1"
               variant="tonal"
             >
               {{ t("world.management.familyGoal") }}
@@ -166,7 +166,7 @@
               prepend-icon="i-mdi:gift-outline"
               rounded="lg"
               size="small"
-              to="/shop?new=1"
+              to="/app/shop?new=1"
               variant="tonal"
             >
               {{ t("world.management.reward") }}
@@ -219,7 +219,7 @@
           color="primary"
           prepend-icon="i-mdi:gift-outline"
           rounded="lg"
-          to="/wishes"
+          to="/app/wishes"
           variant="flat"
           width="100%"
         >
@@ -244,7 +244,7 @@
               }}
             </p>
           </div>
-          <v-btn color="warning" icon="i-mdi:arrow-right" size="small" to="/shop" variant="tonal" />
+          <v-btn color="warning" icon="i-mdi:arrow-right" size="small" to="/app/shop" variant="tonal" />
         </div>
       </BrandedCard>
 
@@ -305,7 +305,7 @@
             <h2>{{ t("world.tasks.title") }}</h2>
             <p>{{ t("world.tasks.description") }}</p>
           </div>
-          <RouterLink class="all-contributions" to="/contributions">
+          <RouterLink class="all-contributions" to="/app/contributions">
             <v-icon icon="i-mdi:view-grid-plus-outline" size="19" />
             <span>{{ t("world.tasks.all") }}</span>
             <v-icon icon="i-mdi:chevron-right" size="17" />
@@ -345,7 +345,7 @@
             <p class="eyebrow mb-1">{{ emptyTaskEyebrow }}</p>
             <strong>{{ emptyTaskTitle }}</strong>
             <p>{{ emptyTaskMessage }}</p>
-            <RouterLink class="empty-task-link" to="/contributions">
+            <RouterLink class="empty-task-link" to="/app/contributions">
               {{ t("world.tasks.openAvailable") }}
               <v-icon icon="i-mdi:arrow-right" size="15" />
             </RouterLink>

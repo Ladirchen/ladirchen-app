@@ -25,6 +25,13 @@ window.addEventListener("vite:preloadError", (event) => {
   window.location.reload();
 });
 
+const legacyHashPath = window.location.hash.startsWith("#/") ? window.location.hash.slice(1) : undefined;
+
+if (legacyHashPath) {
+  const appPath = legacyHashPath === "/" ? "/app" : `/app${legacyHashPath}`;
+  window.history.replaceState(null, "", `${appPath}${window.location.search}`);
+}
+
 const app = createApp(App);
 
 registerPlugins(app);

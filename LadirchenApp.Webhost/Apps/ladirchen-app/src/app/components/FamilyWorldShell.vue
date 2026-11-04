@@ -3,21 +3,9 @@
     <div v-if="!appHydrated" class="family-world-loading" role="status">
       <v-progress-circular color="primary" indeterminate />
     </div>
-    <section
-      v-else-if="store.sessionRestorationFailed"
-      class="family-world-loading family-world-session-error pa-5"
-      role="alert"
-    >
-      <v-card class="pa-6 text-center" max-width="420" rounded="xl">
-        <v-icon color="warning" icon="i-mdi:cloud-alert-outline" size="44" />
-        <h1 class="mt-3">{{ t("auth.sessionRestore.title") }}</h1>
-        <p class="text-medium-emphasis mt-2 mb-5">{{ t("auth.sessionRestore.description") }}</p>
-        <v-btn color="primary" prepend-icon="i-mdi:refresh" rounded="lg" @click="restoreAuthenticationSession">
-          {{ t("auth.sessionRestore.retry") }}
-        </v-btn>
-      </v-card>
-    </section>
-    <AsyncAuthGateway v-else-if="!store.isAuthenticated" />
+    <div v-else-if="!store.isAuthenticated" class="family-world-loading" role="status">
+      <v-progress-circular color="primary" indeterminate />
+    </div>
     <template v-else>
       <LadirchenIntro @finished="handleIntroFinished" />
 
@@ -26,7 +14,7 @@
           <RouterLink
             :aria-label="t('common.familyWorldAria')"
             class="family-world-brand d-flex align-end text-decoration-none"
-            to="/"
+            to="/app"
           >
             <span class="family-world-logo position-relative flex-shrink-0 overflow-hidden" aria-hidden="true">
               <img alt="" src="/ladirchen-logo.png" />
@@ -305,7 +293,6 @@ interface NavigationItem {
   label: string;
   tip: string;
 }
-const AsyncAuthGateway = defineAsyncComponent(() => import("@/features/auth/components/AuthGateway.vue"));
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
 const AsyncGlobalLadiGuide = defineAsyncComponent(() => import("./GlobalLadiGuide.vue"));
 const AsyncSavingsPiggyDialog = defineAsyncComponent(
@@ -400,25 +387,27 @@ const shellLayoutClasses = computed(() => ({
   "family-world-background--landscape": md.value && isLandscape.value,
 }));
 const navigationItems = computed<NavigationItem[]>(() => [
-  { to: "/", icon: "world", label: t("navigation.world.label"), tip: t("navigation.world.tip") },
+  { to: "/app", icon: "world", label: t("navigation.world.label"), tip: t("navigation.world.tip") },
   {
-    to: "/contributions",
+    to: "/app/contributions",
     icon: "contributions",
     label: t("navigation.contributions.label"),
     tip: t("navigation.contributions.tip"),
   },
-  { to: "/wishes", icon: "wishes", label: t("navigation.wishes.label"), tip: t("navigation.wishes.tip") },
-  { to: "/shop", icon: "shop", label: t("navigation.shop.label"), tip: t("navigation.shop.tip") },
-  { to: "/family", icon: "family", label: t("navigation.family.label"), tip: t("navigation.family.tip") },
-  { to: "/profile", icon: "profile", label: t("navigation.profile.label"), tip: t("navigation.profile.tip") },
+  { to: "/app/wishes", icon: "wishes", label: t("navigation.wishes.label"), tip: t("navigation.wishes.tip") },
+  { to: "/app/shop", icon: "shop", label: t("navigation.shop.label"), tip: t("navigation.shop.tip") },
+  { to: "/app/family", icon: "family", label: t("navigation.family.label"), tip: t("navigation.family.tip") },
+  { to: "/app/profile", icon: "profile", label: t("navigation.profile.label"), tip: t("navigation.profile.tip") },
 ]);
 const navigation = computed(() => {
   if (store.signedInMember?.guardianAccess === "external") {
-    return navigationItems.value.filter((item) => ["/contributions", "/wishes", "/shop", "/profile"].includes(item.to));
+    return navigationItems.value.filter((item) =>
+      ["/app/contributions", "/app/wishes", "/app/shop", "/app/profile"].includes(item.to),
+    );
   }
 
   if (store.viewerRole === "guardian" && !store.permissions.canManageContent) {
-    return navigationItems.value.filter((item) => !["/contributions", "/shop"].includes(item.to));
+    return navigationItems.value.filter((item) => !["/app/contributions", "/app/shop"].includes(item.to));
   }
 
   return navigationItems.value;
@@ -449,7 +438,11 @@ async function restoreAuthenticationSession() {
   appHydrated.value = false;
 
   try {
-    await store.restoreAuthenticatedSession();
+    const restored = await store.restoreAuthenticatedSession();
+
+    if (!restored) {
+      await router.replace({ path: "/login", query: { redirect: currentRoute.fullPath } });
+    }
   } finally {
     appHydrated.value = true;
   }
@@ -466,10 +459,18 @@ onBeforeUnmount(function callback() {
 });
 watch(isLandscape, resetContentScroll);
 watch(
+  () => store.isAuthenticated,
+  (authenticated) => {
+    if (appHydrated.value && !authenticated) {
+      void router.replace({ path: "/login", query: { redirect: currentRoute.fullPath } });
+    }
+  },
+);
+watch(
   () => [store.signedInMember?.guardianAccess, currentRoute.path] as const,
   ([access, path]) => {
-    if (access === "external" && !["/contributions", "/wishes", "/shop", "/profile"].includes(path)) {
-      void router.replace("/contributions");
+    if (access === "external" && !["/app/contributions", "/app/wishes", "/app/shop", "/app/profile"].includes(path)) {
+      void router.replace("/app/contributions");
     }
   },
   { immediate: true },
