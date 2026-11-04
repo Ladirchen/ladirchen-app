@@ -43,8 +43,9 @@
         </div>
 
         <div class="landing-hero__visual" :aria-label="t('landing.aria.hero')">
-          <span class="landing-orbit landing-orbit--task"><v-icon icon="i-mdi:check-bold" /></span>
-          <span class="landing-orbit landing-orbit--family"><v-icon icon="i-mdi:account-group" /></span>
+          <span class="landing-spark landing-spark--top" aria-hidden="true">✦</span>
+          <span class="landing-spark landing-spark--side" aria-hidden="true">✦</span>
+          <span class="landing-energy"><v-icon icon="i-mdi:home-heart" /> 72 %</span>
           <span class="landing-orbit landing-orbit--reward"><LadirchenCoin animated /></span>
           <img
             class="landing-ladi"
@@ -164,15 +165,16 @@
             />
             <img class="world-preview__house" :src="starterHouse" alt="" loading="lazy" />
             <div class="world-preview__family" aria-hidden="true">
-              <span
-                v-for="avatar in sampleAvatars"
-                :key="avatar.emoji"
-                class="sample-avatar"
-                :class="`sample-avatar--${avatar.tone}`"
-                >{{ avatar.emoji }}</span
-              >
+              <AvatarFigure
+                v-for="(appearance, index) in sampleAvatarAppearances"
+                :key="index"
+                :appearance="appearance"
+                calm
+                full-body
+                :size="52"
+              />
             </div>
-            <span class="world-preview__pet" aria-hidden="true">🐱</span>
+            <AnimatedPet class="world-preview__pet" :pet="samplePet" :size="42" />
             <span class="world-preview__energy"><v-icon icon="i-mdi:home-heart" /> 72 % Hausenergie</span>
           </div>
         </article>
@@ -286,13 +288,27 @@ import perchedLadi from "@/assets/ladi/perched-ladi.webp";
 import starterLadi from "@/assets/ladi/starter-ladi.webp";
 import sunLadi from "@/assets/ladi/sun-ladi.webp";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
+import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
+import { createGuardianAvatarAppearance, resolveChildAvatarAppearance } from "@/domain/avatar";
+import { createDomainId } from "@/domain/shared/identifiers";
 import { usePwaInstall } from "@/features/landing/use-pwa-install";
+import { familyMemberColorPalette } from "@/theme/color-palette";
+import type { AvatarAppearance } from "@/domain/avatar";
+import type { FamilyPet } from "@/domain/family/types";
 
-const sampleAvatars = [
-  { emoji: "🧑🏽", tone: "mint" },
-  { emoji: "👧🏻", tone: "blue" },
-  { emoji: "👦🏾", tone: "gold" },
-] as const;
+const sampleAvatarAppearances: AvatarAppearance[] = [
+  createGuardianAvatarAppearance("adult"),
+  resolveChildAvatarAppearance(undefined, 0),
+  resolveChildAvatarAppearance(undefined, 1),
+];
+const samplePet: FamilyPet = {
+  avatar: "🐱",
+  color: familyMemberColorPalette.petAnna,
+  id: createDomainId.familyPet("landing-sample-cat"),
+  kind: "cat",
+  name: "Milo",
+};
 
 const steps = [
   {
@@ -586,15 +602,16 @@ const installButtonLabel = computed(() =>
 }
 
 .landing-hero__visual {
-  aspect-ratio: 1.08;
+  aspect-ratio: 1;
   --uno: position-relative d-grid place-center;
-  border: 2px solid var(--lad-color-primary-soft);
-  border-radius: 2.75rem;
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary) 35%, transparent);
+  border-radius: 50%;
   background:
-    radial-gradient(circle at 70% 20%, var(--lad-color-reward-soft), transparent 24%),
-    linear-gradient(145deg, var(--lad-surface-soft), var(--lad-color-info-soft));
+    radial-gradient(circle at 68% 22%, var(--lad-color-reward-soft), transparent 28%),
+    radial-gradient(circle at 28% 76%, var(--lad-color-primary-soft), transparent 36%),
+    linear-gradient(145deg, var(--lad-surface-raised), var(--lad-color-info-soft));
   box-shadow:
-    0 0 0 0.55rem color-mix(in srgb, var(--lad-surface-raised) 80%, transparent),
+    0 0 0 0.7rem color-mix(in srgb, var(--lad-surface-raised) 78%, transparent),
     0 1.5rem 4rem var(--lad-shadow);
 }
 
@@ -605,29 +622,51 @@ const installButtonLabel = computed(() =>
   animation: ladi-float 4.5s ease-in-out infinite;
 }
 
+.landing-spark {
+  --uno: position-absolute;
+  z-index: 2;
+  color: var(--lad-color-reward);
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  filter: drop-shadow(0 0.25rem 0.5rem color-mix(in srgb, var(--lad-color-reward) 45%, transparent));
+}
+
+.landing-spark--top {
+  top: 13%;
+  left: 13%;
+}
+
+.landing-spark--side {
+  right: 10%;
+  bottom: 36%;
+  color: var(--lad-color-info-strong);
+  font-size: 1.25rem;
+}
+
+.landing-energy {
+  padding: 0.65rem 0.9rem;
+  --uno: position-absolute d-inline-flex align-center ga-1;
+  top: 7%;
+  right: 6%;
+  z-index: 3;
+  color: var(--lad-color-primary-deep);
+  border: 1px solid var(--lad-color-primary-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lad-surface-raised) 92%, transparent);
+  box-shadow: 0 0.55rem 1.4rem color-mix(in srgb, var(--lad-shadow) 70%, transparent);
+  font-size: 0.8rem;
+  font-weight: var(--lad-font-weight-strong);
+  backdrop-filter: blur(0.5rem);
+}
+
 .landing-orbit {
   width: 4.2rem;
   height: 4.2rem;
   --uno: position-absolute d-grid place-center;
   z-index: 2;
-  color: var(--lad-color-primary-deep);
   border: 3px solid var(--lad-surface-raised);
-  border-radius: 1.35rem;
+  border-radius: 50%;
   background: var(--lad-surface-raised);
   box-shadow: 0 0.6rem 1.5rem var(--lad-shadow);
-}
-
-.landing-orbit--task {
-  top: 11%;
-  left: -4%;
-  background: var(--lad-color-primary-soft);
-}
-
-.landing-orbit--family {
-  top: 3%;
-  right: 3%;
-  color: var(--lad-color-info-strong);
-  background: var(--lad-color-info-soft);
 }
 
 .landing-orbit--reward {
@@ -962,56 +1001,22 @@ const installButtonLabel = computed(() =>
 }
 
 .world-preview__family {
-  width: 11rem;
-  height: 4.2rem;
+  width: 11.5rem;
+  height: 4.9rem;
   position: absolute;
   display: flex;
   align-items: flex-end;
   bottom: 2%;
   left: 2%;
   z-index: 2;
-  gap: 0.3rem;
-}
-
-.sample-avatar {
-  width: 3.15rem;
-  height: 3.75rem;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 2px solid var(--lad-surface-raised);
-  border-radius: 1.2rem 1.2rem 0.8rem 0.8rem;
-  box-shadow: 0 0.35rem 0.8rem color-mix(in srgb, var(--lad-shadow) 72%, transparent);
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.sample-avatar--mint {
-  background: var(--lad-color-primary-soft);
-}
-
-.sample-avatar--blue {
-  background: var(--lad-color-info-soft);
-}
-
-.sample-avatar--gold {
-  background: var(--lad-color-reward-soft);
+  gap: 0.1rem;
 }
 
 .world-preview__pet {
-  width: 3.4rem;
-  height: 3.4rem;
   position: absolute;
   right: 6%;
   bottom: 2%;
   z-index: 2;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--lad-surface-raised);
-  border-radius: 50%;
-  background: var(--lad-color-reward-soft);
-  box-shadow: 0 0.35rem 0.8rem color-mix(in srgb, var(--lad-shadow) 72%, transparent);
-  font-size: 2rem;
 }
 
 .world-preview__energy {
