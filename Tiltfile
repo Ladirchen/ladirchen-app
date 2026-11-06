@@ -1,6 +1,20 @@
 # -*- mode: Python -*-
 # Assumes a local Kubernetes cluster is already running and configured as the current context.
 
+# Public development-only default; never use it for a shared or production database.
+postgres_password = os.getenv('POSTGRES_PASSWORD') or 'ladirchen-local-dev'
+
+k8s_yaml(encode_yaml({
+  'apiVersion': 'v1',
+  'kind': 'Secret',
+  'metadata': {'name': 'ladirchen-app-postgres'},
+  'type': 'Opaque',
+  'stringData': {
+    'password': postgres_password,
+    'connection-string': 'Host=ladirchen-app-postgres;Port=5432;Database=ladirchen;Username=ladirchen;Password="%s";Pooling=true;Maximum Pool Size=20' % postgres_password.replace('"', '""'),
+  },
+}))
+
 # Tilt always strips .git from the docker_build context, so GitVersion can't run inside the container; compute it on the host instead.
 # local() spawns cmd.exe on Windows and sh elsewhere, so detect the dotnet path in pure Starlark to stay cross-platform.
 if os.name == 'nt':
@@ -21,9 +35,16 @@ docker_build(
   },
 )
 
-k8s_yaml(["k8s/deployment.yaml", "k8s/service.yaml"])
+k8s_yaml(["k8s/postgres.yaml", "k8s/deployment.yaml", "k8s/service.yaml"])
+
+k8s_resource(
+  "ladirchen-app-postgres",
+  port_forwards="5432:5432",
+  objects=["ladirchen-app-postgres:secret", "ladirchen-app-postgres:persistentvolumeclaim"],
+)
 
 k8s_resource(
   "ladirchen-app-webhost",
   port_forwards="3000:8080",
+  resource_deps=["ladirchen-app-postgres"],
 )

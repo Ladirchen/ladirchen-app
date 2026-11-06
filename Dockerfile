@@ -1,16 +1,17 @@
-# syntax=docker/dockerfile:1.27.1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
-
-FROM node:24.22.1-alpine3.24@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS node
-
-FROM mcr.microsoft.com/dotnet/sdk:10.0.403-alpine3.24@sha256:cc02b814237a76c4735fb6eeee87181597b5e56f2ce458a435e527674d91f4d7 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403-alpine3.24 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG BUILD_VERSION=0.0.0
 ARG ENABLE_VUE_DEVTOOLS=false
 ENV CI=true \
-  ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS
+  ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS \
+  VP_HOME=/root/.vite-plus \
+  VP_NODE_MANAGER=yes
+ENV PATH="${VP_HOME}/bin:${PATH}"
 
-COPY --from=node /usr/local/ /usr/local/
-RUN npm install --global pnpm@12.15.0
+RUN apk add --no-cache bash curl libstdc++ \
+  && curl -fsSL https://vite.plus -o /tmp/install-vite-plus.sh \
+  && bash /tmp/install-vite-plus.sh \
+  && rm /tmp/install-vite-plus.sh
 
 WORKDIR /src
 COPY ["nuget.config", "Directory.Build.props", "Build.GitVersion.props", "Build.NSwag.props", "./"]
@@ -30,7 +31,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
   /p:UseAppHost=false \
   /p:Version=$BUILD_VERSION
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.14-alpine3.24@sha256:254fe017495996d3abcc487ffacdcce2b73affb380d3af87af12c8dff41fe0b0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.14-alpine3.24 AS final
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
   DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \

@@ -13,6 +13,24 @@ namespace LadirchenApp.Webhost.Tests.Application.Commands;
 public sealed class InitialFamilyAggregateFactoryTests
 {
   [Test]
+  public async Task CreateUsesZurichTimeInWinterAndSummer()
+  {
+    var batch = InitialFamilyAggregateFactory.Create(
+      new FamilyId(Guid.NewGuid()),
+      new FamilyMemberId("guardian"),
+      "Guardian"
+    );
+    var family = batch.Family?.Root ?? throw new InvalidOperationException();
+    var winterInstant = new DateTimeOffset(2026, 1, 15, 23, 30, 0, TimeSpan.Zero);
+    var summerInstant = new DateTimeOffset(2026, 7, 15, 22, 30, 0, TimeSpan.Zero);
+
+    await Assert.That(family.TimeZone.LocalTime(winterInstant).Offset).IsEqualTo(TimeSpan.FromHours(1));
+    await Assert.That(family.TimeZone.LocalDate(winterInstant)).IsEqualTo(new DateOnly(2026, 1, 16));
+    await Assert.That(family.TimeZone.LocalTime(summerInstant).Offset).IsEqualTo(TimeSpan.FromHours(2));
+    await Assert.That(family.TimeZone.LocalDate(summerInstant)).IsEqualTo(new DateOnly(2026, 7, 16));
+  }
+
+  [Test]
   public async Task CreateBuildsACompleteTypedAggregateBatch()
   {
     var familyId = new FamilyId(Guid.Parse("74586dc6-2053-40f7-bf25-339e8f8f29e4"));

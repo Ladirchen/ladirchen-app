@@ -1,6 +1,12 @@
 @use "./tokens";
 
 @layer vuetify-overrides {
+  #app,
+  .v-application,
+  .v-application__wrap {
+    min-width: 320px;
+  }
+
   code,
   pre,
   .v-code {

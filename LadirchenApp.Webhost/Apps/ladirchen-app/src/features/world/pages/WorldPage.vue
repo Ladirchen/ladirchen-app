@@ -814,21 +814,21 @@ function giveDirectGift() {
   color: var(--lad-mint-dark);
   transform: translateY(-50%);
 }
-:global(.family-world-background--landscape) .world-hero {
+:global(.family-world-background--landscape .world-hero) {
   height: calc(100dvh - 8.75rem);
   min-height: 0;
   padding-top: 0.75rem;
   padding-bottom: 0.5rem;
   --uno: d-flex flex-column;
 }
-:global(.family-world-background--landscape) .world-hero :deep(.world-scene-wrap) {
+:global(.family-world-background--landscape .world-hero .world-scene-wrap) {
   width: min(100%, calc((100dvh - 13rem) * 1.354));
   min-height: 0;
   margin-inline: auto;
   flex: 1 1 auto;
 }
-:global(.family-world-background--landscape) .world-hero :deep(.scene-drag-layer),
-:global(.family-world-background--landscape) .world-hero :deep(.world-scene) {
+:global(.family-world-background--landscape .world-hero .scene-drag-layer),
+:global(.family-world-background--landscape .world-hero .world-scene) {
   height: 100%;
 }
 @include respond-down(mobile) {
