@@ -94,11 +94,29 @@ To run the Ladirchen App locally, follow these steps:
 1. Ensure all prerequisites are installed and your local Kubernetes cluster is running.
 1. Start the development environment using Tilt:
 
-   ```sh
+   ```powershell
    tilt up
    ```
 
-1. Access the app in your browser at the port specified by your Tilt configuration.
+   Tilt uses the public, development-only password `ladirchen-local-dev` by
+   default and creates a Kubernetes Secret at runtime. No environment setup is
+   required. Optionally set `POSTGRES_PASSWORD` before starting Tilt to override
+   the default. Never use this default password for shared or production databases.
+
+1. Access the app in your browser at <http://localhost:3000>.
+
+Tilt starts PostgreSQL 18 in the cluster and waits for its readiness probe before
+starting the web host. It injects `ConnectionStrings__Ladirchen` from the same
+Secret, using `ladirchen-app-postgres:5432` as the database address and `ladirchen`
+as the database and user. No separately installed PostgreSQL instance is needed
+for Tilt. The web host applies migrations on startup.
+
+Database data is stored in a 1 GiB PersistentVolumeClaim using the cluster's
+default storage class. Keep the same database password across restarts:
+PostgreSQL initializes credentials only when the volume is empty. Changing the
+environment variable does not change the password in an existing database.
+`tilt down` removes the claim along with the other resources and can delete its
+data, depending on the storage class's reclaim policy.
 
 ## Vercel beta deployment
 

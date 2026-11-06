@@ -17,6 +17,13 @@ spec:
       containers:
         - name: webhost
           image: ladirchen-app-webhost
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
           ports:
             - containerPort: 8080
           env:
@@ -24,3 +31,8 @@ spec:
               value: Release
             - name: ASPNETCORE_URLS
               value: http://+:8080
+            - name: ConnectionStrings__Ladirchen
+              valueFrom:
+                secretKeyRef:
+                  name: ladirchen-app-postgres
+                  key: connection-string
