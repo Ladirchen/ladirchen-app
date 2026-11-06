@@ -39,6 +39,7 @@ k8s_yaml(["k8s/postgres.yaml", "k8s/deployment.yaml", "k8s/service.yaml"])
 
 k8s_resource(
   "ladirchen-app-postgres",
+  port_forwards="5432:5432",
   objects=["ladirchen-app-postgres:secret", "ladirchen-app-postgres:persistentvolumeclaim"],
 )
 

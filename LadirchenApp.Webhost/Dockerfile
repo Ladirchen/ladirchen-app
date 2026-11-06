@@ -2,6 +2,8 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
+RUN apk add --no-cache icu-data-full icu-libs tzdata
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -13,9 +15,14 @@ ARG BUILD_CONFIGURATION=Release
 # GitVersion can't run in this container (no .git), so the version is computed on the host and passed in.
 ARG BUILD_VERSION=0.0.0
 ARG ENABLE_VUE_DEVTOOLS=false
-ENV ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS
-RUN apk add --no-cache bash curl && curl -fsSL https://vite.plus | bash
-ENV PATH="/root/.local/share/vite-plus/bin:${PATH}"
+ENV ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS \
+  VP_HOME=/root/.vite-plus \
+  VP_NODE_MANAGER=yes
+ENV PATH="${VP_HOME}/bin:${PATH}"
+RUN apk add --no-cache bash curl libstdc++ \
+  && curl -fsSL https://vite.plus -o /tmp/install-vite-plus.sh \
+  && bash /tmp/install-vite-plus.sh \
+  && rm /tmp/install-vite-plus.sh
 WORKDIR /src
 COPY ["nuget.config", "."]
 COPY ["LadirchenApp.Webhost/LadirchenApp.Webhost.csproj", "LadirchenApp.Webhost/"]

@@ -111,6 +111,16 @@ Secret, using `ladirchen-app-postgres:5432` as the database address and `ladirch
 as the database and user. No separately installed PostgreSQL instance is needed
 for Tilt. The web host applies migrations on startup.
 
+The Alpine runtime in `LadirchenApp.Webhost/Dockerfile` includes ICU and timezone
+data and disables .NET globalization-invariant mode, matching the production
+image. Registration requires these dependencies to validate `Europe/Zurich`
+and apply its daylight-saving rules. Keep them in the base stage so both
+Visual Studio fast mode and the final Tilt image include them.
+
+While Tilt is running, desktop database clients can connect to `localhost:5432`
+with database `ladirchen`, user `ladirchen`, and password `ladirchen-local-dev`
+(or your `POSTGRES_PASSWORD` override). Local port 5432 must be available.
+
 Database data is stored in a 1 GiB PersistentVolumeClaim using the cluster's
 default storage class. Keep the same database password across restarts:
 PostgreSQL initializes credentials only when the volume is empty. Changing the
@@ -121,7 +131,10 @@ data, depending on the storage class's reclaim policy.
 ## Vercel beta deployment
 
 The root `Dockerfile` publishes the Vue application and ASP.NET host into one
-container. The browser therefore uses the same origin for static assets, API
+container. Both Dockerfiles install Vite+ in the .NET build stage; the web
+project uses `vp install` and `vp run build` to build the frontend with the
+runtime and package manager configured in `package.json`.
+The browser therefore uses the same origin for static assets, API
 requests, the authentication cookie and SignalR. `vercel.json` deploys the HTTP
 application with the Container preset and keeps one production daemon running
 in `fra1` for durable outbox delivery and weekly interest settlement.

@@ -1,14 +1,17 @@
-FROM node:24.22.2-alpine3.24 AS node
-
 FROM mcr.microsoft.com/dotnet/sdk:10.0.403-alpine3.24 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG BUILD_VERSION=0.0.0
 ARG ENABLE_VUE_DEVTOOLS=false
 ENV CI=true \
-  ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS
+  ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS \
+  VP_HOME=/root/.vite-plus \
+  VP_NODE_MANAGER=yes
+ENV PATH="${VP_HOME}/bin:${PATH}"
 
-COPY --from=node /usr/local/ /usr/local/
-RUN npm install --global pnpm@12.15.0
+RUN apk add --no-cache bash curl libstdc++ \
+  && curl -fsSL https://vite.plus -o /tmp/install-vite-plus.sh \
+  && bash /tmp/install-vite-plus.sh \
+  && rm /tmp/install-vite-plus.sh
 
 WORKDIR /src
 COPY ["nuget.config", "Directory.Build.props", "Build.GitVersion.props", "Build.NSwag.props", "./"]
