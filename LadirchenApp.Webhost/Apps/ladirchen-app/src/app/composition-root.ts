@@ -10,6 +10,7 @@ import { SignalRFamilyAggregateUpdatesGateway } from "@/infrastructure/realtime/
 import { HttpFamilyCommandGateway } from "@/infrastructure/http/http-family-command-gateway";
 import { HttpFamilyBootstrapService } from "@/infrastructure/http/http-family-bootstrap-service";
 import { HttpAuthenticationGateway } from "@/infrastructure/http/http-authentication-gateway";
+import { HttpApplicationInfoGateway } from "@/infrastructure/http/http-application-info-gateway";
 import { HttpSavingsInterestSimulationGateway } from "@/infrastructure/http/http-savings-interest-simulation-gateway";
 const repositories: FamilyReadModelRepositories = createHttpFamilyReadModelRepositories(
   frontendRuntimeConfig.apiBaseUrl,
@@ -20,6 +21,7 @@ const familyBootstrapService = new HttpFamilyBootstrapService(frontendRuntimeCon
 const initialDataFactory = { create: createEmptyFamilyWorldInitialData };
 export const familyContext = localFamilyContext;
 export const authenticationGateway = new HttpAuthenticationGateway(frontendRuntimeConfig.apiBaseUrl);
+export const applicationInfoGateway = new HttpApplicationInfoGateway(frontendRuntimeConfig.apiBaseUrl);
 export const savingsInterestSimulationGateway = new HttpSavingsInterestSimulationGateway(
   frontendRuntimeConfig.apiBaseUrl,
 );

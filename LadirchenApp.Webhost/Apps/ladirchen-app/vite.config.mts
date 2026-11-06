@@ -81,7 +81,14 @@ export default defineConfig({
         ],
         importScripts: ["/push-notifications-sw.js"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/health\//, /^\/hubs\//, /^\/robots\.txt$/, /^\/sitemap\.xml$/],
+        navigateFallbackDenylist: [
+          /^\/about\/?$/,
+          /^\/api\//,
+          /^\/health\//,
+          /^\/hubs\//,
+          /^\/robots\.txt$/,
+          /^\/sitemap\.xml$/,
+        ],
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) =>

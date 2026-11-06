@@ -95,6 +95,8 @@ German and English messages live as flat, alphabetically sorted JSON files in `s
 
 ## 🔌 Backend integration boundary
 
+The interactive app header and profile display the running backend's version from `GET /about`. This endpoint reads GitVersion-generated .NET assembly informational metadata, not the frontend package version. Requests and responses disable caching; unavailable metadata shows a localized error and retry action without blocking the app.
+
 The application uses backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. Each read-model adapter expects:
 
 ```text
