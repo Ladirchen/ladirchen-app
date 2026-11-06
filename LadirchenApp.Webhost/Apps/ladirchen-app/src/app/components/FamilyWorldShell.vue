@@ -1,5 +1,5 @@
 <template>
-  <div class="family-world-background" :class="shellLayoutClasses">
+  <div class="family-world-background family-world-background--fullscreen" :class="shellLayoutClasses">
     <div v-if="!appHydrated" class="family-world-loading" role="status">
       <v-progress-circular color="primary" indeterminate />
     </div>
@@ -203,7 +203,11 @@
 
       <v-dialog :model-value="store.behaviorNoticeAnimation.visible" max-width="390" persistent>
         <v-card :key="store.behaviorNoticeAnimation.version" class="behavior-notice-card pa-6 text-center" rounded="xl">
-          <div class="behavior-rain" aria-hidden="true"><span>💧</span><span>💧</span><span>💧</span></div>
+          <div class="behavior-rain" aria-hidden="true">
+            <span>💧</span>
+            <span>💧</span>
+            <span>💧</span>
+          </div>
           <div class="behavior-face" aria-hidden="true">{{ behaviorNoticeFace }}</div>
           <p class="eyebrow mt-3 mb-1">{{ t("shell.behavior.eyebrow") }}</p>
           <h2>{{ behaviorNoticeTitle }}</h2>
@@ -286,13 +290,16 @@ import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import AppNavigationIcon from "./AppNavigationIcon.vue";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { CURRENT_TIME_REFRESH_INTERVAL_MS } from "@/shared/runtime-timing";
+
 type NavigationIcon = "family" | "contributions" | "profile" | "world" | "wishes" | "shop";
+
 interface NavigationItem {
   to: string;
   icon: NavigationIcon;
   label: string;
   tip: string;
 }
+
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
 const AsyncGlobalLadiGuide = defineAsyncComponent(() => import("./GlobalLadiGuide.vue"));
 const AsyncSavingsPiggyDialog = defineAsyncComponent(
@@ -306,7 +313,7 @@ const store = useFamilyWorldStore();
 const currentRoute = useRoute();
 const router = useRouter();
 const { locale, t } = useI18n();
-const { height: viewportHeight, md, platform, sm, smAndDown, width: viewportWidth, xs } = useDisplay();
+const { height: viewportHeight, md, platform, sm, width: viewportWidth, xs } = useDisplay();
 const appHydrated = ref(false);
 const cancellationDecision = ref<boolean>();
 const introFinished = ref(false);
@@ -377,13 +384,9 @@ const pendingCancellationLimits = computed(
   () => store.pendingGoalCancellation?.commandLimits?.[store.signedInMemberId],
 );
 const isLandscape = computed(() => viewportWidth.value > viewportHeight.value);
-const usesFullscreenShell = computed(
-  () => smAndDown.value || (md.value && (isLandscape.value || platform.value.touch)),
-);
 const shellLayoutClasses = computed(() => ({
   "family-world-background--compact": xs.value,
   "family-world-background--expanded-padding": sm.value || (md.value && platform.value.touch),
-  "family-world-background--fullscreen": usesFullscreenShell.value,
   "family-world-background--landscape": md.value && isLandscape.value,
 }));
 const navigationItems = computed<NavigationItem[]>(() => [
@@ -448,11 +451,11 @@ async function restoreAuthenticationSession() {
   }
 }
 void restoreAuthenticationSession();
-onMounted(function callback() {
+onMounted(() => {
   store.refreshCurrentTime();
   clockTimer = window.setInterval(() => store.refreshCurrentTime(), CURRENT_TIME_REFRESH_INTERVAL_MS);
 });
-onBeforeUnmount(function callback() {
+onBeforeUnmount(() => {
   if (clockTimer !== undefined) {
     window.clearInterval(clockTimer);
   }
