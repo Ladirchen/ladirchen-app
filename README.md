@@ -105,6 +105,10 @@ To run the Ladirchen App locally, follow these steps:
 
 1. Access the app in your browser at <http://localhost:3000>.
 
+Frontend routes use hashes: `/#/` for the landing page, `/#/login` for login,
+and `/#/app` for the family world. Tilt only forwards ports; it does not rewrite
+these URLs. The installed PWA also opens `/#/app`.
+
 Tilt starts PostgreSQL 18 in the cluster and waits for its readiness probe before
 starting the web host. It injects `ConnectionStrings__Ladirchen` from the same
 Secret, using `ladirchen-app-postgres:5432` as the database address and `ladirchen`

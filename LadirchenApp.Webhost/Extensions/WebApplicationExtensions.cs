@@ -1,13 +1,6 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
-using LadirchenApp.Application.Aggregates;
-using LadirchenApp.Application.Commands;
-using LadirchenApp.Application.Queries;
-using LadirchenApp.Domain.Shared;
 using LadirchenApp.Webhost.Helpers;
 using LadirchenApp.Webhost.Infrastructure;
 using LadirchenApp.Webhost.Models;
@@ -16,7 +9,6 @@ using LadirchenApp.Webhost.Realtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
