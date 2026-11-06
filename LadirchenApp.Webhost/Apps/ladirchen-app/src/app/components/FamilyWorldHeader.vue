@@ -2,13 +2,18 @@
   <header class="family-world-header d-flex align-center justify-space-between">
     <RouterLink
       :aria-label="t('common.familyWorldAria')"
-      class="family-world-brand d-flex align-end text-decoration-none"
+      class="family-world-brand d-flex align-center text-decoration-none"
       to="/app"
     >
       <span class="family-world-logo position-relative flex-shrink-0 overflow-hidden" aria-hidden="true">
         <img alt="" src="/ladirchen-logo.png" />
       </span>
-      <span class="family-world-wordmark">{{ t("common.appName") }}</span>
+      <span class="family-world-brand-copy">
+        <span class="family-world-wordmark">{{ t("common.appName") }}</span>
+        <small class="family-world-current-user">
+          {{ t("shell.currentUser", { name: store.displayNameFor(store.signedInMemberId) }) }}
+        </small>
+      </span>
     </RouterLink>
     <div
       class="header-stats d-grid align-center"

@@ -47,8 +47,21 @@
     letter-spacing: -0.04em;
   }
   .family-world-wordmark {
-    padding-bottom: rem(1);
     line-height: 1;
+  }
+  .family-world-brand-copy {
+    min-width: 0;
+  }
+  .family-world-current-user {
+    display: block;
+    overflow: hidden;
+    margin-top: rem(4);
+    color: var(--lad-muted);
+    font-size: rem(9);
+    font-weight: var(--lad-font-weight-strong);
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .family-world-logo {
     width: rem(46);

@@ -90,6 +90,9 @@
           <v-switch color="primary" density="compact" hide-details inset model-value />
         </div>
       </template>
+      <div v-if="appVersion" class="setting-row">
+        <span>{{ t("profile.appVersion", { version: appVersion }) }}</span>
+      </div>
     </BrandedCard>
 
     <BrandedCard v-if="store.isFamilyAdmin" class="settings-card pa-4 mt-5" tone="profile">
@@ -205,6 +208,8 @@ import {
   readWebPushState,
   type WebPushState,
 } from "@/infrastructure/push/web-push-notifications";
+import { fetchApplicationVersion } from "@/infrastructure/http/http-about-gateway";
+import { frontendRuntimeConfig } from "@/config/runtime";
 const AsyncAvatarBuilderDialog = defineAsyncComponent(
   () => import("@/shared/components/avatar/AvatarBuilderDialog.vue"),
 );
@@ -224,6 +229,7 @@ const avatarBuilderOpen = ref(false);
 const profileEditorOpen = ref(false);
 const pushBusy = ref(false);
 const pushState = ref<WebPushState>("disabled");
+const appVersion = ref("");
 const nicknameDraft = ref(store.activeChild?.nickname ?? "");
 const activeLocale = computed<SupportedLocale>({
   get(this: void) {
@@ -262,10 +268,19 @@ async function updatePushNotifications(enabled: boolean | null) {
   }
 }
 onMounted(async () => {
-  try {
-    pushState.value = await readWebPushState();
-  } catch {
+  const [webPushResult, versionResult] = await Promise.allSettled([
+    readWebPushState(),
+    fetchApplicationVersion(frontendRuntimeConfig.apiBaseUrl),
+  ]);
+
+  if (webPushResult.status === "fulfilled") {
+    pushState.value = webPushResult.value;
+  } else {
     pushState.value = "unavailable";
+  }
+
+  if (versionResult.status === "fulfilled") {
+    appVersion.value = versionResult.value ?? "";
   }
 });
 watch(

@@ -122,6 +122,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@api": fileURLToPath(new URL("api", import.meta.url)),
       "@": fileURLToPath(new URL("src", import.meta.url)),
     },
     extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
