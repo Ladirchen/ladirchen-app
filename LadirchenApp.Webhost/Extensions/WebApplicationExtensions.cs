@@ -141,7 +141,12 @@ public static partial class WebApplicationExtensions
 
   public static WebApplication MapAboutInfo(this WebApplication aWebApplication, string aPath = "about")
   {
-    aWebApplication.MapGet(aPath, () => AssemblyHelper.GetAboutInfoFromAssembly()).WithTags("Info");
+    aWebApplication.MapGet(aPath, (HttpContext context) =>
+    {
+      context.Response.Headers.CacheControl = "no-store";
+
+      return AssemblyHelper.GetAboutInfoFromAssembly(typeof(WebApplicationExtensions).Assembly);
+    }).WithTags("Info");
 
     return aWebApplication;
   }

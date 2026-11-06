@@ -63,6 +63,19 @@
         </button>
       </template>
     </div>
+    <div class="header-session d-flex align-center justify-space-between ga-2">
+      <RouterLink
+        v-if="store.signedInMember"
+        :aria-label="t('shell.currentUser.aria', { name: currentUserName })"
+        class="header-current-user d-flex align-center ga-1 text-decoration-none"
+        :title="t('shell.currentUser.aria', { name: currentUserName })"
+        to="/app/profile"
+      >
+        <span class="i-mdi:account-circle-outline flex-shrink-0" aria-hidden="true"></span>
+        <span class="text-truncate">{{ currentUserName }}</span>
+      </RouterLink>
+      <ApplicationVersion />
+    </div>
   </header>
 
   <AsyncWeeklyStreakDialog v-if="streakDialog" v-model="streakDialog" />
@@ -73,6 +86,7 @@ import { computed, defineAsyncComponent, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import AnimatedStreakFlame from "@/features/streaks/components/AnimatedStreakFlame.vue";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
+import ApplicationVersion from "@/shared/components/ApplicationVersion.vue";
 import { useFamilyWorldStore } from "@/stores/family-world";
 
 const AsyncWeeklyStreakDialog = defineAsyncComponent(
@@ -81,6 +95,7 @@ const AsyncWeeklyStreakDialog = defineAsyncComponent(
 const store = useFamilyWorldStore();
 const { locale, t } = useI18n();
 const streakDialog = ref(false);
+const currentUserName = computed(() => store.displayNameFor(store.signedInMemberId));
 const headerBalanceMemberId = computed(() =>
   store.viewerRole === "guardian" ? store.signedInMemberId : store.activeChildId,
 );

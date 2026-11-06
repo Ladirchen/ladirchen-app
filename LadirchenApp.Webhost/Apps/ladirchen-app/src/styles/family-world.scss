@@ -29,6 +29,9 @@
     min-height: rem(70);
     padding: 0.75rem rem(18);
     --uno: position-sticky top-0 ga-4;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    row-gap: rem(4);
     z-index: 20;
 
     color: var(--lad-text);
@@ -45,6 +48,19 @@
     font-size: rem(19);
     font-weight: var(--lad-font-weight-black);
     letter-spacing: -0.04em;
+  }
+  .header-session {
+    flex: 0 0 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .header-current-user {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--lad-color-primary-deep);
+    font-size: rem(13);
+    font-weight: var(--lad-font-weight-strong);
   }
   .family-world-wordmark {
     padding-bottom: rem(1);
@@ -187,6 +203,7 @@
     .family-world-header {
       padding-inline: rem(14);
       gap: rem(10);
+      row-gap: rem(4);
     }
     .family-world-brand {
       font-size: rem(17);

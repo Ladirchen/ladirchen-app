@@ -114,6 +114,8 @@
       <v-icon class="logout-arrow" icon="i-mdi:arrow-right" />
     </button>
 
+    <ApplicationVersion class="mt-5" />
+
     <AsyncDevelopmentToolsPanel v-if="isDevelopment" />
 
     <v-dialog v-model="profileEditorOpen" max-width="420">
@@ -194,6 +196,7 @@ import { useI18n } from "vue-i18n";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import PageHeader from "@/shared/components/ui/PageHeader.vue";
+import ApplicationVersion from "@/shared/components/ApplicationVersion.vue";
 import { createDefaultAvatarAppearance, resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { setActiveLocale } from "@/plugins/i18n";

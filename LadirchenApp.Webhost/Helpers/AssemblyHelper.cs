@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -17,7 +15,7 @@ public static class AssemblyHelper
   {
     Assembly asm = aAssembly ?? GetFallbackAssembly();
     AssemblyName asmName = asm.GetName();
-    string? informationalVersion = GetInformationalVersion(aAssembly);
+    string? informationalVersion = GetInformationalVersion(asm);
     string semver = informationalVersion?.Split('+').FirstOrDefault() ?? "Unknown SemVer";
     string sha = informationalVersion?.Split("Sha.").LastOrDefault() ?? "Unknown Sha";
     string name = asmName.Name ?? "Unknown Name";
@@ -35,11 +33,8 @@ public static class AssemblyHelper
   public static string? GetInformationalVersion(Assembly? aAssembly = null)
   {
     Assembly asm = aAssembly ?? GetFallbackAssembly();
-    string asmFilePath = string.IsNullOrWhiteSpace(asm.Location)
-      ? Path.Combine(AppContext.BaseDirectory, asm.GetName().Name + ".dll")
-      : asm.Location;
 
-    return FileVersionInfo.GetVersionInfo(asmFilePath).ProductVersion;
+    return asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
   }
 
   private static Assembly GetFallbackAssembly()
