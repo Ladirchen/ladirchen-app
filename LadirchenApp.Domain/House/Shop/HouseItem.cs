@@ -31,7 +31,7 @@ public sealed partial class HouseItem
   }
 
   public string Id { get; }
-  public decimal Price { get; }
+  public decimal Price { get; private set; }
   public HouseItemCategory Category { get; }
   public HouseItemMobility Mobility { get; }
   public string IntendedArea { get; }
@@ -46,6 +46,12 @@ public sealed partial class HouseItem
   {
     Owned = true;
     Equipped = equipped;
+  }
+
+  internal void SetPrice(decimal price)
+  {
+    Rules.Require(price >= 0, DomainError.InvalidValue, "A house-item price cannot be negative.");
+    Price = price;
   }
 
   internal void SetPlacement(HousePlacement placement, bool equipped)

@@ -54,6 +54,13 @@ export interface FamilyCommandPayloadMap {
   readonly "home.reset-entity": Readonly<{ placementId: HouseLayoutPlacementId }>;
   readonly "home.select-room-design": IdFamilyCommandPayload<RoomDesignId>;
   readonly "home.select-theme": IdFamilyCommandPayload<HouseThemeId>;
+  readonly "home.set-catalog-price": Readonly<{
+    catalogType: "accessory" | "furniture-set" | "room-design" | "theme";
+    id: string;
+    price: number;
+    promotionalPrice?: number;
+    promotionUntil?: string;
+  }>;
   readonly "home.store-accessory": IdFamilyCommandPayload<HouseAccessoryId>;
   readonly "home.toggle-accessory": IdFamilyCommandPayload<HouseAccessoryId>;
   readonly "profile.complete-setup": Readonly<{

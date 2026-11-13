@@ -24,6 +24,9 @@ export interface HouseAccessory {
   description: string;
   icon: string;
   price: number;
+  regularPrice: number;
+  promotionActive: boolean;
+  promotionUntil?: string;
   purchasableByMemberIds: ReadonlyArray<string>;
   placement: HouseAccessoryPlacement;
   roomId?: HouseRoomId;

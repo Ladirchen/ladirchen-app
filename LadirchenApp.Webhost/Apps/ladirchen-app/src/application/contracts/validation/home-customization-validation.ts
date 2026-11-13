@@ -68,6 +68,10 @@ function hasPurchaseAvailability(value: Record<string, unknown>): boolean {
     typeof value.owned === "boolean" &&
     isFiniteNumber(value.price) &&
     value.price >= 0 &&
+    isFiniteNumber(value.regularPrice) &&
+    value.regularPrice >= 0 &&
+    typeof value.promotionActive === "boolean" &&
+    (value.promotionUntil === undefined || typeof value.promotionUntil === "string") &&
     isArrayOf(value.purchasableByMemberIds, isFamilyMemberId) &&
     new Set(value.purchasableByMemberIds).size === value.purchasableByMemberIds.length
   );

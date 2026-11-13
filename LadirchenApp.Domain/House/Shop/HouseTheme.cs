@@ -17,7 +17,13 @@ public sealed partial class HouseTheme
   }
 
   public string Id { get; }
-  public decimal Price { get; }
+  public decimal Price { get; private set; }
   public IReadOnlyList<RoomDesign> Designs { get; }
   public bool Owned { get; internal set; }
+
+  internal void SetPrice(decimal price)
+  {
+    Rules.Require(price >= 0, DomainError.InvalidValue, "A theme price cannot be negative.");
+    Price = price;
+  }
 }

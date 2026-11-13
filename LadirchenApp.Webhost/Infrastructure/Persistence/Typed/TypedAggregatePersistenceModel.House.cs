@@ -24,6 +24,9 @@ internal static partial class TypedAggregatePersistenceModel
     house.Property(item => item.Revision).IsConcurrencyToken();
     house.Property(item => item.UpdatedBy).HasMaxLength(128);
     house.Property(item => item.SelectedThemeId).HasMaxLength(128);
+    house.Property(item => item.CatalogPricesJson)
+      .HasColumnType("jsonb")
+      .HasDefaultValueSql("'[]'::jsonb");
     house.HasMany(item => item.Accessories).WithOne(item => item.HouseCustomization)
       .HasForeignKey(item => item.FamilyId).OnDelete(DeleteBehavior.Cascade);
     house.HasMany(item => item.Themes).WithOne(item => item.HouseCustomization)

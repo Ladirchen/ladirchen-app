@@ -31,6 +31,8 @@ public sealed partial class FamilyHouseShop
   private readonly Dictionary<string, RoomDesign> _stateRoomDesigns = new(StringComparer.Ordinal);
   private readonly Dictionary<string, HouseLayoutEntity> _statePlacements = new(StringComparer.Ordinal);
   private readonly Dictionary<string, HousePlacement> _initialPlacements = new(StringComparer.Ordinal);
+  private readonly Dictionary<(string CatalogType, string Id), HouseCatalogPriceState> _catalogPrices = new();
+  private DateOnly _catalogPricingDate = DateOnly.MaxValue;
 
   public HouseSubscriptionTier SubscriptionTier { get; private set; } = HouseSubscriptionTier.Free;
 
@@ -93,7 +95,10 @@ public sealed partial class FamilyHouseShop
           item.EntityType,
           item.EntityId,
           item.Placement
-        ))
+        )),
+      _catalogPrices.Values
+        .OrderBy(item => item.CatalogType, StringComparer.Ordinal)
+        .ThenBy(item => item.Id, StringComparer.Ordinal)
     );
   }
 
@@ -129,6 +134,7 @@ public sealed partial class FamilyHouseShop
   private void ReconstituteState(FamilyHouseShopState state)
   {
     SubscriptionTier = Rules.Defined(state.SubscriptionTier);
+    ReconstituteCatalogPrices(state.CatalogPrices);
     var accessoryStates = IndexAccessories(state.Accessories);
     var themeStates = IndexThemes(state.Themes);
     var designStates = IndexRoomDesigns(state.RoomDesigns);
@@ -147,6 +153,50 @@ public sealed partial class FamilyHouseShop
     SelectedThemeId = selectedTheme!.Id;
   }
 
+  private void ReconstituteCatalogPrices(IEnumerable<HouseCatalogPriceState> states)
+  {
+    _catalogPrices.Clear();
+
+    foreach (var item in HouseShopCatalog.Accessories)
+    {
+      _catalogPrices.Add(
+        ("accessory", item.Key),
+        new HouseCatalogPriceState("accessory", item.Key, item.Value.Price)
+      );
+    }
+
+    foreach (var item in HouseShopCatalog.FurnitureSets)
+    {
+      _catalogPrices.Add(
+        ("furniture-set", item.Key),
+        new HouseCatalogPriceState("furniture-set", item.Key, item.Value.Price)
+      );
+    }
+
+    foreach (var item in HouseShopCatalog.Themes)
+    {
+      _catalogPrices.Add(("theme", item.Key), new HouseCatalogPriceState("theme", item.Key, item.Value));
+    }
+
+    foreach (var item in HouseShopCatalog.RoomDesigns)
+    {
+      _catalogPrices.Add(
+        ("room-design", item.Key),
+        new HouseCatalogPriceState("room-design", item.Key, item.Value.Price)
+      );
+    }
+
+    foreach (var state in states)
+    {
+      Rules.Require(
+        _catalogPrices.ContainsKey((state.CatalogType, state.Id)),
+        DomainError.NotFound,
+        "The stored house-catalog price references unknown content."
+      );
+      _catalogPrices[(state.CatalogType, state.Id)] = state;
+    }
+  }
+
   private void ReconstituteAccessories(
     IReadOnlyDictionary<string, HouseItemState> states,
     IReadOnlyDictionary<string, HouseLayoutEntityState> placements
@@ -162,7 +212,7 @@ public sealed partial class FamilyHouseShop
       )?.Placement ?? definition.Initial;
       var item = new HouseItem(
         catalogItem.Key,
-        definition.Price,
+        CatalogPrice("accessory", catalogItem.Key).Price,
         Category(catalogItem.Key),
         definition.Movable ? HouseItemMobility.Movable : HouseItemMobility.Fixed,
         definition.IntendedArea,
@@ -193,7 +243,7 @@ public sealed partial class FamilyHouseShop
         catalogItem.Key,
         definition.ThemeId,
         definition.Area,
-        definition.Price,
+        CatalogPrice("room-design", catalogItem.Key).Price,
         definition.MinimumLevel
       );
       Rules.Require(
@@ -224,7 +274,7 @@ public sealed partial class FamilyHouseShop
         ?? new HouseThemeState(catalogItem.Key, false);
       var theme = new HouseTheme(
         catalogItem.Key,
-        catalogItem.Value,
+        CatalogPrice("theme", catalogItem.Key).Price,
         _stateRoomDesigns.Values.Where(item => item.ThemeId == catalogItem.Key)
       );
       Rules.Require(

@@ -48,7 +48,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
     );
   }
 
-  private static HomeCustomizationReadModelProjection ProjectHomeCustomization(
+  private HomeCustomizationReadModelProjection ProjectHomeCustomization(
     Family family,
     LoadedAggregate<FamilyHouse> loadedProgression,
     LoadedAggregate<FamilyHouseShop> loadedCustomization,
@@ -65,6 +65,8 @@ public sealed partial class GetFamilyAggregateQueryHandler
       .Resolve(member)
       .PurchaseHouseContentWithoutBalance;
     var customization = loadedCustomization.Root;
+    var catalogDate = family.TimeZone.LocalDate(_timeProvider.GetUtcNow());
+    customization.UseCatalogPricesOn(catalogDate);
     var accessories = customization.Accessories.ToDictionary(item => item.Id);
     var availableAccessoryIds = customization.Accessories
       .Where(item => customization.IsAvailableAtCurrentLevel(item.MinimumLevel))
@@ -139,6 +141,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       loadedCustomization.Revision,
       customization,
       loadedProgression.Root.StoredLevel,
+      catalogDate,
       capabilityMemberId,
       capabilities
     );

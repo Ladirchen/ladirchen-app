@@ -81,9 +81,22 @@
                 </v-chip>
               </div>
               <strong class="d-block mt-2">{{ edition.name }}</strong>
+              <v-btn
+                v-if="canEditCatalogPrices"
+                class="mt-2"
+                prepend-icon="i-mdi:pencil-outline"
+                size="x-small"
+                variant="tonal"
+                @click="openCatalogPriceEditor('theme', edition, edition.name)"
+              >
+                {{ t("shop.catalog.prices.edit") }}
+              </v-btn>
               <p class="catalog-description text-caption text-medium-emphasis mt-1">{{ edition.description }}</p>
               <div class="catalog-actions mt-3">
-                <span v-if="!isActive" class="price"><LadirchenAmount :value="edition.price" /></span>
+                <span v-if="!isActive" class="price">
+                  <del v-if="edition.promotionActive"><LadirchenAmount :value="edition.regularPrice" /></del>
+                  <LadirchenAmount :value="edition.price" />
+                </span>
                 <v-btn
                   v-if="action === 'buy'"
                   class="catalog-buy-button catalog-buy-button--compact"
@@ -144,6 +157,14 @@
                 <small>{{ metaLabel }}</small>
               </div>
               <div class="set-action">
+                <v-btn
+                  v-if="canEditCatalogPrices"
+                  :aria-label="t('shop.catalog.prices.editNamed', { title: set.name })"
+                  icon="i-mdi:pencil-outline"
+                  size="x-small"
+                  variant="text"
+                  @click="openCatalogPriceEditor('furniture-set', set, set.name)"
+                />
                 <span v-if="status === 'owned'" class="catalog-status catalog-status--owned">
                   <i>✦</i>
                   <v-icon icon="i-mdi:check-decagram" size="16" />
@@ -156,6 +177,9 @@
                   {{ t("shop.catalog.locked") }}
                   <i>✧</i>
                 </span>
+                <v-chip v-if="set.promotionActive && status !== 'owned'" color="warning" size="x-small">
+                  {{ t("shop.catalog.prices.promotionBadge") }}
+                </v-chip>
                 <v-btn
                   v-else-if="status === 'buy'"
                   class="catalog-buy-button"
@@ -207,6 +231,16 @@
               </v-chip>
             </div>
             <strong class="d-block mt-3">{{ accessory.title }}</strong>
+            <v-btn
+              v-if="canEditCatalogPrices"
+              class="mt-2"
+              prepend-icon="i-mdi:pencil-outline"
+              size="x-small"
+              variant="tonal"
+              @click="openCatalogPriceEditor('accessory', accessory, accessory.title)"
+            >
+              {{ t("shop.catalog.prices.edit") }}
+            </v-btn>
             <p class="accessory-description text-caption text-medium-emphasis mt-1">{{ accessory.description }}</p>
             <div v-if="accessory.owned" class="owned-status-row">
               <span class="catalog-status catalog-status--owned">
@@ -217,7 +251,10 @@
               </span>
             </div>
             <div v-if="!accessory.owned" class="catalog-actions accessory-actions ga-2">
-              <span class="price"><LadirchenAmount :value="accessory.price" /></span>
+              <span class="price">
+                <del v-if="accessory.promotionActive"><LadirchenAmount :value="accessory.regularPrice" /></del>
+                <LadirchenAmount :value="accessory.price" />
+              </span>
               <v-btn
                 v-if="canPurchaseHouseContent"
                 class="catalog-buy-button catalog-buy-button--compact"
@@ -335,6 +372,61 @@
         </v-card>
       </v-dialog>
 
+      <v-dialog v-model="catalogPriceDialog" max-width="430">
+        <v-card class="pa-5" rounded="xl">
+          <v-card-title class="pa-0 mb-1">{{ t("shop.catalog.prices.title") }}</v-card-title>
+          <v-card-subtitle class="pa-0 mb-4">{{ catalogPriceDraft.title }}</v-card-subtitle>
+          <v-text-field
+            v-model.number="catalogPriceDraft.price"
+            :label="t('shop.catalog.prices.regular')"
+            max="10"
+            min="0"
+            suffix="L"
+            type="number"
+            variant="outlined"
+          />
+          <v-switch
+            v-model="catalogPriceDraft.promotionEnabled"
+            color="warning"
+            inset
+            :label="t('shop.catalog.prices.promotion')"
+          />
+          <div v-if="catalogPriceDraft.promotionEnabled" class="d-grid reward-form ga-3">
+            <v-text-field
+              v-model.number="catalogPriceDraft.promotionalPrice"
+              :label="t('shop.catalog.prices.promotional')"
+              :max="catalogPriceDraft.price"
+              min="0"
+              suffix="L"
+              type="number"
+              variant="outlined"
+            />
+            <v-text-field
+              v-model="catalogPriceDraft.promotionUntil"
+              :label="t('shop.catalog.prices.until')"
+              :min="minimumAvailableDate"
+              type="date"
+              variant="outlined"
+            />
+          </div>
+          <v-alert class="mb-4" density="compact" type="info" variant="tonal">
+            {{ t("shop.catalog.prices.description") }}
+          </v-alert>
+          <div class="d-flex justify-end ga-2">
+            <v-btn rounded="lg" variant="text" @click="closeCatalogPriceEditor">{{ t("common.cancel") }}</v-btn>
+            <v-btn
+              color="primary"
+              :disabled="!canSaveCatalogPrice"
+              rounded="lg"
+              variant="flat"
+              @click="saveCatalogPrice"
+            >
+              {{ t("common.save") }}
+            </v-btn>
+          </div>
+        </v-card>
+      </v-dialog>
+
       <v-dialog :model-value="rewardToDelete !== null" max-width="390" @update:model-value="onDeleteDialogToggle">
         <v-card class="pa-5" rounded="xl">
           <v-card-title class="pa-0">{{ t("shop.delete.title") }}</v-card-title>
@@ -368,9 +460,13 @@ type FurnitureSetStatus = "owned" | "locked" | "buy" | "childPurchase";
 const { t } = useI18n();
 const {
   activeTab,
+  canSaveCatalogPrice,
   canSaveReward,
   canRequest,
   categoryOptions,
+  catalogPriceDialog,
+  catalogPriceDraft,
+  closeCatalogPriceEditor,
   confirmRewardDeletion,
   displayedShopRewards,
   editionPreviewBackground,
@@ -383,6 +479,7 @@ const {
   newReward,
   closeRewardDialog,
   openRewardEditor,
+  openCatalogPriceEditor,
   ownsEdition,
   ownsSet,
   furnitureSetAreaLabel,
@@ -392,6 +489,7 @@ const {
   rewardPublicationStatus,
   rewardToDelete,
   saveReward,
+  saveCatalogPrice,
   setPreviewAccessories,
   shopViewOptions,
   store,
@@ -404,6 +502,7 @@ const canViewShop = computed(() => store.viewerRole === "child" || store.viewerR
 const canPurchaseHouseContent = computed(
   () => store.viewerRole === "child" || store.permissions.canPurchaseHouseContentWithoutBalance,
 );
+const canEditCatalogPrices = computed(() => store.isFamilyAdmin);
 const rewardDialogTitle = computed(() => t(rewardToEdit.value ? "shop.form.editTitle" : "shop.form.title"));
 const editionCards = computed(() =>
   houseEditions.value.map(function callback(edition) {

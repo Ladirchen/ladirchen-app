@@ -52,6 +52,11 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     var canPurchaseWithoutBalance = new FamilyPermissionPolicy()
       .Resolve(actor)
       .PurchaseHouseContentWithoutBalance;
+    var isCatalogPriceChange = command.CommandType == "home.set-catalog-price";
+    if (isCatalogPriceChange)
+    {
+      family.RequireAdministrator(command.ActorId);
+    }
     Rules.Require(
       !isPurchase || actor.Role == MemberRole.Child || canPurchaseWithoutBalance,
       DomainError.Forbidden,
@@ -70,6 +75,8 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     );
     LoadedFamilyEconomy? loadedEconomy = null;
     var availableBalance = 0m;
+    var localDate = family.TimeZone.LocalDate(TimeProvider.GetUtcNow());
+    loadedHouse.Root.UseCatalogPricesOn(localDate);
 
     if (isPurchase && actor.Role == MemberRole.Child)
     {
@@ -86,7 +93,8 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
       command,
       RequiredObject(command.Payload),
       canPurchaseWithoutBalance,
-      availableBalance
+      availableBalance,
+      localDate
     );
 
     if (isPurchase && actor.Role == MemberRole.Child)
@@ -175,13 +183,24 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     FamilyCommand command,
     JsonElement payload,
     bool canPurchaseWithoutBalance,
-    decimal availableBalance
+    decimal availableBalance,
+    DateOnly localDate
   )
   {
     var actorIsChild = family.ActiveMember(command.ActorId).Role == MemberRole.Child;
 
     switch (command.CommandType)
     {
+      case "home.set-catalog-price":
+        house.SetCatalogPrice(
+          RequiredString(payload, "catalogType"),
+          RequiredString(payload, "id"),
+          RequiredDecimal(payload, "price"),
+          OptionalDecimal(payload, "promotionalPrice"),
+          OptionalDate(payload, "promotionUntil"),
+          localDate
+        );
+        break;
       case "home.purchase-accessory":
         return RequirePurchase(
           house.PurchaseAccessoryContent(
@@ -277,6 +296,34 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
     }
 
     return null;
+  }
+
+  private static decimal? OptionalDecimal(JsonElement payload, string name)
+  {
+    return payload.TryGetProperty(name, out var value) && value.ValueKind != JsonValueKind.Null
+      ? value.GetDecimal()
+      : null;
+  }
+
+  private static DateOnly? OptionalDate(JsonElement payload, string name)
+  {
+    if (!payload.TryGetProperty(name, out var value) || value.ValueKind == JsonValueKind.Null)
+    {
+      return null;
+    }
+
+    if (!DateOnly.TryParseExact(
+      value.GetString(),
+      "yyyy-MM-dd",
+      CultureInfo.InvariantCulture,
+      DateTimeStyles.None,
+      out var result
+    ))
+    {
+      throw new FamilyCommandException("The house-catalog promotion date is invalid.");
+    }
+
+    return result;
   }
 
   private static HousePurchase RequirePurchase(HousePurchase? purchase, string message)

@@ -1371,6 +1371,18 @@ export interface HomeSelectThemeCommandRequest extends ExecuteFamilyCommandReque
   payload: IdFamilyCommandPayload;
 }
 
+export interface HomeSetCatalogPriceCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: HomeCatalogPricePayload;
+}
+
+export interface HomeCatalogPricePayload {
+  catalogType: string;
+  id: string;
+  price: number;
+  promotionalPrice?: number | null;
+  promotionUntil?: string | null;
+}
+
 export interface HomeStoreAccessoryCommandRequest extends ExecuteFamilyCommandRequest {
   payload: IdFamilyCommandPayload;
 }
@@ -1961,6 +1973,9 @@ export interface HouseAccessoryCatalogEntryReadModel {
   owned?: boolean | null;
   price?: number | null;
   purchasableByMemberIds: string[];
+  regularPrice?: number | null;
+  promotionActive?: boolean | null;
+  promotionUntil?: Date | null;
 }
 
 export interface HouseAreaCatalogEntryReadModel {
@@ -1978,6 +1993,9 @@ export interface FurnitureSetCatalogEntryReadModel {
   owned?: boolean | null;
   price?: number | null;
   purchasableByMemberIds: string[];
+  regularPrice?: number | null;
+  promotionActive?: boolean | null;
+  promotionUntil?: Date | null;
 }
 
 export interface HouseStageCatalogEntryReadModel {
@@ -1996,6 +2014,9 @@ export interface RoomDesignCatalogEntryReadModel {
   price?: number | null;
   purchasableByMemberIds: string[];
   themeId: string;
+  regularPrice?: number | null;
+  promotionActive?: boolean | null;
+  promotionUntil?: Date | null;
 }
 
 export interface HouseThemeCatalogEntryReadModel {
@@ -2004,6 +2025,9 @@ export interface HouseThemeCatalogEntryReadModel {
   owned?: boolean | null;
   price?: number | null;
   purchasableByMemberIds: string[];
+  regularPrice?: number | null;
+  promotionActive?: boolean | null;
+  promotionUntil?: Date | null;
 }
 
 export interface HouseAccessoryReadModel {

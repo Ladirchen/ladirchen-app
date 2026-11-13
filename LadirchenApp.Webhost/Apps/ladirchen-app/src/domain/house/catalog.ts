@@ -199,7 +199,14 @@ export const HOUSE_THEMES: HouseThemeDefinition[] = [
 ];
 export type HouseAccessoryDefinition = Omit<
   HouseAccessory,
-  "equipped" | "minimumHouseLevel" | "owned" | "price" | "purchasableByMemberIds"
+  | "equipped"
+  | "minimumHouseLevel"
+  | "owned"
+  | "price"
+  | "promotionActive"
+  | "promotionUntil"
+  | "purchasableByMemberIds"
+  | "regularPrice"
 >;
 type HouseAccessorySeed = Omit<
   HouseAccessoryDefinition,
@@ -458,6 +465,9 @@ export function createHouseAccessories(
     readonly id: string;
     readonly minimumHouseLevel?: HouseStageLevel;
     readonly price?: number;
+    readonly regularPrice?: number;
+    readonly promotionActive?: boolean;
+    readonly promotionUntil?: string;
     readonly purchasableByMemberIds?: ReadonlyArray<string>;
   }> = [],
 ): HouseAccessory[] {
@@ -474,6 +484,9 @@ export function createHouseAccessories(
       minimumHouseLevel: catalogEntry?.minimumHouseLevel,
       owned: state?.owned ?? false,
       price: catalogEntry?.price ?? 0,
+      regularPrice: catalogEntry?.regularPrice ?? catalogEntry?.price ?? 0,
+      promotionActive: catalogEntry?.promotionActive ?? false,
+      promotionUntil: catalogEntry?.promotionUntil,
       purchasableByMemberIds: catalogEntry?.purchasableByMemberIds ?? [],
     };
   });

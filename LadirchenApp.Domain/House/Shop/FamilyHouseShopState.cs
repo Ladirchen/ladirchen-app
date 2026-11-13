@@ -15,7 +15,8 @@ internal sealed record FamilyHouseShopState
     IEnumerable<HouseItemState> accessories,
     IEnumerable<HouseThemeState> themes,
     IEnumerable<RoomDesignState> roomDesigns,
-    IEnumerable<HouseLayoutEntityState> placements
+    IEnumerable<HouseLayoutEntityState> placements,
+    IEnumerable<HouseCatalogPriceState>? catalogPrices = null
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -30,6 +31,7 @@ internal sealed record FamilyHouseShopState
     Themes = themes.ToArray();
     RoomDesigns = roomDesigns.ToArray();
     Placements = placements.ToArray();
+    CatalogPrices = catalogPrices?.ToArray() ?? [];
   }
 
   public FamilyId Id { get; }
@@ -39,4 +41,5 @@ internal sealed record FamilyHouseShopState
   public IReadOnlyList<HouseThemeState> Themes { get; }
   public IReadOnlyList<RoomDesignState> RoomDesigns { get; }
   public IReadOnlyList<HouseLayoutEntityState> Placements { get; }
+  public IReadOnlyList<HouseCatalogPriceState> CatalogPrices { get; }
 }

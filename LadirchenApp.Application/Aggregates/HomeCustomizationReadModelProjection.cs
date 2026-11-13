@@ -1,3 +1,5 @@
+using System;
+
 using LadirchenApp.Domain.House.Shop;
 using LadirchenApp.Domain.Shared;
 
@@ -7,6 +9,7 @@ public sealed record HomeCustomizationReadModelProjection(
   long Revision,
   FamilyHouseShop Customization,
   int HouseLevel,
+  DateOnly CatalogDate,
   FamilyMemberId CapabilityMemberId,
   HomeCatalogCapabilitiesProjection Capabilities
 ) : IFamilyReadModelProjection

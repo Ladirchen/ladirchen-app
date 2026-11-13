@@ -28,6 +28,7 @@ import type {
   HomeResetEntityCommandRequest,
   HomeSelectRoomDesignCommandRequest,
   HomeSelectThemeCommandRequest,
+  HomeSetCatalogPriceCommandRequest,
   HomeStoreAccessoryCommandRequest,
   HomeToggleAccessoryCommandRequest,
   ProfileCompleteSetupCommandRequest,
@@ -96,6 +97,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "home.reset-entity": HomeResetEntityCommandRequest;
   readonly "home.select-room-design": HomeSelectRoomDesignCommandRequest;
   readonly "home.select-theme": HomeSelectThemeCommandRequest;
+  readonly "home.set-catalog-price": HomeSetCatalogPriceCommandRequest;
   readonly "home.store-accessory": HomeStoreAccessoryCommandRequest;
   readonly "home.toggle-accessory": HomeToggleAccessoryCommandRequest;
   readonly "profile.complete-setup": ProfileCompleteSetupCommandRequest;

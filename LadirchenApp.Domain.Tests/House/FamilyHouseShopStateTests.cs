@@ -15,6 +15,28 @@ namespace LadirchenApp.Domain.Tests.House;
 public sealed class FamilyHouseShopStateTests
 {
   [Test]
+  public async Task CatalogDefaultsAreCappedAndFamilyPriceSettingsRoundTrip()
+  {
+    var family = CompleteFamily();
+    var shop = FamilyHouseShop.CreateInitial(family, 0, HouseSubscriptionTier.Pro);
+    var localDate = new DateOnly(2026, 10, 10);
+
+    await Assert.That(HouseShopCatalog.Accessories.Values.Max(item => item.Price)).IsLessThanOrEqualTo(10);
+    await Assert.That(HouseShopCatalog.FurnitureSets.Values.Max(item => item.Price)).IsLessThanOrEqualTo(10);
+    await Assert.That(HouseShopCatalog.Themes.Values.Max()).IsLessThanOrEqualTo(10);
+
+    shop.SetCatalogPrice("theme", "halloween-night", 9, 3, new DateOnly(2026, 10, 12), localDate);
+    var restored = FamilyHouseShop.Reconstitute(family, 0, shop.CaptureState());
+    restored.UseCatalogPricesOn(localDate);
+
+    await Assert.That(restored.CatalogPrice("theme", "halloween-night").Price).IsEqualTo(9);
+    await Assert.That(restored.Themes.Single(item => item.Id == "halloween-night").Price).IsEqualTo(3);
+    await Assert.That(() =>
+      restored.SetCatalogPrice("theme", "halloween-night", 11, null, null, localDate)
+    ).Throws<DomainRuleException>();
+  }
+
+  [Test]
   public async Task InitialCreationUsesCatalogDefaultsAndCompleteFamilyPlacements()
   {
     var family = CompleteFamily();

@@ -42,6 +42,27 @@ export const homeActions = {
       this.notify("notifications.home.accessoryPurchased", { title }),
     );
   },
+  async setHouseCatalogPrice(
+    this: FamilyWorldStoreContext,
+    catalogType: "accessory" | "furniture-set" | "room-design" | "theme",
+    id: string,
+    price: number,
+    promotionalPrice?: number,
+    promotionUntil?: string,
+  ) {
+    await executeBackendFamilyCommand(
+      this,
+      "home.set-catalog-price",
+      { catalogType, id, price, promotionalPrice, promotionUntil },
+      "notifications.save.home",
+      () =>
+        this.notify(
+          promotionalPrice === undefined
+            ? "notifications.home.catalogPriceSaved"
+            : "notifications.home.catalogPromotion",
+        ),
+    );
+  },
   async purchaseFurnitureSet(this: FamilyWorldStoreContext, id: FurnitureSetId) {
     await executeBackendFamilyCommand(this, "home.purchase-furniture-set", { id }, "notifications.save.home", () =>
       this.notify("notifications.home.setPurchased"),

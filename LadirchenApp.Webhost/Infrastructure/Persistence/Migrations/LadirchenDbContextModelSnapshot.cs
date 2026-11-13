@@ -1320,6 +1320,11 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CatalogPricesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
                     b.Property<long>("Revision")
                         .IsConcurrencyToken()
                         .HasColumnType("bigint");

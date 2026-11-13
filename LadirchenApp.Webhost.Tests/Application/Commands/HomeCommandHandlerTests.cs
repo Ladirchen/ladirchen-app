@@ -26,7 +26,7 @@ public sealed class HomeCommandHandlerTests
   [Test]
   public async Task PurchaseUsesAvailableBalanceAndAtomicallyPersistsTypedRoots()
   {
-    var store = CreateStore(100, 50, HouseSubscriptionTier.Pro);
+    var store = CreateStore(4, null, HouseSubscriptionTier.Pro);
     var handler = store.CreateCommandHandler();
 
     var result = await ExecuteAsync(handler, _childId, "home.purchase-accessory", new
@@ -37,8 +37,8 @@ public sealed class HomeCommandHandlerTests
     var wallArt = Accessory(store, "wall-art");
     await Assert.That(wallArt.Owned).IsTrue();
     await Assert.That(wallArt.Equipped).IsFalse();
-    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(55);
-    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Available).IsEqualTo(5);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(2);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Available).IsEqualTo(2);
     await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(2);
     await Assert.That(store.Revision(TypedAggregateKind.HouseCustomization)).IsEqualTo(2);
     await Assert.That(store.LastRevisionGuards.Select(item => item.AggregateKind))
@@ -63,7 +63,40 @@ public sealed class HomeCommandHandlerTests
       .IsEqualTo(homeRevision);
     await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy))
       .IsEqualTo(economyRevision);
-    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(55);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Balance).IsEqualTo(2);
+  }
+
+  [Test]
+  public async Task AdministratorCanPersistCatalogPricesAndPromotions()
+  {
+    var store = CreateStore(100, null, HouseSubscriptionTier.Pro);
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _administratorId, "home.set-catalog-price", new
+    {
+      catalogType = "accessory",
+      id = "wall-art",
+      price = 10,
+      promotionalPrice = 4,
+      promotionUntil = "2026-10-12",
+    });
+
+    var house = store.RequiredHouse();
+    var price = house.CatalogPrice("accessory", "wall-art");
+    await Assert.That(price.Price).IsEqualTo(10);
+    await Assert.That(price.PromotionalPrice).IsEqualTo(4);
+    await Assert.That(price.PromotionUntil).IsEqualTo(new DateOnly(2026, 10, 12));
+    house.UseCatalogPricesOn(new DateOnly(2026, 10, 10));
+    await Assert.That(house.Accessories.Single(item => item.Id == "wall-art").Price).IsEqualTo(4);
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _supporterId, "home.set-catalog-price", new
+      {
+        catalogType = "accessory",
+        id = "wall-art",
+        price = 5,
+      })
+    ).Throws<DomainRuleException>();
   }
 
   [Test]

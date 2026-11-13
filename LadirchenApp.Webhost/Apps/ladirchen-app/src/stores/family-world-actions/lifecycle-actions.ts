@@ -6,9 +6,29 @@ import { FAMILY_READ_MODEL_TYPES, type FamilyReadModelType } from "@/application
 import { createHouseAccessories } from "@/domain/house/catalog";
 import type { FamilyMember } from "@/domain/family/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
+import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
 
 const emptyMemberId = "00000000-0000-0000-0000-000000000000";
 const readModelRefreshes = new WeakMap<object, Partial<Record<FamilyReadModelType, Promise<void>>>>();
+
+function activeCatalogPromotionKeys(catalog: HouseCatalogState | undefined): Set<string> {
+  const keys = new Set<string>();
+
+  for (const [type, entries] of [
+    ["accessory", catalog?.accessories ?? []],
+    ["furniture-set", catalog?.furnitureSets ?? []],
+    ["room-design", catalog?.roomDesigns ?? []],
+    ["theme", catalog?.themes ?? []],
+  ] as const) {
+    for (const entry of entries) {
+      if (entry.promotionActive) {
+        keys.add(`${type}:${entry.id}`);
+      }
+    }
+  }
+
+  return keys;
+}
 
 function activeChildIdFrom(
   members: ReadonlyArray<FamilyMember>,
@@ -323,6 +343,8 @@ async function refreshFamilyReadModelSnapshot(
     const snapshot = await homeCustomizationService.load(familyId, viewerMemberId);
 
     if (snapshot) {
+      const previousPromotions = activeCatalogPromotionKeys(context.houseCatalog);
+      const nextPromotions = activeCatalogPromotionKeys(snapshot.state.catalog);
       context.houseCatalog = snapshot.state.catalog;
       context.accessories = createHouseAccessories(snapshot.state.accessories, snapshot.state.catalog.accessories);
       context.canArrangeHouseReadModel = snapshot.state.capabilities.canArrangeHouse;
@@ -343,6 +365,10 @@ async function refreshFamilyReadModelSnapshot(
       context.selectedRoomDesignIds = selectedRoomDesignIds;
       context.readModelRevisions[readModelType] = snapshot.revision;
       context.homeCustomizationHydrated = true;
+
+      if ([...nextPromotions].some((key) => !previousPromotions.has(key))) {
+        context.notify("notifications.home.catalogPromotion");
+      }
     }
   } catch {
     context.notify(readModelType === "home-customization" ? "notifications.load.home" : "notifications.load.family");

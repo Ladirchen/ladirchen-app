@@ -36,6 +36,9 @@ export interface PurchasableHouseCatalogEntryState<TId extends string> {
   readonly id: TId;
   readonly owned: boolean;
   readonly price: number;
+  readonly regularPrice: number;
+  readonly promotionActive: boolean;
+  readonly promotionUntil?: string;
   readonly purchasableByMemberIds: ReadonlyArray<FamilyMemberId>;
 }
 

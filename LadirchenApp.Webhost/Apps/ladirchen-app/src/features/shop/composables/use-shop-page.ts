@@ -20,6 +20,7 @@ import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
 import { PAGE_INTRO_GUIDE_DELAY_MS } from "@/shared/runtime-timing";
 import type { ShopRewardPublicationStatus } from "@/features/shop/shop-view-models";
 type HouseCatalogArea = "inside" | "outside" | "special";
+type HouseCatalogPriceType = "accessory" | "furniture-set" | "room-design" | "theme";
 type PublicationMode = "now" | "scheduled" | "hidden";
 interface RewardDraft {
   title: string;
@@ -40,6 +41,15 @@ interface RewardDraft {
 interface HouseThemePreview {
   backgroundUrl?: string;
   houseUrl?: string;
+}
+interface HouseCatalogPriceDraft {
+  catalogType: HouseCatalogPriceType;
+  id: string;
+  title: string;
+  price: number;
+  promotionEnabled: boolean;
+  promotionalPrice: number;
+  promotionUntil: string;
 }
 function createEmptyReward(): RewardDraft {
   return {
@@ -69,6 +79,16 @@ export function useShopPage() {
   const rewardDialog = ref(false);
   const rewardToEdit = ref<ShopReward | null>(null);
   const rewardToDelete = ref<ShopReward | null>(null);
+  const catalogPriceDialog = ref(false);
+  const catalogPriceDraft = reactive<HouseCatalogPriceDraft>({
+    catalogType: "accessory",
+    id: "",
+    title: "",
+    price: 1,
+    promotionEnabled: false,
+    promotionalPrice: 0,
+    promotionUntil: "",
+  });
   const currentTime = computed(() => new Date(store.currentTimeMilliseconds));
   const iconOptions = ["🎁", "🎮", "🍿", "🎨", "🎟️", "🧁", "🚲", "🌙", "💵", "🛍️"];
   const shopViewOptions = computed<ReadonlyArray<PageViewOption<"family" | "house">>>(() => {
@@ -163,6 +183,15 @@ export function useShopPage() {
           newReward.promotionUntil >= minimumAvailableDate.value)),
     ),
   );
+  const canSaveCatalogPrice = computed(
+    () =>
+      catalogPriceDraft.price >= 0 &&
+      catalogPriceDraft.price <= 10 &&
+      (!catalogPriceDraft.promotionEnabled ||
+        (catalogPriceDraft.promotionalPrice >= 0 &&
+          catalogPriceDraft.promotionalPrice < catalogPriceDraft.price &&
+          catalogPriceDraft.promotionUntil >= minimumAvailableDate.value)),
+  );
   const displayedShopRewards = computed(() =>
     store.viewerRole === "guardian"
       ? store.shopRewards.map(localize.reward)
@@ -194,6 +223,9 @@ export function useShopPage() {
               description: t(edition.descriptionKey),
               name: t(edition.nameKey),
               price: catalogEntry.price,
+              regularPrice: catalogEntry.regularPrice,
+              promotionActive: catalogEntry.promotionActive,
+              promotionUntil: catalogEntry.promotionUntil,
               purchasableByMemberIds: catalogEntry.purchasableByMemberIds,
             }
           : undefined;
@@ -215,6 +247,9 @@ export function useShopPage() {
               minimumHouseLevel: catalogEntry.minimumHouseLevel,
               name: t(set.nameKey),
               price: catalogEntry.price,
+              regularPrice: catalogEntry.regularPrice,
+              promotionActive: catalogEntry.promotionActive,
+              promotionUntil: catalogEntry.promotionUntil,
               purchasableByMemberIds: catalogEntry.purchasableByMemberIds,
             }
           : undefined;
@@ -307,6 +342,35 @@ export function useShopPage() {
     rewardToEdit.value = null;
     rewardDialog.value = false;
   }
+  function openCatalogPriceEditor(
+    catalogType: HouseCatalogPriceType,
+    entry: { id: string; price: number; regularPrice: number; promotionActive: boolean; promotionUntil?: string },
+    title: string,
+  ) {
+    Object.assign(catalogPriceDraft, {
+      catalogType,
+      id: entry.id,
+      title,
+      price: entry.regularPrice,
+      promotionEnabled: entry.promotionActive,
+      promotionalPrice: entry.promotionActive ? entry.price : Math.max(0, entry.regularPrice - 1),
+      promotionUntil: entry.promotionUntil ?? "",
+    });
+    catalogPriceDialog.value = true;
+  }
+  function closeCatalogPriceEditor() {
+    catalogPriceDialog.value = false;
+  }
+  function saveCatalogPrice() {
+    void store.setHouseCatalogPrice(
+      catalogPriceDraft.catalogType,
+      catalogPriceDraft.id,
+      catalogPriceDraft.price,
+      catalogPriceDraft.promotionEnabled ? catalogPriceDraft.promotionalPrice : undefined,
+      catalogPriceDraft.promotionEnabled ? catalogPriceDraft.promotionUntil : undefined,
+    );
+    closeCatalogPriceEditor();
+  }
   function openRewardEditor(reward: ShopReward) {
     rewardToEdit.value = reward;
     Object.assign(newReward, {
@@ -386,10 +450,13 @@ export function useShopPage() {
 
   return {
     activeTab,
+    canSaveCatalogPrice,
     canSaveReward,
     canRequest,
     catalogItemsEyebrow,
     catalogItemsTitle,
+    catalogPriceDialog,
+    catalogPriceDraft,
     categoryOptions,
     confirmRewardDeletion,
     displayedShopRewards,
@@ -402,7 +469,9 @@ export function useShopPage() {
     minimumAvailableDate,
     newReward,
     closeRewardDialog,
+    closeCatalogPriceEditor,
     openRewardEditor,
+    openCatalogPriceEditor,
     ownsEdition,
     ownsSet,
     furnitureSetAreaLabel,
@@ -412,6 +481,7 @@ export function useShopPage() {
     rewardPublicationStatus,
     rewardToDelete,
     saveReward,
+    saveCatalogPrice,
     setPreviewAccessories,
     shopViewOptions,
     store,

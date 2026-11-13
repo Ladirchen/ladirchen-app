@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json;
 
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House.Shop;
@@ -10,6 +11,8 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Typed;
 
 internal static class HouseCustomizationPersistenceMapper
 {
+  private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+
   public static FamilyHouseShop ToDomain(
     HouseCustomizationRootEntity entity,
     Family family,
@@ -38,7 +41,8 @@ internal static class HouseCustomizationPersistenceMapper
           item.EntityType,
           item.EntityId,
           new HousePlacement(item.Area, item.X, item.Y, item.Scale)
-        ))
+        )),
+      JsonSerializer.Deserialize<HouseCatalogPriceState[]>(entity.CatalogPricesJson, _jsonOptions) ?? []
     );
 
     return FamilyHouseShop.Reconstitute(family, currentHouseLevel, state);
@@ -61,6 +65,7 @@ internal static class HouseCustomizationPersistenceMapper
     entity.FamilyId = state.Id.Value;
     entity.SelectedThemeId = state.SelectedThemeId;
     entity.SubscriptionTier = (int)state.SubscriptionTier;
+    entity.CatalogPricesJson = JsonSerializer.Serialize(state.CatalogPrices, _jsonOptions);
     entity.Accessories.Clear();
     entity.Themes.Clear();
     entity.RoomDesigns.Clear();

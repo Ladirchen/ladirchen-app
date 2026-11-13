@@ -11,6 +11,7 @@ public sealed class HouseCustomizationRootEntity
   public DateTimeOffset UpdatedAt { get; set; }
   public string SelectedThemeId { get; set; } = string.Empty;
   public int SubscriptionTier { get; set; }
+  public string CatalogPricesJson { get; set; } = "[]";
   public ICollection<HouseAccessoryEntity> Accessories { get; set; } = new List<HouseAccessoryEntity>();
   public ICollection<HouseThemeEntity> Themes { get; set; } = new List<HouseThemeEntity>();
   public ICollection<HouseRoomDesignEntity> RoomDesigns { get; set; } = new List<HouseRoomDesignEntity>();

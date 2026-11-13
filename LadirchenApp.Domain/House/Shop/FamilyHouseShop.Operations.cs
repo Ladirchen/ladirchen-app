@@ -40,6 +40,69 @@ public sealed partial class FamilyHouseShop
     }
   }
 
+  public IReadOnlyCollection<HouseCatalogPriceState> CatalogPrices
+  {
+    get
+    {
+      return _catalogPrices.Values;
+    }
+  }
+
+  public void UseCatalogPricesOn(DateOnly localDate)
+  {
+    _catalogPricingDate = localDate;
+    foreach (var accessory in _stateAccessories.Values)
+    {
+      accessory.SetPrice(CatalogPrice("accessory", accessory.Id).EffectivePrice(localDate));
+    }
+
+    foreach (var theme in _stateThemes.Values)
+    {
+      theme.SetPrice(CatalogPrice("theme", theme.Id).EffectivePrice(localDate));
+    }
+
+    foreach (var design in _stateRoomDesigns.Values)
+    {
+      design.SetPrice(CatalogPrice("room-design", design.Id).EffectivePrice(localDate));
+    }
+  }
+
+  public void SetCatalogPrice(
+    string catalogType,
+    string id,
+    decimal price,
+    decimal? promotionalPrice,
+    DateOnly? promotionUntil,
+    DateOnly localDate
+  )
+  {
+    var key = (Rules.Text(catalogType), Rules.Text(id));
+    Rules.Require(
+      _catalogPrices.ContainsKey(key),
+      DomainError.NotFound,
+      "The house-catalog content is unknown."
+    );
+    Rules.Require(
+      promotionUntil is null || promotionUntil >= localDate,
+      DomainError.InvalidValue,
+      "A house-catalog promotion cannot end in the past."
+    );
+    _catalogPrices[key] = new HouseCatalogPriceState(
+      key.Item1,
+      key.Item2,
+      price,
+      promotionalPrice,
+      promotionUntil
+    );
+    UseCatalogPricesOn(localDate);
+  }
+
+  public HouseCatalogPriceState CatalogPrice(string catalogType, string id)
+  {
+    return _catalogPrices.GetValueOrDefault((catalogType, id))
+      ?? throw new DomainRuleException(DomainError.NotFound, "The house-catalog content is unknown.");
+  }
+
   public bool CanPurchaseAccessory(
     string accessoryId,
     bool actorIsChild,
@@ -420,7 +483,7 @@ public sealed partial class FamilyHouseShop
 
     return new FurnitureSet(
       normalized,
-      definition.Price,
+      CatalogPrice("furniture-set", normalized).EffectivePrice(_catalogPricingDate),
       definition.MinimumLevel,
       definition.AccessoryIds.Select(RequireAccessory)
     );

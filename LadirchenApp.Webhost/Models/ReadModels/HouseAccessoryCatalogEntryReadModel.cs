@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -10,5 +11,8 @@ public sealed record HouseAccessoryCatalogEntryReadModel(
   int? MinimumHouseLevel,
   bool? Owned,
   decimal? Price,
-  [property: JsonRequired] IReadOnlyList<string> PurchasableByMemberIds
+  [property: JsonRequired] IReadOnlyList<string> PurchasableByMemberIds,
+  decimal? RegularPrice = null,
+  bool? PromotionActive = null,
+  DateOnly? PromotionUntil = null
 );

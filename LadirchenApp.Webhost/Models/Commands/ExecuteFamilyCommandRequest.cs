@@ -32,6 +32,7 @@ namespace LadirchenApp.Webhost.Models.Commands;
 [JsonDerivedType(typeof(HomeResetEntityCommandRequest), "home.reset-entity")]
 [JsonDerivedType(typeof(HomeSelectRoomDesignCommandRequest), "home.select-room-design")]
 [JsonDerivedType(typeof(HomeSelectThemeCommandRequest), "home.select-theme")]
+[JsonDerivedType(typeof(HomeSetCatalogPriceCommandRequest), "home.set-catalog-price")]
 [JsonDerivedType(typeof(HomeStoreAccessoryCommandRequest), "home.store-accessory")]
 [JsonDerivedType(typeof(HomeToggleAccessoryCommandRequest), "home.toggle-accessory")]
 [JsonDerivedType(typeof(ProfileCompleteSetupCommandRequest), "profile.complete-setup")]

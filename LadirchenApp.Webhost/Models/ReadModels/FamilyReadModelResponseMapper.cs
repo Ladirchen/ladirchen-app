@@ -204,6 +204,7 @@ internal static class FamilyReadModelResponseMapper
     var catalogAccessories = HouseShopCatalog.Accessories.Select(item =>
     {
       var accessory = accessories[item.Key];
+      var price = customization.CatalogPrice("accessory", item.Key);
 
       return new HouseAccessoryCatalogEntryReadModel(
         source.Capabilities.AvailableAccessoryIds.Contains(item.Key),
@@ -211,11 +212,14 @@ internal static class FamilyReadModelResponseMapper
         item.Key,
         item.Value.MinimumLevel,
         accessory.Owned,
-        item.Value.Price,
+        accessory.Price,
         CapabilityMemberIds(
           source.CapabilityMemberId,
           source.Capabilities.PurchasableAccessoryIds.Contains(item.Key)
-        )
+        ),
+        price.Price,
+        accessory.Price != price.Price,
+        price.PromotionUntil
       );
     }).ToArray();
     var catalogAreas = HouseShopCatalog.AreaMinimumLevels.Select(item =>
@@ -226,7 +230,11 @@ internal static class FamilyReadModelResponseMapper
       )
     ).ToArray();
     var catalogFurnitureSets = HouseShopCatalog.FurnitureSets.Select(item =>
-      new FurnitureSetCatalogEntryReadModel(
+    {
+      var price = customization.CatalogPrice("furniture-set", item.Key);
+      var effectivePrice = price.EffectivePrice(source.CatalogDate);
+
+      return new FurnitureSetCatalogEntryReadModel(
         item.Value.AccessoryIds,
         source.Capabilities.AvailableFurnitureSetIds.Contains(item.Key),
         item.Value.AccessoryIds.Any(id =>
@@ -235,13 +243,16 @@ internal static class FamilyReadModelResponseMapper
         item.Key,
         item.Value.MinimumLevel,
         source.Capabilities.OwnedFurnitureSetIds.Contains(item.Key),
-        item.Value.Price,
+        effectivePrice,
         CapabilityMemberIds(
           source.CapabilityMemberId,
           source.Capabilities.PurchasableFurnitureSetIds.Contains(item.Key)
-        )
-      )
-    ).ToArray();
+        ),
+        price.Price,
+        effectivePrice != price.Price,
+        price.PromotionUntil
+      );
+    }).ToArray();
     var catalogHouseStages = HouseShopCatalog.HouseStages.Select(stage =>
       new HouseStageCatalogEntryReadModel(
         source.HouseLevel == stage.Level,
@@ -253,6 +264,7 @@ internal static class FamilyReadModelResponseMapper
     var catalogRoomDesigns = HouseShopCatalog.RoomDesigns.Select(item =>
     {
       var design = roomDesigns[item.Key];
+      var price = customization.CatalogPrice("room-design", item.Key);
 
       return new RoomDesignCatalogEntryReadModel(
         source.Capabilities.AvailableRoomDesignIds.Contains(item.Key),
@@ -260,26 +272,36 @@ internal static class FamilyReadModelResponseMapper
         item.Key,
         item.Value.MinimumLevel,
         design.Owned,
-        item.Value.Price,
+        design.Price,
         CapabilityMemberIds(
           source.CapabilityMemberId,
           source.Capabilities.PurchasableRoomDesignIds.Contains(item.Key)
         ),
-        item.Value.ThemeId
+        item.Value.ThemeId,
+        price.Price,
+        design.Price != price.Price,
+        price.PromotionUntil
       );
     }).ToArray();
     var catalogThemes = HouseShopCatalog.Themes.Select(item =>
-      new HouseThemeCatalogEntryReadModel(
+    {
+      var price = customization.CatalogPrice("theme", item.Key);
+      var theme = themes[item.Key];
+
+      return new HouseThemeCatalogEntryReadModel(
         true,
         item.Key,
-        themes[item.Key].Owned,
-        item.Value,
+        theme.Owned,
+        theme.Price,
         CapabilityMemberIds(
           source.CapabilityMemberId,
           source.Capabilities.PurchasableThemeIds.Contains(item.Key)
-        )
-      )
-    ).ToArray();
+        ),
+        price.Price,
+        theme.Price != price.Price,
+        price.PromotionUntil
+      );
+    }).ToArray();
     var state = new HomeCustomizationReadModelState(
       new HomeCapabilitiesReadModel(source.Capabilities.CanArrangeHouse),
       new HomeCatalogReadModel(

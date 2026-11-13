@@ -18,8 +18,14 @@ public sealed partial class RoomDesign
   public string Id { get; }
   public string ThemeId { get; }
   public string Room { get; }
-  public decimal Price { get; }
+  public decimal Price { get; private set; }
   public int MinimumLevel { get; }
   public bool Owned { get; internal set; }
   public bool Selected { get; internal set; }
+
+  internal void SetPrice(decimal price)
+  {
+    Rules.Require(price >= 0, DomainError.InvalidValue, "A room-design price cannot be negative.");
+    Price = price;
+  }
 }
