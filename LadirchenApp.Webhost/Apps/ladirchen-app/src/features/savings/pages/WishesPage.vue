@@ -107,6 +107,39 @@
                   >
                     {{ t("wishes.cancellation.cancelPersonal") }}
                   </v-btn>
+                  <v-btn
+                    v-if="redeemableVoucherId(card.goal.id)"
+                    color="success"
+                    prepend-icon="i-mdi:ticket-confirmation-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="flat"
+                    @click="redeemVoucher(card.goal.id)"
+                  >
+                    {{ t("wishes.voucher.redeem") }}
+                  </v-btn>
+                  <v-btn
+                    v-if="redeemableVoucherId(card.goal.id)"
+                    color="primary"
+                    prepend-icon="i-mdi:cash-refund"
+                    rounded="lg"
+                    size="small"
+                    variant="tonal"
+                    @click="convertVoucher(card.goal.id)"
+                  >
+                    {{ t("wishes.voucher.convert") }}
+                  </v-btn>
+                  <v-btn
+                    v-if="card.canDissolve"
+                    color="error"
+                    prepend-icon="i-mdi:delete-forever-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="text"
+                    @click="store.dissolveGoal(card.goal.id)"
+                  >
+                    {{ t("wishes.cancellation.dissolve") }}
+                  </v-btn>
                 </div>
               </div>
             </div>
@@ -184,6 +217,39 @@
                   >
                     {{ t("wishes.cancellation.request") }}
                   </v-btn>
+                  <v-btn
+                    v-if="redeemableVoucherId(card.goal.id)"
+                    color="success"
+                    prepend-icon="i-mdi:ticket-confirmation-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="flat"
+                    @click="redeemVoucher(card.goal.id)"
+                  >
+                    {{ t("wishes.voucher.redeem") }}
+                  </v-btn>
+                  <v-btn
+                    v-if="redeemableVoucherId(card.goal.id)"
+                    color="primary"
+                    prepend-icon="i-mdi:cash-refund"
+                    rounded="lg"
+                    size="small"
+                    variant="tonal"
+                    @click="convertVoucher(card.goal.id)"
+                  >
+                    {{ t("wishes.voucher.convert") }}
+                  </v-btn>
+                  <v-btn
+                    v-if="card.canDissolve"
+                    color="error"
+                    prepend-icon="i-mdi:delete-forever-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="text"
+                    @click="store.dissolveGoal(card.goal.id)"
+                  >
+                    {{ t("wishes.cancellation.dissolve") }}
+                  </v-btn>
                 </div>
               </div>
             </div>
@@ -232,6 +298,15 @@
               @click="redeemVoucher(voucher.id)"
             >
               {{ t("wishes.voucher.redeem") }}
+            </v-btn>
+            <v-btn
+              v-if="voucher.redeemableByMemberIds.includes(store.signedInMemberId)"
+              color="primary"
+              size="small"
+              variant="tonal"
+              @click="convertVoucher(voucher.id)"
+            >
+              {{ t("wishes.voucher.convert") }}
             </v-btn>
           </div>
         </BrandedCard>
@@ -382,6 +457,7 @@ const {
   addGoal,
   canCreatePersonalGoal,
   consentToVoucher,
+  convertVoucher,
   depositedAmount,
   formatInterestRate,
   giveSupport,
@@ -397,6 +473,7 @@ const {
   personalGoals,
   progress,
   redeemVoucher,
+  redeemableVoucherId,
   saveAmount,
   saveDialog,
   saveMotion,
@@ -434,7 +511,10 @@ const personalGoalCards = computed(() =>
       ownerLabel: ownerName(goal.ownerId),
       visibilityLabel: personalGoalVisibilityLabel(goal),
       canSave: (goal.commandLimits?.[store.signedInMemberId]?.maximumDepositAmount ?? 0) > 0,
-      canCancel: goal.commandLimits?.[store.signedInMemberId]?.canCancel === true,
+      canCancel:
+        goal.commandLimits?.[store.signedInMemberId]?.canCancel === true &&
+        goal.commandLimits?.[store.signedInMemberId]?.canDissolve !== true,
+      canDissolve: goal.commandLimits?.[store.signedInMemberId]?.canDissolve === true,
       deposited: depositedAmount(goal),
       weeklyInterest: weeklyInterestForGoal(goal),
       interestEarned: goal.interestEarned ?? 0,
@@ -452,6 +532,7 @@ const familyGoalCards = computed(() =>
     cheerAriaLabel: t("wishes.cheerAria", { title: goal.title }),
     canGift: (goal.commandLimits?.[store.signedInMemberId]?.maximumSupportAmount ?? 0) > 0,
     canRequestCancellation: goal.commandLimits?.[store.signedInMemberId]?.canRequestCancellation === true,
+    canDissolve: goal.commandLimits?.[store.signedInMemberId]?.canDissolve === true,
     cancellationPending: goal.cancellationRequest !== undefined,
   })),
 );

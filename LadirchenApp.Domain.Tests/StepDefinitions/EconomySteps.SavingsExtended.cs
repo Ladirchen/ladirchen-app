@@ -1006,7 +1006,7 @@ public sealed partial class EconomySteps
   {
     try
     {
-      _economy.RedeemSavingsVoucher(actorId, _goalId, _now);
+      _economy.RedeemSavingsVoucher(actorId, _goalId, NextOperation(), _now);
 
       return true;
     }

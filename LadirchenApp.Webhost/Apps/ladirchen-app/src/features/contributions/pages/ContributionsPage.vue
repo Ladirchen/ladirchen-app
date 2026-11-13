@@ -363,6 +363,15 @@
                     />
                     <div class="management-action-buttons">
                       <v-btn
+                        v-if="contribution.status === 'approved'"
+                        :aria-label="t('contributions.manage.reactivateAria', { title: contribution.title })"
+                        icon="i-mdi:restore"
+                        size="small"
+                        variant="tonal"
+                        @click="reactivateContribution(contribution)"
+                      />
+                      <v-btn
+                        v-else
                         :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
                         icon="i-mdi:content-copy"
                         size="small"
@@ -415,11 +424,33 @@
           variant="outlined"
         />
         <v-select
+          v-if="contributionToEdit || newContribution.kind !== 'basic' || !store.permissions.canManageContent"
           v-model="newContribution.assigneeId"
           :items="assignmentOptions"
           item-title="title"
           item-value="value"
           :label="t('contributions.form.assignment')"
+          variant="outlined"
+        />
+        <v-select
+          v-else
+          v-model="newContribution.assigneeIds"
+          chips
+          clearable
+          :items="childAssignmentOptions"
+          item-title="title"
+          item-value="value"
+          :label="t('contributions.form.children')"
+          multiple
+          variant="outlined"
+        />
+        <v-text-field
+          v-if="!contributionToEdit"
+          v-model.number="newContribution.quantity"
+          :label="t('contributions.form.quantity')"
+          max="20"
+          min="1"
+          type="number"
           variant="outlined"
         />
         <div class="d-grid form-columns ga-3">
@@ -630,8 +661,10 @@ const {
   approveWithRating,
   assignContribution,
   assignmentOptions,
+  childAssignmentOptions,
   closeContributionDialog,
   copyContribution,
+  reactivateContribution,
   reviewableTasks,
   confirmContributionDelete,
   confirmPromotionDelete,
@@ -728,6 +761,9 @@ const canSaveContribution = computed(() =>
     newContribution.icon.trim() &&
     newContribution.title.trim() &&
     newContribution.reward >= 0 &&
+    Number.isInteger(newContribution.quantity) &&
+    newContribution.quantity >= 1 &&
+    newContribution.quantity <= 20 &&
     (newContribution.kind === "extra" || newContribution.energy >= 1),
   ),
 );

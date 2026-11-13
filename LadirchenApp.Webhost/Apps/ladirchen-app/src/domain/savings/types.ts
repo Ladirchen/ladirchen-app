@@ -45,6 +45,7 @@ export interface SavingGoalCancellationRequest {
 export interface SavingGoalCommandLimits {
   canApproveCancellation: boolean;
   canCancel: boolean;
+  canDissolve: boolean;
   canRejectCancellation: boolean;
   canRequestCancellation: boolean;
   canWithdraw: boolean;

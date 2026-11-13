@@ -179,6 +179,7 @@ internal static class FamilyReadModelResponseMapper
       new FamilyProgressionReadModelState(
         source.CanCloseWeekSuccessfully,
         source.CompletedWeeklyStreak,
+        source.FamilyDailyStreak,
         source.CurrentWeekTarget,
         source.FamilyEnergy,
         source.HouseAtmosphere,
@@ -403,6 +404,7 @@ internal static class FamilyReadModelResponseMapper
           item => new SavingsGoalCommandLimitsReadModel(
             item.Value.CanApproveCancellation,
             item.Value.CanCancel,
+            item.Value.CanDissolve,
             item.Value.CanRejectCancellation,
             item.Value.CanRequestCancellation,
             item.Value.CanWithdraw,

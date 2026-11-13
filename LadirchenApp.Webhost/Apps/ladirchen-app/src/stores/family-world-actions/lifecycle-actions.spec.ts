@@ -69,6 +69,7 @@ function createBootstrapReadModel(
       state: {
         canCloseWeekSuccessfully: context.canCloseWeekSuccessfully,
         completedWeeklyStreak: context.completedWeeklyStreak,
+        familyDailyStreak: context.familyDailyStreak,
         currentWeekTarget: context.currentWeekTarget,
         familyEnergy: context.familyEnergyReadModel,
         houseAtmosphere: context.houseAtmosphere,

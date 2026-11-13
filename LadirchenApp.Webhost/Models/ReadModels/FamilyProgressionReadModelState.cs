@@ -6,6 +6,7 @@ namespace LadirchenApp.Webhost.Models.ReadModels;
 public sealed record FamilyProgressionReadModelState(
   [property: JsonRequired] bool CanCloseWeekSuccessfully,
   [property: JsonRequired] int CompletedWeeklyStreak,
+  [property: JsonRequired] int FamilyDailyStreak,
   [property: JsonRequired] int CurrentWeekTarget,
   [property: JsonRequired] decimal FamilyEnergy,
   [property: JsonRequired] string HouseAtmosphere,

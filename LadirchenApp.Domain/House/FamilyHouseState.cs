@@ -16,7 +16,8 @@ internal sealed record FamilyHouseState
     int currentWeekTarget,
     Percentage maximumSavingsInterestRate,
     IEnumerable<ParticipantProgressState> participants,
-    IEnumerable<ClosedFamilyWeekState> closedWeeks
+    IEnumerable<ClosedFamilyWeekState> closedWeeks,
+    IEnumerable<DailyHouseEnergyState>? dailyEnergies = null
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -30,6 +31,7 @@ internal sealed record FamilyHouseState
     MaximumSavingsInterestRate = maximumSavingsInterestRate;
     Participants = participants.ToArray();
     ClosedWeeks = closedWeeks.ToArray();
+    DailyEnergies = (dailyEnergies ?? []).ToArray();
   }
 
   public FamilyHouseState(
@@ -58,4 +60,5 @@ internal sealed record FamilyHouseState
   public Percentage MaximumSavingsInterestRate { get; }
   public IReadOnlyList<ParticipantProgressState> Participants { get; }
   public IReadOnlyList<ClosedFamilyWeekState> ClosedWeeks { get; }
+  public IReadOnlyList<DailyHouseEnergyState> DailyEnergies { get; }
 }

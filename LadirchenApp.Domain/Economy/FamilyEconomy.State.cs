@@ -184,7 +184,8 @@ public sealed partial class FamilyEconomy
         state.ApprovedAt,
         state.InvitedPartnerIds,
         state.Status != ContributionStatus.Approved,
-        state.CreatorId
+        state.CreatorId,
+        state.SubmittedAt
       );
     }
 
@@ -572,7 +573,8 @@ public sealed partial class FamilyEconomy
       contribution.EarnedReward,
       contribution.ApprovedAt,
       contribution.InvitedPartners.ToArray(),
-      contribution.CreatorId
+      contribution.CreatorId,
+      contribution.SubmittedAt
     );
   }
 

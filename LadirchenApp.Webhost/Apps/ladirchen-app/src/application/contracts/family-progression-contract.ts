@@ -20,6 +20,7 @@ export interface MemberProgression {
 export interface FamilyProgressionState {
   readonly canCloseWeekSuccessfully: boolean;
   readonly completedWeeklyStreak: number;
+  readonly familyDailyStreak: number;
   readonly currentWeekTarget: number;
   readonly familyEnergy: number;
   readonly houseAtmosphere: HouseAtmosphere;

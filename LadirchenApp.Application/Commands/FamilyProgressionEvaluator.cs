@@ -49,7 +49,7 @@ internal static class FamilyProgressionEvaluator
       memberEvaluations.Add(
         new MemberProgressionEvaluation(
           personalEvaluation,
-          ApprovedDates(family, economy, member.Id, period),
+          ParticipationDates(family, economy, member.Id, period),
           energyPolicy.ContributionFor(stage),
           interestPolicy.RateFor(personalEvaluation)
         )
@@ -68,7 +68,7 @@ internal static class FamilyProgressionEvaluator
     );
   }
 
-  private static IReadOnlyList<DateOnly> ApprovedDates(
+  private static IReadOnlyList<DateOnly> ParticipationDates(
     Family family,
     FamilyEconomy economy,
     FamilyMemberId memberId,
@@ -77,8 +77,10 @@ internal static class FamilyProgressionEvaluator
   {
     return economy.Contributions
       .Where(item => item.AssigneeId == memberId)
-      .Where(item => item.Status == ContributionStatus.Approved && item.ApprovedAt is not null)
-      .Select(item => family.TimeZone.LocalDate(item.ApprovedAt!.Value))
+      .Where(item => item.Status != ContributionStatus.Available)
+      .Select(item => item.SubmittedAt ?? item.ApprovedAt)
+      .Where(item => item is not null)
+      .Select(item => family.TimeZone.LocalDate(item!.Value))
       .Where(period.Contains)
       .Distinct()
       .Order()

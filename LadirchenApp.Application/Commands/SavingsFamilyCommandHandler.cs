@@ -186,6 +186,14 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
       case "savings.consume-guardian-gift":
         economy.ConsumeGuardianGift(command.ActorId, GiftId(payload));
         break;
+      case "savings.convert-voucher":
+        _ = economy.ConvertSavingsVoucherToLadirchen(
+          command.ActorId,
+          GoalId(payload),
+          operationId,
+          now
+        );
+        break;
       case "savings.deposit":
         _ = economy.DepositToGoal(
           command.ActorId,
@@ -207,6 +215,9 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
       case "savings.cancel-goal":
         _ = economy.CancelGoal(command.ActorId, GoalId(payload), operationId, now);
         break;
+      case "savings.dissolve-goal":
+        _ = economy.DissolveGoal(command.ActorId, GoalId(payload), operationId, now);
+        break;
       case "savings.request-goal-cancellation":
         economy.RequestGoalCancellation(command.ActorId, GoalId(payload), operationId, now);
         break;
@@ -223,7 +234,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
         _ = economy.ConsentSavingsVoucher(command.ActorId, GoalId(payload), now);
         break;
       case "savings.redeem-voucher":
-        economy.RedeemSavingsVoucher(command.ActorId, GoalId(payload), now);
+        economy.RedeemSavingsVoucher(command.ActorId, GoalId(payload), operationId, now);
         break;
       case "savings.settle-weekly-interest":
         progression = await SettleWeeklyInterestAsync(

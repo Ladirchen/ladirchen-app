@@ -143,9 +143,8 @@ public sealed class SavingsCommandHandlerTests
     {
       id = "family-trip",
     });
-    voucher = store.RequiredEconomy().SavingsVouchers.Single();
-    await Assert.That(voucher.RedemptionCount).IsEqualTo(1);
-    await Assert.That(voucher.RedeemedAt).IsNotNull();
+    await Assert.That(store.RequiredEconomy().SavingsVouchers).IsEmpty();
+    await Assert.That(store.RequiredEconomy().SavingsGoals).IsEmpty();
 
     await Assert.That(async () =>
       await ExecuteAsync(handler, _childId, "savings.redeem-voucher", new

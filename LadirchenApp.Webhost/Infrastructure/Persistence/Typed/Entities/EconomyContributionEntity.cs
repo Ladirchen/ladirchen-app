@@ -19,6 +19,7 @@ public sealed class EconomyContributionEntity
   public decimal? EarnedRatingBonus { get; set; }
   public decimal? EarnedPromotionMultiplier { get; set; }
   public DateTimeOffset? ApprovedAt { get; set; }
+  public DateTimeOffset? SubmittedAt { get; set; }
   public FamilyEconomyRootEntity Economy { get; set; } = null!;
   public ICollection<EconomyContributionPartnerEntity> InvitedPartners { get; set; } =
     new List<EconomyContributionPartnerEntity>();

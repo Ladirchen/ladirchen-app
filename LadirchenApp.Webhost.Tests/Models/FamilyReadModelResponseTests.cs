@@ -69,7 +69,7 @@ public sealed class FamilyReadModelResponseTests
       new SavingGoalCancellationRequestReadModel("guardian", ["guardian"], ["child"]),
       new Dictionary<string, SavingsGoalCommandLimitsReadModel>
       {
-        ["child"] = new(true, false, true, false, false, 0, 0),
+        ["child"] = new(true, false, false, true, false, false, 0, 0),
       },
       "family",
       true,
@@ -128,6 +128,7 @@ public sealed class FamilyReadModelResponseTests
       "state: SavingsReadModelState;",
       "cancellationRequest?: SavingGoalCancellationRequestReadModel | null;",
       "canApproveCancellation: boolean;",
+      "canDissolve: boolean;",
       "canRejectCancellation: boolean;",
       "canRequestCancellation: boolean;",
     };
@@ -183,6 +184,7 @@ public sealed class FamilyReadModelResponseTests
   {
     return new FamilyProgressionReadModelState(
       false,
+      0,
       0,
       7,
       0,

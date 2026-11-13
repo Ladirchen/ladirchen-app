@@ -58,7 +58,12 @@ public sealed class ExecuteFamilyCommandHandler
         timeProvider
       ),
       new RewardShopFamilyCommandHandler(economyRepository, unitOfWork, timeProvider),
-      new ContributionsFamilyCommandHandler(economyRepository, unitOfWork, timeProvider),
+      new ContributionsFamilyCommandHandler(
+        economyRepository,
+        progressionRepository,
+        unitOfWork,
+        timeProvider
+      ),
     ];
   }
 

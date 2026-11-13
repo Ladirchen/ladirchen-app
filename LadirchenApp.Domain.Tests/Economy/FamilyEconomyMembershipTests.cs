@@ -168,7 +168,12 @@ public sealed class FamilyEconomyMembershipTests
       new TransactionId("create-completed-goal"),
       _now
     );
-    economy.RedeemSavingsVoucher(_departingChildId, goalId, _now);
+    economy.RedeemSavingsVoucher(
+      _departingChildId,
+      goalId,
+      new TransactionId("redeem-completed-goal"),
+      _now
+    );
     economy.AddShopReward(
       _administratorId,
       rewardId,
@@ -210,7 +215,8 @@ public sealed class FamilyEconomyMembershipTests
 
     await Assert.That(restoredHistory.Status).IsEqualTo(ContributionStatus.Approved);
     await Assert.That(restoredHistory.AssigneeId).IsEqualTo(_departingChildId);
-    await Assert.That(synchronized.SavingsVouchers.Single(item => item.Id == goalId).RedeemedAt).IsNotNull();
+    await Assert.That(synchronized.SavingsVouchers).IsEmpty();
+    await Assert.That(synchronized.SavingsGoals.Select(item => item.Id)).DoesNotContain(goalId);
     await Assert.That(synchronized.RedemptionRequests.Single(item => item.Id == requestId).Status).IsEqualTo(RedemptionStatus.Approved);
     await Assert.That(synchronized.Wallets.Select(item => item.Id)).DoesNotContain(_departingChildId);
   }

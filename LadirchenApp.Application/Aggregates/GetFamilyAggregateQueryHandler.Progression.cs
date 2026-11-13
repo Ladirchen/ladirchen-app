@@ -61,6 +61,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
       loadedProgression.Revision,
       evaluation.FamilyEnergy >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
       loadedProgression.Root.CompletedWeeklyStreak,
+      loadedProgression.Root.DailyStreak(family.TimeZone.LocalDate(_timeProvider.GetUtcNow())),
       loadedProgression.Root.CurrentWeekTarget,
       evaluation.FamilyEnergy,
       energyPolicy.Atmosphere(evaluation.FamilyEnergy),

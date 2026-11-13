@@ -46,22 +46,132 @@ public sealed partial class FamilyEconomy
   public void RedeemSavingsVoucher(
     FamilyMemberId actor,
     SavingGoalId voucherId,
+    TransactionId operationId,
     DateTimeOffset now
   )
   {
     ActiveMember(actor);
     var voucher = FindSavingsVoucher(voucherId);
+    var goal = FindGoal(voucherId);
     Rules.Require(
       voucher.OwnerId == actor || voucher.Participants.Contains(actor),
       DomainError.Forbidden,
       "Only the voucher owner or a participating family member may redeem it."
     );
+    RequireNewOperation(operationId);
     Rules.Require(
       voucher.Redeem(now),
       DomainError.InvalidState,
       "The savings voucher is not redeemable or was already redeemed."
     );
+    _guardianGifts.RemoveAll(gift => gift.GoalId == goal.Id);
+    _savingsVouchers.Remove(voucher);
+    _goals.Remove(goal);
+    Record(
+      operationId,
+      new LedgerEntry(
+        operationId,
+        actor,
+        goal.Id,
+        LedgerKind.GoalDebit,
+        voucher.Amount,
+        goal.Id,
+        "Savings voucher redeemed",
+        now.ToUniversalTime()
+      )
+    );
     AddDomainEvent(new GoalChanged(Id, voucher.Id, "VoucherRedeemed", voucher.Amount, now));
+  }
+
+  public decimal ConvertSavingsVoucherToLadirchen(
+    FamilyMemberId actor,
+    SavingGoalId voucherId,
+    TransactionId operationId,
+    DateTimeOffset now
+  )
+  {
+    ActiveMember(actor);
+    var voucher = FindSavingsVoucher(voucherId);
+    var goal = FindGoal(voucherId);
+    Rules.Require(
+      voucher.OwnerId == actor || voucher.Participants.Contains(actor),
+      DomainError.Forbidden,
+      "Only the voucher owner or a participating family member may convert it."
+    );
+    RequireNewOperation(operationId);
+    Rules.Require(
+      voucher.Redeem(now),
+      DomainError.InvalidState,
+      "The savings voucher is not convertible or was already redeemed."
+    );
+    var refunds = voucher.OwnerId is null
+      ? goal.RefundableContributions.ToArray()
+      : [new KeyValuePair<FamilyMemberId, decimal>(voucher.OwnerId, voucher.Amount)];
+    var returned = refunds.Sum(refund => refund.Value);
+    var forfeited = voucher.Amount - returned;
+    Rules.Require(forfeited >= 0, DomainError.InvalidState, "Voucher refunds exceed the voucher amount.");
+    var refundBalances = refunds.Select(refund =>
+    {
+      var wallet = WalletFor(refund.Key);
+
+      return (
+        Wallet: wallet,
+        Balance: checked(wallet.Balance + refund.Value),
+        MemberId: refund.Key,
+        Amount: refund.Value
+      );
+    }).ToArray();
+    var entries = new List<LedgerEntry>
+    {
+      new LedgerEntry(
+        operationId,
+        actor,
+        goal.Id,
+        LedgerKind.GoalDebit,
+        voucher.Amount,
+        goal.Id,
+        "Savings voucher converted",
+        now.ToUniversalTime()
+      ),
+    };
+
+    foreach (var refund in refundBalances)
+    {
+      refund.Wallet.Set(refund.Balance, refund.Wallet.Reserved);
+      entries.Add(new LedgerEntry(
+        operationId,
+        refund.MemberId,
+        null,
+        LedgerKind.Credit,
+        refund.Amount,
+        goal.Id,
+        "Savings voucher converted to Ladirchen",
+        now.ToUniversalTime(),
+        actor
+      ));
+    }
+
+    if (forfeited > 0)
+    {
+      entries.Add(new LedgerEntry(
+        operationId,
+        actor,
+        goal.Id,
+        LedgerKind.BonusForfeited,
+        forfeited,
+        goal.Id,
+        "Non-refundable voucher credits forfeited",
+        now.ToUniversalTime()
+      ));
+    }
+
+    _guardianGifts.RemoveAll(gift => gift.GoalId == goal.Id);
+    _savingsVouchers.Remove(voucher);
+    _goals.Remove(goal);
+    Record(operationId, entries.ToArray());
+    AddDomainEvent(new GoalChanged(Id, voucher.Id, "VoucherConverted", returned, now));
+
+    return returned;
   }
 
   public void ConsumeGuardianGift(FamilyMemberId actor, GuardianGiftId giftId)

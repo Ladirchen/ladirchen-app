@@ -14,9 +14,9 @@ public static class ContributionParticipationPolicy
     ArgumentNullException.ThrowIfNull(memberId);
     var basic = contributions.Where(item => item.Kind == ContributionKind.Basic && item.AssigneeId == memberId).ToArray();
     var total = basic.Sum(item => item.Energy.Value);
-    var approvedBasic = basic.Where(item => item.Status == ContributionStatus.Approved).Sum(item => item.Energy.Value);
+    var approvedBasic = basic.Where(item => item.Status != ContributionStatus.Available).Sum(item => item.Energy.Value);
     var approvedExtra = contributions
-      .Where(item => item.Kind == ContributionKind.Extra && item.AssigneeId == memberId && item.Status == ContributionStatus.Approved)
+      .Where(item => item.Kind == ContributionKind.Extra && item.AssigneeId == memberId && item.Status != ContributionStatus.Available)
       .Sum(item => item.Energy.Value);
 
     return EffectiveCompletion(total, approvedBasic, approvedExtra);
@@ -38,7 +38,7 @@ public static class ContributionParticipationPolicy
     return new Percentage(Math.Min(100, Rules.Round((approvedBasic + approvedExtra) / assignedBasic * 100)));
   }
 
-  public static int ApprovedDays(IEnumerable<Contribution> contributions, FamilyMemberId memberId,
+  public static int ParticipationDays(IEnumerable<Contribution> contributions, FamilyMemberId memberId,
     IsoWeekPeriod period, IanaTimeZone zone)
   {
     ArgumentNullException.ThrowIfNull(contributions);
@@ -46,8 +46,14 @@ public static class ContributionParticipationPolicy
     ArgumentNullException.ThrowIfNull(period);
     ArgumentNullException.ThrowIfNull(zone);
 
-    return contributions.Where(item => item.AssigneeId == memberId && item.Status == ContributionStatus.Approved && item.ApprovedAt is not null)
-      .Select(item => zone.LocalDate(item.ApprovedAt!.Value)).Where(period.Contains).Distinct().Count();
+    return contributions
+      .Where(item => item.AssigneeId == memberId && item.Status != ContributionStatus.Available)
+      .Select(item => item.SubmittedAt ?? item.ApprovedAt)
+      .Where(item => item is not null)
+      .Select(item => zone.LocalDate(item!.Value))
+      .Where(period.Contains)
+      .Distinct()
+      .Count();
   }
 
   public static decimal AverageRating(IEnumerable<Contribution> contributions, FamilyMemberId memberId)

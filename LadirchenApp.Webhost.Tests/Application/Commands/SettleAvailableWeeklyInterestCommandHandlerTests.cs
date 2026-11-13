@@ -55,7 +55,7 @@ public sealed class SettleAvailableWeeklyInterestCommandHandlerTests
   }
 
   [Test]
-  public async Task DoesNothingWhenNoFamilyHasAnEligibleClosedWeek()
+  public async Task AutomaticallyClosesThePreviousFullWeekBeforeSettlingIt()
   {
     var store = CreateStore(hasClosedWeek: false);
     var handler = CreateHandler(store);
@@ -65,18 +65,26 @@ public sealed class SettleAvailableWeeklyInterestCommandHandlerTests
       CancellationToken.None
     );
 
-    await Assert.That(result.AttemptedPeriods).IsEqualTo(0);
-    await Assert.That(result.SettledPeriods).IsEqualTo(0);
+    await Assert.That(result.AttemptedPeriods).IsEqualTo(1);
+    await Assert.That(result.SettledPeriods).IsEqualTo(1);
     await Assert.That(result.DeferredPeriods).IsEqualTo(0);
     await Assert.That(result.FailedFamilies).IsEqualTo(0);
-    await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy)).IsEqualTo(1);
+    await Assert.That(store.RequiredProgression().ClosedWeeks.Select(week => week.Period.Key))
+      .IsEquivalentTo(["2026-W41"]);
+    await Assert.That(store.RequiredProgression().StoredLevel).IsEqualTo(1);
+    await Assert.That(store.RequiredProgression().CompletedWeeklyStreak).IsEqualTo(1);
   }
 
   private static SettleAvailableWeeklyInterestCommandHandler CreateHandler(
     TestTypedAggregateStore store
   )
   {
-    var planner = new GetWeeklyInterestSettlementPlanQueryHandler(store, store, store);
+    var planner = new GetWeeklyInterestSettlementPlanQueryHandler(
+      store,
+      store,
+      store,
+      new FixedTimeProvider(_now)
+    );
 
     return new SettleAvailableWeeklyInterestCommandHandler(
       store,
@@ -132,6 +140,16 @@ public sealed class SettleAvailableWeeklyInterestCommandHandlerTests
       _now.AddDays(-11)
     );
     var progression = FamilyHouse.CreateInitial(family);
+
+    if (!hasClosedWeek)
+    {
+      var period = new IsoWeekPeriod(2026, 41);
+
+      for (var offset = 0; offset < 7; offset++)
+      {
+        progression.RecordDailyEnergy(period.Start.AddDays(offset), 60);
+      }
+    }
 
     if (hasClosedWeek)
     {

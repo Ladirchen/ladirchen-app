@@ -130,6 +130,56 @@ public sealed class FamilyHouseStateTests
     await Assert.That(house.StoredWeeklyStreakFor(formerMember)).IsEqualTo(0);
   }
 
+  [Test]
+  public async Task DailyEnergyBuildsAStreakAsSoonAsTheThresholdIsReached()
+  {
+    var family = CompleteFamily(new FamilyMemberId("child"));
+    var house = FamilyHouse.CreateInitial(family);
+    var today = new DateOnly(2026, 10, 12);
+    house.RecordDailyEnergy(today.AddDays(-2), 75);
+    house.RecordDailyEnergy(today.AddDays(-1), 60);
+
+    await Assert.That(house.DailyStreak(today)).IsEqualTo(2);
+
+    house.RecordDailyEnergy(today, 60);
+    house.RecordDailyEnergy(today, 40);
+
+    await Assert.That(house.DailyStreak(today)).IsEqualTo(3);
+  }
+
+  [Test]
+  public async Task WeeklyEnergyIsTheRoundedAverageOfAllSevenDays()
+  {
+    var family = CompleteFamily(new FamilyMemberId("child"));
+    var house = FamilyHouse.CreateInitial(family);
+    var period = new IsoWeekPeriod(2026, 41);
+    var dailyEnergies = new[] { 80, 60, 70, 50, 60, 40, 60 };
+
+    for (var offset = 0; offset < dailyEnergies.Length; offset++)
+    {
+      house.RecordDailyEnergy(period.Start.AddDays(offset), dailyEnergies[offset]);
+    }
+
+    await Assert.That(house.AverageEnergy(period)).IsEqualTo(60);
+  }
+
+  [Test]
+  public async Task WeeklyEnergyBelowTheExactThresholdDoesNotRoundUp()
+  {
+    var family = CompleteFamily(new FamilyMemberId("child"));
+    var house = FamilyHouse.CreateInitial(family);
+    var period = new IsoWeekPeriod(2026, 41);
+
+    for (var offset = 0; offset < 6; offset++)
+    {
+      house.RecordDailyEnergy(period.Start.AddDays(offset), 60);
+    }
+
+    house.RecordDailyEnergy(period.Start.AddDays(6), 59);
+
+    await Assert.That(house.AverageEnergy(period)).IsEqualTo(59);
+  }
+
   private static FamilyHouseState CompleteState(
     FamilyId familyId,
     FamilyMemberId currentMember,

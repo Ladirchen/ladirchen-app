@@ -28,6 +28,26 @@
       </div>
     </BrandedCard>
 
+    <BrandedCard v-if="store.viewerRole === 'guardian'" class="pa-4 mb-5" tag="section" tone="family">
+      <div class="d-flex align-center justify-space-between ga-3 flex-wrap">
+        <div>
+          <p class="family-hero-kicker">{{ t("family.weekly.overviewTitle") }}</p>
+          <strong>{{ t("family.weekly.overviewDescription") }}</strong>
+        </div>
+        <div class="d-flex ga-2 flex-wrap">
+          <v-chip color="warning" prepend-icon="i-mdi:fire" variant="tonal">
+            {{ t("family.weekly.streak", { count: store.familyDailyStreak }) }}
+          </v-chip>
+          <v-chip color="primary" prepend-icon="i-mdi:lightning-bolt" variant="tonal">
+            {{ t("family.weekly.energy", { value: store.familyEnergy }) }}
+          </v-chip>
+          <v-chip color="info" prepend-icon="i-mdi:home-variant" variant="tonal">
+            {{ t("family.weekly.house", { level: store.houseLevel + 1 }) }}
+          </v-chip>
+        </div>
+      </div>
+    </BrandedCard>
+
     <BrandedCard class="family-roster mb-6" tag="section" tone="family">
       <div class="family-section-heading">
         <div>

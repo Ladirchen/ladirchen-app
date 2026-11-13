@@ -16,15 +16,18 @@ namespace LadirchenApp.Application.Commands;
 internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandAreaHandler
 {
   private readonly IFamilyEconomyRepository _economyRepository;
+  private readonly IFamilyProgressionRepository _progressionRepository;
 
   public ContributionsFamilyCommandHandler(
     IFamilyEconomyRepository economyRepository,
+    IFamilyProgressionRepository progressionRepository,
     ITypedAggregateUnitOfWork unitOfWork,
     TimeProvider timeProvider
   )
     : base(unitOfWork, timeProvider, "contributions.")
   {
     _economyRepository = economyRepository ?? throw new ArgumentNullException(nameof(economyRepository));
+    _progressionRepository = progressionRepository ?? throw new ArgumentNullException(nameof(progressionRepository));
   }
 
   public override async Task<FamilyCommandResult> HandleAsync(
@@ -39,6 +42,8 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var loadedEconomy = await _economyRepository.LoadAsync(family.Root, cancellationToken)
       ?? throw new FamilyCommandException("The family economy has not been initialized.");
     var economy = loadedEconomy.Root;
+    var loadedProgression = await _progressionRepository.LoadAsync(family.Root, cancellationToken)
+      ?? throw new FamilyCommandException("The family progression has not been initialized.");
     var payload = RequiredObject(command.Payload);
     var now = TimeProvider.GetUtcNow();
     var operationId = OperationId(command);
@@ -101,6 +106,16 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           now
         );
         break;
+      case "contributions.reactivate":
+        addedContribution = ReactivateContribution(
+          economy,
+          loadedEconomy.Presentation,
+          command.ActorId,
+          payload,
+          now
+        );
+        AddAssignmentNotification(economy, payload, notifications);
+        break;
       case "contributions.delete":
         economy.DeleteContribution(command.ActorId, ContributionId(payload), now);
         break;
@@ -142,6 +157,17 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       updatedContribution,
       celebratedContributionId
     );
+    var period = IsoWeekPeriod.For(family.Root.TimeZone.LocalDate(now));
+    var progressionEvaluation = FamilyProgressionEvaluator.Evaluate(
+      family.Root,
+      economy,
+      loadedProgression.Root,
+      period
+    );
+    loadedProgression.Root.RecordDailyEnergy(
+      family.Root.TimeZone.LocalDate(now),
+      progressionEvaluation.FamilyEnergy
+    );
     var saved = await UnitOfWork.SaveAsync(
       new TypedAggregateSaveBatch(
         command.FamilyId,
@@ -150,6 +176,10 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           economy,
           presentation,
           loadedEconomy.Revision
+        ),
+        familyProgression: new PendingFamilyProgressionSave(
+          loadedProgression.Root,
+          loadedProgression.Revision
         ),
         revisionGuards:
         [
@@ -160,11 +190,18 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     );
     var changedEconomy = saved.FamilyEconomy
       ?? throw new InvalidOperationException("The family economy was not saved.");
+    var changedProgression = saved.FamilyProgression
+      ?? throw new InvalidOperationException("The family progression was not saved.");
 
     return new FamilyCommandResult(
     [
       Change(command.FamilyId, "contributions", changedEconomy.Revision, changedEconomy.Audit),
-      Change(command.FamilyId, "family-progression", changedEconomy.Revision, changedEconomy.Audit),
+      Change(
+        command.FamilyId,
+        "family-progression",
+        changedProgression.Revision,
+        changedProgression.Audit
+      ),
       Change(command.FamilyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
       Change(command.FamilyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
       Change(command.FamilyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
@@ -288,6 +325,23 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       ?? throw new FamilyCommandException("Presentation data for the source contribution is missing.");
 
     return sourcePresentation with { ContributionId = copyId, RewardCelebrated = false };
+  }
+
+  private static ContributionPresentationState ReactivateContribution(
+    FamilyEconomy economy,
+    FamilyEconomyPresentationState presentation,
+    FamilyMemberId actorId,
+    JsonElement payload,
+    DateTimeOffset now
+  )
+  {
+    var sourceId = new ContributionId(RequiredString(payload, "sourceId"));
+    var reactivatedId = ContributionId(payload);
+    economy.ReactivateContribution(actorId, sourceId, reactivatedId, now);
+    var sourcePresentation = presentation.Contributions.SingleOrDefault(item => item.ContributionId == sourceId)
+      ?? throw new FamilyCommandException("Presentation data for the source contribution is missing.");
+
+    return sourcePresentation with { ContributionId = reactivatedId, RewardCelebrated = false };
   }
 
   private static ContributionDefinition ContributionDefinition(JsonElement payload)

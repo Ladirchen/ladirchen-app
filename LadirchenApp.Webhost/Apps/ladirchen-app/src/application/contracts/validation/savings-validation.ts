@@ -103,6 +103,7 @@ function isSavingGoal(value: unknown): value is SavingGoal {
             isRecord(limit) &&
             typeof limit.canApproveCancellation === "boolean" &&
             typeof limit.canCancel === "boolean" &&
+            typeof limit.canDissolve === "boolean" &&
             typeof limit.canRejectCancellation === "boolean" &&
             typeof limit.canRequestCancellation === "boolean" &&
             typeof limit.canWithdraw === "boolean" &&

@@ -31,7 +31,8 @@ internal static partial class FamilyEconomyPersistenceMapper
           .OrderBy(partner => partner.MemberId, StringComparer.Ordinal)
           .Select(partner => new FamilyMemberId(partner.MemberId))
           .ToArray(),
-        OptionalMemberId(item.CreatorId)
+        OptionalMemberId(item.CreatorId),
+        item.SubmittedAt
       ))
       .ToArray();
   }
@@ -85,6 +86,7 @@ internal static partial class FamilyEconomyPersistenceMapper
         EarnedRatingBonus = contribution.EarnedReward?.RatingBonus,
         EarnedPromotionMultiplier = contribution.EarnedReward?.Multiplier,
         ApprovedAt = contribution.ApprovedAt,
+        SubmittedAt = contribution.SubmittedAt,
       };
 
       foreach (var partnerId in contribution.InvitedPartnerIds)

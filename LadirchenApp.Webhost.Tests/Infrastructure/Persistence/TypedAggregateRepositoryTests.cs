@@ -122,18 +122,6 @@ public sealed class TypedAggregateRepositoryTests
         new TransactionId("gift-operation"),
         now
       );
-      economy.AddContribution(
-        administratorId,
-        contributionId,
-        new ContributionDefinition(
-          "Help",
-          ContributionKind.Basic,
-          new LadirchenAmount(5),
-          new Percentage(10),
-          childId
-        ),
-        now
-      );
       economy.AddShopReward(
         administratorId,
         rewardId,
@@ -152,6 +140,18 @@ public sealed class TypedAggregateRepositoryTests
         rewardId,
         new RedemptionRequestId("request"),
         new TransactionId("request-operation"),
+        now
+      );
+      economy.AddContribution(
+        administratorId,
+        contributionId,
+        new ContributionDefinition(
+          "Help",
+          ContributionKind.Basic,
+          new LadirchenAmount(5),
+          new Percentage(10),
+          childId
+        ),
         now
       );
       var presentation = new FamilyEconomyPresentationState(
@@ -218,6 +218,8 @@ public sealed class TypedAggregateRepositoryTests
       await Assert.That(loadedEconomy.Root.WalletFor(childId).Available).IsEqualTo(10);
       await Assert.That(loadedEconomy.Root.Contributions.Single().Status)
         .IsEqualTo(ContributionStatus.Pending);
+      await Assert.That(loadedEconomy.Root.Contributions.Single().SubmittedAt)
+        .IsEqualTo(now.AddMinutes(1));
       await Assert.That(loadedEconomy.Root.RedemptionRequests.Single().Status)
         .IsEqualTo(RedemptionStatus.Pending);
       await Assert.That(loadedEconomy.Presentation.Contributions.Single().Description)

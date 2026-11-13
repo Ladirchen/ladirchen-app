@@ -72,15 +72,30 @@ export const contributionsActions = {
       this.notify("notifications.contributions.returned"),
     );
   },
-  async addContribution(this: FamilyWorldStoreContext, input: NewContribution) {
-    const id = createDomainId.contribution(createUuid());
-    await executeBackendFamilyCommand(
-      this,
-      "contributions.add",
-      { id, ...input },
-      "notifications.save.contributions",
-      () => this.notify("notifications.contributions.added"),
-    );
+  async addContribution(
+    this: FamilyWorldStoreContext,
+    input: NewContribution & { assigneeIds?: FamilyMemberId[]; quantity?: number },
+  ) {
+    const { assigneeIds = [], quantity = 1, ...definition } = input;
+    const assignments = assigneeIds.length > 0 ? assigneeIds : [definition.assigneeId];
+    const total = assignments.length * quantity;
+    let created = 0;
+
+    for (const assigneeId of assignments) {
+      for (let index = 0; index < quantity; index += 1) {
+        created += 1;
+        const id = createDomainId.contribution(createUuid());
+        await executeBackendFamilyCommand(
+          this,
+          "contributions.add",
+          { id, ...definition, assigneeId },
+          "notifications.save.contributions",
+          created === total
+            ? () => this.notify("notifications.contributions.addedQuantity", { quantity: total })
+            : undefined,
+        );
+      }
+    }
   },
   async updateContribution(this: FamilyWorldStoreContext, id: ContributionId, input: NewContribution) {
     await executeBackendFamilyCommand(
@@ -99,6 +114,16 @@ export const contributionsActions = {
       { id, sourceId },
       "notifications.save.contributions",
       () => this.notify("notifications.contributions.copied"),
+    );
+  },
+  async reactivateContribution(this: FamilyWorldStoreContext, sourceId: ContributionId) {
+    const id = createDomainId.contribution(createUuid());
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.reactivate",
+      { id, sourceId },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.reactivated"),
     );
   },
   async deleteContribution(this: FamilyWorldStoreContext, id: ContributionId) {

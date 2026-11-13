@@ -332,6 +332,22 @@ public sealed partial class FamilyEconomy
     return true;
   }
 
+  public decimal DissolveGoal(
+    FamilyMemberId actor,
+    SavingGoalId id,
+    TransactionId operationId,
+    DateTimeOffset now
+  )
+  {
+    var member = ActiveMember(actor);
+    Rules.Require(member.IsAdministrator, DomainError.Forbidden, "Only an administrator may dissolve a goal.");
+    var goal = FindGoal(id);
+    RequireNewOperation(operationId);
+    _savingsVouchers.RemoveAll(voucher => voucher.Id == goal.Id);
+
+    return CompleteGoalCancellation(actor, goal, operationId, now);
+  }
+
   private void RequireNoPendingGoalCancellation(SavingGoal goal)
   {
     Rules.Require(

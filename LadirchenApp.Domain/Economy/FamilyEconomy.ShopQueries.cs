@@ -61,6 +61,11 @@ public sealed partial class FamilyEconomy
 
     return _members
       .Where(member => !member.InvitationPending && member.Role == MemberRole.Child)
+      .Where(member => !_contributions.Any(contribution =>
+        contribution.Kind == ContributionKind.Basic
+        && contribution.AssigneeId == member.Id
+        && contribution.Status == ContributionStatus.Available
+      ))
       .Where(member => WalletFor(member.Id).Available >= reward.EffectivePrice(localDate).Value)
       .Select(member => member.Id)
       .ToArray();

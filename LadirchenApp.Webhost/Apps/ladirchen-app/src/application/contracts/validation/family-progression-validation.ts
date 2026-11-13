@@ -31,6 +31,7 @@ export function isFamilyProgressionState(value: unknown): value is FamilyProgres
     isRecord(value) &&
     typeof value.canCloseWeekSuccessfully === "boolean" &&
     isNonNegativeInteger(value.completedWeeklyStreak) &&
+    isNonNegativeInteger(value.familyDailyStreak) &&
     isInteger(value.currentWeekTarget) &&
     value.currentWeekTarget > 0 &&
     isInteger(value.houseLevel) &&

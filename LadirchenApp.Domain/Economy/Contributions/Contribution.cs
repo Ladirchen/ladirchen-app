@@ -61,6 +61,10 @@ public sealed class Contribution : Entity<ContributionId>
   {
     get; private set;
   }
+  public DateTimeOffset? SubmittedAt
+  {
+    get; private set;
+  }
   public IReadOnlyList<FamilyMemberId> InvitedPartners { get; private set; } = Array.Empty<FamilyMemberId>();
 
   internal void Assign(FamilyMemberId? member)
@@ -89,14 +93,16 @@ public sealed class Contribution : Entity<ContributionId>
     InvitedPartners = Array.AsReadOnly(partners);
   }
 
-  internal void Submit()
+  internal void Submit(DateTimeOffset? submittedAt = null)
   {
     Status = ContributionStatus.Pending;
+    SubmittedAt = submittedAt?.ToUniversalTime();
   }
 
   internal void Return()
   {
     Status = ContributionStatus.Available;
+    SubmittedAt = null;
   }
 
   internal void Approve(StarRating rating, ContributionRewardBreakdown reward, DateTimeOffset now)

@@ -250,6 +250,11 @@ export const savingsActions = {
       }
     });
   },
+  async dissolveGoal(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    await executeBackendFamilyCommand(this, "savings.dissolve-goal", { id }, "notifications.save.savings", () => {
+      this.notify("notifications.goals.dissolved");
+    });
+  },
   async requestGoalCancellation(this: FamilyWorldStoreContext, id: SavingGoalId) {
     await executeBackendFamilyCommand(
       this,
@@ -270,7 +275,14 @@ export const savingsActions = {
   async consentToSavingsVoucher(this: FamilyWorldStoreContext, id: SavingGoalId) {
     await executeBackendFamilyCommand(this, "savings.consent-voucher", { id }, "notifications.save.savings");
   },
+  async convertSavingsVoucherToLadirchen(this: FamilyWorldStoreContext, id: SavingGoalId) {
+    await executeBackendFamilyCommand(this, "savings.convert-voucher", { id }, "notifications.save.savings", () =>
+      this.notify("notifications.goals.voucherConverted"),
+    );
+  },
   async redeemSavingsVoucher(this: FamilyWorldStoreContext, id: SavingGoalId) {
-    await executeBackendFamilyCommand(this, "savings.redeem-voucher", { id }, "notifications.save.savings");
+    await executeBackendFamilyCommand(this, "savings.redeem-voucher", { id }, "notifications.save.savings", () =>
+      this.notify("notifications.goals.voucherRedeemed"),
+    );
   },
 } satisfies FamilyWorldActionGroup;

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Commands;
@@ -52,11 +53,21 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
     var currentPeriod = IsoWeekPeriod.For(
       family.TimeZone.LocalDate(TimeProvider.GetUtcNow())
     );
+    var evaluatedPeriod = command.CommandType == "progression.close-week"
+      ? new IsoWeekPeriod(
+        RequiredInt(RequiredObject(command.Payload), "year"),
+        RequiredInt(RequiredObject(command.Payload), "week")
+      )
+      : currentPeriod;
+    Require(
+      command.CommandType != "progression.close-week" || evaluatedPeriod.Start < currentPeriod.Start,
+      "Only a completed family week can be closed automatically."
+    );
     var evaluation = FamilyProgressionEvaluator.Evaluate(
       family,
       loadedEconomy.Root,
       house,
-      currentPeriod
+      evaluatedPeriod
     );
     IReadOnlyList<string> changedReadModels;
 
@@ -108,6 +119,36 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
           evaluation.Members.Select(item => item.LadiEvaluation),
           TimeProvider.GetUtcNow()
         );
+        changedReadModels =
+        [
+          "family-profile",
+          "family-progression",
+          "savings",
+          "home-customization",
+        ];
+        break;
+      case "progression.close-week":
+        family.RequireAdministrator(command.ActorId);
+        var averageEnergy = house.AverageEnergy(evaluatedPeriod);
+
+        if (averageEnergy >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy)
+        {
+          _ = house.CloseSuccessfulWeek(
+            evaluatedPeriod,
+            averageEnergy,
+            evaluation.Members.Select(item => item.LadiEvaluation),
+            TimeProvider.GetUtcNow()
+          );
+        }
+        else
+        {
+          house.CloseFailedWeek(
+            evaluatedPeriod,
+            averageEnergy,
+            evaluation.Members.Select(item => item.LadiEvaluation),
+            TimeProvider.GetUtcNow()
+          );
+        }
         changedReadModels =
         [
           "family-profile",

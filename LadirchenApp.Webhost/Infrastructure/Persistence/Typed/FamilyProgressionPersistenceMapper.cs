@@ -37,7 +37,10 @@ internal static class FamilyProgressionPersistenceMapper
           item.MemberEvaluations
             .OrderBy(evaluation => evaluation.MemberId, StringComparer.Ordinal)
             .Select(ToEvaluation)
-        ))
+        )),
+      entity.DailyEnergies
+        .OrderBy(item => item.Date)
+        .Select(item => new DailyHouseEnergyState(item.Date, item.Energy))
     );
 
     return FamilyHouse.Reconstitute(family, state);
@@ -64,6 +67,7 @@ internal static class FamilyProgressionPersistenceMapper
     entity.MaximumSavingsInterestRate = state.MaximumSavingsInterestRate.Value;
     entity.Participants.Clear();
     entity.ClosedWeeks.Clear();
+    entity.DailyEnergies.Clear();
 
     foreach (var participant in state.Participants)
     {
@@ -105,6 +109,16 @@ internal static class FamilyProgressionPersistenceMapper
       }
 
       entity.ClosedWeeks.Add(weekEntity);
+    }
+
+    foreach (var day in state.DailyEnergies)
+    {
+      entity.DailyEnergies.Add(new FamilyProgressionDailyEnergyEntity
+      {
+        FamilyId = state.Id.Value,
+        Date = day.Date,
+        Energy = day.Energy,
+      });
     }
   }
 

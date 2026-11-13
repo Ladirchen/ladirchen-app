@@ -13,16 +13,19 @@ public sealed class GetWeeklyInterestSettlementPlanQueryHandler
   private readonly IFamilyEconomyRepository _economyRepository;
   private readonly IFamilyRepository _familyRepository;
   private readonly IFamilyProgressionRepository _progressionRepository;
+  private readonly TimeProvider _timeProvider;
 
   public GetWeeklyInterestSettlementPlanQueryHandler(
     IFamilyRepository familyRepository,
     IFamilyEconomyRepository economyRepository,
-    IFamilyProgressionRepository progressionRepository
+    IFamilyProgressionRepository progressionRepository,
+    TimeProvider timeProvider
   )
   {
     _familyRepository = familyRepository;
     _economyRepository = economyRepository;
     _progressionRepository = progressionRepository;
+    _timeProvider = timeProvider;
   }
 
   public async Task<WeeklyInterestSettlementPlan?> HandleAsync(
@@ -58,7 +61,14 @@ public sealed class GetWeeklyInterestSettlementPlanQueryHandler
       .Where(period => !economy.Root.SettledInterestPeriods.Contains(period))
       .OrderBy(period => period.Start)
       .ToArray();
+    var currentPeriod = IsoWeekPeriod.For(
+      family.Root.TimeZone.LocalDate(_timeProvider.GetUtcNow())
+    );
+    var previousPeriod = IsoWeekPeriod.For(currentPeriod.Start.AddDays(-7));
+    var periodToClose = progression.Root.IsWeekClosed(previousPeriod)
+      ? null
+      : previousPeriod;
 
-    return new WeeklyInterestSettlementPlan(administrator.Id, periods);
+    return new WeeklyInterestSettlementPlan(administrator.Id, periodToClose, periods);
   }
 }

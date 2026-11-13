@@ -139,6 +139,7 @@ public sealed partial class FamilyEconomy
   {
     RequireChild(actor);
     ArgumentNullException.ThrowIfNull(requestId);
+    RequireNoOpenBasicContribution(actor);
     var reward = FindShopReward(rewardId);
     Rules.Require(
       reward.Status == ShopRewardStatus.Available && reward.Quantity > 0,
@@ -179,6 +180,20 @@ public sealed partial class FamilyEconomy
       )
     );
     AddDomainEvent(new ShopRewardRequested(Id, requestId, actor, rewardId, effectivePrice.Value, now));
+  }
+
+  private void RequireNoOpenBasicContribution(FamilyMemberId actor)
+  {
+    var hasOpenBasicContribution = _contributions.Any(item =>
+      item.Kind == ContributionKind.Basic
+      && item.AssigneeId == actor
+      && item.Status == ContributionStatus.Available
+    );
+    Rules.Require(
+      !hasOpenBasicContribution,
+      DomainError.InvalidState,
+      "Open basic contributions must be completed before requesting a shop reward."
+    );
   }
 
   public void CancelShopRewardRequest(

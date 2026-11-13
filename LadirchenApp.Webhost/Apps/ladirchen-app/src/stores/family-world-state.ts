@@ -147,6 +147,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     behaviorNoticeAnimation,
     savingsVouchers,
     completedWeeklyStreak: 0,
+    familyDailyStreak: 0,
     currentWeekTarget: 0,
     houseLevel,
     houseCatalog,

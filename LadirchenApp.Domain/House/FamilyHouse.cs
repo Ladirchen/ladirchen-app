@@ -15,6 +15,7 @@ public sealed class FamilyHouse : AggregateRoot<FamilyId>
 {
   private readonly Dictionary<FamilyMemberId, ParticipantProgress> _participants = new();
   private readonly Dictionary<IsoWeekPeriod, ClosedFamilyWeek> _closedWeeks = new();
+  private readonly Dictionary<DateOnly, int> _dailyEnergies = new();
 
   public const int MaximumStoredLevel = 4;
 
@@ -91,6 +92,11 @@ public sealed class FamilyHouse : AggregateRoot<FamilyId>
       );
     }
 
+    foreach (var day in state.DailyEnergies)
+    {
+      house.RecordDailyEnergy(day.Date, day.Energy);
+    }
+
     return house;
   }
 
@@ -128,8 +134,38 @@ public sealed class FamilyHouse : AggregateRoot<FamilyId>
           item.Outcome,
           item.EvaluatedAt,
           item.MemberEvaluations.Values
-        ))
+        )),
+      _dailyEnergies.OrderBy(item => item.Key).Select(item => new DailyHouseEnergyState(item.Key, item.Value))
     );
+  }
+
+  public void RecordDailyEnergy(DateOnly date, int energy)
+  {
+    Rules.Require(energy >= 0 && energy <= 100, DomainError.InvalidValue, "Daily house energy must be a percentage.");
+    _dailyEnergies[date] = Math.Max(_dailyEnergies.GetValueOrDefault(date), energy);
+  }
+
+  public int DailyStreak(DateOnly today)
+  {
+    var date = _dailyEnergies.GetValueOrDefault(today) >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy
+      ? today
+      : today.AddDays(-1);
+    var streak = 0;
+
+    while (_dailyEnergies.GetValueOrDefault(date) >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy)
+    {
+      streak++;
+      date = date.AddDays(-1);
+    }
+
+    return streak;
+  }
+
+  public int AverageEnergy(IsoWeekPeriod period)
+  {
+    var total = Enumerable.Range(0, 7).Sum(offset => _dailyEnergies.GetValueOrDefault(period.Start.AddDays(offset)));
+
+    return total / 7;
   }
 
   internal void RegisterParticipant(FamilyMemberId memberId, bool participates, int storedWeeklyStreak)

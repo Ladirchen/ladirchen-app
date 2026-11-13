@@ -224,12 +224,41 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     );
   }
 
+  public void ReactivateContribution(
+    FamilyMemberId actor,
+    ContributionId sourceId,
+    ContributionId reactivatedId,
+    DateTimeOffset now
+  )
+  {
+    var source = FindContribution(sourceId);
+    RequireContributionManager(actor, source);
+    Rules.Require(
+      source.Status == ContributionStatus.Approved,
+      DomainError.InvalidState,
+      "Only an approved contribution can be reactivated."
+    );
+    AddContribution(
+      actor,
+      reactivatedId,
+      new ContributionDefinition(
+        source.Title,
+        source.Kind,
+        source.Reward,
+        source.Energy,
+        source.AssigneeId
+      ),
+      now
+    );
+  }
+
   public void ClaimContribution(FamilyMemberId actor, ContributionId id, DateTimeOffset now)
   {
     RequireChild(actor);
     RequireTasksAvailableFor(actor, now);
     var contribution = FindContribution(id);
     RequireAvailable(contribution);
+    RequireBasicContributionCompletedForExtra(actor, contribution, now);
     Rules.Require(
       contribution.AssigneeId is null,
       DomainError.InvalidState,
@@ -312,7 +341,8 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
       DomainError.Forbidden,
       "Only the assignee may submit a contribution."
     );
-    contribution.Submit();
+    RequireBasicContributionCompletedForExtra(actor, contribution, now);
+    contribution.Submit(now);
     AddDomainEvent(new ContributionSubmitted(Id, id, actor, now));
   }
 
@@ -449,6 +479,32 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
       contribution.Status == ContributionStatus.Available,
       DomainError.InvalidState,
       "The contribution must be available."
+    );
+  }
+
+  private void RequireBasicContributionCompletedForExtra(
+    FamilyMemberId actor,
+    Contribution contribution,
+    DateTimeOffset now
+  )
+  {
+    if (contribution.Kind != ContributionKind.Extra)
+    {
+      return;
+    }
+
+    var currentWeek = IsoWeekPeriod.For(_timeZone.LocalDate(now));
+    var completedBasicContribution = _contributions.Any(item =>
+      item.Kind == ContributionKind.Basic
+      && item.AssigneeId == actor
+      && item.Status != ContributionStatus.Available
+      && (item.SubmittedAt ?? item.ApprovedAt) is not null
+      && currentWeek.Contains(_timeZone.LocalDate((item.SubmittedAt ?? item.ApprovedAt)!.Value))
+    );
+    Rules.Require(
+      completedBasicContribution,
+      DomainError.InvalidState,
+      "A submitted basic contribution is required before doing an extra contribution."
     );
   }
 

@@ -157,6 +157,7 @@ internal static class SavingsReadModelProjector
 
     return new SavingsGoalCommandLimits(
       !hasVoucher && ownsGoal && !goal.Owner.IsFamily,
+      member.IsAdministrator,
       !hasVoucher && goal.Owner.IsFamily && isCancellationParticipant && !cancellationPending,
       !hasVoucher && canDecideCancellation,
       !hasVoucher && canDecideCancellation,

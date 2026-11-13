@@ -85,6 +85,7 @@ export const lifecycleActions = {
 
       if (familyProgression) {
         this.completedWeeklyStreak = familyProgression.state.completedWeeklyStreak;
+        this.familyDailyStreak = familyProgression.state.familyDailyStreak;
         this.currentWeekTarget = familyProgression.state.currentWeekTarget;
         this.houseLevel = familyProgression.state.houseLevel;
         this.memberProgressions = { ...familyProgression.state.memberProgressions };
@@ -298,6 +299,7 @@ async function refreshFamilyReadModelSnapshot(
 
       if (snapshot) {
         context.completedWeeklyStreak = snapshot.state.completedWeeklyStreak;
+        context.familyDailyStreak = snapshot.state.familyDailyStreak;
         context.currentWeekTarget = snapshot.state.currentWeekTarget;
         context.houseLevel = snapshot.state.houseLevel;
         context.memberProgressions = { ...snapshot.state.memberProgressions };

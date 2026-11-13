@@ -25,6 +25,7 @@ export interface FamilyCommandPayloadMap {
   readonly "contributions.acknowledge-reward": IdFamilyCommandPayload<ContributionId>;
   readonly "contributions.add": Readonly<{ id: ContributionId } & NewContribution>;
   readonly "contributions.copy": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
+  readonly "contributions.reactivate": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
   readonly "contributions.add-promotion": Readonly<{ id: PromotionId } & NewPromotion>;
   readonly "contributions.approve": Readonly<{ id: ContributionId; stars: number }>;
   readonly "contributions.assign": Readonly<{ id: ContributionId; memberId?: FamilyMemberId }>;
@@ -86,8 +87,10 @@ export interface FamilyCommandPayloadMap {
   readonly "savings.cancel-goal": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.consent-voucher": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.consume-guardian-gift": Readonly<{ giftId: GuardianGiftId }>;
+  readonly "savings.convert-voucher": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.decide-goal-cancellation": Readonly<{ id: SavingGoalId; approved: boolean }>;
   readonly "savings.deposit": Readonly<{ id: SavingGoalId; amount: number }>;
+  readonly "savings.dissolve-goal": IdFamilyCommandPayload<SavingGoalId>;
   readonly "savings.gift-to-goal": Readonly<{
     id: SavingGoalId;
     amount: number;

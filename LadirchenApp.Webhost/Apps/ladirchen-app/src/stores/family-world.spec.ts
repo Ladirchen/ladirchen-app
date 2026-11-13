@@ -38,6 +38,7 @@ describe("family world empty state", () => {
         [memberId]: {
           canApproveCancellation: false,
           canCancel: false,
+          canDissolve: false,
           canRejectCancellation: false,
           canRequestCancellation: false,
           canWithdraw: false,

@@ -54,12 +54,18 @@ public sealed class WeeklyInterestSettlementPlanQueryHandlerTests
     );
     var store = new TestTypedAggregateStore(new FixedTimeProvider(now));
     store.Seed(family, economy, progression: progression);
-    var handler = new GetWeeklyInterestSettlementPlanQueryHandler(store, store, store);
+    var handler = new GetWeeklyInterestSettlementPlanQueryHandler(
+      store,
+      store,
+      store,
+      new FixedTimeProvider(now)
+    );
 
     var plan = await handler.HandleAsync(_familyId, CancellationToken.None);
 
     await Assert.That(plan).IsNotNull();
     await Assert.That(plan!.AdministratorId).IsEqualTo(_administratorId);
+    await Assert.That(plan.PeriodToClose).IsNull();
     await Assert.That(plan.Periods.Select(period => period.Key)).IsEquivalentTo(["2026-W41"]);
   }
 }

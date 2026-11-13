@@ -34,6 +34,8 @@ internal static partial class TypedAggregatePersistenceModel
       .HasForeignKey(item => item.FamilyId).OnDelete(DeleteBehavior.Cascade);
     progression.HasMany(item => item.ClosedWeeks).WithOne(item => item.Progression)
       .HasForeignKey(item => item.FamilyId).OnDelete(DeleteBehavior.Cascade);
+    progression.HasMany(item => item.DailyEnergies).WithOne(item => item.Progression)
+      .HasForeignKey(item => item.FamilyId).OnDelete(DeleteBehavior.Cascade);
 
     var participant = modelBuilder.Entity<FamilyProgressionParticipantEntity>();
     participant.ToTable(
@@ -45,6 +47,16 @@ internal static partial class TypedAggregatePersistenceModel
     );
     participant.HasKey(item => new { item.FamilyId, item.MemberId });
     participant.Property(item => item.MemberId).HasMaxLength(128);
+
+    var dailyEnergy = modelBuilder.Entity<FamilyProgressionDailyEnergyEntity>();
+    dailyEnergy.ToTable(
+      "FamilyProgressionDailyEnergies",
+      table => table.HasCheckConstraint(
+        "CK_FamilyProgressionDailyEnergies_Energy",
+        "\"Energy\" >= 0 AND \"Energy\" <= 100"
+      )
+    );
+    dailyEnergy.HasKey(item => new { item.FamilyId, item.Date });
 
     var week = modelBuilder.Entity<ClosedFamilyWeekEntity>();
     week.ToTable(

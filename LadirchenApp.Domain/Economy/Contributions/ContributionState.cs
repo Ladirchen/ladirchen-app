@@ -17,5 +17,6 @@ internal sealed record ContributionState(
   ContributionRewardBreakdown? EarnedReward,
   DateTimeOffset? ApprovedAt,
   IReadOnlyList<FamilyMemberId> InvitedPartnerIds,
-  FamilyMemberId? CreatorId = null
+  FamilyMemberId? CreatorId = null,
+  DateTimeOffset? SubmittedAt = null
 );

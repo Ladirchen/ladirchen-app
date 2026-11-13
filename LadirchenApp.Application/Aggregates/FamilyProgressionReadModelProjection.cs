@@ -8,6 +8,7 @@ public sealed record FamilyProgressionReadModelProjection(
   long Revision,
   bool CanCloseWeekSuccessfully,
   int CompletedWeeklyStreak,
+  int FamilyDailyStreak,
   int CurrentWeekTarget,
   int FamilyEnergy,
   string HouseAtmosphere,

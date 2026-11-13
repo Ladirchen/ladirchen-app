@@ -33,6 +33,7 @@ describe("family aggregate runtime validation", () => {
     const progression = {
       canCloseWeekSuccessfully: true,
       completedWeeklyStreak: 2,
+      familyDailyStreak: 3,
       currentWeekTarget: 7,
       familyEnergy: 60,
       houseAtmosphere: "sunny",
@@ -133,6 +134,7 @@ describe("family aggregate runtime validation", () => {
         "member-2": {
           canApproveCancellation: true,
           canCancel: false,
+          canDissolve: false,
           canRejectCancellation: true,
           canRequestCancellation: false,
           canWithdraw: false,

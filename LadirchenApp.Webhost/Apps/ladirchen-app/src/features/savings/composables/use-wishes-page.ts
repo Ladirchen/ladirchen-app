@@ -150,6 +150,16 @@ export function useWishesPage() {
     void store.redeemSavingsVoucher(id);
   }
 
+  function convertVoucher(id: SavingGoalId) {
+    void store.convertSavingsVoucherToLadirchen(id);
+  }
+
+  function redeemableVoucherId(goalId: SavingGoalId) {
+    return visibleSavingsVouchers.value.find(
+      (voucher) => voucher.goalId === goalId && voucher.redeemableByMemberIds.includes(store.signedInMemberId),
+    )?.id;
+  }
+
   function saveToGoal() {
     const goalId = activeGoal.value?.id;
 
@@ -299,6 +309,7 @@ export function useWishesPage() {
     addGoal,
     canCreatePersonalGoal,
     consentToVoucher,
+    convertVoucher,
     depositedAmount,
     formatInterestRate,
     giveSupport,
@@ -314,6 +325,7 @@ export function useWishesPage() {
     personalGoals,
     progress,
     redeemVoucher,
+    redeemableVoucherId,
     saveAmount,
     saveDialog,
     saveMotion,

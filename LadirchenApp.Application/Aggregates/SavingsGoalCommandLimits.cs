@@ -2,6 +2,7 @@ namespace LadirchenApp.Application.Aggregates;
 
 public sealed record SavingsGoalCommandLimits(
   bool CanCancel,
+  bool CanDissolve,
   bool CanRequestCancellation,
   bool CanApproveCancellation,
   bool CanRejectCancellation,

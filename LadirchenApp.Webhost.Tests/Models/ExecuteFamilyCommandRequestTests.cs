@@ -115,6 +115,7 @@ public sealed class ExecuteFamilyCommandRequestTests
       ["contributions.assign"] = (typeof(ContributionsAssignCommandRequest), """{"id":"dishes","memberId":"child"}"""),
       ["contributions.claim"] = (typeof(ContributionsClaimCommandRequest), Id()),
       ["contributions.copy"] = (typeof(ContributionsCopyCommandRequest), """{"id":"dishes-copy","sourceId":"dishes"}"""),
+      ["contributions.reactivate"] = (typeof(ContributionsReactivateCommandRequest), """{"id":"dishes-new","sourceId":"dishes"}"""),
       ["contributions.delete"] = (typeof(ContributionsDeleteCommandRequest), Id()),
       ["contributions.delete-promotion"] = (typeof(ContributionsDeletePromotionCommandRequest), Id()),
       ["contributions.return"] = (typeof(ContributionsReturnCommandRequest), Id()),

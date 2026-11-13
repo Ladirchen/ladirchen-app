@@ -99,7 +99,7 @@ public sealed partial class EconomySteps
   [Given("an unassigned contribution")]
   public void UnassignedContribution()
   {
-    _economy.AddContribution(_admin, _contributionId, new("Help", ContributionKind.Extra, new(10), new(0), null), _now);
+    _economy.AddContribution(_admin, _contributionId, new("Help", ContributionKind.Basic, new(10), new(0), null), _now);
   }
 
   [When("the child claims it")]

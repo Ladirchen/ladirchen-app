@@ -33,7 +33,8 @@ public sealed partial class FamilyEconomy
     DateTimeOffset? approvedAt,
     IReadOnlyCollection<FamilyMemberId> invitedPartners,
     bool requireActiveReferences = true,
-    FamilyMemberId? creatorId = null
+    FamilyMemberId? creatorId = null,
+    DateTimeOffset? submittedAt = null
   )
   {
     ArgumentNullException.ThrowIfNull(id);
@@ -80,7 +81,7 @@ public sealed partial class FamilyEconomy
       case ContributionStatus.Available:
         break;
       case ContributionStatus.Pending:
-        contribution.Submit();
+        contribution.Submit(submittedAt);
         break;
       case ContributionStatus.Approved:
         Rules.Require(
@@ -88,6 +89,7 @@ public sealed partial class FamilyEconomy
           DomainError.InvalidValue,
           "An approved contribution requires its rating, reward and approval time."
         );
+        contribution.Submit(submittedAt);
         contribution.Approve(rating!, earnedReward!, approvedAt!.Value);
         break;
       default:

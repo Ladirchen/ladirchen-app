@@ -36,6 +36,8 @@ export function useContributionsPage() {
   const newContribution = reactive<
     Omit<NewContribution, "assigneeId"> & {
       assigneeId: FamilyMemberId | "";
+      assigneeIds: FamilyMemberId[];
+      quantity: number;
     }
   >({
     title: "",
@@ -45,6 +47,8 @@ export function useContributionsPage() {
     energy: 10,
     kind: "basic",
     assigneeId: "",
+    assigneeIds: [],
+    quantity: 1,
   });
   const kindOptions = computed(() => [
     { title: t("contributions.kind.basic"), value: "basic" },
@@ -74,6 +78,11 @@ export function useContributionsPage() {
       })),
     ];
   });
+  const childAssignmentOptions = computed(() =>
+    store.members
+      .filter((member) => member.role === "child")
+      .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
+  );
   const newPromotion = reactive<Omit<NewPromotion, "contributionId"> & { contributionId: ContributionId | "" }>({
     contributionId: "",
     multiplier: 2,
@@ -216,12 +225,14 @@ export function useContributionsPage() {
     contributionToEdit.value = contribution;
     Object.assign(newContribution, {
       assigneeId: contribution.assigneeId ?? "",
+      assigneeIds: [],
       description: contribution.description,
       energy: contribution.energy,
       icon: contribution.icon,
       kind: contribution.kind,
       reward: contribution.reward,
       title: contribution.title,
+      quantity: 1,
     });
     addDialog.value = true;
   }
@@ -304,21 +315,27 @@ export function useContributionsPage() {
       energy: 10,
       kind: "basic",
       assigneeId: "",
+      assigneeIds: [],
+      quantity: 1,
     });
   }
   function saveContribution() {
-    const input = { ...newContribution, assigneeId: newContribution.assigneeId || undefined };
+    const { assigneeIds, quantity, ...draft } = newContribution;
+    const input = { ...draft, assigneeId: draft.assigneeId || undefined };
 
     if (contributionToEdit.value) {
       void store.updateContribution(contributionToEdit.value.id, input);
     } else {
-      void store.addContribution(input);
+      void store.addContribution({ ...input, assigneeIds, quantity });
     }
 
     closeContributionDialog();
   }
   function copyContribution(contribution: Contribution) {
     void store.copyContribution(contribution.id);
+  }
+  function reactivateContribution(contribution: Contribution) {
+    void store.reactivateContribution(contribution.id);
   }
   function addPromotion() {
     const contributionId = newPromotion.contributionId;
@@ -380,8 +397,10 @@ export function useContributionsPage() {
     approveWithRating,
     assignContribution,
     assignmentOptions,
+    childAssignmentOptions,
     closeContributionDialog,
     copyContribution,
+    reactivateContribution,
     reviewableTasks,
     confirmContributionDelete,
     confirmPromotionDelete,

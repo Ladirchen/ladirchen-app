@@ -5,6 +5,7 @@ namespace LadirchenApp.Webhost.Models.ReadModels;
 public sealed record SavingsGoalCommandLimitsReadModel(
   [property: JsonRequired] bool CanApproveCancellation,
   [property: JsonRequired] bool CanCancel,
+  [property: JsonRequired] bool CanDissolve,
   [property: JsonRequired] bool CanRejectCancellation,
   [property: JsonRequired] bool CanRequestCancellation,
   [property: JsonRequired] bool CanWithdraw,

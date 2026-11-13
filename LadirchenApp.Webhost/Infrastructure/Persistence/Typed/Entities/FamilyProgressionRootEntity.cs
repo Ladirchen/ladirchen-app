@@ -17,4 +17,6 @@ public sealed class FamilyProgressionRootEntity
     new List<FamilyProgressionParticipantEntity>();
   public ICollection<ClosedFamilyWeekEntity> ClosedWeeks { get; set; } =
     new List<ClosedFamilyWeekEntity>();
+  public ICollection<FamilyProgressionDailyEnergyEntity> DailyEnergies { get; set; } =
+    new List<FamilyProgressionDailyEnergyEntity>();
 }

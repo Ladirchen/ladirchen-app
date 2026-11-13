@@ -423,6 +423,9 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1133,6 +1136,25 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.ToTable("FamilyPets", null, t =>
                         {
                             t.HasCheckConstraint("CK_FamilyPets_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 4");
+                        });
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyProgressionDailyEnergyEntity", b =>
+                {
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Energy")
+                        .HasColumnType("integer");
+
+                    b.HasKey("FamilyId", "Date");
+
+                    b.ToTable("FamilyProgressionDailyEnergies", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FamilyProgressionDailyEnergies_Energy", "\"Energy\" >= 0 AND \"Energy\" <= 100");
                         });
                 });
 
@@ -1923,6 +1945,17 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Navigation("Family");
                 });
 
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyProgressionDailyEnergyEntity", b =>
+                {
+                    b.HasOne("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyProgressionRootEntity", "Progression")
+                        .WithMany("DailyEnergies")
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Progression");
+                });
+
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyProgressionParticipantEntity", b =>
                 {
                     b.HasOne("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyProgressionRootEntity", "Progression")
@@ -2109,6 +2142,8 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyProgressionRootEntity", b =>
                 {
                     b.Navigation("ClosedWeeks");
+
+                    b.Navigation("DailyEnergies");
 
                     b.Navigation("Participants");
                 });

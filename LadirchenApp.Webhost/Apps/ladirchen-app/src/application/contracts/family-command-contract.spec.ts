@@ -11,6 +11,7 @@ import type {
   ContributionsAssignCommandRequest,
   ContributionsClaimCommandRequest,
   ContributionsCopyCommandRequest,
+  ContributionsReactivateCommandRequest,
   ContributionsDeleteCommandRequest,
   ContributionsDeletePromotionCommandRequest,
   ContributionsReturnCommandRequest,
@@ -50,8 +51,10 @@ import type {
   SavingsCancelGoalCommandRequest,
   SavingsConsentVoucherCommandRequest,
   SavingsConsumeGuardianGiftCommandRequest,
+  SavingsConvertVoucherCommandRequest,
   SavingsDecideGoalCancellationCommandRequest,
   SavingsDepositCommandRequest,
+  SavingsDissolveGoalCommandRequest,
   SavingsGiftToGoalCommandRequest,
   SavingsGiftToMemberCommandRequest,
   SavingsRedeemVoucherCommandRequest,
@@ -76,6 +79,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "contributions.assign": ContributionsAssignCommandRequest;
   readonly "contributions.claim": ContributionsClaimCommandRequest;
   readonly "contributions.copy": ContributionsCopyCommandRequest;
+  readonly "contributions.reactivate": ContributionsReactivateCommandRequest;
   readonly "contributions.delete": ContributionsDeleteCommandRequest;
   readonly "contributions.delete-promotion": ContributionsDeletePromotionCommandRequest;
   readonly "contributions.return": ContributionsReturnCommandRequest;
@@ -116,8 +120,10 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "savings.cancel-goal": SavingsCancelGoalCommandRequest;
   readonly "savings.consent-voucher": SavingsConsentVoucherCommandRequest;
   readonly "savings.consume-guardian-gift": SavingsConsumeGuardianGiftCommandRequest;
+  readonly "savings.convert-voucher": SavingsConvertVoucherCommandRequest;
   readonly "savings.decide-goal-cancellation": SavingsDecideGoalCancellationCommandRequest;
   readonly "savings.deposit": SavingsDepositCommandRequest;
+  readonly "savings.dissolve-goal": SavingsDissolveGoalCommandRequest;
   readonly "savings.gift-to-goal": SavingsGiftToGoalCommandRequest;
   readonly "savings.gift-to-member": SavingsGiftToMemberCommandRequest;
   readonly "savings.issue-behavior-warning": BehaviorIssueWarningCommandRequest;

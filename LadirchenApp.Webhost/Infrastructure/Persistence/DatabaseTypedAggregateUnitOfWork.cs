@@ -507,6 +507,8 @@ public sealed class DatabaseTypedAggregateUnitOfWork : ITypedAggregateUnitOfWork
       .ExecuteDeleteAsync(cancellationToken);
     await _database.Set<FamilyProgressionParticipantEntity>().Where(item => item.FamilyId == familyId)
       .ExecuteDeleteAsync(cancellationToken);
+    await _database.Set<FamilyProgressionDailyEnergyEntity>().Where(item => item.FamilyId == familyId)
+      .ExecuteDeleteAsync(cancellationToken);
   }
 
   private async Task DeleteHouseCustomizationChildrenAsync(

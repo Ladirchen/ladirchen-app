@@ -62,6 +62,39 @@ public sealed class SettleAvailableWeeklyInterestCommandHandler
         continue;
       }
 
+      if (plan.PeriodToClose is not null)
+      {
+        var period = plan.PeriodToClose;
+        var closeWeekCommand = new FamilyCommand(
+          CreateCommandId(familyId, $"close:{period.Key}"),
+          familyId,
+          plan.AdministratorId,
+          "progression.close-week",
+          JsonSerializer.SerializeToElement(new { year = period.Year, week = period.Week })
+        );
+
+        try
+        {
+          await _familyCommands.HandleAsync(closeWeekCommand, cancellationToken);
+          plan = await _planner.HandleAsync(familyId, cancellationToken);
+        }
+        catch (FamilyAggregateConflictException)
+        {
+          continue;
+        }
+        catch (Exception exception) when (IsInvalidFamilyState(exception))
+        {
+          failedFamilies++;
+
+          continue;
+        }
+
+        if (plan is null)
+        {
+          continue;
+        }
+      }
+
       foreach (var period in plan.Periods)
       {
         attemptedPeriods++;

@@ -1244,6 +1244,10 @@ export interface CopyContributionPayload {
   sourceId: string;
 }
 
+export interface ContributionsReactivateCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: CopyContributionPayload;
+}
+
 export interface ContributionsAddPromotionCommandRequest extends ExecuteFamilyCommandRequest {
   payload: AddContributionPromotionPayload;
 }
@@ -1570,6 +1574,10 @@ export interface GuardianGiftReferencePayload {
   giftId: string;
 }
 
+export interface SavingsConvertVoucherCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
 export interface SavingsDepositCommandRequest extends ExecuteFamilyCommandRequest {
   payload: SavingsGoalAmountPayload;
 }
@@ -1577,6 +1585,10 @@ export interface SavingsDepositCommandRequest extends ExecuteFamilyCommandReques
 export interface SavingsGoalAmountPayload {
   id: string;
   amount: number;
+}
+
+export interface SavingsDissolveGoalCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
 }
 
 export interface SavingsGiftToGoalCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1888,6 +1900,7 @@ export interface FamilyProgressionReadModelResponse {
 export interface FamilyProgressionReadModelState {
   canCloseWeekSuccessfully: boolean;
   completedWeeklyStreak: number;
+  familyDailyStreak: number;
   currentWeekTarget: number;
   familyEnergy: number;
   houseAtmosphere: string;
@@ -2123,6 +2136,7 @@ export interface SavingGoalCancellationRequestReadModel {
 export interface SavingsGoalCommandLimitsReadModel {
   canApproveCancellation: boolean;
   canCancel: boolean;
+  canDissolve: boolean;
   canRejectCancellation: boolean;
   canRequestCancellation: boolean;
   canWithdraw: boolean;
