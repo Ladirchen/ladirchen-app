@@ -4,7 +4,38 @@ import { clamp, PERCENTAGE_BASE } from "@/domain/shared/numbers";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { executeBackendFamilyCommand } from "./backend-family-command";
 
+function houseLevelStorageKey(memberId: string): string {
+  return `ladirchen:house-level:${memberId}`;
+}
+
 export const homeActions = {
+  revealPendingHouseLevel(this: FamilyWorldStoreContext) {
+    const key = houseLevelStorageKey(this.signedInMemberId);
+    const storedLevel = Number(this.$familyWorld.clientStorage.getItem(key) ?? 0);
+    const previousLevel =
+      storedLevel === 1 || storedLevel === 2 || storedLevel === 3 || storedLevel === 4 ? storedLevel : 0;
+
+    if (this.houseLevel > previousLevel) {
+      this.houseLevelAnimation.previousLevel = previousLevel;
+      this.houseLevelAnimation.level = this.houseLevel;
+      this.houseLevelAnimation.version += 1;
+      this.houseLevelAnimation.visible = true;
+      this.revealVersion += 1;
+
+      return;
+    }
+
+    if (this.houseLevel < previousLevel) {
+      this.$familyWorld.clientStorage.setItem(key, String(this.houseLevel));
+    }
+  },
+  dismissHouseLevelAnimation(this: FamilyWorldStoreContext) {
+    this.$familyWorld.clientStorage.setItem(
+      houseLevelStorageKey(this.signedInMemberId),
+      String(this.houseLevelAnimation.level),
+    );
+    this.houseLevelAnimation.visible = false;
+  },
   async purchaseAccessory(this: FamilyWorldStoreContext, id: HouseAccessoryId) {
     const title = this.accessories.find((item) => item.id === id)?.title ?? "";
     await executeBackendFamilyCommand(this, "home.purchase-accessory", { id }, "notifications.save.home", () =>

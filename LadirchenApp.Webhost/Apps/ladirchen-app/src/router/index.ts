@@ -1,10 +1,16 @@
-import { createRouter, createWebHashHistory } from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
+
+const legacyHashPath = window.location.hash.startsWith("#/") ? window.location.hash.slice(1) : undefined;
+
+if (legacyHashPath) {
+  window.history.replaceState(null, "", legacyHashPath);
+}
 
 const DEFAULT_DESCRIPTION =
   "Ladirli hilft Familien, Haushaltsaufgaben und Verantwortung fair, übersichtlich und kindgerecht zu organisieren.";
 
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",

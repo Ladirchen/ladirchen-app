@@ -30,6 +30,11 @@ export function createFamilyWorldTestDependencies(
       register: async () => session,
       signOut: async () => undefined,
     },
+    clientStorage: {
+      getItem: () => null,
+      removeItem: () => undefined,
+      setItem: () => undefined,
+    },
     contributionsService: emptyReadModelService,
     familyBootstrapService: emptyReadModelService,
     familyAggregateUpdates: {

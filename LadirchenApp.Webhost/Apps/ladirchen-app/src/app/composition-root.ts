@@ -12,6 +12,7 @@ import { HttpFamilyBootstrapService } from "@/infrastructure/http/http-family-bo
 import { HttpAuthenticationGateway } from "@/infrastructure/http/http-authentication-gateway";
 import { HttpApplicationInfoGateway } from "@/infrastructure/http/http-application-info-gateway";
 import { HttpSavingsInterestSimulationGateway } from "@/infrastructure/http/http-savings-interest-simulation-gateway";
+import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 const repositories: FamilyReadModelRepositories = createHttpFamilyReadModelRepositories(
   frontendRuntimeConfig.apiBaseUrl,
 );
@@ -34,6 +35,7 @@ export const rewardShopService = repositories.rewardShop;
 export const familyProgressionService = repositories.familyProgression;
 export const familyWorldDependencies: FamilyWorldDependencies = {
   authentication: authenticationGateway,
+  clientStorage: browserClientStorage,
   contributionsService,
   familyBootstrapService,
   familyAggregateUpdates,

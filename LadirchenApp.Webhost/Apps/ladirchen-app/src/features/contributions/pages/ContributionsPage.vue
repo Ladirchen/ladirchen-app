@@ -323,6 +323,17 @@
             <v-btn color="primary" icon="i-mdi:plus" size="small" variant="tonal" @click="openContributionDialog" />
           </template>
         </SectionHeader>
+        <v-select
+          v-model="managedMemberFilter"
+          class="management-member-filter mb-4"
+          density="comfortable"
+          hide-details
+          :items="managedMemberOptions"
+          item-title="title"
+          item-value="value"
+          :label="t('contributions.manage.filterLabel')"
+          variant="outlined"
+        />
         <div class="contribution-card-list d-flex flex-column ga-5">
           <section v-for="group in managedContributionGroups" :key="group.memberId ?? 'open'">
             <div class="member-task-heading d-flex align-center ga-2 mb-2">
@@ -679,6 +690,8 @@ const {
   guardianTasksToRate,
   kindOptions,
   managedContributionGroups,
+  managedMemberFilter,
+  managedMemberOptions,
   memberName,
   multiplierOptions,
   newContribution,
@@ -792,6 +805,11 @@ function toggleEmptyStateFilter() {
 
 .contribution-card-list {
   padding-inline: rem(17);
+}
+
+.management-member-filter {
+  max-width: 28rem;
+  margin-inline: rem(17);
 }
 
 .guardian-context {

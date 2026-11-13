@@ -80,6 +80,12 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     version: number;
   } = { visible: false, level: "green", deductedAmount: 0, reason: "", guardianName: "", version: 0 };
   const houseLevel = initialStateValue<HouseStageLevel>(0);
+  const houseLevelAnimation: {
+    visible: boolean;
+    previousLevel: HouseStageLevel;
+    level: HouseStageLevel;
+    version: number;
+  } = { visible: false, previousLevel: 0, level: 0, version: 0 };
   const memberProgressions: Partial<Record<FamilyMemberId, MemberProgression>> = {};
   const houseCatalog = initialStateValue<HouseCatalogState | undefined>(undefined);
   const subscriptionTier = initialStateValue<SubscriptionTier>("free");
@@ -150,6 +156,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     familyDailyStreak: 0,
     currentWeekTarget: 0,
     houseLevel,
+    houseLevelAnimation,
     houseCatalog,
     houseThemeId,
     ownedHouseThemeIds,

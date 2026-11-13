@@ -4,6 +4,7 @@
   </v-snackbar>
 
   <ContributionRewardDialog />
+  <HouseLevelUpDialog />
   <GuardianGiftDialog />
   <BehaviorNoticeDialog />
   <GoalCancellationDialog />
@@ -19,6 +20,7 @@ import BehaviorNoticeDialog from "./BehaviorNoticeDialog.vue";
 import ContributionRewardDialog from "./ContributionRewardDialog.vue";
 import GoalCancellationDialog from "./GoalCancellationDialog.vue";
 import GuardianGiftDialog from "./GuardianGiftDialog.vue";
+import HouseLevelUpDialog from "./HouseLevelUpDialog.vue";
 
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
 const AsyncSavingsPiggyDialog = defineAsyncComponent(

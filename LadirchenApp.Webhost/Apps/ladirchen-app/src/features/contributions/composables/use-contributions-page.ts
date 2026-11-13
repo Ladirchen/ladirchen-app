@@ -23,6 +23,7 @@ export function useContributionsPage() {
   const filter = ref<"all" | ContributionKind>("all");
   const scopeFilter = ref<"all" | "mine" | "open">("mine");
   const statusFilter = ref<"open" | "completed">("open");
+  const managedMemberFilter = ref<"all" | "open" | FamilyMemberId>("all");
   const addDialog = ref(false);
   const contributionToEdit = ref<Contribution>();
   const promotionDialog = ref(false);
@@ -115,9 +116,19 @@ export function useContributionsPage() {
       )
       .sort((left, right) => Number(Boolean(left.assigneeId)) - Number(Boolean(right.assigneeId))),
   );
+  const managedMemberOptions = computed(() => [
+    { title: t("contributions.manage.filterAll"), value: "all" },
+    { title: t("contributions.manage.filterOpen"), value: "open" },
+    ...store.members.map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
+  ]);
   const managedContributionGroups = computed(() => {
     const memberIds = store.members.map((member) => member.id);
-    const groupIds: Array<FamilyMemberId | undefined> = [undefined, ...memberIds];
+    const groupIds: Array<FamilyMemberId | undefined> = [undefined, ...memberIds].filter(
+      (memberId) =>
+        managedMemberFilter.value === "all" ||
+        (managedMemberFilter.value === "open" && memberId === undefined) ||
+        managedMemberFilter.value === memberId,
+    );
 
     return groupIds.flatMap((memberId) => {
       const contributions = managedContributions.value.filter((contribution) => contribution.assigneeId === memberId);
@@ -416,6 +427,8 @@ export function useContributionsPage() {
     kindOptions,
     managedContributions,
     managedContributionGroups,
+    managedMemberFilter,
+    managedMemberOptions,
     memberName,
     multiplierOptions,
     newContribution,

@@ -88,6 +88,7 @@ export const lifecycleActions = {
         this.familyDailyStreak = familyProgression.state.familyDailyStreak;
         this.currentWeekTarget = familyProgression.state.currentWeekTarget;
         this.houseLevel = familyProgression.state.houseLevel;
+        this.revealPendingHouseLevel();
         this.memberProgressions = { ...familyProgression.state.memberProgressions };
         this.familyEnergyReadModel = familyProgression.state.familyEnergy;
         this.houseAtmosphere = familyProgression.state.houseAtmosphere;
@@ -302,6 +303,7 @@ async function refreshFamilyReadModelSnapshot(
         context.familyDailyStreak = snapshot.state.familyDailyStreak;
         context.currentWeekTarget = snapshot.state.currentWeekTarget;
         context.houseLevel = snapshot.state.houseLevel;
+        context.revealPendingHouseLevel();
         context.memberProgressions = { ...snapshot.state.memberProgressions };
         context.familyEnergyReadModel = snapshot.state.familyEnergy;
         context.houseAtmosphere = snapshot.state.houseAtmosphere;

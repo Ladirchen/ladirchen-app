@@ -58,7 +58,7 @@ export default defineConfig({
         name: "Ladirli – Familienwelt",
         scope: "/",
         short_name: "Ladirli",
-        start_url: "/",
+        start_url: "/app",
         theme_color: "#08766a",
       },
       registerType: "autoUpdate",
