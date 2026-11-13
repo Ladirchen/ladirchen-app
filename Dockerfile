@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.403-alpine3.24 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.404-alpine3.24 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG BUILD_VERSION=0.0.0
 ARG ENABLE_VUE_DEVTOOLS=false
@@ -31,7 +31,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
   /p:UseAppHost=false \
   /p:Version=$BUILD_VERSION
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.14-alpine3.24 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.15-alpine3.24 AS final
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
   DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \

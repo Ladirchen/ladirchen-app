@@ -6,9 +6,9 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Pin the patched package over the older transitive version required by the EF key-store package. -->
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.14" NoWarn="NU1510" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.15" NoWarn="NU1510" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
