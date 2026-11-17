@@ -59,6 +59,6 @@ public sealed partial class FamilyEconomy
       DomainError.InvalidState,
       "A restored request must retain the reward price."
     );
-    _requests.Add(new RedemptionRequest(id, rewardId, requesterId, price, requestedAt));
+    _requests.Add(new RedemptionRequest(id, rewardId, requesterId, price, reward.DurationMinutes, requestedAt));
   }
 }

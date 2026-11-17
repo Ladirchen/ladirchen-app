@@ -46,10 +46,12 @@ public sealed partial class GetFamilyAggregateQueryHandler
     var contributions = ProjectContributions(family, loadedEconomy, query.ViewerId);
     var profile = ProjectFamilyProfile(
       loadedFamily,
+      loadedEconomy,
       loadedProgression,
       loadedCustomization,
       query.AuthenticatedMemberId,
-      query.ViewerId
+      query.ViewerId,
+      family.TimeZone.LocalDate(_timeProvider.GetUtcNow())
     );
     var rewardShop = ProjectRewardShop(
       family,

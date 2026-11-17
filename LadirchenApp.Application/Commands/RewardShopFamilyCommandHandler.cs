@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -43,10 +44,15 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var operationId = OperationId(command);
     ShopRewardPresentationState? addedReward = null;
     ShopRewardPresentationState? updatedReward = null;
+    var notifications = new List<FamilyUserNotification>();
 
     if (command.CommandType is "reward-shop.add"
       or "reward-shop.update"
       or "reward-shop.set-visibility"
+      or "reward-shop.set-task-gate-override"
+      or "reward-shop.reset-timer"
+      or "reward-shop.cancel-timer"
+      or "reward-shop.expire-timer"
       or "reward-shop.republish"
       or "reward-shop.delete")
     {
@@ -66,6 +72,14 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
           command.ActorId,
           RewardId(payload),
           RequiredBool(payload, "isVisible"),
+          now
+        );
+        break;
+      case "reward-shop.set-task-gate-override":
+        economy.SetShopTaskGateOverride(
+          command.ActorId,
+          new FamilyMemberId(RequiredString(payload, "memberId")),
+          RequiredBool(payload, "enabled"),
           now
         );
         break;
@@ -93,7 +107,30 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
         );
         break;
       case "reward-shop.decide":
-        DecideShopReward(economy, command.ActorId, payload, operationId, now);
+        var approvedRequest = DecideShopReward(economy, command.ActorId, payload, operationId, now);
+        if (approvedRequest?.DurationMinutes is not null)
+        {
+          notifications.Add(TimerStartedNotification(approvedRequest));
+        }
+        break;
+      case "reward-shop.pause-timer":
+        economy.PauseTimeReward(command.ActorId, RequestId(payload), now);
+        break;
+      case "reward-shop.resume-timer":
+        economy.ResumeTimeReward(command.ActorId, RequestId(payload), now);
+        break;
+      case "reward-shop.reset-timer":
+        economy.ResetTimeReward(command.ActorId, RequestId(payload), now);
+        break;
+      case "reward-shop.cancel-timer":
+        var cancelledRequest = economy.RedemptionRequests.Single(item => item.Id == RequestId(payload));
+        economy.CancelTimeReward(command.ActorId, cancelledRequest.Id, operationId, now);
+        notifications.Add(TimerCancelledNotification(cancelledRequest));
+        break;
+      case "reward-shop.expire-timer":
+        var expiredRequest = economy.RedemptionRequests.Single(item => item.Id == RequestId(payload));
+        economy.ExpireTimeReward(command.ActorId, expiredRequest.Id, now);
+        notifications.Add(TimerExpiredNotification(expiredRequest));
         break;
       default:
         throw new FamilyCommandException("The reward-shop command is not supported.");
@@ -129,7 +166,7 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
       Change(command.FamilyId, "reward-shop", changedEconomy.Revision, changedEconomy.Audit),
       Change(command.FamilyId, "savings", changedEconomy.Revision, changedEconomy.Audit),
       Change(command.FamilyId, "home-customization", changedEconomy.Revision, changedEconomy.Audit),
-    ]);
+    ], notifications);
   }
 
   private static ShopRewardPresentationState AddShopReward(
@@ -215,6 +252,8 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     var quantity = RequiredInt(payload, "quantity");
     var from = OptionalCalendarDate(payload, "availableFrom");
     var until = OptionalCalendarDate(payload, "availableUntil");
+    var category = ParseShopRewardCategory(RequiredString(payload, "category"));
+    var durationMinutes = OptionalInt(payload, "durationMinutes");
     var catalogPolicy = new FamilyRewardCatalogPolicy();
 
     if (!catalogPolicy.IsValidNewReward(
@@ -236,17 +275,18 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     return (
       new ShopRewardDefinition(
         title,
-        ParseShopRewardCategory(RequiredString(payload, "category")),
+        category,
         new LadirchenAmount(price),
         quantity,
         OptionalBool(payload, "isVisible") ?? true,
-        new AvailabilityWindow(from, until)
+        new AvailabilityWindow(from, until),
+        durationMinutes
       ),
       new ShopRewardPresentationState(id, description, icon, conditions)
     );
   }
 
-  private static void DecideShopReward(
+  private static RedemptionRequest? DecideShopReward(
     FamilyEconomy economy,
     FamilyMemberId actorId,
     JsonElement payload,
@@ -259,11 +299,13 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
     if (RequiredBool(payload, "approved"))
     {
       economy.ApproveShopReward(actorId, requestId, operationId, now);
+
+      return economy.RedemptionRequests.Single(item => item.Id == requestId);
     }
-    else
-    {
-      economy.RejectShopReward(actorId, requestId, operationId, now);
-    }
+
+    economy.RejectShopReward(actorId, requestId, operationId, now);
+
+    return null;
   }
 
   private static FamilyEconomyPresentationState UpdatePresentation(
@@ -323,6 +365,65 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
   private static ShopRewardId RewardId(JsonElement payload)
   {
     return new ShopRewardId(RequiredString(payload, "id"));
+  }
+
+  private static RedemptionRequestId RequestId(JsonElement payload)
+  {
+    return new RedemptionRequestId(RequiredString(payload, "requestId"));
+  }
+
+  private static int? OptionalInt(JsonElement source, string property)
+  {
+    if (!source.TryGetProperty(property, out var value) || value.ValueKind == JsonValueKind.Null)
+    {
+      return null;
+    }
+
+    if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var result))
+    {
+      throw new FamilyCommandException($"The {property} value must be an integer.");
+    }
+
+    return result;
+  }
+
+  private static FamilyUserNotification TimerStartedNotification(RedemptionRequest request)
+  {
+    return new FamilyUserNotification(
+      request.RequesterId,
+      "Zeitgutschein gestartet",
+      $"Dein Zeitgutschein über {request.DurationMinutes} Minuten läuft jetzt.",
+      "Time reward started",
+      $"Your {request.DurationMinutes}-minute time reward is now running.",
+      "/#/shop",
+      $"time-reward-started-{request.Id.Value}"
+    );
+  }
+
+  private static FamilyUserNotification TimerCancelledNotification(RedemptionRequest request)
+  {
+    return new FamilyUserNotification(
+      request.RequesterId,
+      "Zeitgutschein abgebrochen",
+      $"Der Zeitgutschein wurde abgebrochen. {request.Price.Value:0.##} Ladirchen wurden zurückerstattet.",
+      "Time reward cancelled",
+      $"The time reward was cancelled. {request.Price.Value:0.##} Ladirchen were refunded.",
+      "/#/shop",
+      $"time-reward-cancelled-{request.Id.Value}"
+    );
+  }
+
+  private static FamilyUserNotification TimerExpiredNotification(RedemptionRequest request)
+  {
+    return new FamilyUserNotification(
+      request.RequesterId,
+      "Zeit ist abgelaufen",
+      "Dein Zeitgutschein ist jetzt abgelaufen.",
+      "Time is up",
+      "Your time reward has expired.",
+      "/#/shop",
+      $"time-reward-expired-{request.Id.Value}"
+    );
   }
 
   private static TransactionId OperationId(FamilyCommand command)
