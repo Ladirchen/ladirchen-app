@@ -8,6 +8,7 @@ public sealed class EconomyShopRewardEntity
   public string RewardId { get; set; } = string.Empty;
   public string Title { get; set; } = string.Empty;
   public int Category { get; set; }
+  public int? DurationMinutes { get; set; }
   public decimal Price { get; set; }
   public decimal? PromotionalPrice { get; set; }
   public DateOnly? PromotionUntil { get; set; }

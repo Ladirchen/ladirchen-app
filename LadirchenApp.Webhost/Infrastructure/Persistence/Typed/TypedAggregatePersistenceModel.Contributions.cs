@@ -19,7 +19,7 @@ internal static partial class TypedAggregatePersistenceModel
       table =>
       {
         table.HasCheckConstraint("CK_FamilyEconomyContributions_Reward", "\"Reward\" >= 0");
-        table.HasCheckConstraint("CK_FamilyEconomyContributions_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 1");
+        table.HasCheckConstraint("CK_FamilyEconomyContributions_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 2");
         table.HasCheckConstraint("CK_FamilyEconomyContributions_Status", "\"Status\" >= 0 AND \"Status\" <= 2");
         table.HasCheckConstraint(
           "CK_FamilyEconomyContributions_Assignee",

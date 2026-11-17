@@ -5,6 +5,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Ical.Net" Version="5.2.4" />
     <!-- Pin the patched package over the older transitive version required by the EF key-store package. -->
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.15" NoWarn="NU1510" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.4" />

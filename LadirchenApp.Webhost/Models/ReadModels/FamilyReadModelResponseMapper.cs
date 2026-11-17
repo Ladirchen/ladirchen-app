@@ -47,6 +47,7 @@ internal static class FamilyReadModelResponseMapper
         contribution.Title,
         presentation.Description,
         presentation.Icon,
+        presentation.Category,
         string.Empty,
         "contributions.dynamic.familyArea",
         kind,
@@ -55,8 +56,10 @@ internal static class FamilyReadModelResponseMapper
         calculated.ProjectedReward,
         contribution.Energy.Value,
         contribution.AssigneeId?.Value,
-        string.Empty,
-        kind == "basic" ? "contributions.dynamic.daily" : "contributions.dynamic.optional",
+        presentation.DueDate?.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) ?? string.Empty,
+        presentation.DueDate is null
+          ? kind == "basic" ? "contributions.dynamic.daily" : "contributions.dynamic.optional"
+          : null,
         kind == "basic" ? "sparkle" : null,
         contribution.Rating?.Value,
         Identifiers(contribution.InvitedPartners),
@@ -67,7 +70,9 @@ internal static class FamilyReadModelResponseMapper
         FormatInstant(contribution.ApprovedAt),
         contribution.Status == ContributionStatus.Approved
           ? presentation.RewardCelebrated
-          : null
+          : null,
+        presentation.DueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        presentation.Recurrence
       );
     }).ToArray();
     var promotions = source.Economy.Promotions
@@ -376,6 +381,7 @@ internal static class FamilyReadModelResponseMapper
           reward.PromotionIsActive(source.LocalDate),
           FormatDate(reward.PromotionUntil),
           FormatRewardCategory(reward.Category),
+          reward.DurationMinutes,
           reward.Quantity,
           presentation.Conditions,
           FormatDate(reward.Window.From),
@@ -391,11 +397,55 @@ internal static class FamilyReadModelResponseMapper
           ViewerCapability(availability.ApprovableByMemberIds, source.ViewerId)
         );
       }).ToArray();
+    var timeRewards = source.Economy.RedemptionRequests
+      .Where(request => request.Status == RedemptionStatus.Approved)
+      .Where(request => request.DurationMinutes is not null && request.TimerRemainingSeconds is not null)
+      .Where(request => request.TimerCancelledAt is null)
+      .Where(request => source.MayManageShop || request.RequesterId == source.ViewerId)
+      .Where(request => source.Economy.ShopRewards.Any(reward => reward.Id == request.RewardId))
+      .Select(request =>
+      {
+        var reward = source.Economy.ShopRewards.Single(item => item.Id == request.RewardId);
+        var presentation = Required(
+          presentations,
+          reward.Id,
+          "The time reward presentation is missing."
+        );
+        var remaining = request.RemainingSeconds(source.Now);
+        var running = remaining > 0 && request.TimerStartedAt is not null;
+        var paused = remaining > 0 && request.TimerStartedAt is null;
+        var mayControl = request.RequesterId == source.ViewerId || source.MayAdministerShop;
+
+        return new ShopTimeRewardReadModel(
+          request.Id.Value,
+          reward.Id.Value,
+          request.RequesterId.Value,
+          reward.Title,
+          presentation.Icon,
+          request.DurationMinutes!.Value,
+          remaining,
+          remaining == 0 ? "expired" : paused ? "paused" : "running",
+          FormatInstant(request.TimerStartedAt),
+          running ? FormatInstant(source.Now.AddSeconds(remaining)) : null,
+          running && mayControl,
+          paused && mayControl,
+          source.MayAdministerShop,
+          source.MayAdministerShop
+        );
+      })
+      .OrderByDescending(timer => timer.Status == "running")
+      .ThenBy(timer => timer.ChildId, StringComparer.Ordinal)
+      .ToArray();
 
     return new RewardShopReadModelResponse(
       source.ReadModelType,
       source.Revision,
-      new RewardShopReadModelState(source.RedemptionOpen, rewards)
+      new RewardShopReadModelState(
+        source.RedemptionOpen,
+        Identifiers(source.ShopTaskGateOverrideMemberIds.OrderBy(item => item.Value, StringComparer.Ordinal)),
+        rewards,
+        timeRewards
+      )
     );
   }
 
@@ -664,6 +714,7 @@ internal static class FamilyReadModelResponseMapper
     {
       ContributionKind.Basic => "basic",
       ContributionKind.Extra => "extra",
+      ContributionKind.School => "school",
       _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
   }
