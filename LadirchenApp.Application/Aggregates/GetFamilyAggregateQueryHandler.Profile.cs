@@ -26,6 +26,10 @@ public sealed partial class GetFamilyAggregateQueryHandler
       await _progressionRepository.LoadAsync(family, cancellationToken),
       "family progression"
     );
+    var loadedEconomy = RequiredDependency(
+      await _economyRepository.LoadAsync(family, cancellationToken),
+      "family economy"
+    );
     var loadedCustomization = RequiredDependency(
       await _houseCustomizationRepository.LoadAsync(
         family,
@@ -37,19 +41,23 @@ public sealed partial class GetFamilyAggregateQueryHandler
 
     return ProjectFamilyProfile(
       loadedFamily,
+      loadedEconomy,
       loadedProgression,
       loadedCustomization,
       authenticatedMemberId,
-      viewerId
+      viewerId,
+      family.TimeZone.LocalDate(_timeProvider.GetUtcNow())
     );
   }
 
   private static FamilyProfileReadModelProjection ProjectFamilyProfile(
     LoadedAggregate<Domain.Family.Family> loadedFamily,
+    LoadedFamilyEconomy loadedEconomy,
     LoadedAggregate<Domain.House.FamilyHouse> loadedProgression,
     LoadedAggregate<FamilyHouseShop> loadedCustomization,
     FamilyMemberId authenticatedMemberId,
-    FamilyMemberId viewerId
+    FamilyMemberId viewerId,
+    DateOnly today
   )
   {
     var family = loadedFamily.Root;
@@ -89,16 +97,19 @@ public sealed partial class GetFamilyAggregateQueryHandler
       viewerPermissions.ReceivePushNotifications
         && authenticatedPermissions.ReceivePushNotifications
     );
-    var weeklyStreaks = members.ToDictionary(
+    var participationDays = members.ToDictionary(
       member => member.Id,
-      member => loadedProgression.Root.StoredWeeklyStreakFor(member.Id)
+      member => Math.Max(
+        loadedEconomy.Root.ParticipationDaysThrough(member.Id, today),
+        loadedProgression.Root.StoredWeeklyStreakFor(member.Id)
+      )
     );
 
     return new FamilyProfileReadModelProjection(
       loadedFamily.Revision,
       members,
       family.Pets,
-      weeklyStreaks,
+      participationDays,
       emailVisibleMemberIds,
       new System.Collections.Generic.Dictionary<FamilyMemberId, FamilyPermissions>
       {

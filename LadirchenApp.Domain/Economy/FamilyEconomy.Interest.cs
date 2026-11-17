@@ -13,22 +13,29 @@ public sealed partial class FamilyEconomy
 
   public PersonalParticipation EvaluateParticipation(
     FamilyMemberId memberId,
-    IsoWeekPeriod period,
-    int completedWeeklyStreak,
-    int weeklyTarget
+    IsoWeekPeriod period
   )
   {
     ActiveMember(memberId);
     ArgumentNullException.ThrowIfNull(period);
-    ArgumentOutOfRangeException.ThrowIfNegative(completedWeeklyStreak);
-    ArgumentOutOfRangeException.ThrowIfLessThan(weeklyTarget, 1);
-    ArgumentOutOfRangeException.ThrowIfGreaterThan(weeklyTarget, PersonalStreakPolicy.DefaultWeeklyTargetDays);
-    var days = ContributionParticipationPolicy.ParticipationDays(_contributions, memberId, period, _timeZone);
+    var days = ParticipationDaysThrough(memberId, period.Start.AddDays(6));
 
     return new PersonalParticipation(
-      checked(completedWeeklyStreak * weeklyTarget + days),
+      days,
       ContributionParticipationPolicy.Completion(_contributions, memberId).Value,
       ContributionParticipationPolicy.AverageRating(_contributions, memberId)
+    );
+  }
+
+  public int ParticipationDaysThrough(FamilyMemberId memberId, DateOnly throughDate)
+  {
+    ActiveMember(memberId);
+
+    return ContributionParticipationPolicy.ParticipationDaysThrough(
+      _contributions,
+      memberId,
+      throughDate,
+      _timeZone
     );
   }
 

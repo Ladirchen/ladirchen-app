@@ -244,6 +244,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
           payload,
           operationId,
           now,
+          notifications,
           cancellationToken
         );
 
@@ -523,6 +524,7 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
     JsonElement payload,
     TransactionId operationId,
     DateTimeOffset now,
+    ICollection<FamilyUserNotification> notifications,
     CancellationToken cancellationToken
   )
   {
@@ -539,6 +541,10 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
     var progression = await _progressionRepository.LoadAsync(family, cancellationToken)
       ?? throw new FamilyCommandException("The family progression has not been initialized.");
     var closedWeek = progression.Root.ClosedWeekFor(period);
+    var interestBefore = economy.SavingsGoals
+      .Where(goal => goal.Owner.MemberId is not null)
+      .GroupBy(goal => goal.Owner.MemberId!)
+      .ToDictionary(group => group.Key, group => group.Sum(goal => goal.InterestEarned));
     _ = economy.ApplyWeeklyInterest(
       command.ActorId,
       period,
@@ -547,6 +553,30 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
       operationId,
       now
     );
+
+    foreach (
+      var group in economy.SavingsGoals
+        .Where(goal => goal.Owner.MemberId is not null)
+        .GroupBy(goal => goal.Owner.MemberId!)
+    )
+    {
+      var credited = group.Sum(goal => goal.InterestEarned) - interestBefore.GetValueOrDefault(group.Key);
+
+      if (credited <= 0)
+      {
+        continue;
+      }
+
+      notifications.Add(new FamilyUserNotification(
+        group.Key,
+        "Sparzinsen gutgeschrieben",
+        $"Du hast {credited:0.##} Ladirchen Zinsen für {period.Key} erhalten.",
+        "Savings interest credited",
+        $"You received {credited:0.##} Ladirchen of interest for {period.Key}.",
+        "/#/wishes",
+        $"weekly-interest-{family.Id.Value:N}-{group.Key.Value}-{period.Key}"
+      ));
+    }
 
     return progression;
   }

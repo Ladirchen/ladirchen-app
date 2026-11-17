@@ -18,5 +18,6 @@ internal sealed record FamilyEconomyState(
   IReadOnlyList<GuardianGoalGiftState> GuardianGifts,
   IReadOnlyList<IsoWeekPeriod> SettledInterestPeriods,
   IReadOnlyList<ShopRewardState> ShopRewards,
-  IReadOnlyList<RedemptionRequestState> RedemptionRequests
+  IReadOnlyList<RedemptionRequestState> RedemptionRequests,
+  IReadOnlyList<FamilyMemberId> ShopTaskGateOverrideMemberIds
 );

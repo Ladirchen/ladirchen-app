@@ -5,5 +5,12 @@ using LadirchenApp.Prototypes;
 
 namespace LadirchenApp.Domain.Economy;
 
-public sealed record ShopRewardDefinition(string Title, ShopRewardCategory Category, LadirchenAmount Price,
-  int Quantity, bool IsVisible, AvailabilityWindow Window);
+public sealed record ShopRewardDefinition(
+  string Title,
+  ShopRewardCategory Category,
+  LadirchenAmount Price,
+  int Quantity,
+  bool IsVisible,
+  AvailabilityWindow Window,
+  int? DurationMinutes = null
+);

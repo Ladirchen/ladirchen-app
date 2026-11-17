@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Persistence;
+using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Application.Queries;
@@ -56,18 +57,32 @@ public sealed class GetWeeklyInterestSettlementPlanQueryHandler
       return null;
     }
 
+    var localTime = family.Root.TimeZone.LocalTime(_timeProvider.GetUtcNow());
+    var currentPeriod = IsoWeekPeriod.For(DateOnly.FromDateTime(localTime.DateTime));
     var periods = progression.Root.ClosedWeeks
       .Select(week => week.Period)
+      .Where(period => period.Start < currentPeriod.Start)
       .Where(period => !economy.Root.SettledInterestPeriods.Contains(period))
       .OrderBy(period => period.Start)
       .ToArray();
-    var currentPeriod = IsoWeekPeriod.For(
-      family.Root.TimeZone.LocalDate(_timeProvider.GetUtcNow())
-    );
     var previousPeriod = IsoWeekPeriod.For(currentPeriod.Start.AddDays(-7));
-    var periodToClose = progression.Root.IsWeekClosed(previousPeriod)
+    IsoWeekPeriod? periodToClose = progression.Root.IsWeekClosed(previousPeriod)
       ? null
       : previousPeriod;
+
+    if (
+      periodToClose is null
+      && !progression.Root.IsWeekClosed(currentPeriod)
+      && FamilyWeekClosingPolicy.CanClose(
+        currentPeriod,
+        currentPeriod,
+        localTime,
+        progression.Root.AverageEnergy(currentPeriod)
+      )
+    )
+    {
+      periodToClose = currentPeriod;
+    }
 
     return new WeeklyInterestSettlementPlan(administrator.Id, periodToClose, periods);
   }

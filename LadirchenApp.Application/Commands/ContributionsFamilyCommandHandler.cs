@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,6 +88,14 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           now
         );
         notifications.Add(RewardNotification(approvedContribution, reward.Total));
+        addedContribution = CreateNextRecurringContribution(
+          economy,
+          loadedEconomy.Presentation,
+          approvedContribution.CreatorId,
+          approvedContribution.Id,
+          family.Root.TimeZone.LocalDate(now),
+          now
+        );
         break;
       case "contributions.return":
         economy.ReturnContribution(command.ActorId, ContributionId(payload), now);
@@ -265,7 +275,10 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       id,
       RequiredString(payload, "description"),
       RequiredString(payload, "icon"),
-      false
+      false,
+      ContributionCategory(payload),
+      ContributionDueDate(payload),
+      ContributionRecurrence(payload)
     );
   }
 
@@ -306,8 +319,56 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       id,
       RequiredString(payload, "description"),
       RequiredString(payload, "icon"),
-      false
+      false,
+      ContributionCategory(payload),
+      ContributionDueDate(payload),
+      ContributionRecurrence(payload)
     );
+  }
+
+  private static ContributionPresentationState? CreateNextRecurringContribution(
+    FamilyEconomy economy,
+    FamilyEconomyPresentationState presentation,
+    FamilyMemberId? actorId,
+    ContributionId sourceId,
+    DateOnly localDate,
+    DateTimeOffset now
+  )
+  {
+    var sourcePresentation = presentation.Contributions.SingleOrDefault(item => item.ContributionId == sourceId)
+      ?? throw new FamilyCommandException("Presentation data for the source contribution is missing.");
+
+    if (sourcePresentation.Recurrence == "none" || sourcePresentation.DueDate is null)
+    {
+      return null;
+    }
+
+    var creatorId = actorId
+      ?? throw new InvalidOperationException("A recurring contribution requires a creator.");
+
+    var nextDueDate = sourcePresentation.DueDate.Value;
+    do
+    {
+      nextDueDate = sourcePresentation.Recurrence switch
+      {
+        "daily" => nextDueDate.AddDays(1),
+        "weekly" => nextDueDate.AddDays(7),
+        _ => throw new FamilyCommandException("The contribution recurrence is invalid."),
+      };
+    }
+    while (nextDueDate <= localDate);
+
+    var identity = $"{sourceId.Value}|{nextDueDate:yyyy-MM-dd}";
+    var hash = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
+    var nextId = new ContributionId($"repeat-{Convert.ToHexString(hash.AsSpan(0, 16)).ToLowerInvariant()}");
+    economy.ReactivateContribution(creatorId, sourceId, nextId, now);
+
+    return sourcePresentation with
+    {
+      ContributionId = nextId,
+      DueDate = nextDueDate,
+      RewardCelebrated = false,
+    };
   }
 
   private static ContributionPresentationState CopyContribution(
@@ -324,7 +385,11 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var sourcePresentation = presentation.Contributions.SingleOrDefault(item => item.ContributionId == sourceId)
       ?? throw new FamilyCommandException("Presentation data for the source contribution is missing.");
 
-    return sourcePresentation with { ContributionId = copyId, RewardCelebrated = false };
+    return sourcePresentation with
+    {
+      ContributionId = copyId,
+      RewardCelebrated = false
+    };
   }
 
   private static ContributionPresentationState ReactivateContribution(
@@ -341,7 +406,11 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var sourcePresentation = presentation.Contributions.SingleOrDefault(item => item.ContributionId == sourceId)
       ?? throw new FamilyCommandException("Presentation data for the source contribution is missing.");
 
-    return sourcePresentation with { ContributionId = reactivatedId, RewardCelebrated = false };
+    return sourcePresentation with
+    {
+      ContributionId = reactivatedId,
+      RewardCelebrated = false
+    };
   }
 
   private static ContributionDefinition ContributionDefinition(JsonElement payload)
@@ -350,6 +419,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     {
       "basic" => ContributionKind.Basic,
       "extra" => ContributionKind.Extra,
+      "school" => ContributionKind.School,
       _ => throw new FamilyCommandException("The contribution kind is invalid."),
     };
 
@@ -360,6 +430,52 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       new Percentage(RequiredDecimal(payload, "energy")),
       CreateOptionalMemberId(OptionalString(payload, "assigneeId"))
     );
+  }
+
+  private static string? ContributionCategory(JsonElement payload)
+  {
+    var category = OptionalString(payload, "category")?.Trim();
+
+    if (string.IsNullOrEmpty(category))
+    {
+      return null;
+    }
+
+    Require(category.Length <= 80, "The contribution category may contain at most 80 characters.");
+
+    return category;
+  }
+
+  private static DateOnly? ContributionDueDate(JsonElement payload)
+  {
+    var value = OptionalString(payload, "dueDate");
+
+    if (string.IsNullOrWhiteSpace(value))
+    {
+      return null;
+    }
+
+    if (!DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dueDate))
+    {
+      throw new FamilyCommandException("The contribution due date is invalid.");
+    }
+
+    return dueDate;
+  }
+
+  private static string ContributionRecurrence(JsonElement payload)
+  {
+    var recurrence = OptionalString(payload, "recurrence") ?? "none";
+    Require(
+      recurrence is "none" or "daily" or "weekly",
+      "The contribution recurrence is invalid."
+    );
+    Require(
+      recurrence == "none" || ContributionDueDate(payload) is not null,
+      "A recurring contribution requires a due date."
+    );
+
+    return recurrence;
   }
 
   private static ContributionId ValidateRewardAcknowledgement(
@@ -391,7 +507,10 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var contributions = presentation.Contributions
       .Where(item => liveIds.Contains(item.ContributionId))
       .Select(item => item.ContributionId == celebratedContributionId
-        ? item with { RewardCelebrated = true }
+        ? item with
+        {
+          RewardCelebrated = true
+        }
         : item)
       .ToList();
 

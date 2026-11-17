@@ -11,5 +11,9 @@ internal sealed record RedemptionRequestState(
   LadirchenAmount Price,
   DateTimeOffset RequestedAt,
   RedemptionStatus Status,
-  DateTimeOffset? DecidedAt
+  DateTimeOffset? DecidedAt,
+  int? DurationMinutes = null,
+  int? TimerRemainingSeconds = null,
+  DateTimeOffset? TimerStartedAt = null,
+  DateTimeOffset? TimerCancelledAt = null
 );
