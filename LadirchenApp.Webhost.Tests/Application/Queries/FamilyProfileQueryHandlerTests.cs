@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LadirchenApp.Application.Aggregates;
+using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.House.Shop;
@@ -81,7 +82,7 @@ public sealed class FamilyProfileQueryHandlerTests
       HouseSubscriptionTier.Pro
     );
     var store = new TestTypedAggregateStore(TimeProvider.System);
-    store.Seed(family, progression: progression, house: house);
+    store.Seed(family, new FamilyEconomy(family), progression: progression, house: house);
     var handler = new GetFamilyAggregateQueryHandler(
       store,
       store,

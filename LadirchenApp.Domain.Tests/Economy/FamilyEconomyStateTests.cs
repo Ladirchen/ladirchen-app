@@ -406,7 +406,8 @@ public sealed class FamilyEconomyStateTests
           RedemptionStatus.Cancelled,
           eventTime.AddDays(-3)
         ),
-      ]
+      ],
+      [child]
     );
   }
 
@@ -466,6 +467,7 @@ public sealed class FamilyEconomyStateTests
         new MemberWalletState(child, childBalance.Value, 0),
         new MemberWalletState(new FamilyMemberId("sibling"), 0, 0),
       ],
+      [],
       [],
       [],
       [],

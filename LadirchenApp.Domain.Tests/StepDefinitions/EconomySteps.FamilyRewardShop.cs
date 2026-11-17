@@ -324,7 +324,15 @@ public sealed partial class EconomySteps
     _economy.AddShopReward(
       _admin,
       _rewardId,
-      new ShopRewardDefinition("Reward", _preparedCategory, new LadirchenAmount(10), 1, true, new AvailabilityWindow()),
+      new ShopRewardDefinition(
+        "Reward",
+        _preparedCategory,
+        new LadirchenAmount(10),
+        1,
+        true,
+        new AvailabilityWindow(),
+        _preparedCategory == ShopRewardCategory.Time ? 120 : null
+      ),
       _now
     );
   }

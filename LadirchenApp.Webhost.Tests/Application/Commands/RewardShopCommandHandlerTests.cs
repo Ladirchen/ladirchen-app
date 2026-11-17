@@ -51,7 +51,10 @@ public sealed class RewardShopCommandHandlerTests
       handler,
       _childId,
       "reward-shop.request",
-      new { id = firstRewardId.Value },
+      new
+      {
+        id = firstRewardId.Value
+      },
       firstRequestCommandId
     );
 
@@ -88,7 +91,10 @@ public sealed class RewardShopCommandHandlerTests
         handler,
         _childId,
         "reward-shop.request",
-        new { id = "small-gift" }
+        new
+        {
+          id = "small-gift"
+        }
       )
     ).Throws<DomainRuleException>();
     await Assert.That(store.Revision(TypedAggregateKind.FamilyEconomy))
@@ -214,7 +220,10 @@ public sealed class RewardShopCommandHandlerTests
       conditions = "Original conditions",
       isVisible = true,
     });
-    await ExecuteAsync(handler, _childId, "reward-shop.request", new { id = rewardId.Value });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new
+    {
+      id = rewardId.Value
+    });
     await ExecuteAsync(handler, _administratorId, "reward-shop.decide", new
     {
       id = rewardId.Value,
@@ -277,7 +286,10 @@ public sealed class RewardShopCommandHandlerTests
       conditions = "Available once",
       isVisible = true,
     });
-    await ExecuteAsync(handler, _childId, "reward-shop.request", new { id = rewardId.Value });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new
+    {
+      id = rewardId.Value
+    });
     await ExecuteAsync(handler, _administratorId, "reward-shop.decide", new
     {
       id = rewardId.Value,
@@ -286,7 +298,10 @@ public sealed class RewardShopCommandHandlerTests
 
     await Assert.That(Reward(store, rewardId).Status).IsEqualTo(ShopRewardStatus.Redeemed);
 
-    await ExecuteAsync(handler, _externalGuardianId, "reward-shop.republish", new { id = rewardId.Value });
+    await ExecuteAsync(handler, _externalGuardianId, "reward-shop.republish", new
+    {
+      id = rewardId.Value
+    });
 
     var reward = Reward(store, rewardId);
     await Assert.That(reward.Status).IsEqualTo(ShopRewardStatus.Available);
@@ -316,7 +331,10 @@ public sealed class RewardShopCommandHandlerTests
       conditions = "Available once",
       isVisible = true,
     });
-    await ExecuteAsync(handler, _childId, "reward-shop.request", new { id = rewardId.Value });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new
+    {
+      id = rewardId.Value
+    });
 
     var reward = Reward(store, rewardId);
     var request = store.RequiredEconomy().RedemptionRequests.Single();
@@ -324,6 +342,112 @@ public sealed class RewardShopCommandHandlerTests
     await Assert.That(reward.PromotionalPrice?.Value).IsEqualTo(60);
     await Assert.That(request.Price.Value).IsEqualTo(60);
     await Assert.That(store.RequiredEconomy().WalletFor(_childId).Reserved).IsEqualTo(60);
+  }
+
+  [Test]
+  public async Task TimedRewardStartsOnApprovalCanBePausedResetAndCancelledWithRefund()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var rewardId = new ShopRewardId("phone-time");
+    var requestCommandId = Guid.Parse("958b68a3-060a-4508-a9fd-1cd71d02b6e5");
+    var requestId = requestCommandId.ToString("N");
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.add", new
+    {
+      id = rewardId.Value,
+      title = "Phone time",
+      description = "Two hours of phone time",
+      icon = "phone",
+      price = 20,
+      category = "time",
+      durationMinutes = 120,
+      quantity = 1,
+      conditions = "Starts after approval",
+      isVisible = true,
+    });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new
+    {
+      id = rewardId.Value,
+    }, requestCommandId);
+    await ExecuteAsync(handler, _administratorId, "reward-shop.decide", new
+    {
+      id = rewardId.Value,
+      approved = true,
+    });
+
+    var request = store.RequiredEconomy().RedemptionRequests.Single();
+    await Assert.That(request.DurationMinutes).IsEqualTo(120);
+    await Assert.That(request.TimerStartedAt).IsEqualTo(_now);
+    await Assert.That(request.RemainingSeconds(_now)).IsEqualTo(7_200);
+    await Assert.That(Reward(store, rewardId).Status).IsEqualTo(ShopRewardStatus.Available);
+
+    await ExecuteAsync(handler, _childId, "reward-shop.pause-timer", new { requestId });
+    request = store.RequiredEconomy().RedemptionRequests.Single();
+    await Assert.That(request.TimerStartedAt).IsNull();
+    await Assert.That(request.TimerRemainingSeconds).IsEqualTo(7_200);
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.reset-timer", new { requestId });
+    request = store.RequiredEconomy().RedemptionRequests.Single();
+    await Assert.That(request.TimerStartedAt).IsEqualTo(_now);
+    await Assert.That(request.RemainingSeconds(_now)).IsEqualTo(7_200);
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.cancel-timer", new { requestId });
+    request = store.RequiredEconomy().RedemptionRequests.Single();
+    await Assert.That(request.TimerCancelledAt).IsEqualTo(_now);
+    await Assert.That(store.RequiredEconomy().WalletFor(_childId).Available).IsEqualTo(100);
+  }
+
+  [Test]
+  public async Task AdministratorCanOpenTheShopForAChildWithAnOpenSchoolTask()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var rewardId = new ShopRewardId("school-break");
+
+    await ExecuteAsync(handler, _administratorId, "contributions.add", new
+    {
+      id = "school-task",
+      title = "School task",
+      description = "Complete the school task.",
+      icon = "school",
+      kind = "school",
+      reward = 10,
+      energy = 20,
+      assigneeId = _childId.Value,
+    });
+    await ExecuteAsync(handler, _administratorId, "reward-shop.add", new
+    {
+      id = rewardId.Value,
+      title = "School break",
+      description = "A short break",
+      icon = "gift",
+      price = 20,
+      category = "privilege",
+      quantity = 1,
+      conditions = "Required tasks are complete",
+      isVisible = true,
+    });
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _childId, "reward-shop.request", new
+      {
+        id = rewardId.Value
+      })
+    ).Throws<DomainRuleException>();
+
+    await ExecuteAsync(handler, _administratorId, "reward-shop.set-task-gate-override", new
+    {
+      memberId = _childId.Value,
+      enabled = true,
+    });
+    await ExecuteAsync(handler, _childId, "reward-shop.request", new
+    {
+      id = rewardId.Value
+    });
+
+    await Assert.That(store.RequiredEconomy().ShopTaskGateOverrideMemberIds).Contains(_childId);
+    await Assert.That(store.RequiredEconomy().RedemptionRequests).HasSingleItem();
   }
 
   private static TestTypedAggregateStore CreateStore()
