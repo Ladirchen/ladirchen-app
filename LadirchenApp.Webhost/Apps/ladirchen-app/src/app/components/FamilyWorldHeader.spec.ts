@@ -13,9 +13,10 @@ import en from "@/locales/en.json";
 import { createFamilyWorldStoreDefinition, FAMILY_WORLD_STORE_DEFINITION } from "@/stores/family-world";
 import { familyMemberColorPalette } from "@/theme/color-palette";
 import FamilyWorldHeader from "./FamilyWorldHeader.vue";
-import { APPLICATION_INFO_GATEWAY } from "@/shared/composables/use-application-info";
 
 vi.mock("/ladirchen-logo.png", () => ({ default: "/ladirchen-logo.png" }));
+// These SSR tests cover the signed-in identity, not the Vuetify version dialog.
+vi.mock("@/shared/components/ApplicationVersion.vue", () => ({ default: { render: () => null } }));
 
 async function createHeader(locale = "en") {
   const pinia = createPinia();
@@ -27,10 +28,15 @@ async function createHeader(locale = "en") {
   });
   const app = createSSRApp(FamilyWorldHeader);
   app.use(pinia);
-  app.use(createI18n({ legacy: false, locale, messages: { de, en } }));
+  app.use(
+    createI18n({
+      legacy: false,
+      locale,
+      messages: { de, en } as never,
+    }),
+  );
   app.use(router);
   app.provide(FAMILY_WORLD_STORE_DEFINITION, useStore);
-  app.provide(APPLICATION_INFO_GATEWAY, { getInfo: vi.fn() });
   await router.push("/app");
   await router.isReady();
 
