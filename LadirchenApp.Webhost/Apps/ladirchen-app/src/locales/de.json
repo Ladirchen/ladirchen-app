@@ -1322,6 +1322,8 @@
   "world.scene.entity.member": "Familienmitglied",
   "world.scene.entity.pet": "Haustier",
   "world.scene.familyAria": "Familienmitglieder in der Familienwelt",
+  "world.scene.fridge.close": "",
+  "world.scene.fridge.open": "",
   "world.scene.frontGarden": "Vorgarten",
   "world.scene.frontGardenAria": "Gartenausstattung im Vorgarten",
   "world.scene.leaveAria": "Zurück vor das Haus",
