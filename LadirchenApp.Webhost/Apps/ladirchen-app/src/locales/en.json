@@ -1322,6 +1322,8 @@
   "world.scene.entity.member": "Family member",
   "world.scene.entity.pet": "Pet",
   "world.scene.familyAria": "Family members in the family world",
+  "world.scene.fridge.close": "Close the fridge",
+  "world.scene.fridge.open": "Open the fridge",
   "world.scene.frontGarden": "Front garden",
   "world.scene.frontGardenAria": "Garden equipment in the front garden",
   "world.scene.leaveAria": "Return to the front of the home",
