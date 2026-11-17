@@ -18,5 +18,43 @@ internal sealed record FamilyEconomyState(
   IReadOnlyList<GuardianGoalGiftState> GuardianGifts,
   IReadOnlyList<IsoWeekPeriod> SettledInterestPeriods,
   IReadOnlyList<ShopRewardState> ShopRewards,
-  IReadOnlyList<RedemptionRequestState> RedemptionRequests
-);
+  IReadOnlyList<RedemptionRequestState> RedemptionRequests,
+  IReadOnlyList<FamilyMemberId> ShopTaskGateOverrideMemberIds
+)
+{
+  public FamilyEconomyState(
+    FamilyId id,
+    ContributionSettings contributionSettings,
+    IReadOnlyList<MemberWalletState> wallets,
+    IReadOnlyList<ContributionState> contributions,
+    IReadOnlyList<ContributionId> usedContributionIds,
+    IReadOnlyList<PromotionState> promotions,
+    IReadOnlyList<TransactionId> appliedOperationIds,
+    IReadOnlyList<LedgerEntryState> ledger,
+    IReadOnlyList<SavingGoalState> savingGoals,
+    IReadOnlyList<SavingsVoucherState> savingsVouchers,
+    IReadOnlyList<GuardianGoalGiftState> guardianGifts,
+    IReadOnlyList<IsoWeekPeriod> settledInterestPeriods,
+    IReadOnlyList<ShopRewardState> shopRewards,
+    IReadOnlyList<RedemptionRequestState> redemptionRequests
+  )
+    : this(
+      id,
+      contributionSettings,
+      wallets,
+      contributions,
+      usedContributionIds,
+      promotions,
+      appliedOperationIds,
+      ledger,
+      savingGoals,
+      savingsVouchers,
+      guardianGifts,
+      settledInterestPeriods,
+      shopRewards,
+      redemptionRequests,
+      []
+    )
+  {
+  }
+}

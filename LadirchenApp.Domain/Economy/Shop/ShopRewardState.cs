@@ -15,5 +15,6 @@ internal sealed record ShopRewardState(
   ShopRewardStatus Status,
   bool Deleted,
   LadirchenAmount? PromotionalPrice = null,
-  DateOnly? PromotionUntil = null
+  DateOnly? PromotionUntil = null,
+  int? DurationMinutes = null
 );

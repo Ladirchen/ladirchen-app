@@ -12,9 +12,11 @@ public static class ContributionParticipationPolicy
   {
     ArgumentNullException.ThrowIfNull(contributions);
     ArgumentNullException.ThrowIfNull(memberId);
-    var basic = contributions.Where(item => item.Kind == ContributionKind.Basic && item.AssigneeId == memberId).ToArray();
-    var total = basic.Sum(item => item.Energy.Value);
-    var approvedBasic = basic.Where(item => item.Status != ContributionStatus.Available).Sum(item => item.Energy.Value);
+    var required = contributions
+      .Where(item => (item.Kind is ContributionKind.Basic or ContributionKind.School) && item.AssigneeId == memberId)
+      .ToArray();
+    var total = required.Sum(item => item.Energy.Value);
+    var approvedBasic = required.Where(item => item.Status != ContributionStatus.Available).Sum(item => item.Energy.Value);
     var approvedExtra = contributions
       .Where(item => item.Kind == ContributionKind.Extra && item.AssigneeId == memberId && item.Status != ContributionStatus.Available)
       .Sum(item => item.Energy.Value);
@@ -52,6 +54,27 @@ public static class ContributionParticipationPolicy
       .Where(item => item is not null)
       .Select(item => zone.LocalDate(item!.Value))
       .Where(period.Contains)
+      .Distinct()
+      .Count();
+  }
+
+  public static int ParticipationDaysThrough(
+    IEnumerable<Contribution> contributions,
+    FamilyMemberId memberId,
+    DateOnly throughDate,
+    IanaTimeZone zone
+  )
+  {
+    ArgumentNullException.ThrowIfNull(contributions);
+    ArgumentNullException.ThrowIfNull(memberId);
+    ArgumentNullException.ThrowIfNull(zone);
+
+    return contributions
+      .Where(item => item.AssigneeId == memberId && item.Status != ContributionStatus.Available)
+      .Select(item => item.SubmittedAt ?? item.ApprovedAt)
+      .Where(item => item is not null)
+      .Select(item => zone.LocalDate(item!.Value))
+      .Where(date => date <= throughDate)
       .Distinct()
       .Count();
   }

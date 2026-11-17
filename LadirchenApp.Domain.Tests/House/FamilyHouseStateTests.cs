@@ -180,6 +180,49 @@ public sealed class FamilyHouseStateTests
     await Assert.That(house.AverageEnergy(period)).IsEqualTo(59);
   }
 
+  [Test]
+  public async Task SuccessfulWeekCanCloseAsSoonAsItsAverageIsReachedOnDaySeven()
+  {
+    var period = new IsoWeekPeriod(2026, 41);
+    var sundayNoon = new DateTimeOffset(2026, 10, 11, 12, 0, 0, TimeSpan.FromHours(2));
+
+    var canClose = FamilyWeekClosingPolicy.CanClose(
+      period,
+      period,
+      sundayNoon,
+      HouseEnergyPolicy.MinimumSuccessfulWeekEnergy
+    );
+
+    await Assert.That(canClose).IsTrue();
+  }
+
+  [Test]
+  public async Task UnsuccessfulWeekWaitsUntilTheEndOfDaySeven()
+  {
+    var period = new IsoWeekPeriod(2026, 41);
+    var sundayNoon = new DateTimeOffset(2026, 10, 11, 12, 0, 0, TimeSpan.FromHours(2));
+    var sundayNight = sundayNoon.AddHours(11);
+
+    await Assert.That(FamilyWeekClosingPolicy.CanClose(period, period, sundayNoon, 59)).IsFalse();
+    await Assert.That(FamilyWeekClosingPolicy.CanClose(period, period, sundayNight, 59)).IsTrue();
+  }
+
+  [Test]
+  public async Task CurrentWeekCannotCloseBeforeDaySeven()
+  {
+    var period = new IsoWeekPeriod(2026, 41);
+    var saturday = new DateTimeOffset(2026, 10, 10, 23, 0, 0, TimeSpan.FromHours(2));
+
+    var canClose = FamilyWeekClosingPolicy.CanClose(
+      period,
+      period,
+      saturday,
+      HouseEnergyPolicy.MinimumSuccessfulWeekEnergy
+    );
+
+    await Assert.That(canClose).IsFalse();
+  }
+
   private static FamilyHouseState CompleteState(
     FamilyId familyId,
     FamilyMemberId currentMember,

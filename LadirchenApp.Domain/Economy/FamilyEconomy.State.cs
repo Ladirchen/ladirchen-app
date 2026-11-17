@@ -28,6 +28,7 @@ public sealed partial class FamilyEconomy
     ArgumentNullException.ThrowIfNull(state.SettledInterestPeriods);
     ArgumentNullException.ThrowIfNull(state.ShopRewards);
     ArgumentNullException.ThrowIfNull(state.RedemptionRequests);
+    ArgumentNullException.ThrowIfNull(state.ShopTaskGateOverrideMemberIds);
     Rules.Require(state.Id == family.Id, DomainError.InvalidState, "The economy must belong to the supplied family.");
 
     _timeZone = family.TimeZone;
@@ -47,6 +48,7 @@ public sealed partial class FamilyEconomy
     ValidateGoalInterestHistory();
     ReconstituteShopRewards(state.ShopRewards);
     ReconstituteRedemptionRequests(state.RedemptionRequests);
+    ReconstituteShopTaskGateOverrides(state.ShopTaskGateOverrideMemberIds);
     ValidateShopReservations();
     ReconstituteOperations(state.AppliedOperationIds);
     ReconstituteLedger(state.Ledger);
@@ -76,8 +78,33 @@ public sealed partial class FamilyEconomy
       _guardianGifts.Select(CaptureGuardianGift).ToArray(),
       _settledInterestPeriods.OrderBy(item => item.Start).ToArray(),
       _shopRewards.Select(CaptureShopReward).ToArray(),
-      _requests.Select(CaptureRedemptionRequest).ToArray()
+      _requests.Select(CaptureRedemptionRequest).ToArray(),
+      _shopTaskGateOverrideMemberIds.OrderBy(item => item.Value, StringComparer.Ordinal).ToArray()
     );
+  }
+
+  private void ReconstituteShopTaskGateOverrides(IReadOnlyList<FamilyMemberId> memberIds)
+  {
+    Rules.Require(
+      memberIds.All(item => item is not null),
+      DomainError.InvalidState,
+      "Shop task-gate override member identifiers cannot be null."
+    );
+    Rules.Require(
+      memberIds.Distinct().Count() == memberIds.Count,
+      DomainError.InvalidState,
+      "Shop task-gate override member identifiers must be unique."
+    );
+    var childIds = _members
+      .Where(item => !item.InvitationPending && item.Role == MemberRole.Child)
+      .Select(item => item.Id)
+      .ToHashSet();
+    Rules.Require(
+      memberIds.All(childIds.Contains),
+      DomainError.InvalidState,
+      "A shop task-gate override must belong to an active child."
+    );
+    _shopTaskGateOverrideMemberIds.UnionWith(memberIds);
   }
 
   private static IReadOnlyList<FamilyEconomyMember> SnapshotMembers(FamilyAggregate family)
@@ -418,7 +445,8 @@ public sealed partial class FamilyEconomy
           state.Price,
           state.Quantity,
           state.IsVisible,
-          state.Window
+          state.Window,
+          state.DurationMinutes
         )
       );
       reward.SetPromotion(state.PromotionalPrice, state.PromotionUntil);
@@ -457,9 +485,16 @@ public sealed partial class FamilyEconomy
         state.RewardId,
         state.RequesterId,
         state.Price,
+        state.DurationMinutes,
         state.RequestedAt
       );
-      request.Restore(state.Status, state.DecidedAt);
+      request.Restore(
+        state.Status,
+        state.DecidedAt,
+        state.TimerRemainingSeconds,
+        state.TimerStartedAt,
+        state.TimerCancelledAt
+      );
       _requests.Add(request);
     }
   }
@@ -677,7 +712,8 @@ public sealed partial class FamilyEconomy
       reward.Status,
       reward.Deleted,
       reward.PromotionalPrice,
-      reward.PromotionUntil
+      reward.PromotionUntil,
+      reward.DurationMinutes
     );
   }
 
@@ -690,7 +726,11 @@ public sealed partial class FamilyEconomy
       request.Price,
       request.RequestedAt,
       request.Status,
-      request.DecidedAt
+      request.DecidedAt,
+      request.DurationMinutes,
+      request.TimerRemainingSeconds,
+      request.TimerStartedAt,
+      request.TimerCancelledAt
     );
   }
 

@@ -41,29 +41,7 @@ public sealed class FamilyEconomyTaskPriorityTests
   [Test]
   public async Task OpenBasicContributionPreventsAChildFromRequestingAShopReward()
   {
-    var economy = CreateEconomy();
-    AddContribution(economy, "basic", ContributionKind.Basic, _childId);
-    economy.GiveSpecialGift(
-      _guardianId,
-      _childId,
-      new LadirchenAmount(20),
-      "Initial balance",
-      new TransactionId("initial-balance"),
-      _now
-    );
-    economy.AddShopReward(
-      _guardianId,
-      new ShopRewardId("reward"),
-      new ShopRewardDefinition(
-        "Reward",
-        ShopRewardCategory.Gift,
-        new LadirchenAmount(10),
-        1,
-        true,
-        new AvailabilityWindow(null, null)
-      ),
-      _now
-    );
+    var economy = CreateEconomyWithTaskAndReward(ContributionKind.Basic);
 
     await Assert.That(() => economy.RequestShopReward(
       _childId,
@@ -88,6 +66,42 @@ public sealed class FamilyEconomyTaskPriorityTests
   }
 
   [Test]
+  public async Task OpenSchoolContributionPreventsAChildFromRequestingAShopReward()
+  {
+    var economy = CreateEconomyWithTaskAndReward(ContributionKind.School);
+
+    await Assert.That(() => economy.RequestShopReward(
+      _childId,
+      new ShopRewardId("reward"),
+      new RedemptionRequestId("request"),
+      new TransactionId("request"),
+      _now
+    )).Throws<DomainRuleException>();
+    await Assert.That(economy.GetShopRewardAvailability(new ShopRewardId("reward"), _now).RequestableByMemberIds)
+      .DoesNotContain(_childId);
+  }
+
+  [Test]
+  public async Task AdministratorCanOverrideTheShopTaskGateForAChild()
+  {
+    var economy = CreateEconomyWithTaskAndReward(ContributionKind.School);
+
+    economy.SetShopTaskGateOverride(_guardianId, _childId, true, _now);
+
+    await Assert.That(economy.GetShopRewardAvailability(new ShopRewardId("reward"), _now).RequestableByMemberIds)
+      .Contains(_childId);
+    economy.RequestShopReward(
+      _childId,
+      new ShopRewardId("reward"),
+      new RedemptionRequestId("request"),
+      new TransactionId("request"),
+      _now
+    );
+
+    await Assert.That(economy.RedemptionRequests).HasSingleItem();
+  }
+
+  [Test]
   public async Task SubmittingAContributionCountsForTheMembersStreakOnTheSameDay()
   {
     var economy = CreateEconomy();
@@ -95,9 +109,28 @@ public sealed class FamilyEconomyTaskPriorityTests
 
     economy.SubmitContribution(_childId, new ContributionId("today"), _now);
     var currentWeek = IsoWeekPeriod.For(new IanaTimeZone("Europe/Zurich").LocalDate(_now));
-    var participation = economy.EvaluateParticipation(_childId, currentWeek, 0, 7);
+    var participation = economy.EvaluateParticipation(_childId, currentWeek);
 
     await Assert.That(participation.StreakDays).IsEqualTo(1);
+  }
+
+  [Test]
+  public async Task PersonalStreakCountsEveryDistinctParticipationDayAcrossWeeks()
+  {
+    var economy = CreateEconomy();
+    var firstDay = _now.AddDays(-14);
+    var secondDay = _now.AddDays(-2);
+    AddContribution(economy, "first-day", ContributionKind.Basic, _childId);
+    AddContribution(economy, "same-day", ContributionKind.Extra, _childId);
+    AddContribution(economy, "second-day", ContributionKind.Basic, _childId);
+
+    economy.SubmitContribution(_childId, new ContributionId("first-day"), firstDay);
+    economy.SubmitContribution(_childId, new ContributionId("same-day"), firstDay.AddHours(1));
+    economy.SubmitContribution(_childId, new ContributionId("second-day"), secondDay);
+    var currentWeek = IsoWeekPeriod.For(new IanaTimeZone("Europe/Zurich").LocalDate(_now));
+    var participation = economy.EvaluateParticipation(_childId, currentWeek);
+
+    await Assert.That(participation.StreakDays).IsEqualTo(2);
   }
 
   [Test]
@@ -145,6 +178,35 @@ public sealed class FamilyEconomyTaskPriorityTests
     );
 
     return new FamilyEconomy(family);
+  }
+
+  private static FamilyEconomy CreateEconomyWithTaskAndReward(ContributionKind kind)
+  {
+    var economy = CreateEconomy();
+    AddContribution(economy, "basic", kind, _childId);
+    economy.GiveSpecialGift(
+      _guardianId,
+      _childId,
+      new LadirchenAmount(20),
+      "Initial balance",
+      new TransactionId("initial-balance"),
+      _now
+    );
+    economy.AddShopReward(
+      _guardianId,
+      new ShopRewardId("reward"),
+      new ShopRewardDefinition(
+        "Reward",
+        ShopRewardCategory.Gift,
+        new LadirchenAmount(10),
+        1,
+        true,
+        new AvailabilityWindow(null, null)
+      ),
+      _now
+    );
+
+    return economy;
   }
 
   private static void AddContribution(

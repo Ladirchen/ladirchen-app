@@ -8,5 +8,7 @@ namespace LadirchenApp.Domain.Economy;
 
 public enum ContributionKind
 {
-  Basic, Extra
+  Basic,
+  Extra,
+  School,
 }

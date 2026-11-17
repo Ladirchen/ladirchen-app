@@ -17,6 +17,7 @@ public sealed class ShopReward : Entity<ShopRewardId>
     ArgumentOutOfRangeException.ThrowIfNegative(quantity);
     Title = Rules.Text(definition.Title);
     Category = Rules.Defined(definition.Category);
+    DurationMinutes = ValidDuration(definition.Category, definition.DurationMinutes);
     Price = price;
     Quantity = quantity;
     IsVisible = definition.IsVisible;
@@ -29,6 +30,10 @@ public sealed class ShopReward : Entity<ShopRewardId>
     get; private set;
   }
   public ShopRewardCategory Category
+  {
+    get; private set;
+  }
+  public int? DurationMinutes
   {
     get; private set;
   }
@@ -141,7 +146,11 @@ public sealed class ShopReward : Entity<ShopRewardId>
 
   internal void Redeem()
   {
-    Quantity--;
+    if (DurationMinutes is null)
+    {
+      Quantity--;
+    }
+
     Release();
   }
   internal void Republish()
@@ -170,6 +179,7 @@ public sealed class ShopReward : Entity<ShopRewardId>
     ArgumentNullException.ThrowIfNull(definition);
     Title = Rules.Text(definition.Title);
     Category = Rules.Defined(definition.Category);
+    DurationMinutes = ValidDuration(definition.Category, definition.DurationMinutes);
     Price = definition.Price ?? throw new ArgumentNullException(nameof(definition));
     ArgumentOutOfRangeException.ThrowIfNegative(definition.Quantity);
     Quantity = definition.Quantity;
@@ -180,6 +190,17 @@ public sealed class ShopReward : Entity<ShopRewardId>
       SetPromotion(null, null);
     }
     Release();
+  }
+
+  private static int? ValidDuration(ShopRewardCategory category, int? durationMinutes)
+  {
+    Rules.Require(
+      category == ShopRewardCategory.Time ? durationMinutes is > 0 and <= 1440 : durationMinutes is null,
+      DomainError.InvalidValue,
+      "Only time rewards require a duration between 1 and 1440 minutes."
+    );
+
+    return durationMinutes;
   }
 
   internal void Restore(ShopRewardStatus status, bool deleted)

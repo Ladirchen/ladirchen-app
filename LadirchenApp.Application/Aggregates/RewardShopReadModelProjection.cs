@@ -14,7 +14,11 @@ public sealed record RewardShopReadModelProjection(
   bool RedemptionOpen,
   IanaTimeZone TimeZone,
   DateOnly LocalDate,
+  DateTimeOffset Now,
   FamilyMemberId ViewerId,
+  bool MayManageShop,
+  bool MayAdministerShop,
+  IReadOnlySet<FamilyMemberId> ShopTaskGateOverrideMemberIds,
   IReadOnlyDictionary<ShopRewardId, ShopRewardAvailability> Availability,
   IReadOnlySet<ShopRewardId> VisibleRewardIds
 ) : IFamilyReadModelProjection

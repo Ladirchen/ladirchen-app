@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
 
 namespace LadirchenApp.Domain.Economy;
@@ -10,6 +11,7 @@ public sealed partial class FamilyEconomy
 {
   private readonly List<ShopReward> _shopRewards = new();
   private readonly List<RedemptionRequest> _requests = new();
+  private readonly HashSet<FamilyMemberId> _shopTaskGateOverrideMemberIds = new();
   public IReadOnlyList<ShopReward> ShopRewards
   {
     get
@@ -139,7 +141,7 @@ public sealed partial class FamilyEconomy
   {
     RequireChild(actor);
     ArgumentNullException.ThrowIfNull(requestId);
-    RequireNoOpenBasicContribution(actor);
+    RequireShopTaskGateOpen(actor);
     var reward = FindShopReward(rewardId);
     Rules.Require(
       reward.Status == ShopRewardStatus.Available && reward.Quantity > 0,
@@ -162,7 +164,7 @@ public sealed partial class FamilyEconomy
       "The purchase exceeds available funds."
     );
     var reserved = checked(wallet.Reserved + effectivePrice.Value);
-    var request = new RedemptionRequest(requestId, rewardId, actor, effectivePrice, now);
+    var request = new RedemptionRequest(requestId, rewardId, actor, effectivePrice, reward.DurationMinutes, now);
     wallet.Set(wallet.Balance, reserved);
     reward.Reserve();
     _requests.Add(request);
@@ -182,17 +184,52 @@ public sealed partial class FamilyEconomy
     AddDomainEvent(new ShopRewardRequested(Id, requestId, actor, rewardId, effectivePrice.Value, now));
   }
 
-  private void RequireNoOpenBasicContribution(FamilyMemberId actor)
+  public IReadOnlySet<FamilyMemberId> ShopTaskGateOverrideMemberIds
   {
-    var hasOpenBasicContribution = _contributions.Any(item =>
-      item.Kind == ContributionKind.Basic
+    get
+    {
+      return _shopTaskGateOverrideMemberIds.ToHashSet();
+    }
+  }
+
+  public void SetShopTaskGateOverride(
+    FamilyMemberId actor,
+    FamilyMemberId childId,
+    bool enabled,
+    DateTimeOffset now
+  )
+  {
+    RequireAdministrator(actor);
+    var child = _members.SingleOrDefault(item => item.Id == childId && !item.InvitationPending);
+    Rules.Require(
+      child?.Role == MemberRole.Child,
+      DomainError.InvalidState,
+      "The shop task-gate override requires an active child."
+    );
+
+    if (enabled)
+    {
+      _shopTaskGateOverrideMemberIds.Add(childId);
+    }
+    else
+    {
+      _shopTaskGateOverrideMemberIds.Remove(childId);
+    }
+
+    AddDomainEvent(new ShopTaskGateOverrideChanged(Id, childId, enabled, now));
+  }
+
+  private void RequireShopTaskGateOpen(FamilyMemberId actor)
+  {
+    var hasOpenRequiredContribution = _contributions.Any(item =>
+      (item.Kind == ContributionKind.Basic || item.Kind == ContributionKind.School)
       && item.AssigneeId == actor
       && item.Status == ContributionStatus.Available
     );
     Rules.Require(
-      !hasOpenBasicContribution,
+      !hasOpenRequiredContribution || _shopTaskGateOverrideMemberIds.Contains(actor),
       DomainError.InvalidState,
-      "Open basic contributions must be completed before requesting a shop reward."
+      "Open basic or school contributions must be completed before requesting a shop reward."
     );
   }
 
@@ -246,6 +283,7 @@ public sealed partial class FamilyEconomy
     wallet.Set(wallet.Balance - price, wallet.Reserved - price);
     reward.Redeem();
     request.Decide(RedemptionStatus.Approved, now);
+    request.StartTimer(now);
     Record(
       operationId,
       new LedgerEntry(
@@ -263,10 +301,71 @@ public sealed partial class FamilyEconomy
     AddDomainEvent(new ShopRewardDecided(Id, requestId, actor, RedemptionStatus.Approved, price, now));
   }
 
+  public void PauseTimeReward(FamilyMemberId actor, RedemptionRequestId requestId, DateTimeOffset now)
+  {
+    var request = FindApprovedTimeReward(requestId);
+    RequireTimerActor(actor, request);
+    request.PauseTimer(now);
+  }
+
+  public void ResumeTimeReward(FamilyMemberId actor, RedemptionRequestId requestId, DateTimeOffset now)
+  {
+    var request = FindApprovedTimeReward(requestId);
+    RequireTimerActor(actor, request);
+    request.ResumeTimer(now);
+  }
+
+  public void ResetTimeReward(FamilyMemberId actor, RedemptionRequestId requestId, DateTimeOffset now)
+  {
+    RequireAdministrator(actor);
+    FindApprovedTimeReward(requestId).ResetTimer(now);
+  }
+
+  public void ExpireTimeReward(FamilyMemberId actor, RedemptionRequestId requestId, DateTimeOffset now)
+  {
+    RequireAdministrator(actor);
+    FindApprovedTimeReward(requestId).ExpireTimer(now);
+  }
+
+  public void CancelTimeReward(
+    FamilyMemberId actor,
+    RedemptionRequestId requestId,
+    TransactionId operationId,
+    DateTimeOffset now
+  )
+  {
+    RequireAdministrator(actor);
+    RequireNewOperation(operationId);
+    var request = FindApprovedTimeReward(requestId);
+    request.CancelTimer(now);
+    var wallet = WalletFor(request.RequesterId);
+    wallet.Set(checked(wallet.Balance + request.Price.Value), wallet.Reserved);
+    Record(
+      operationId,
+      new LedgerEntry(
+        operationId,
+        request.RequesterId,
+        null,
+        LedgerKind.Credit,
+        request.Price.Value,
+        request.Id,
+        "Cancelled time reward refund",
+        now.ToUniversalTime(),
+        actor
+      )
+    );
+  }
+
   public void DeleteShopReward(FamilyMemberId actor, ShopRewardId id, TransactionId operationId, DateTimeOffset now)
   {
     RequireAdministrator(actor);
     var reward = FindShopReward(id);
+    Rules.Require(
+      _requests.All(item => item.RewardId != id || item.TimerRemainingSeconds is null
+        || item.TimerCancelledAt is not null || item.RemainingSeconds(now) == 0),
+      DomainError.InvalidState,
+      "A reward with active timers cannot be deleted."
+    );
     var request = _requests.Find(item => item.RewardId == id && item.Status == RedemptionStatus.Pending);
 
     if (request is not null)
@@ -334,6 +433,33 @@ public sealed partial class FamilyEconomy
     );
 
     return request!;
+  }
+
+  private RedemptionRequest FindApprovedTimeReward(RedemptionRequestId id)
+  {
+    ArgumentNullException.ThrowIfNull(id);
+    var request = _requests.Find(item => item.Id == id);
+    Rules.Require(
+      request is { Status: RedemptionStatus.Approved, DurationMinutes: not null }
+        && request.TimerRemainingSeconds is not null
+        && request.TimerCancelledAt is null,
+      DomainError.InvalidState,
+      "An approved active time reward is required."
+    );
+
+    return request!;
+  }
+
+  private void RequireTimerActor(FamilyMemberId actor, RedemptionRequest request)
+  {
+    if (actor == request.RequesterId)
+    {
+      RequireChild(actor);
+
+      return;
+    }
+
+    RequireAdministrator(actor);
   }
 
   private void RequireShopOpen(DateTimeOffset now)

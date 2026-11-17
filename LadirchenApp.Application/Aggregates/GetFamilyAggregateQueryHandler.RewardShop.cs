@@ -59,7 +59,11 @@ public sealed partial class GetFamilyAggregateQueryHandler
       ShopAvailabilityPolicy.RedemptionIsOpen(now, family.TimeZone),
       family.TimeZone,
       family.TimeZone.LocalDate(now),
+      now,
       viewerId,
+      mayManageShop,
+      authenticatedMember.IsAdministrator,
+      loadedEconomy.Root.ShopTaskGateOverrideMemberIds,
       availability,
       visibleRewardIds
     );

@@ -170,7 +170,7 @@ public sealed partial class EconomySteps
   [When("participation for week {int} of {int} is evaluated")]
   public void Evaluate(int week, int year)
   {
-    _participation = _economy.EvaluateParticipation(_child, new(year, week), 0, 7);
+    _participation = _economy.EvaluateParticipation(_child, new(year, week));
   }
 
   [Then("participation is {int} days, {float} percent and {float} stars")]
@@ -189,7 +189,7 @@ public sealed partial class EconomySteps
 
   private PersonalLadiEvaluation PersonalLadiEvaluationFor(FamilyMemberId memberId, IsoWeekPeriod period)
   {
-    var participation = _economy.EvaluateParticipation(memberId, period, 0, 7);
+    var participation = _economy.EvaluateParticipation(memberId, period);
     var progression = new LadiProgressionPolicy();
     var value = progression.Calculate(participation);
     var stage = progression.DetermineStage(value.Capped);

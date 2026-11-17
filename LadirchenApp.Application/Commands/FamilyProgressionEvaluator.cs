@@ -32,9 +32,7 @@ internal static class FamilyProgressionEvaluator
     {
       var participation = economy.EvaluateParticipation(
         member.Id,
-        period,
-        house.StoredWeeklyStreakFor(member.Id),
-        house.CurrentWeekTarget
+        period
       );
       var value = progressionPolicy.Calculate(participation);
       var stage = progressionPolicy.DetermineStage(value.Capped);

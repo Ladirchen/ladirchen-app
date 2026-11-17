@@ -50,18 +50,27 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
         "The family-progression aggregate has not been initialized."
       );
     var house = loadedProgression.Root;
-    var currentPeriod = IsoWeekPeriod.For(
-      family.TimeZone.LocalDate(TimeProvider.GetUtcNow())
-    );
+    var now = TimeProvider.GetUtcNow();
+    var localTime = family.TimeZone.LocalTime(now);
+    var currentPeriod = IsoWeekPeriod.For(DateOnly.FromDateTime(localTime.DateTime));
     var evaluatedPeriod = command.CommandType == "progression.close-week"
       ? new IsoWeekPeriod(
         RequiredInt(RequiredObject(command.Payload), "year"),
         RequiredInt(RequiredObject(command.Payload), "week")
       )
       : currentPeriod;
+    var closingAverageEnergy = command.CommandType == "progression.close-week"
+      ? house.AverageEnergy(evaluatedPeriod)
+      : 0;
     Require(
-      command.CommandType != "progression.close-week" || evaluatedPeriod.Start < currentPeriod.Start,
-      "Only a completed family week can be closed automatically."
+      command.CommandType != "progression.close-week"
+        || FamilyWeekClosingPolicy.CanClose(
+          evaluatedPeriod,
+          currentPeriod,
+          localTime,
+          closingAverageEnergy
+        ),
+      "A family week can only be closed on its final day or after it has ended."
     );
     var evaluation = FamilyProgressionEvaluator.Evaluate(
       family,
@@ -99,7 +108,7 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
             currentPeriod,
             evaluation.FamilyEnergy,
             evaluation.Members.Select(item => item.LadiEvaluation),
-            TimeProvider.GetUtcNow()
+            now
           ),
           "Family energy is too low to complete the week."
         );
@@ -117,7 +126,7 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
           currentPeriod,
           evaluation.FamilyEnergy,
           evaluation.Members.Select(item => item.LadiEvaluation),
-          TimeProvider.GetUtcNow()
+          now
         );
         changedReadModels =
         [
@@ -129,7 +138,7 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
         break;
       case "progression.close-week":
         family.RequireAdministrator(command.ActorId);
-        var averageEnergy = house.AverageEnergy(evaluatedPeriod);
+        var averageEnergy = closingAverageEnergy;
 
         if (averageEnergy >= HouseEnergyPolicy.MinimumSuccessfulWeekEnergy)
         {
@@ -137,7 +146,7 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
             evaluatedPeriod,
             averageEnergy,
             evaluation.Members.Select(item => item.LadiEvaluation),
-            TimeProvider.GetUtcNow()
+            now
           );
         }
         else
@@ -146,7 +155,7 @@ internal sealed class ProgressionFamilyCommandHandler : TypedFamilyCommandAreaHa
             evaluatedPeriod,
             averageEnergy,
             evaluation.Members.Select(item => item.LadiEvaluation),
-            TimeProvider.GetUtcNow()
+            now
           );
         }
         changedReadModels =
