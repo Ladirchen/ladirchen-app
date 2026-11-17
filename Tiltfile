@@ -24,6 +24,7 @@ else:
 dotnet = dotnet_candidate if os.path.exists(dotnet_candidate) else 'dotnet'
 local(dotnet + " tool restore", quiet=True)
 build_version = str(local(dotnet + " tool run dotnet-gitversion /showvariable FullSemVer", quiet=True)).strip()
+informational_version = str(local(dotnet + " tool run dotnet-gitversion /showvariable InformationalVersion", quiet=True)).strip()
 
 docker_build(
   "ladirchen-app-webhost",
@@ -31,6 +32,7 @@ docker_build(
   dockerfile="LadirchenApp.Webhost/Dockerfile",
   build_args={
     "BUILD_VERSION": build_version,
+    "BUILD_INFORMATIONAL_VERSION": informational_version,
     "ENABLE_VUE_DEVTOOLS": "true",
   },
 )

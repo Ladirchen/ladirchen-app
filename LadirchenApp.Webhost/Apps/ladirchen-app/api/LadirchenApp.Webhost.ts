@@ -1148,6 +1148,14 @@ export interface AboutInfo {
   semVer?: string;
   sha?: string;
   informationalVersion?: string | null;
+  branch?: string | null;
+  fileVersion?: string | null;
+  title?: string | null;
+  product?: string | null;
+  company?: string | null;
+  description?: string | null;
+  configuration?: string | null;
+  copyright?: string | null;
 }
 
 export interface Version {

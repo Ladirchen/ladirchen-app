@@ -251,6 +251,7 @@
         <a href="#fragen">FAQ</a>
         <a href="#installieren">App installieren</a>
       </nav>
+      <ApplicationVersion class="landing-footer__version" informational-only />
     </footer>
 
     <v-dialog v-model="instructionsOpen" max-width="470">
@@ -287,6 +288,7 @@ import { useI18n } from "vue-i18n";
 import perchedLadi from "@/assets/ladi/perched-ladi.webp";
 import starterLadi from "@/assets/ladi/starter-ladi.webp";
 import sunLadi from "@/assets/ladi/sun-ladi.webp";
+import ApplicationVersion from "@/shared/components/ApplicationVersion.vue";
 import LadirchenCoin from "@/shared/components/LadirchenCoin.vue";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import AnimatedPet from "@/shared/components/family/AnimatedPet.vue";
@@ -1185,9 +1187,8 @@ const installButtonLabel = computed(() =>
   --uno: d-flex align-center flex-wrap ga-4;
 }
 
-.landing-footer small {
+.landing-footer__version {
   grid-column: 1 / -1;
-  color: var(--lad-muted);
 }
 
 .installation-dialog {
@@ -1320,10 +1321,6 @@ const installButtonLabel = computed(() =>
 
   .landing-footer {
     grid-template-columns: 1fr;
-  }
-
-  .landing-footer small {
-    grid-column: auto;
   }
 }
 

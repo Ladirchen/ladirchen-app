@@ -97,6 +97,10 @@ German and English messages live as flat, alphabetically sorted JSON files in `s
 
 The interactive app header and profile display the running backend's version from `GET /about`. This endpoint reads GitVersion-generated .NET assembly informational metadata, not the frontend package version. Requests and responses disable caching; unavailable metadata shows a localized error and retry action without blocking the app.
 
+Select the version with the information icon in the app header to open the details dialog. It shows the full informational version and available assembly metadata, including the Git branch and commit when embedded at build time.
+
+The landing page footer also shows the full informational version when the backend provides it.
+
 The application uses backend-driven HTTP adapters on the current origin. Set `VITE_API_BASE_URL` only when the API is hosted elsewhere. Each read-model adapter expects:
 
 ```text

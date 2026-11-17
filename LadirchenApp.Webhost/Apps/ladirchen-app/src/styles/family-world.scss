@@ -54,13 +54,16 @@
     min-width: 0;
     flex-wrap: wrap;
   }
-  .header-current-user {
+  .header-current-user,
+  .header-version {
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
     color: var(--lad-color-primary-deep);
     font-size: rem(13);
     font-weight: var(--lad-font-weight-strong);
+  }
+  .header-current-user {
+    overflow: hidden;
   }
   .family-world-wordmark {
     padding-bottom: rem(1);
