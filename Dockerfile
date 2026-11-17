@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.404-alpine3.24 AS build
 ARG BUILD_CONFIGURATION=Release
 ARG BUILD_VERSION=0.0.0
+ARG BUILD_INFORMATIONAL_VERSION
 ARG ENABLE_VUE_DEVTOOLS=false
 ENV CI=true \
   ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS \
@@ -29,7 +30,8 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
   --configuration $BUILD_CONFIGURATION \
   --output /app/publish \
   /p:UseAppHost=false \
-  /p:Version=$BUILD_VERSION
+  "/p:Version=$BUILD_VERSION" \
+  "/p:InformationalVersion=${BUILD_INFORMATIONAL_VERSION:-$BUILD_VERSION}"
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.15-alpine3.24 AS final
 WORKDIR /app

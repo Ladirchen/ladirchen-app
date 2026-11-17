@@ -74,7 +74,7 @@
         <span class="i-mdi:account-circle-outline flex-shrink-0" aria-hidden="true"></span>
         <span class="text-truncate">{{ currentUserName }}</span>
       </RouterLink>
-      <ApplicationVersion />
+      <ApplicationVersion class="header-version" show-details />
     </div>
   </header>
 

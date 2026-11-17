@@ -1,4 +1,5 @@
 import type { ApplicationInfo, ApplicationInfoGateway } from "@/application/ports/application-info-gateway";
+import { applicationDetailFields } from "@/application/ports/application-info-gateway";
 import { isNonEmptyString, isRecord } from "@/application/contracts/validation/runtime-validation";
 
 export class HttpApplicationInfoGateway implements ApplicationInfoGateway {
@@ -31,6 +32,16 @@ export class HttpApplicationInfoGateway implements ApplicationInfoGateway {
       throw new TypeError("The application information response is invalid.");
     }
 
-    return { semVer: value.semVer, informationalVersion: value.informationalVersion };
+    const details: Partial<Record<(typeof applicationDetailFields)[number], string>> = {};
+
+    for (const field of applicationDetailFields) {
+      const detail = value[field];
+
+      if (isNonEmptyString(detail) && (field !== "sha" || /^[\da-f]{40}(?:[\da-f]{24})?$/iu.test(detail))) {
+        details[field] = detail;
+      }
+    }
+
+    return { ...details, semVer: value.semVer, informationalVersion: value.informationalVersion };
   }
 }

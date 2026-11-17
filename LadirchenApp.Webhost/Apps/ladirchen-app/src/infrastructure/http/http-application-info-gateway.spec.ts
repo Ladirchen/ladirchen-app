@@ -7,10 +7,23 @@ describe("HttpApplicationInfoGateway", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("retrieves version metadata from the configured backend without caching", async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ ...info, name: "Webhost" }));
+    const details = {
+      name: "Webhost",
+      version: "1.2.3.0",
+      fileVersion: "1.2.3.4",
+      company: "Example",
+      branch: "main",
+      sha: "1234567890abcdef1234567890abcdef12345678",
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ ...info, ...details, description: null, product: " ", unknown: "ignored" }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(new HttpApplicationInfoGateway("https://api.example.test///").getInfo()).resolves.toEqual(info);
+    await expect(new HttpApplicationInfoGateway("https://api.example.test///").getInfo()).resolves.toEqual({
+      ...info,
+      ...details,
+    });
     expect(fetchMock).toHaveBeenCalledWith("https://api.example.test/about", {
       cache: "no-store",
       credentials: "include",
@@ -20,7 +33,7 @@ describe("HttpApplicationInfoGateway", () => {
 
   it("supports a release version on the current origin", async () => {
     const release = { semVer: "1.2.3", informationalVersion: "1.2.3+abc123" };
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(Response.json(release));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ ...release, sha: "Unknown Sha" }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(new HttpApplicationInfoGateway("").getInfo()).resolves.toEqual(release);

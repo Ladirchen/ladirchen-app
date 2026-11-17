@@ -15,7 +15,11 @@ public class BuildDockerImageTask : FrostingTask<BuildContext>
       {
         File = context.SolutionDirectory.CombineWithFilePath("LadirchenApp.Webhost/Dockerfile").FullPath,
         Tag = [context.WebhostDockerImageTag],
-        BuildArg = [$"BUILD_VERSION={context.GitVersion.FullSemVer}"],
+        BuildArg =
+        [
+          $"BUILD_VERSION={context.GitVersion.FullSemVer}",
+          $"BUILD_INFORMATIONAL_VERSION={context.GitVersion.InformationalVersion}",
+        ],
       },
       context.SolutionDirectory.FullPath
     );

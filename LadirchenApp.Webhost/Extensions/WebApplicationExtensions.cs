@@ -146,8 +146,11 @@ public static partial class WebApplicationExtensions
     {
       context.Response.Headers.CacheControl = "no-store";
 
-      return AssemblyHelper.GetAboutInfoFromAssembly(typeof(WebApplicationExtensions).Assembly);
-    }).WithTags("Info");
+      return TypedResults.Ok(AssemblyHelper.GetAboutInfoFromAssembly(typeof(WebApplicationExtensions).Assembly));
+    })
+    .WithTags("Info")
+    .WithSummary("Get the running webhost assembly version")
+    .WithDescription("Returns the semantic and informational versions along with published assembly metadata.");
 
     return aWebApplication;
   }

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 using LadirchenApp.Webhost.Extensions;
@@ -32,12 +33,18 @@ public sealed class AboutInfoEndpointTests
 
     using var response = await client.GetAsync("/about");
     var info = await response.Content.ReadFromJsonAsync<AboutInfo>();
-    var expected = typeof(AssemblyHelper).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
+    using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    var assembly = typeof(AssemblyHelper).Assembly;
+    var expected = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
 
     await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     await Assert.That(response.Headers.CacheControl!.NoStore).IsTrue();
     await Assert.That(info!.Name).IsEqualTo("LadirchenApp.Webhost");
     await Assert.That(info.InformationalVersion).IsEqualTo(expected);
     await Assert.That(info.SemVer).IsEqualTo(expected.Split('+')[0]);
+    await Assert.That(info.Version).IsEqualTo(assembly.GetName().Version);
+    await Assert.That(json.RootElement.GetProperty("version").GetString()).IsEqualTo(assembly.GetName().Version?.ToString());
+    await Assert.That(info.Company).IsEqualTo(assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company);
+    await Assert.That(info.FileVersion).IsEqualTo(assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
   }
 }

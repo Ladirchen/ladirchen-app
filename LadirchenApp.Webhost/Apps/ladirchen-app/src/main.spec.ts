@@ -6,6 +6,8 @@ vi.mock("vue", () => ({ createApp: () => ({ mount }) }));
 vi.mock("./App.vue", () => ({ default: {} }));
 vi.mock("@/plugins", () => ({ registerPlugins: vi.fn() }));
 vi.mock("@/plugins/i18n", () => ({ initializeI18n: () => Promise.resolve() }));
+// Bootstrap routing does not need UnoCSS's browser-only virtual stylesheet.
+vi.mock("virtual:uno.css", () => ({}));
 
 describe("application bootstrap", () => {
   afterEach(() => {

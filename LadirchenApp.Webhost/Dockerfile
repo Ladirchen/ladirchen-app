@@ -14,6 +14,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 # GitVersion can't run in this container (no .git), so the version is computed on the host and passed in.
 ARG BUILD_VERSION=0.0.0
+ARG BUILD_INFORMATIONAL_VERSION
 ARG ENABLE_VUE_DEVTOOLS=false
 ENV ENABLE_VUE_DEVTOOLS=$ENABLE_VUE_DEVTOOLS \
   VP_HOME=/root/.vite-plus \
@@ -29,7 +30,9 @@ COPY ["LadirchenApp.Webhost/LadirchenApp.Webhost.csproj", "LadirchenApp.Webhost/
 RUN dotnet restore "./LadirchenApp.Webhost/LadirchenApp.Webhost.csproj"
 COPY . .
 WORKDIR "/src/LadirchenApp.Webhost"
-RUN dotnet build "./LadirchenApp.Webhost.csproj" -c $BUILD_CONFIGURATION -o /app/build /p:Version=$BUILD_VERSION
+RUN dotnet build "./LadirchenApp.Webhost.csproj" -c $BUILD_CONFIGURATION -o /app/build \
+  "/p:Version=$BUILD_VERSION" \
+  "/p:InformationalVersion=${BUILD_INFORMATIONAL_VERSION:-$BUILD_VERSION}"
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
@@ -39,7 +42,8 @@ RUN dotnet publish "./LadirchenApp.Webhost.csproj" \
   -c $BUILD_CONFIGURATION \
   -o /app/publish \
   /p:UseAppHost=false \
-  /p:Version=$BUILD_VERSION
+  "/p:Version=$BUILD_VERSION" \
+  "/p:InformationalVersion=${BUILD_INFORMATIONAL_VERSION:-$BUILD_VERSION}"
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
