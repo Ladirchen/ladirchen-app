@@ -190,6 +190,23 @@ custom build command, output directory or route rewrite is required. See the
 [WebSocket support](https://vercel.com/changelog/websocket-support-is-now-generally-available)
 documentation for the platform lifecycle and limits.
 
+## Schabi calendar integration
+
+Family administrators can configure one personal Schabi task-calendar feed per
+child from the profile settings. The private feed URL is protected with the
+application Data Protection key ring before it is stored; Schabi passwords are
+not persisted. Keep the Data Protection certificate stable across web and
+daemon deployments so the daemon can decrypt existing feed URLs.
+
+The production daemon checks enabled integrations hourly and imports each
+family's Thursday-to-Wednesday task window once every Thursday in the family's
+configured time zone. Imported entries use deterministic command and
+contribution identifiers, so retries do not create duplicates. They are created
+in the `School` category with zero Ladirchen reward and 9 percent house energy.
+Descriptions, HTTP(S) event URLs and linked calendar attachments are imported
+with the task. Configure the Schabi feed itself for tasks only when generating
+its external-calendar subscription URL.
+
 ## Build
 
 To build the Ladirchen App, follow these steps:
