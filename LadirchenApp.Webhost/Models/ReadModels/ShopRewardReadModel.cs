@@ -14,6 +14,7 @@ public sealed record ShopRewardReadModel(
   bool? PromotionActive,
   string? PromotionUntil,
   [property: JsonRequired] string Category,
+  int? DurationMinutes,
   [property: JsonRequired] int Quantity,
   [property: JsonRequired] string Conditions,
   string? AvailableFrom,

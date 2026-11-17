@@ -9,6 +9,7 @@ public sealed record AddShopRewardPayload(
   [property: JsonRequired] string Icon,
   [property: JsonRequired] decimal Price,
   [property: JsonRequired] string Category,
+  int? DurationMinutes,
   [property: JsonRequired] int Quantity,
   [property: JsonRequired] string Conditions,
   string? AvailableFrom,

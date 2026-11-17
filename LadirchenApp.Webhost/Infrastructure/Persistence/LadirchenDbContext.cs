@@ -75,6 +75,14 @@ public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
     }
   }
 
+  public DbSet<SchabiCalendarIntegrationEntity> SchabiCalendarIntegrations
+  {
+    get
+    {
+      return Set<SchabiCalendarIntegrationEntity>();
+    }
+  }
+
   public DbSet<FamilyRootEntity> Families
   {
     get
@@ -202,6 +210,20 @@ public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
       .HasOne(item => item.Subscription)
       .WithMany(item => item.Notifications)
       .HasForeignKey(item => item.SubscriptionId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    var schabiIntegration = modelBuilder.Entity<SchabiCalendarIntegrationEntity>();
+    schabiIntegration.ToTable("SchabiCalendarIntegrations");
+    schabiIntegration.HasKey(item => new { item.FamilyId, item.MemberId });
+    schabiIntegration.Property(item => item.MemberId).HasMaxLength(128);
+    schabiIntegration.Property(item => item.SchabiUsername).HasMaxLength(128);
+    schabiIntegration.Property(item => item.ProtectedCalendarUrl).IsRequired();
+    schabiIntegration.Property(item => item.LastError).HasMaxLength(2000);
+    schabiIntegration.HasIndex(item => item.Enabled);
+    schabiIntegration
+      .HasOne<FamilyMemberEntity>()
+      .WithMany()
+      .HasForeignKey(item => new { item.FamilyId, item.MemberId })
       .OnDelete(DeleteBehavior.Cascade);
 
     TypedAggregatePersistenceModel.Configure(modelBuilder);

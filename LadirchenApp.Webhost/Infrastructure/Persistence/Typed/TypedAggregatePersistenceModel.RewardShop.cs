@@ -21,6 +21,11 @@ internal static partial class TypedAggregatePersistenceModel
           + "(\"PromotionalPrice\" >= 0 AND \"PromotionalPrice\" < \"Price\" AND \"PromotionUntil\" IS NOT NULL)"
         );
         table.HasCheckConstraint("CK_FamilyEconomyShopRewards_Quantity", "\"Quantity\" >= 0");
+        table.HasCheckConstraint(
+          "CK_FamilyEconomyShopRewards_Duration",
+          "(\"Category\" = 0 AND \"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440) OR "
+          + "(\"Category\" <> 0 AND \"DurationMinutes\" IS NULL)"
+        );
         table.HasCheckConstraint("CK_FamilyEconomyShopRewards_Status", "\"Status\" >= 0 AND \"Status\" <= 2");
         table.HasCheckConstraint(
           "CK_FamilyEconomyShopRewards_AvailabilityWindow",
@@ -43,6 +48,12 @@ internal static partial class TypedAggregatePersistenceModel
         table.HasCheckConstraint(
           "CK_FamilyEconomyRedemptionRequests_Decision",
           "(\"Status\" = 0 AND \"DecidedAt\" IS NULL) OR (\"Status\" <> 0 AND \"DecidedAt\" IS NOT NULL)"
+        );
+        table.HasCheckConstraint(
+          "CK_FamilyEconomyRedemptionRequests_Timer",
+          "(\"DurationMinutes\" IS NULL AND \"TimerRemainingSeconds\" IS NULL AND \"TimerStartedAt\" IS NULL "
+          + "AND \"TimerCancelledAt\" IS NULL) OR (\"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440 "
+          + "AND \"TimerRemainingSeconds\" >= 0 AND (\"TimerCancelledAt\" IS NULL OR \"TimerStartedAt\" IS NULL))"
         );
       }
     );

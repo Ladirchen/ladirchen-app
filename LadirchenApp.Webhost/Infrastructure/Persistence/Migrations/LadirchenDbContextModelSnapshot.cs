@@ -255,6 +255,56 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.ToTable("MemberAccountInvitations", (string)null);
                 });
 
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.SchabiCalendarIntegrationEntity", b =>
+                {
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MemberId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset?>("LastSuccessfulSyncAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProtectedCalendarUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SchabiUsername")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("SyncDayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeOnly>("SyncTimeLocal")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("FamilyId", "MemberId");
+
+                    b.HasIndex("Enabled");
+
+                    b.ToTable("SchabiCalendarIntegrations", (string)null);
+                });
+
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.ClosedFamilyWeekEntity", b =>
                 {
                     b.Property<Guid>("FamilyId")
@@ -349,13 +399,25 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Icon")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Recurrence")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
 
                     b.Property<bool>("RewardCelebrated")
                         .HasColumnType("boolean");
@@ -440,7 +502,7 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_FamilyEconomyContributions_Energy", "\"EnergyPercent\" >= 0 AND \"EnergyPercent\" <= 100");
 
-                            t.HasCheckConstraint("CK_FamilyEconomyContributions_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 1");
+                            t.HasCheckConstraint("CK_FamilyEconomyContributions_Kind", "\"Kind\" >= 0 AND \"Kind\" <= 2");
 
                             t.HasCheckConstraint("CK_FamilyEconomyContributions_Rating", "\"Rating\" IS NULL OR (\"Rating\" >= 1 AND \"Rating\" <= 5)");
 
@@ -668,6 +730,9 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DecidedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
@@ -687,6 +752,15 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("TimerCancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("TimerRemainingSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("TimerStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("FamilyId", "RequestId");
 
                     b.HasIndex("FamilyId", "RewardId")
@@ -702,6 +776,8 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_FamilyEconomyRedemptionRequests_Price", "\"Price\" >= 0");
 
                             t.HasCheckConstraint("CK_FamilyEconomyRedemptionRequests_Status", "\"Status\" >= 0 AND \"Status\" <= 3");
+
+                            t.HasCheckConstraint("CK_FamilyEconomyRedemptionRequests_Timer", "(\"DurationMinutes\" IS NULL AND \"TimerRemainingSeconds\" IS NULL AND \"TimerStartedAt\" IS NULL AND \"TimerCancelledAt\" IS NULL) OR (\"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440 AND \"TimerRemainingSeconds\" >= 0 AND (\"TimerCancelledAt\" IS NULL OR \"TimerStartedAt\" IS NULL))");
                         });
                 });
 
@@ -920,6 +996,9 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsVisible")
                         .HasColumnType("boolean");
 
@@ -949,6 +1028,8 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("CK_FamilyEconomyShopRewards_AvailabilityWindow", "\"AvailableFrom\" IS NULL OR \"AvailableUntil\" IS NULL OR \"AvailableFrom\" <= \"AvailableUntil\"");
 
                             t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Category", "\"Category\" >= 0 AND \"Category\" <= 5");
+
+                            t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Duration", "(\"Category\" = 0 AND \"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440) OR (\"Category\" <> 0 AND \"DurationMinutes\" IS NULL)");
 
                             t.HasCheckConstraint("CK_FamilyEconomyShopRewards_Price", "\"Price\" >= 0");
 
@@ -985,6 +1066,12 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<long>("Revision")
                         .IsConcurrencyToken()
                         .HasColumnType("bigint");
+
+                    b.Property<string>("ShopTaskGateOverrideMemberIdsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1322,6 +1409,7 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("CatalogPricesJson")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
                         .HasDefaultValueSql("'[]'::jsonb");
 
@@ -1632,6 +1720,15 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("CommandId")
                         .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.SchabiCalendarIntegrationEntity", b =>
+                {
+                    b.HasOne("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.FamilyMemberEntity", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId", "MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.ClosedFamilyWeekEntity", b =>
