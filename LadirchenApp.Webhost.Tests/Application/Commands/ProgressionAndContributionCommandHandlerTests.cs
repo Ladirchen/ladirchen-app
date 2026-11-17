@@ -27,7 +27,9 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     var store = CreateStore(Contribution("daily-basic", ContributionKind.Basic, _childId));
     var handler = store.CreateCommandHandler();
 
-    await ExecuteAsync(handler, _guardianId, "progression.refresh", new { });
+    await ExecuteAsync(handler, _guardianId, "progression.refresh", new
+    {
+    });
 
     var progression = store.RequiredProgression();
     await Assert.That(progression.MaximumSavingsInterestRate.Value).IsEqualTo(8);
@@ -74,6 +76,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       title = "Updated family project",
       description = "Updated presentation",
       icon = "updated-icon",
+      category = "Hausaufgabe",
       kind = "basic",
       reward = 25,
       energy = 30,
@@ -96,6 +99,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     await Assert.That(copy.AssigneeId).IsNull();
     await Assert.That(copiedPresentation.Description).IsEqualTo("Updated presentation");
     await Assert.That(copiedPresentation.Icon).IsEqualTo("updated-icon");
+    await Assert.That(copiedPresentation.Category).IsEqualTo("Hausaufgabe");
   }
 
   [Test]
@@ -109,7 +113,9 @@ public sealed class ProgressionAndContributionCommandHandlerTests
         handler,
         _childId,
         "progression.refresh",
-        new { },
+        new
+        {
+        },
         _supporterId
       )
     ).Throws<DomainRuleException>();
@@ -123,10 +129,14 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     var store = CreateStore(ApprovedContribution());
     var handler = store.CreateCommandHandler();
 
-    await ExecuteAsync(handler, _guardianId, "progression.complete-week", new { });
+    await ExecuteAsync(handler, _guardianId, "progression.complete-week", new
+    {
+    });
     var revisionAfterFirstClosure = store.Revision(TypedAggregateKind.FamilyProgression);
     await Assert.That(async () =>
-      await ExecuteAsync(handler, _guardianId, "progression.complete-week", new { })
+      await ExecuteAsync(handler, _guardianId, "progression.complete-week", new
+      {
+      })
     ).Throws<DomainRuleException>();
 
     var progression = store.RequiredProgression();
@@ -162,6 +172,44 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     var notification = result.UserNotifications.Single();
     await Assert.That(notification.RecipientId).IsEqualTo(_childId);
     await Assert.That(notification.BodyDe).Contains("13 Ladirchen");
+  }
+
+  [Test]
+  public async Task ApprovingAWeeklyContributionCreatesTheNextScheduledOccurrence()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add", new
+    {
+      id = "weekly-homework",
+      title = "Weekly homework",
+      description = "Prepare the school bag.",
+      icon = "school",
+      category = "Hausaufgabe",
+      kind = "school",
+      reward = 10,
+      energy = 0,
+      assigneeId = _childId.Value,
+      dueDate = "2026-10-12",
+      recurrence = "weekly",
+    });
+    await ExecuteAsync(handler, _childId, "contributions.submit", new
+    {
+      id = "weekly-homework",
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    {
+      id = "weekly-homework",
+      stars = 4,
+    });
+
+    var next = store.RequiredEconomy().Contributions.Single(item => item.Status == ContributionStatus.Available);
+    var nextPresentation = store.EconomyPresentation.Contributions
+      .Single(item => item.ContributionId == next.Id);
+    await Assert.That(next.AssigneeId).IsEqualTo(_childId);
+    await Assert.That(nextPresentation.DueDate).IsEqualTo(new DateOnly(2026, 10, 19));
+    await Assert.That(nextPresentation.Recurrence).IsEqualTo("weekly");
   }
 
   [Test]

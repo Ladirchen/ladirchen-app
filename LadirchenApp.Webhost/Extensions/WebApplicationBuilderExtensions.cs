@@ -74,6 +74,8 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Services.AddHostedService<FamilyAggregateOutboxDispatcher>();
     webApplicationBuilder.Services.AddHostedService<WebPushNotificationDispatcher>();
     webApplicationBuilder.Services.AddHostedService<WeeklyInterestSettlementService>();
+    webApplicationBuilder.Services.AddHostedService<TimeRewardExpirationService>();
+    webApplicationBuilder.Services.AddHostedService<SchabiCalendarSynchronizationService>();
   }
 
   public static void SetupLadierchenMigration(this WebApplicationBuilder webApplicationBuilder)
@@ -118,6 +120,17 @@ public static class WebApplicationBuilderExtensions
     webApplicationBuilder.Services.AddScoped<GetFamilyAggregateQueryHandler>();
     webApplicationBuilder.Services.AddScoped<GetWeeklyInterestSettlementPlanQueryHandler>();
     webApplicationBuilder.Services.AddScoped<ExecuteFamilyCommandHandler>();
+    webApplicationBuilder.Services.AddScoped<
+      ICommandHandler<FamilyCommand, FamilyCommandResult>
+    >(provider => provider.GetRequiredService<ExecuteFamilyCommandHandler>());
+    webApplicationBuilder.Services.AddScoped<SchabiIntegrationService>();
+    webApplicationBuilder.Services.AddScoped<SchabiCalendarSynchronizer>();
+    webApplicationBuilder.Services.AddHttpClient(nameof(SchabiCalendarSynchronizer))
+      .ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.HttpClientHandler
+      {
+        AllowAutoRedirect = false,
+      })
+      .RemoveAllLoggers();
     webApplicationBuilder.Services.AddScoped<
       ICommandHandler<SettleAvailableWeeklyInterestCommand, WeeklyInterestSettlementResult>,
       SettleAvailableWeeklyInterestCommandHandler

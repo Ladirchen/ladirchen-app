@@ -227,7 +227,8 @@ public sealed class SavingsQueryHandlerTests
           RedemptionStatus.Pending,
           null
         ),
-      ]
+      ],
+      []
     ));
     var presentation = new FamilyEconomyPresentationState(
       [new ContributionPresentationState(contributionId, "", "", false)],

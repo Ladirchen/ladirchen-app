@@ -10,6 +10,7 @@ public sealed class FamilyEconomyRootEntity
   public string UpdatedBy { get; set; } = string.Empty;
   public DateTimeOffset UpdatedAt { get; set; }
   public decimal PerfectRatingBonusPercent { get; set; }
+  public string ShopTaskGateOverrideMemberIdsJson { get; set; } = "[]";
   public ICollection<FamilyEconomyWalletEntity> Wallets { get; set; } = new List<FamilyEconomyWalletEntity>();
   public ICollection<EconomyContributionEntity> Contributions { get; set; } = new List<EconomyContributionEntity>();
   public ICollection<EconomyUsedContributionIdEntity> UsedContributionIds { get; set; } =

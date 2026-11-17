@@ -155,7 +155,7 @@ public sealed class TypedAggregateRepositoryTests
         now
       );
       var presentation = new FamilyEconomyPresentationState(
-        [new ContributionPresentationState(contributionId, "Description", "icon", false)],
+        [new ContributionPresentationState(contributionId, "Description", "icon", false, "Hausaufgabe")],
         [],
         [new ShopRewardPresentationState(rewardId, "Details", "reward-icon", "Conditions")],
         []
@@ -224,6 +224,8 @@ public sealed class TypedAggregateRepositoryTests
         .IsEqualTo(RedemptionStatus.Pending);
       await Assert.That(loadedEconomy.Presentation.Contributions.Single().Description)
         .IsEqualTo("Description");
+      await Assert.That(loadedEconomy.Presentation.Contributions.Single().Category)
+        .IsEqualTo("Hausaufgabe");
       await Assert.That(loadedEconomy.Presentation.ShopRewards.Single().Conditions)
         .IsEqualTo("Conditions");
     }
@@ -448,21 +450,31 @@ public sealed class TypedAggregateRepositoryTests
       familyId,
       childId,
       "contributions.submit",
-      new { id = "help" }
+      new
+      {
+        id = "help"
+      }
     );
     await ExecuteAsync(
       handler,
       familyId,
       administratorId,
       "contributions.approve",
-      new { id = "help", stars = 5 }
+      new
+      {
+        id = "help",
+        stars = 5
+      }
     );
     await ExecuteAsync(
       handler,
       familyId,
       childId,
       "contributions.acknowledge-reward",
-      new { id = "help" }
+      new
+      {
+        id = "help"
+      }
     );
     var loadedFamily = await familyRepository.LoadAsync(familyId, CancellationToken.None);
     await Assert.That(loadedFamily).IsNotNull();
@@ -478,7 +490,10 @@ public sealed class TypedAggregateRepositoryTests
       familyId,
       administratorId,
       "contributions.delete",
-      new { id = "help" }
+      new
+      {
+        id = "help"
+      }
     );
 
     await ExecuteAsync(
@@ -504,7 +519,10 @@ public sealed class TypedAggregateRepositoryTests
       familyId,
       administratorId,
       "reward-shop.delete",
-      new { id = "cinema" }
+      new
+      {
+        id = "cinema"
+      }
     );
 
     await ExecuteAsync(
@@ -548,7 +566,10 @@ public sealed class TypedAggregateRepositoryTests
       familyId,
       childId,
       "savings.cancel-goal",
-      new { id = "bike" }
+      new
+      {
+        id = "bike"
+      }
     );
 
     await ExecuteAsync(
@@ -569,7 +590,10 @@ public sealed class TypedAggregateRepositoryTests
       familyId,
       childId,
       "savings.consume-guardian-gift",
-      new { giftId = "gift" }
+      new
+      {
+        giftId = "gift"
+      }
     );
     loadedFamily = await familyRepository.LoadAsync(familyId, CancellationToken.None);
     loadedEconomy = await economyRepository.LoadAsync(

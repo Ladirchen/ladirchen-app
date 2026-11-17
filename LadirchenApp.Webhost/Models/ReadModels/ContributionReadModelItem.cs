@@ -9,6 +9,7 @@ public sealed record ContributionReadModelItem(
   [property: JsonRequired] string Title,
   [property: JsonRequired] string Description,
   [property: JsonRequired] string Icon,
+  string? Category,
   [property: JsonRequired] string Area,
   string? AreaKey,
   [property: JsonRequired] string Kind,
@@ -27,5 +28,7 @@ public sealed record ContributionReadModelItem(
   decimal? EarnedRatingBonus,
   decimal? EarnedPromotionMultiplier,
   string? ApprovedAt,
-  bool? RewardCelebrated
+  bool? RewardCelebrated,
+  string? DueDate,
+  [property: JsonRequired] string Recurrence
 );

@@ -27,7 +27,8 @@ internal static partial class FamilyEconomyPersistenceMapper
         (ShopRewardStatus)item.Status,
         item.Deleted,
         item.PromotionalPrice is null ? null : new LadirchenAmount(item.PromotionalPrice.Value),
-        item.PromotionUntil
+        item.PromotionUntil,
+        item.DurationMinutes
       ))
       .ToArray();
   }
@@ -46,7 +47,11 @@ internal static partial class FamilyEconomyPersistenceMapper
         new LadirchenAmount(item.Price),
         item.RequestedAt,
         (RedemptionStatus)item.Status,
-        item.DecidedAt
+        item.DecidedAt,
+        item.DurationMinutes,
+        item.TimerRemainingSeconds,
+        item.TimerStartedAt,
+        item.TimerCancelledAt
       ))
       .ToArray();
   }
@@ -64,6 +69,7 @@ internal static partial class FamilyEconomyPersistenceMapper
         RewardId = reward.Id.Value,
         Title = reward.Title,
         Category = (int)reward.Category,
+        DurationMinutes = reward.DurationMinutes,
         Price = reward.Price.Value,
         PromotionalPrice = reward.PromotionalPrice?.Value,
         PromotionUntil = reward.PromotionUntil,
@@ -88,6 +94,10 @@ internal static partial class FamilyEconomyPersistenceMapper
         RequestedAt = request.RequestedAt,
         Status = (int)request.Status,
         DecidedAt = request.DecidedAt,
+        DurationMinutes = request.DurationMinutes,
+        TimerRemainingSeconds = request.TimerRemainingSeconds,
+        TimerStartedAt = request.TimerStartedAt,
+        TimerCancelledAt = request.TimerCancelledAt,
       });
     }
   }

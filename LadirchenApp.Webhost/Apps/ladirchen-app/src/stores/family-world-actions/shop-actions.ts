@@ -1,5 +1,5 @@
 import { createDomainId } from "@/domain/shared/identifiers";
-import type { ShopRewardId } from "@/domain/shared/identifiers";
+import type { FamilyMemberId, ShopRewardId } from "@/domain/shared/identifiers";
 import type { NewShopReward } from "@/domain/shop/types";
 import type { FamilyWorldActionGroup, FamilyWorldStoreContext } from "@/stores/family-world-store-context";
 import { executeBackendFamilyCommand } from "./backend-family-command";
@@ -32,6 +32,15 @@ export const shopActions = {
       { id, isVisible },
       "notifications.save.shop",
       () => this.notify(isVisible ? "notifications.shop.visible" : "notifications.shop.hidden", { title }),
+    );
+  },
+  async setShopTaskGateOverride(this: FamilyWorldStoreContext, memberId: FamilyMemberId, enabled: boolean) {
+    await executeBackendFamilyCommand(
+      this,
+      "reward-shop.set-task-gate-override",
+      { enabled, memberId },
+      "notifications.save.shop",
+      () => this.notify(enabled ? "notifications.shop.taskGateOpened" : "notifications.shop.taskGateRestored"),
     );
   },
   async updateShopReward(this: FamilyWorldStoreContext, id: ShopRewardId, input: NewShopReward) {
@@ -67,5 +76,17 @@ export const shopActions = {
     await executeBackendFamilyCommand(this, "reward-shop.decide", { approved, id }, "notifications.save.shop", () =>
       this.notify(approved ? "notifications.shop.approved" : "notifications.shop.rejected", { title }),
     );
+  },
+  async pauseShopTimer(this: FamilyWorldStoreContext, requestId: string) {
+    await executeBackendFamilyCommand(this, "reward-shop.pause-timer", { requestId }, "notifications.save.shop");
+  },
+  async resumeShopTimer(this: FamilyWorldStoreContext, requestId: string) {
+    await executeBackendFamilyCommand(this, "reward-shop.resume-timer", { requestId }, "notifications.save.shop");
+  },
+  async resetShopTimer(this: FamilyWorldStoreContext, requestId: string) {
+    await executeBackendFamilyCommand(this, "reward-shop.reset-timer", { requestId }, "notifications.save.shop");
+  },
+  async cancelShopTimer(this: FamilyWorldStoreContext, requestId: string) {
+    await executeBackendFamilyCommand(this, "reward-shop.cancel-timer", { requestId }, "notifications.save.shop");
   },
 } satisfies FamilyWorldActionGroup;

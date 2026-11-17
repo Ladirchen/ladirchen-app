@@ -201,6 +201,7 @@ export function createContributions(): Contribution[] {
       energy: 15,
       assigneeId: FAMILY_MEMBER_IDS.laura,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "sparkle",
       stars: 4,
     },
@@ -217,6 +218,7 @@ export function createContributions(): Contribution[] {
       energy: 20,
       assigneeId: FAMILY_MEMBER_IDS.laura,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "flowers",
       stars: 5,
     },
@@ -233,6 +235,7 @@ export function createContributions(): Contribution[] {
       energy: 25,
       assigneeId: FAMILY_MEMBER_IDS.laura,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "garden",
       stars: 4,
     },
@@ -249,6 +252,7 @@ export function createContributions(): Contribution[] {
       energy: 25,
       assigneeId: FAMILY_MEMBER_IDS.laura,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "lights",
     },
     {
@@ -263,6 +267,7 @@ export function createContributions(): Contribution[] {
       reward: 10,
       energy: 15,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "smoke",
     },
     {
@@ -277,6 +282,7 @@ export function createContributions(): Contribution[] {
       reward: 10,
       energy: 0,
       dueLabel: "",
+      recurrence: "none",
     },
     {
       id: CONTRIBUTION_IDS.adamBreakfast,
@@ -291,6 +297,7 @@ export function createContributions(): Contribution[] {
       energy: 60,
       assigneeId: FAMILY_MEMBER_IDS.adam,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "lights",
     },
     {
@@ -306,6 +313,7 @@ export function createContributions(): Contribution[] {
       energy: 40,
       assigneeId: FAMILY_MEMBER_IDS.adam,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "sparkle",
     },
     {
@@ -321,6 +329,7 @@ export function createContributions(): Contribution[] {
       energy: 60,
       assigneeId: FAMILY_MEMBER_IDS.daniel,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "garden",
     },
     {
@@ -336,6 +345,7 @@ export function createContributions(): Contribution[] {
       energy: 40,
       assigneeId: FAMILY_MEMBER_IDS.daniel,
       dueLabel: "",
+      recurrence: "none",
       worldEffect: "flowers",
     },
   ];

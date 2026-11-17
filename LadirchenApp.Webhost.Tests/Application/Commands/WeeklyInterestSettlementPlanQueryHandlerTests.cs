@@ -68,4 +68,50 @@ public sealed class WeeklyInterestSettlementPlanQueryHandlerTests
     await Assert.That(plan.PeriodToClose).IsNull();
     await Assert.That(plan.Periods.Select(period => period.Key)).IsEquivalentTo(["2026-W41"]);
   }
+
+  [Test]
+  public async Task PlanClosesASuccessfulCurrentWeekOnItsSeventhDay()
+  {
+    var now = new DateTimeOffset(2026, 10, 11, 10, 0, 0, TimeSpan.Zero);
+    var family = new Family(
+      _familyId,
+      _administratorId,
+      "Guardian",
+      new IanaTimeZone("Europe/Zurich")
+    );
+    var economy = new FamilyEconomy(family);
+    var progression = FamilyHouse.CreateInitial(family);
+    var previousPeriod = new IsoWeekPeriod(2026, 40);
+    var currentPeriod = new IsoWeekPeriod(2026, 41);
+    progression.CloseSuccessfulWeek(
+      previousPeriod,
+      HouseEnergyPolicy.MinimumSuccessfulWeekEnergy,
+      Array.Empty<PersonalLadiEvaluation>(),
+      now.AddDays(-7)
+    );
+
+    for (var offset = 0; offset < 7; offset++)
+    {
+      progression.RecordDailyEnergy(
+        currentPeriod.Start.AddDays(offset),
+        HouseEnergyPolicy.MinimumSuccessfulWeekEnergy
+      );
+    }
+
+    var store = new TestTypedAggregateStore(new FixedTimeProvider(now));
+    store.Seed(family, economy, progression: progression);
+    var handler = new GetWeeklyInterestSettlementPlanQueryHandler(
+      store,
+      store,
+      store,
+      new FixedTimeProvider(now)
+    );
+
+    var plan = await handler.HandleAsync(_familyId, CancellationToken.None);
+
+    await Assert.That(plan).IsNotNull();
+    await Assert.That(plan!.PeriodToClose).IsEqualTo(currentPeriod);
+    await Assert.That(plan.Periods).Contains(previousPeriod);
+    await Assert.That(plan.Periods).DoesNotContain(currentPeriod);
+  }
 }

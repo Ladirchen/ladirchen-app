@@ -1015,6 +1015,219 @@ export class Client {
     return Promise.resolve<SavingsReadModelResponse>(null as any);
   }
 
+  listSchabiIntegrations(familyId: string, signal?: AbortSignal): Promise<SchabiIntegrationResponse[]> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/integrations/schabi";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processListSchabiIntegrations(_response);
+    });
+  }
+
+  protected processListSchabiIntegrations(response: Response): Promise<SchabiIntegrationResponse[]> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === ""
+            ? null
+            : (JSON.parse(_responseText, this.jsonParseReviver) as SchabiIntegrationResponse[]);
+        return result200;
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<SchabiIntegrationResponse[]>(null as any);
+  }
+
+  saveSchabiIntegration(
+    familyId: string,
+    childId: string,
+    request: SchabiIntegrationRequest,
+    signal?: AbortSignal,
+  ): Promise<SchabiIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/integrations/schabi/{childId}";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (childId === undefined || childId === null)
+      throw new globalThis.Error("The parameter 'childId' must be defined.");
+    url_ = url_.replace("{childId}", encodeURIComponent("" + childId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(request);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "PUT",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processSaveSchabiIntegration(_response);
+    });
+  }
+
+  protected processSaveSchabiIntegration(response: Response): Promise<SchabiIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as SchabiIntegrationResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<SchabiIntegrationResponse>(null as any);
+  }
+
+  deleteSchabiIntegration(familyId: string, childId: string, signal?: AbortSignal): Promise<void> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/integrations/schabi/{childId}";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (childId === undefined || childId === null)
+      throw new globalThis.Error("The parameter 'childId' must be defined.");
+    url_ = url_.replace("{childId}", encodeURIComponent("" + childId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "DELETE",
+      signal,
+      headers: {},
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processDeleteSchabiIntegration(_response);
+    });
+  }
+
+  protected processDeleteSchabiIntegration(response: Response): Promise<void> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 204) {
+      return response.text().then((_responseText) => {
+        return;
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<void>(null as any);
+  }
+
+  synchronizeSchabiIntegration(
+    familyId: string,
+    childId: string,
+    signal?: AbortSignal,
+  ): Promise<SchabiIntegrationResponse> {
+    let url_ = this.baseUrl + "/api/families/{familyId}/integrations/schabi/{childId}/synchronize";
+    if (familyId === undefined || familyId === null)
+      throw new globalThis.Error("The parameter 'familyId' must be defined.");
+    url_ = url_.replace("{familyId}", encodeURIComponent("" + familyId));
+    if (childId === undefined || childId === null)
+      throw new globalThis.Error("The parameter 'childId' must be defined.");
+    url_ = url_.replace("{childId}", encodeURIComponent("" + childId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.http.fetch(url_, options_).then((_response: Response) => {
+      return this.processSynchronizeSchabiIntegration(_response);
+    });
+  }
+
+  protected processSynchronizeSchabiIntegration(response: Response): Promise<SchabiIntegrationResponse> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        result200 =
+          _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as SchabiIntegrationResponse);
+        return result200;
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        result400 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+      });
+    } else if (status === 403) {
+      return response.text().then((_responseText) => {
+        let result403: any = null;
+        result403 = _responseText === "" ? null : (JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails);
+        return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      });
+    }
+    return Promise.resolve<SchabiIntegrationResponse>(null as any);
+  }
+
   getWebPushConfiguration(signal?: AbortSignal): Promise<WebPushConfigurationResponse> {
     let url_ = this.baseUrl + "/api/push/configuration";
     url_ = url_.replace(/[?&]$/, "");
@@ -1241,6 +1454,9 @@ export interface AddContributionPayload {
   energy: number;
   kind: string;
   assigneeId?: string | null;
+  category?: string | null;
+  dueDate?: string | null;
+  recurrence?: string | null;
 }
 
 export interface ContributionsCopyCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1507,6 +1723,7 @@ export interface AddShopRewardPayload {
   icon: string;
   price: number;
   category: string;
+  durationMinutes?: number | null;
   quantity: number;
   conditions: string;
   availableFrom?: string | null;
@@ -1518,6 +1735,14 @@ export interface AddShopRewardPayload {
 
 export interface RewardShopCancelCommandRequest extends ExecuteFamilyCommandRequest {
   payload: IdFamilyCommandPayload;
+}
+
+export interface RewardShopCancelTimerCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ShopTimerPayload;
+}
+
+export interface ShopTimerPayload {
+  requestId: string;
 }
 
 export interface RewardShopDecideCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1539,6 +1764,27 @@ export interface RewardShopRequestCommandRequest extends ExecuteFamilyCommandReq
 
 export interface RewardShopRepublishCommandRequest extends ExecuteFamilyCommandRequest {
   payload: IdFamilyCommandPayload;
+}
+
+export interface RewardShopPauseTimerCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ShopTimerPayload;
+}
+
+export interface RewardShopResetTimerCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ShopTimerPayload;
+}
+
+export interface RewardShopResumeTimerCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ShopTimerPayload;
+}
+
+export interface RewardShopSetTaskGateOverrideCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: ShopTaskGateOverridePayload;
+}
+
+export interface ShopTaskGateOverridePayload {
+  memberId: string;
+  enabled: boolean;
 }
 
 export interface RewardShopSetVisibilityCommandRequest extends ExecuteFamilyCommandRequest {
@@ -1788,6 +2034,7 @@ export interface ContributionReadModelItem {
   title: string;
   description: string;
   icon: string;
+  category?: string | null;
   area: string;
   areaKey?: string | null;
   kind: string;
@@ -1807,6 +2054,8 @@ export interface ContributionReadModelItem {
   earnedPromotionMultiplier?: number | null;
   approvedAt?: string | null;
   rewardCelebrated?: boolean | null;
+  dueDate?: string | null;
+  recurrence: string;
 }
 
 export interface ContributionPromotionReadModelItem {
@@ -2077,7 +2326,9 @@ export interface RewardShopReadModelResponse {
 
 export interface RewardShopReadModelState {
   redemptionOpen?: boolean | null;
+  shopTaskGateOverrideMemberIds: string[];
   rewards: ShopRewardReadModel[];
+  timeRewards: ShopTimeRewardReadModel[];
 }
 
 export interface ShopRewardReadModel {
@@ -2091,6 +2342,7 @@ export interface ShopRewardReadModel {
   promotionActive?: boolean | null;
   promotionUntil?: string | null;
   category: string;
+  durationMinutes?: number | null;
   quantity: number;
   conditions: string;
   availableFrom?: string | null;
@@ -2104,6 +2356,23 @@ export interface ShopRewardReadModel {
   requestableByMemberIds?: string[] | null;
   cancellableByMemberIds?: string[] | null;
   approvableByMemberIds?: string[] | null;
+}
+
+export interface ShopTimeRewardReadModel {
+  requestId: string;
+  rewardId: string;
+  childId: string;
+  title: string;
+  icon: string;
+  durationMinutes: number;
+  remainingSeconds: number;
+  status: string;
+  startedAt?: string | null;
+  endsAt?: string | null;
+  canPause?: boolean;
+  canResume?: boolean;
+  canReset?: boolean;
+  canCancel?: boolean;
 }
 
 export interface SavingsReadModelResponse {
@@ -2207,6 +2476,24 @@ export interface SavingsVoucherReadModel {
   visibleToMemberIds: string[];
   consentableByMemberIds: string[];
   redeemableByMemberIds: string[];
+}
+
+export interface SchabiIntegrationResponse {
+  memberId?: string;
+  username?: string;
+  enabled?: boolean;
+  syncDayOfWeek?: number;
+  syncTimeLocal?: string;
+  lastSuccessfulSyncAt?: Date | null;
+  lastError?: string | null;
+}
+
+export interface SchabiIntegrationRequest {
+  username: string;
+  calendarUrl?: string | null;
+  enabled?: boolean;
+  syncDayOfWeek?: number;
+  syncTimeLocal: string;
 }
 
 export interface WebPushConfigurationResponse {

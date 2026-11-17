@@ -47,6 +47,7 @@ public static partial class WebApplicationExtensions
     app.MapFamilyReadModelApi();
     app.MapFamilyCommandApi();
     app.MapFamilyProjectionApi();
+    app.MapSchabiIntegrationApi();
     app.MapWebPushApi();
     app.MapHub<FamilyUpdatesHub>("/hubs/family-updates");
     app.MapSinglePageApps(appSettings);

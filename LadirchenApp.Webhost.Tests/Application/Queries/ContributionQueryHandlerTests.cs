@@ -191,6 +191,7 @@ public sealed class ContributionQueryHandlerTests
       [],
       [],
       [],
+      [],
       []
     ));
     var presentation = new FamilyEconomyPresentationState(

@@ -2,13 +2,7 @@ import { useTimeoutFn } from "@vueuse/core";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import type {
-  Contribution,
-  ContributionKind,
-  NewContribution,
-  NewPromotion,
-  Promotion,
-} from "@/domain/contributions/types";
+import type { Contribution, NewContribution, NewPromotion, Promotion } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
@@ -20,7 +14,7 @@ export function useContributionsPage() {
   const route = useRoute();
   const { t } = useI18n();
   const localize = useLocalizedDomainContent();
-  const filter = ref<"all" | ContributionKind>("all");
+  const filter = ref<string>("all");
   const scopeFilter = ref<"all" | "mine" | "open">("mine");
   const statusFilter = ref<"open" | "completed">("open");
   const managedMemberFilter = ref<"all" | "open" | FamilyMemberId>("all");
@@ -44,17 +38,35 @@ export function useContributionsPage() {
     title: "",
     description: "",
     icon: "✨",
+    category: t("contributions.kind.basic"),
     reward: 10,
     energy: 10,
     kind: "basic",
+    dueDate: new Date().toISOString().slice(0, 10),
+    recurrence: "none",
     assigneeId: "",
     assigneeIds: [],
     quantity: 1,
   });
   const kindOptions = computed(() => [
     { title: t("contributions.kind.basic"), value: "basic" },
+    { title: t("contributions.kind.school"), value: "school" },
     { title: t("contributions.kind.extraOptional"), value: "extra" },
   ]);
+  const categorySuggestions = computed(() =>
+    [
+      ...new Set([
+        t("contributions.kind.basic"),
+        t("contributions.kind.school"),
+        t("contributions.kind.extra"),
+        ...store.contributions.flatMap((contribution) => {
+          const category = contribution.category?.trim();
+
+          return category ? [category] : [];
+        }),
+      ]),
+    ].sort((left, right) => left.localeCompare(right)),
+  );
   const assignmentOptions = computed(function callback() {
     if (store.permissions.canManageChildTasks && !store.permissions.canManageContent) {
       return store.members
@@ -94,19 +106,36 @@ export function useContributionsPage() {
     { title: t("contributions.promotions.double"), value: 2 },
     { title: t("contributions.promotions.triple"), value: 3 },
   ]);
-  const localizedContributions = computed(() => store.contributions.map(localize.contribution));
+  const localizedContributions = computed(() =>
+    store.contributions.map((contribution) => {
+      const localized = localize.contribution(contribution);
+
+      return {
+        ...localized,
+        category: localized.category?.trim() || t(`contributions.kind.${localized.kind}`),
+      };
+    }),
+  );
+  const categoryFilterOptions = computed(() =>
+    [...new Set(localizedContributions.value.map((contribution) => contribution.category))]
+      .sort((left, right) => left.localeCompare(right))
+      .map((category) => ({ icon: "🏷️", title: category, value: category })),
+  );
   const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
   const activePromotions = computed(() => localizedPromotions.value.filter((item) => item.active));
   const filteredContributions = computed(() =>
     localizedContributions.value.filter(
       (contribution) =>
-        (filter.value === "all" || contribution.kind === filter.value) &&
+        (filter.value === "all" || contribution.category === filter.value) &&
         (statusFilter.value === "completed"
           ? contribution.status === "approved"
           : contribution.status !== "approved") &&
-        (scopeFilter.value === "all" ||
-          (scopeFilter.value === "mine" && contribution.assigneeId === store.activeChildId) ||
-          (scopeFilter.value === "open" && !contribution.assigneeId && contribution.status === "available")),
+        (store.viewerRole === "child"
+          ? contribution.assigneeId === store.signedInMemberId ||
+            (!contribution.assigneeId && contribution.status === "available")
+          : scopeFilter.value === "all" ||
+            (scopeFilter.value === "mine" && contribution.assigneeId === store.activeChildId) ||
+            (scopeFilter.value === "open" && !contribution.assigneeId && contribution.status === "available")),
     ),
   );
   const managedContributions = computed(() =>
@@ -240,9 +269,12 @@ export function useContributionsPage() {
       description: contribution.description,
       energy: contribution.energy,
       icon: contribution.icon,
+      category: contribution.category,
       kind: contribution.kind,
       reward: contribution.reward,
       title: contribution.title,
+      dueDate: contribution.dueDate,
+      recurrence: contribution.recurrence,
       quantity: 1,
     });
     addDialog.value = true;
@@ -322,9 +354,12 @@ export function useContributionsPage() {
       title: "",
       description: "",
       icon: "✨",
+      category: t("contributions.kind.basic"),
       reward: 10,
       energy: 10,
       kind: "basic",
+      dueDate: new Date().toISOString().slice(0, 10),
+      recurrence: "none",
       assigneeId: "",
       assigneeIds: [],
       quantity: 1,
@@ -383,6 +418,16 @@ export function useContributionsPage() {
     startPageIntroGuide();
   });
   watch(
+    () => newContribution.kind,
+    function callback(kind, previousKind) {
+      const previousDefault = previousKind ? t(`contributions.kind.${previousKind}`) : "";
+
+      if (!newContribution.category.trim() || newContribution.category === previousDefault) {
+        newContribution.category = t(`contributions.kind.${kind}`);
+      }
+    },
+  );
+  watch(
     () => route.query.new,
     function callback(value) {
       if (value === "1" && (store.permissions.canManageContent || store.permissions.canManageChildTasks)) {
@@ -408,6 +453,8 @@ export function useContributionsPage() {
     approveWithRating,
     assignContribution,
     assignmentOptions,
+    categoryFilterOptions,
+    categorySuggestions,
     childAssignmentOptions,
     closeContributionDialog,
     copyContribution,
@@ -425,6 +472,7 @@ export function useContributionsPage() {
     guardianOwnContributions,
     guardianTasksToRate,
     kindOptions,
+    localizedContributions,
     managedContributions,
     managedContributionGroups,
     managedMemberFilter,

@@ -232,6 +232,7 @@ describe("family aggregate runtime validation", () => {
       id: "extra-task",
       kind: "extra",
       partnerableMemberIds: ["guardian-1", "child-2"],
+      recurrence: "none",
       reward: 10,
       status: "available",
       title: "Extra task",
@@ -296,10 +297,16 @@ describe("family aggregate runtime validation", () => {
       status: "available",
       title: "Movie night",
     };
-    const rewardShop = { redemptionOpen: true, rewards: [reward] };
+    const rewardShop = {
+      redemptionOpen: true,
+      rewards: [reward],
+      shopTaskGateOverrideMemberIds: ["member-1"],
+      timeRewards: [],
+    };
 
     expect(isRewardShopState(rewardShop)).toBe(true);
     expect(isRewardShopState({ ...rewardShop, redemptionOpen: undefined })).toBe(false);
+    expect(isRewardShopState({ ...rewardShop, shopTaskGateOverrideMemberIds: undefined })).toBe(false);
     expect(
       isRewardShopState({
         ...rewardShop,

@@ -23,6 +23,7 @@ import type { MemberProgression } from "@/application/contracts/family-progressi
 import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
 import type { AvatarProfileCatalog } from "@/application/contracts/family-profile-contract";
 import type { FamilyReadModelType } from "@/application/contracts/family-read-model-contract";
+import type { ShopTimeReward } from "@/domain/shop";
 export function normalizeFamilyMembers(members: FamilyMember[]): FamilyMember[] {
   return members.map((member) => ({
     ...member,
@@ -177,7 +178,9 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     accessories: initialData.accessories,
     promotions: initialData.promotions,
     shopRewards: initialData.shopRewards,
+    shopTimeRewards: [] as ShopTimeReward[],
     rewardShopRedemptionOpen: false,
+    shopTaskGateOverrideMemberIds: [] as FamilyMemberId[],
   };
 }
 export type FamilyWorldState = ReturnType<typeof createFamilyWorldState>;

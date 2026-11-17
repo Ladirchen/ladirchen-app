@@ -5,7 +5,9 @@ import type {
 } from "@/locales/translation-keys";
 import type { ContributionId, FamilyMemberId, PromotionId } from "@/domain/shared/identifiers";
 
-export type ContributionKind = "basic" | "extra";
+export type ContributionKind = "basic" | "extra" | "school";
+export const CONTRIBUTION_RECURRENCES = ["none", "daily", "weekly"] as const;
+export type ContributionRecurrence = (typeof CONTRIBUTION_RECURRENCES)[number];
 export const CONTRIBUTION_STATUSES = ["available", "pending", "approved"] as const;
 export type ContributionStatus = (typeof CONTRIBUTION_STATUSES)[number];
 export type WorldEffect = "lights" | "flowers" | "garden" | "sparkle" | "smoke";
@@ -16,6 +18,7 @@ export interface Contribution {
   title: string;
   description: string;
   icon: string;
+  category?: string;
   area: string;
   areaKey?: TranslationKey;
   kind: ContributionKind;
@@ -35,6 +38,8 @@ export interface Contribution {
   earnedPromotionMultiplier?: number;
   approvedAt?: string;
   rewardCelebrated?: boolean;
+  dueDate?: string;
+  recurrence: ContributionRecurrence;
 }
 
 export interface Promotion {
@@ -61,8 +66,11 @@ export interface NewContribution {
   title: string;
   description: string;
   icon: string;
+  category: string;
   reward: number;
   energy: number;
   kind: ContributionKind;
   assigneeId?: FamilyMemberId;
+  dueDate?: string;
+  recurrence: ContributionRecurrence;
 }

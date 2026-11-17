@@ -10,5 +10,8 @@ public sealed record AddContributionPayload(
   [property: JsonRequired] decimal Reward,
   [property: JsonRequired] decimal Energy,
   [property: JsonRequired] string Kind,
-  string? AssigneeId
+  string? AssigneeId,
+  string? Category,
+  string? DueDate,
+  string? Recurrence
 );
