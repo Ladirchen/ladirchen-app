@@ -160,7 +160,7 @@ public sealed class SavingsCommandHandlerTests
     var store = CreateWeeklyInterestStore();
     var handler = store.CreateCommandHandler();
 
-    await ExecuteAsync(handler, _guardianId, "savings.settle-weekly-interest", new
+    var result = await ExecuteAsync(handler, _guardianId, "savings.settle-weekly-interest", new
     {
       year = 2026,
       week = 41,
@@ -170,6 +170,10 @@ public sealed class SavingsCommandHandlerTests
     await Assert.That(goal.Saved).IsEqualTo(53);
     await Assert.That(goal.LastInterestRate?.Value).IsEqualTo(5.33m);
     await Assert.That(goal.LastInterestPeriod).IsEqualTo(new IsoWeekPeriod(2026, 41));
+    var notification = result.UserNotifications.Single();
+    await Assert.That(notification.RecipientId).IsEqualTo(_childId);
+    await Assert.That(notification.BodyDe).Contains("3 Ladirchen");
+    await Assert.That(notification.Tag).Contains("2026-W41");
     await Assert.That(store.LastRevisionGuards.Select(item => item.AggregateKind))
       .IsEquivalentTo([TypedAggregateKind.Family, TypedAggregateKind.FamilyProgression]);
   }

@@ -24,6 +24,8 @@ public sealed class ProcessRoleServiceRegistrationTests
 
     await Assert.That(HasHostedService<FamilyAggregateOutboxDispatcher>(builder)).IsFalse();
     await Assert.That(HasHostedService<WeeklyInterestSettlementService>(builder)).IsFalse();
+    await Assert.That(HasHostedService<SchabiCalendarSynchronizationService>(builder)).IsFalse();
+    await Assert.That(HasHostedService<TimeRewardExpirationService>(builder)).IsFalse();
     await Assert.That(hostOptions.ShutdownTimeout).IsEqualTo(System.TimeSpan.FromSeconds(25));
   }
 
@@ -39,6 +41,8 @@ public sealed class ProcessRoleServiceRegistrationTests
 
     await Assert.That(HasHostedService<FamilyAggregateOutboxDispatcher>(builder)).IsTrue();
     await Assert.That(HasHostedService<WeeklyInterestSettlementService>(builder)).IsTrue();
+    await Assert.That(HasHostedService<SchabiCalendarSynchronizationService>(builder)).IsTrue();
+    await Assert.That(HasHostedService<TimeRewardExpirationService>(builder)).IsTrue();
     await Assert.That(hostOptions.ServicesStopConcurrently).IsTrue();
     await Assert.That(hostOptions.ShutdownTimeout).IsEqualTo(System.TimeSpan.FromSeconds(55));
   }

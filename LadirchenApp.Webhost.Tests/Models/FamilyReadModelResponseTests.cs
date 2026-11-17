@@ -30,7 +30,7 @@ public sealed class FamilyReadModelResponseTests
         typeof(FamilyProgressionReadModelState),
       [new HomeCustomizationReadModelResponse("home-customization", 1, EmptyHome())] =
         typeof(HomeCustomizationReadModelState),
-      [new RewardShopReadModelResponse("reward-shop", 1, new(false, []))] =
+      [new RewardShopReadModelResponse("reward-shop", 1, new(false, [], [], []))] =
         typeof(RewardShopReadModelState),
       [new SavingsReadModelResponse("savings", 1, EmptySavings())] =
         typeof(SavingsReadModelState),
