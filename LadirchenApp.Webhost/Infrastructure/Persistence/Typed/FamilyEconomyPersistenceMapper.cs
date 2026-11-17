@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
@@ -12,12 +13,18 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Typed;
 
 internal static partial class FamilyEconomyPersistenceMapper
 {
+  private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+
   public static FamilyEconomy ToDomain(FamilyEconomyRootEntity entity, Family family)
   {
     ArgumentNullException.ThrowIfNull(entity);
     ArgumentNullException.ThrowIfNull(family);
     var activeWalletMemberIds = family.Members
       .Where(item => !item.InvitationPending && item.Access != GuardianAccess.External)
+      .Select(item => item.Id.Value)
+      .ToHashSet(StringComparer.Ordinal);
+    var activeChildMemberIds = family.Members
+      .Where(item => !item.InvitationPending && item.Role == MemberRole.Child)
       .Select(item => item.Id.Value)
       .ToHashSet(StringComparer.Ordinal);
     // Reservations are authoritative pending requests, not a second persisted wallet balance.
@@ -57,7 +64,11 @@ internal static partial class FamilyEconomyPersistenceMapper
         .Select(item => new IsoWeekPeriod(item.IsoYear, item.IsoWeek))
         .ToArray(),
       ToShopRewardStates(entity),
-      ToRedemptionRequestStates(entity)
+      ToRedemptionRequestStates(entity),
+      (JsonSerializer.Deserialize<string[]>(entity.ShopTaskGateOverrideMemberIdsJson, _jsonOptions) ?? [])
+        .Where(activeChildMemberIds.Contains)
+        .Select(item => new FamilyMemberId(item))
+        .ToArray()
     );
 
     return FamilyEconomy.Reconstitute(family, state);
@@ -74,7 +85,10 @@ internal static partial class FamilyEconomyPersistenceMapper
           new ContributionId(item.ContributionId),
           item.Description,
           item.Icon,
-          item.RewardCelebrated
+          item.RewardCelebrated,
+          item.Category,
+          item.DueDate,
+          item.Recurrence
         )),
       entity.SavingGoalPresentations
         .OrderBy(item => item.GoalId, StringComparer.Ordinal)
@@ -125,6 +139,10 @@ internal static partial class FamilyEconomyPersistenceMapper
     var state = economy.CaptureState();
     entity.FamilyId = state.Id.Value;
     entity.PerfectRatingBonusPercent = state.ContributionSettings.PerfectRatingBonus.Value;
+    entity.ShopTaskGateOverrideMemberIdsJson = JsonSerializer.Serialize(
+      state.ShopTaskGateOverrideMemberIds.Select(item => item.Value),
+      _jsonOptions
+    );
     ClearCollections(entity);
     AddWalletsAndHistory(entity, state);
     AddContributions(entity, state);
@@ -212,6 +230,9 @@ internal static partial class FamilyEconomyPersistenceMapper
         ContributionId = item.ContributionId.Value,
         Description = item.Description,
         Icon = item.Icon,
+        Category = item.Category,
+        DueDate = item.DueDate,
+        Recurrence = item.Recurrence,
         RewardCelebrated = item.RewardCelebrated,
       });
     }

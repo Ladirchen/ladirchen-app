@@ -27,6 +27,9 @@ internal static partial class TypedAggregatePersistenceModel
     economy.Property(item => item.Revision).IsConcurrencyToken();
     economy.Property(item => item.UpdatedBy).HasMaxLength(128);
     economy.Property(item => item.PerfectRatingBonusPercent).HasColumnType("numeric");
+    economy.Property(item => item.ShopTaskGateOverrideMemberIdsJson)
+      .HasColumnType("jsonb")
+      .HasDefaultValueSql("'[]'::jsonb");
     ConfigureEconomyRootCollections(economy);
     ConfigureEconomyWalletsAndHistory(modelBuilder);
     ConfigureContributions(modelBuilder);
@@ -122,6 +125,8 @@ internal static partial class TypedAggregatePersistenceModel
     contribution.ToTable("ContributionPresentations");
     contribution.HasKey(item => new { item.FamilyId, item.ContributionId });
     contribution.Property(item => item.ContributionId).HasMaxLength(128);
+    contribution.Property(item => item.Category).HasMaxLength(80);
+    contribution.Property(item => item.Recurrence).HasMaxLength(16);
 
     var goal = modelBuilder.Entity<SavingGoalPresentationEntity>();
     goal.ToTable("SavingGoalPresentations");

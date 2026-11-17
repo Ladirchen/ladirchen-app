@@ -182,7 +182,8 @@ public sealed class RewardShopQueryHandlerTests
           RedemptionStatus.Pending,
           null
         ),
-      ]
+      ],
+      []
     ));
     var presentation = new FamilyEconomyPresentationState(
       [],
@@ -219,7 +220,8 @@ public sealed class RewardShopQueryHandlerTests
       true,
       new AvailabilityWindow(from, null),
       status,
-      false
+      false,
+      DurationMinutes: category == ShopRewardCategory.Time ? 120 : null
     );
   }
 
