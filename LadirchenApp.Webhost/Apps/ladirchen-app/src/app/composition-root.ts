@@ -12,6 +12,7 @@ import { HttpFamilyBootstrapService } from "@/infrastructure/http/http-family-bo
 import { HttpAuthenticationGateway } from "@/infrastructure/http/http-authentication-gateway";
 import { HttpApplicationInfoGateway } from "@/infrastructure/http/http-application-info-gateway";
 import { HttpSavingsInterestSimulationGateway } from "@/infrastructure/http/http-savings-interest-simulation-gateway";
+import { HttpSchabiIntegrationGateway } from "@/infrastructure/http/http-schabi-integration-gateway";
 import { browserClientStorage } from "@/infrastructure/storage/browser-client-storage";
 const repositories: FamilyReadModelRepositories = createHttpFamilyReadModelRepositories(
   frontendRuntimeConfig.apiBaseUrl,
@@ -26,6 +27,7 @@ export const applicationInfoGateway = new HttpApplicationInfoGateway(frontendRun
 export const savingsInterestSimulationGateway = new HttpSavingsInterestSimulationGateway(
   frontendRuntimeConfig.apiBaseUrl,
 );
+export const schabiIntegrationGateway = new HttpSchabiIntegrationGateway(frontendRuntimeConfig.apiBaseUrl);
 export const localeMessagesSource = createBundledLocaleMessagesSource();
 export const homeCustomizationService = repositories.homeCustomization;
 export const familyProfileService = repositories.familyProfile;

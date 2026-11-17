@@ -42,10 +42,15 @@ import type {
   ProgressionSetMaximumSavingsRateCommandRequest,
   RewardShopAddCommandRequest,
   RewardShopCancelCommandRequest,
+  RewardShopCancelTimerCommandRequest,
   RewardShopDecideCommandRequest,
   RewardShopDeleteCommandRequest,
   RewardShopRequestCommandRequest,
   RewardShopRepublishCommandRequest,
+  RewardShopPauseTimerCommandRequest,
+  RewardShopResetTimerCommandRequest,
+  RewardShopResumeTimerCommandRequest,
+  RewardShopSetTaskGateOverrideCommandRequest,
   RewardShopSetVisibilityCommandRequest,
   RewardShopUpdateCommandRequest,
   SavingsAddGoalCommandRequest,
@@ -111,10 +116,15 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "progression.set-maximum-savings-rate": ProgressionSetMaximumSavingsRateCommandRequest;
   readonly "reward-shop.add": RewardShopAddCommandRequest;
   readonly "reward-shop.cancel": RewardShopCancelCommandRequest;
+  readonly "reward-shop.cancel-timer": RewardShopCancelTimerCommandRequest;
   readonly "reward-shop.decide": RewardShopDecideCommandRequest;
   readonly "reward-shop.delete": RewardShopDeleteCommandRequest;
   readonly "reward-shop.request": RewardShopRequestCommandRequest;
   readonly "reward-shop.republish": RewardShopRepublishCommandRequest;
+  readonly "reward-shop.pause-timer": RewardShopPauseTimerCommandRequest;
+  readonly "reward-shop.reset-timer": RewardShopResetTimerCommandRequest;
+  readonly "reward-shop.resume-timer": RewardShopResumeTimerCommandRequest;
+  readonly "reward-shop.set-task-gate-override": RewardShopSetTaskGateOverrideCommandRequest;
   readonly "reward-shop.set-visibility": RewardShopSetVisibilityCommandRequest;
   readonly "reward-shop.update": RewardShopUpdateCommandRequest;
   readonly "savings.acknowledge-behavior-notice": BehaviorAcknowledgeNoticeCommandRequest;

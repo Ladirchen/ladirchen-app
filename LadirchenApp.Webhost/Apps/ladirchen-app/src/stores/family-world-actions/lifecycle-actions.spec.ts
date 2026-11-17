@@ -86,7 +86,9 @@ function createBootstrapReadModel(
       revision: 1,
       state: {
         redemptionOpen: context.rewardShopRedemptionOpen,
+        shopTaskGateOverrideMemberIds: context.shopTaskGateOverrideMemberIds,
         rewards: context.shopRewards,
+        timeRewards: context.shopTimeRewards,
       },
     },
     savings: {

@@ -49,6 +49,16 @@
     </div>
     <div class="reward-icon d-grid place-center">{{ reward.icon }}</div>
     <strong class="d-block mt-3">{{ reward.title }}</strong>
+    <v-chip
+      v-if="reward.durationMinutes"
+      class="mt-2 align-self-start"
+      color="primary"
+      prepend-icon="i-mdi:timer-outline"
+      size="small"
+      variant="tonal"
+    >
+      {{ durationLabel }}
+    </v-chip>
     <p class="reward-description text-caption text-medium-emphasis mt-1">{{ reward.description }}</p>
     <div class="reward-actions d-flex align-center justify-space-between ga-2 mt-auto" data-ladi-ignore>
       <span class="price d-flex align-center">
@@ -171,6 +181,21 @@ const guardianStatusColor = computed(() => (rewardIsRedeemed.value ? "success" :
 const guardianStatusLabel = computed(() =>
   t(rewardIsRedeemed.value ? "shop.rewards.redeemed" : "shop.rewards.available"),
 );
+const durationLabel = computed(() => {
+  const minutes = props.reward.durationMinutes ?? 0;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (remainingMinutes === 0) {
+    return t("shop.timer.durationHours", { count: hours });
+  }
+
+  if (hours === 0) {
+    return t("shop.timer.durationMinutes", { count: remainingMinutes });
+  }
+
+  return t("shop.timer.durationHoursMinutes", { hours, minutes: remainingMinutes });
+});
 </script>
 
 <style lang="scss" scoped>

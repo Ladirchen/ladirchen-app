@@ -10,6 +10,46 @@
       />
 
       <template v-if="activeTab === 'family'">
+        <BrandedCard
+          v-if="canOverrideShopTaskGate && store.activeChild"
+          class="d-flex align-center justify-space-between ga-4 pa-4 mb-4"
+          tone="shop"
+        >
+          <div>
+            <strong>{{
+              t("shop.taskGate.title", { name: store.activeChild.nickname ?? store.activeChild.name })
+            }}</strong>
+            <p class="text-caption text-medium-emphasis mb-0">
+              {{ shopTaskGateControl.message }}
+            </p>
+          </div>
+          <v-btn
+            :color="shopTaskGateControl.color"
+            :prepend-icon="shopTaskGateControl.icon"
+            rounded="lg"
+            size="small"
+            variant="tonal"
+            @click="toggleShopTaskGateOverride"
+          >
+            {{ shopTaskGateControl.label }}
+          </v-btn>
+        </BrandedCard>
+
+        <section v-if="store.shopTimeRewards.length > 0" class="mb-6">
+          <div class="mb-3">
+            <p class="eyebrow mb-1">{{ t("shop.timer.eyebrow") }}</p>
+            <h2 class="section-title">{{ t("shop.timer.title") }}</h2>
+          </div>
+          <div class="reward-grid">
+            <ShopTimeRewardCard
+              v-for="timeReward in store.shopTimeRewards"
+              :key="timeReward.requestId"
+              :owner-name="store.displayNameFor(timeReward.childId)"
+              :reward="timeReward"
+            />
+          </div>
+        </section>
+
         <div class="d-flex align-end justify-space-between mb-3">
           <div>
             <h2 class="section-title">{{ t("shop.rewards.title") }}</h2>
@@ -302,6 +342,18 @@
             :label="t('shop.form.category')"
             variant="outlined"
           />
+          <v-text-field
+            v-if="newReward.category === 'time'"
+            v-model.number="newReward.durationMinutes"
+            :hint="t('shop.form.durationHint')"
+            :label="t('shop.form.durationMinutes')"
+            max="1440"
+            min="1"
+            persistent-hint
+            suffix="min"
+            type="number"
+            variant="outlined"
+          />
           <div class="d-grid reward-form ga-3">
             <v-text-field
               v-model.number="newReward.price"
@@ -453,6 +505,7 @@ import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import PageViewSwitch from "@/shared/components/ui/PageViewSwitch.vue";
 import RoomFurniture from "@/shared/components/house/RoomFurniture.vue";
 import ShopRewardCard from "@/features/shop/components/ShopRewardCard.vue";
+import ShopTimeRewardCard from "@/features/shop/components/ShopTimeRewardCard.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { useShopPage } from "@/features/shop/composables/use-shop-page";
 type EditionAction = "buy" | "childPurchase" | "use" | "selected";
@@ -460,6 +513,7 @@ type FurnitureSetStatus = "owned" | "locked" | "buy" | "childPurchase";
 const { t } = useI18n();
 const {
   activeTab,
+  canOverrideShopTaskGate,
   canSaveCatalogPrice,
   canSaveReward,
   canRequest,
@@ -492,7 +546,9 @@ const {
   saveCatalogPrice,
   setPreviewAccessories,
   shopViewOptions,
+  shopTaskGateControl,
   store,
+  toggleShopTaskGateOverride,
   visibleAccessories,
   visibleFurnitureSets,
   catalogItemsEyebrow,
