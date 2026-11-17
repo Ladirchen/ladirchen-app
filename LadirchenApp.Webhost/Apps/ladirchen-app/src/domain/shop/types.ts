@@ -5,6 +5,7 @@ export const SHOP_REWARD_STATUSES = ["available", "requested", "redeemed"] as co
 export type ShopRewardStatus = (typeof SHOP_REWARD_STATUSES)[number];
 export type ShopRewardPublicationStatus = "expired" | "hidden" | "scheduled" | "visible";
 export type ShopRewardCategory = "time" | "activity" | "allowance" | "gift" | "privilege" | "custom";
+export type ShopTimeRewardStatus = "running" | "paused" | "expired";
 
 export interface ShopReward {
   id: ShopRewardId;
@@ -17,6 +18,7 @@ export interface ShopReward {
   promotionActive?: boolean;
   promotionUntil?: string;
   category: ShopRewardCategory;
+  durationMinutes?: number;
   quantity: number;
   conditions: string;
   availableFrom?: string;
@@ -45,4 +47,22 @@ export interface NewShopReward {
   isVisible?: boolean;
   promotionalPrice?: number;
   promotionUntil?: string;
+  durationMinutes?: number;
+}
+
+export interface ShopTimeReward {
+  requestId: string;
+  rewardId: ShopRewardId;
+  childId: FamilyMemberId;
+  title: string;
+  icon: string;
+  durationMinutes: number;
+  remainingSeconds: number;
+  status: ShopTimeRewardStatus;
+  startedAt?: string;
+  endsAt?: string;
+  canPause: boolean;
+  canResume: boolean;
+  canReset: boolean;
+  canCancel: boolean;
 }

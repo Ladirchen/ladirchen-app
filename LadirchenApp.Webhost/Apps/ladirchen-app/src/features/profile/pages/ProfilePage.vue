@@ -105,6 +105,8 @@
       </div>
     </BrandedCard>
 
+    <AsyncSchabiIntegrationSettings v-if="store.isFamilyAdmin" />
+
     <button class="logout-card mt-5" type="button" @click="store.signOut">
       <span class="logout-icon" aria-hidden="true"><v-icon icon="i-mdi:logout-variant" /></span>
       <span>
@@ -213,6 +215,9 @@ const AsyncAvatarBuilderDialog = defineAsyncComponent(
 );
 const AsyncDevelopmentToolsPanel = defineAsyncComponent(
   () => import("@/features/profile/components/DevelopmentToolsPanel.vue"),
+);
+const AsyncSchabiIntegrationSettings = defineAsyncComponent(
+  () => import("@/features/profile/components/SchabiIntegrationSettings.vue"),
 );
 const localDevelopmentHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const isDevelopment = import.meta.env.DEV || localDevelopmentHostnames.has(window.location.hostname);

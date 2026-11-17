@@ -8,7 +8,8 @@
   >
     <div class="d-flex align-start ga-3">
       <v-avatar class="task-icon-avatar" color="blue-lighten-5" rounded="lg" size="58">
-        {{ contribution.icon }}
+        <SchabiTaskIcon v-if="isSchabiTask" />
+        <template v-else>{{ contribution.icon }}</template>
       </v-avatar>
       <div class="flex-grow-1 min-w-0">
         <div class="d-flex align-center flex-wrap ga-2 mb-1">
@@ -22,7 +23,7 @@
             {{ assigneeLabel }}
           </span>
         </div>
-        <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
+        <ContributionDescription :text="contribution.description" />
         <div v-if="contribution.status === 'approved'" class="approved-reward-summary mt-3">
           <MetricCard class="approved-reward-main" compact tone="reward">
             <ContributionMetaIcon kind="reward" />
@@ -31,7 +32,7 @@
               <strong>{{ t("contributions.reward.coins", { value: earnedReward }) }}</strong>
             </span>
           </MetricCard>
-          <MetricCard v-if="contribution.kind === 'basic'" class="approved-energy" compact tone="energy">
+          <MetricCard v-if="contribution.kind !== 'extra'" class="approved-energy" compact tone="energy">
             <ContributionMetaIcon kind="energy" />
             <span>
               <small>{{ t("contributions.reward.house") }}</small>
@@ -55,7 +56,7 @@
             </span>
           </MetricCard>
           <MetricCard
-            v-if="contribution.kind === 'basic'"
+            v-if="contribution.kind !== 'extra'"
             class="contribution-meta-chip contribution-meta-chip--energy"
             compact
             tone="energy"
@@ -162,12 +163,15 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import { totalEarnedContributionReward } from "@/domain/contributions/rating";
+import { isSchabiContributionId } from "@/domain/contributions/source";
 import type { Contribution, Promotion } from "@/domain/contributions/types";
 import type { FamilyMember, IanaTimeZone } from "@/domain/family/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import ActiveContributionBonus from "./ActiveContributionBonus.vue";
 import ContributionMetaIcon from "./ContributionMetaIcon.vue";
+import ContributionDescription from "./ContributionDescription.vue";
+import SchabiTaskIcon from "./SchabiTaskIcon.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import MetricCard from "@/shared/components/ui/MetricCard.vue";
 export interface Props {
@@ -194,6 +198,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits<Emits>();
 const { t } = useI18n();
+const isSchabiTask = computed(() => isSchabiContributionId(props.contribution.id));
 const assignedMember = computed(() =>
   props.familyMembers.find((member) => member.id === props.contribution.assigneeId),
 );
@@ -203,9 +208,15 @@ const isAssignedToActiveChild = computed(
 const kindLabelClass = computed(() =>
   props.contribution.kind === "basic" ? "contribution-label--basic" : "contribution-label--special",
 );
-const kindIcon = computed(() => (props.contribution.kind === "basic" ? "i-mdi:home-heart" : "i-mdi:creation"));
-const kindLabel = computed(() =>
-  t(props.contribution.kind === "basic" ? "contributions.kind.basic" : "contributions.kind.extra"),
+const kindIcon = computed(function callback() {
+  if (props.contribution.kind === "basic") {
+    return "i-mdi:home-heart";
+  }
+
+  return props.contribution.kind === "school" ? "i-mdi:school-outline" : "i-mdi:creation";
+});
+const kindLabel = computed(
+  () => props.contribution.category?.trim() || t(`contributions.kind.${props.contribution.kind}`),
 );
 const assigneeLabelClass = computed(() =>
   isAssignedToActiveChild.value ? "contribution-label--mine" : "contribution-label--open",

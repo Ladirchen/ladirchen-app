@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="store.piggyBankOpen" content-class="piggy-summary-dialog-frame" max-width="460" scrollable>
+  <v-dialog v-model="store.piggyBankOpen" content-class="piggy-summary-dialog-frame" max-width="540" scrollable>
     <v-card class="piggy-dialog" :class="{ 'piggy-dialog--guardian': store.viewerRole === 'guardian' }" rounded="xl">
       <div class="piggy-header pa-3">
         <div class="piggy-title-row">
@@ -115,6 +115,10 @@
               <span class="guardian-child-stat">
                 <small>{{ t("savings.piggy.guardianAccounts.tasks") }}</small>
                 <strong>{{ child.completedThisWeek }}</strong>
+              </span>
+              <span class="guardian-child-stat guardian-child-stat--streak">
+                <small>{{ t("savings.piggy.guardianAccounts.streak") }}</small>
+                <strong><v-icon aria-hidden="true" icon="i-mdi:fire" />{{ child.streakDays }}</strong>
               </span>
               <span class="guardian-child-stat guardian-child-stat--level">
                 <small>{{ t("savings.piggy.guardianAccounts.level") }}</small>
@@ -668,7 +672,7 @@ const canGiftToMember = computed(
   padding: 8px;
   --uno: d-grid align-center min-w-0;
   grid-template-columns:
-    42px minmax(76px, 1fr) repeat(3, minmax(47px, 0.62fr))
+    42px minmax(76px, 1fr) repeat(4, minmax(47px, 0.62fr))
     minmax(45px, 0.56fr);
   gap: 6px;
   border: 2px solid color-mix(in srgb, var(--lad-color-primary-muted) 12%, transparent);
@@ -730,6 +734,14 @@ const canGiftToMember = computed(
 .guardian-child-stat--level strong {
   color: var(--lad-color-primary-deep);
   font-size: rem(15);
+}
+.guardian-child-stat--streak strong {
+  --uno: d-flex align-center;
+  gap: 2px;
+  color: var(--lad-color-reward-strong);
+}
+.guardian-child-stat--streak :deep(.v-icon) {
+  font-size: rem(12);
 }
 .currency-settings-card {
   border: 2px solid color-mix(in srgb, var(--lad-color-reward-border) 25%, transparent);
@@ -1242,7 +1254,7 @@ const canGiftToMember = computed(
   .guardian-balance-row {
     min-height: 58px;
     grid-template-columns:
-      36px minmax(64px, 1fr) repeat(3, minmax(39px, 0.55fr))
+      36px minmax(64px, 1fr) repeat(4, minmax(36px, 0.55fr))
       minmax(32px, 0.45fr);
     gap: 3px;
     padding-inline: 5px;

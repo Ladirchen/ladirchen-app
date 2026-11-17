@@ -11,6 +11,66 @@
       {{ t("contributions.guardianContext") }}
     </v-alert>
 
+    <section class="task-calendar mb-6">
+      <div class="d-flex align-center justify-space-between ga-3 mb-3">
+        <div>
+          <strong>{{ t("contributions.calendar.title") }}</strong>
+          <p class="text-caption text-medium-emphasis">{{ calendarRangeLabel }}</p>
+        </div>
+        <div class="d-flex align-center ga-1">
+          <v-btn
+            :aria-label="t('contributions.calendar.previous')"
+            icon="i-mdi:chevron-left"
+            size="small"
+            variant="text"
+            @click="weekOffset -= 1"
+          />
+          <v-btn size="small" variant="tonal" @click="weekOffset = 0">{{ t("contributions.calendar.today") }}</v-btn>
+          <v-btn
+            :aria-label="t('contributions.calendar.next')"
+            icon="i-mdi:chevron-right"
+            size="small"
+            variant="text"
+            @click="weekOffset += 1"
+          />
+        </div>
+      </div>
+      <div class="calendar-member-groups">
+        <section v-for="group in calendarGroups" :key="group.memberId ?? 'open'" class="calendar-member-group">
+          <div class="calendar-member-heading">
+            <v-avatar :color="group.color" size="30" variant="tonal">{{ group.avatar }}</v-avatar>
+            <strong>{{ group.title }}</strong>
+            <v-chip size="x-small" variant="tonal">{{ group.taskCount }}</v-chip>
+          </div>
+          <div class="week-grid">
+            <div v-for="day in group.days" :key="day.iso" class="week-day" :class="{ 'week-day--today': day.isToday }">
+              <div class="week-day__heading">
+                <span>{{ day.weekday }}</span>
+                <strong>{{ day.day }}</strong>
+              </div>
+              <button
+                v-for="contribution in day.contributions"
+                :key="contribution.id"
+                class="calendar-task"
+                :class="`calendar-task--${contribution.kind}`"
+                type="button"
+                @click="openCalendarTask(contribution)"
+              >
+                <SchabiTaskIcon v-if="isSchabiContributionId(contribution.id)" />
+                <span v-else>{{ contribution.icon }}</span>
+                <span class="calendar-task__title">{{ contribution.title }}</span>
+                <v-icon v-if="contribution.recurrence !== 'none'" icon="i-mdi:repeat" size="14" />
+              </button>
+              <span v-if="!day.contributions.length" class="week-day__empty">—</span>
+            </div>
+          </div>
+        </section>
+        <p v-if="!calendarGroups.length" class="text-caption text-medium-emphasis">
+          {{ t("contributions.calendar.empty") }}
+        </p>
+      </div>
+    </section>
+
     <template v-if="store.viewerRole === 'child'">
       <section v-if="guardianTasksToRate.length" class="mb-6">
         <SectionHeader
@@ -39,7 +99,7 @@
               </v-avatar>
               <div class="flex-grow-1">
                 <strong>{{ contribution.title }}</strong>
-                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
+                <ContributionDescription :text="contribution.description" />
                 <p class="text-caption text-medium-emphasis">{{ completedByLabel }}</p>
               </div>
             </div>
@@ -68,7 +128,9 @@
         v-model:scope="scopeFilter"
         v-model:status="statusFilter"
         class="mb-4"
+        :category-options="categoryFilterOptions"
         :open-count="openContributionCount"
+        :show-scope="false"
       />
 
       <TransitionGroup class="contribution-card-list d-flex flex-column ga-3" name="list" tag="div">
@@ -152,7 +214,7 @@
               </v-avatar>
               <div class="flex-grow-1 min-w-0">
                 <strong class="text-body-small">{{ contribution.title }}</strong>
-                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
+                <ContributionDescription :text="contribution.description" />
                 <p class="text-caption text-medium-emphasis">{{ statusDescription }}</p>
               </div>
               <v-btn
@@ -200,7 +262,7 @@
               </v-avatar>
               <div class="flex-grow-1">
                 <strong>{{ contribution.title }}</strong>
-                <p class="text-caption text-medium-emphasis">{{ contribution.description }}</p>
+                <ContributionDescription :text="contribution.description" />
                 <p class="text-caption text-medium-emphasis">{{ metaLabel }}</p>
               </div>
             </div>
@@ -434,6 +496,13 @@
           maxlength="4"
           variant="outlined"
         />
+        <v-combobox
+          v-model="newContribution.category"
+          :items="categorySuggestions"
+          :label="t('contributions.form.category')"
+          maxlength="80"
+          variant="outlined"
+        />
         <v-select
           v-if="contributionToEdit || newContribution.kind !== 'basic' || !store.permissions.canManageContent"
           v-model="newContribution.assigneeId"
@@ -465,6 +534,23 @@
           variant="outlined"
         />
         <div class="d-grid form-columns ga-3">
+          <v-text-field
+            v-model="newContribution.dueDate"
+            clearable
+            :label="t('contributions.form.dueDate')"
+            type="date"
+            variant="outlined"
+          />
+          <v-select
+            v-model="newContribution.recurrence"
+            :items="recurrenceOptions"
+            item-title="title"
+            item-value="value"
+            :label="t('contributions.form.recurrence')"
+            variant="outlined"
+          />
+        </div>
+        <div class="d-grid form-columns ga-3">
           <v-select
             v-model="newContribution.kind"
             :items="kindOptions"
@@ -482,7 +568,7 @@
           />
         </div>
         <v-slider
-          v-if="newContribution.kind === 'basic'"
+          v-if="newContribution.kind !== 'extra'"
           v-model="newContribution.energy"
           color="primary"
           :label="t('contributions.form.energyShare')"
@@ -656,10 +742,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import type { Contribution } from "@/domain/contributions/types";
+import { isSchabiContributionId } from "@/domain/contributions/source";
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
 import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
+import ContributionDescription from "@/shared/components/contributions/ContributionDescription.vue";
+import SchabiTaskIcon from "@/shared/components/contributions/SchabiTaskIcon.vue";
 import ContributionFilterPanel from "@/features/contributions/components/ContributionFilterPanel.vue";
 import PromotionCountdown from "@/shared/components/contributions/PromotionCountdown.vue";
 import SectionHeader from "@/shared/components/ui/SectionHeader.vue";
@@ -672,6 +762,8 @@ const {
   approveWithRating,
   assignContribution,
   assignmentOptions,
+  categoryFilterOptions,
+  categorySuggestions,
   childAssignmentOptions,
   closeContributionDialog,
   copyContribution,
@@ -689,6 +781,7 @@ const {
   guardianOwnContributions,
   guardianTasksToRate,
   kindOptions,
+  localizedContributions,
   managedContributionGroups,
   managedMemberFilter,
   managedMemberOptions,
@@ -718,11 +811,103 @@ const {
   teamContribution,
   teamDialog,
 } = useContributionsPage();
-const { t } = useI18n();
+const { locale, t } = useI18n();
+const weekOffset = ref(0);
+function localIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+const calendarTasks = computed(() =>
+  localizedContributions.value.filter((contribution) => contribution.status !== "approved"),
+);
+const calendarDateSlots = computed(() => {
+  const today = new Date();
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) + weekOffset.value * 7);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + index);
+    const iso = localIsoDate(date);
+
+    return {
+      iso,
+      weekday: new Intl.DateTimeFormat(locale.value, { weekday: "short" }).format(date),
+      day: date.getDate(),
+      isToday: iso === localIsoDate(today),
+    };
+  });
+});
+const calendarGroups = computed(() => {
+  const children = store.members.filter(
+    (member) => member.role === "child" && (store.viewerRole !== "child" || member.id === store.signedInMemberId),
+  );
+  const groups: Array<{
+    avatar: string;
+    color: string;
+    days: Array<(typeof calendarDateSlots.value)[number] & { contributions: Contribution[] }>;
+    memberId: string | undefined;
+    taskCount: number;
+    title: string;
+  }> = children.map((member) => {
+    const tasks = calendarTasks.value.filter((contribution) => contribution.assigneeId === member.id);
+
+    return {
+      avatar: member.avatar,
+      color: member.color,
+      days: calendarDateSlots.value.map((day) => ({
+        ...day,
+        contributions: tasks.filter((contribution) => contribution.dueDate === day.iso),
+      })),
+      memberId: member.id,
+      taskCount: tasks.length,
+      title: member.name,
+    };
+  });
+  const openTasks = calendarTasks.value.filter((contribution) => !contribution.assigneeId);
+
+  if (store.viewerRole !== "child" && openTasks.length) {
+    groups.push({
+      avatar: "✨",
+      color: "primary",
+      days: calendarDateSlots.value.map((day) => ({
+        ...day,
+        contributions: openTasks.filter((contribution) => contribution.dueDate === day.iso),
+      })),
+      memberId: undefined,
+      taskCount: openTasks.length,
+      title: t("contributions.assignment.stillOpen"),
+    });
+  }
+
+  return groups;
+});
+const calendarRangeLabel = computed(() => {
+  const first = calendarDateSlots.value.at(0)?.iso;
+  const last = calendarDateSlots.value.at(-1)?.iso;
+  const formatter = new Intl.DateTimeFormat(locale.value, { day: "2-digit", month: "short", year: "numeric" });
+
+  return first && last
+    ? `${formatter.format(new Date(`${first}T12:00:00`))} – ${formatter.format(new Date(`${last}T12:00:00`))}`
+    : "";
+});
+function openCalendarTask(contribution: Contribution) {
+  if (store.viewerRole !== "child" && contribution.status === "available") {
+    openContributionEditor(contribution);
+  }
+}
 const contributionDialogTitle = computed(() =>
   t(contributionToEdit.value ? "contributions.form.editTitle" : "contributions.form.title"),
 );
 const contributionSubmitLabel = computed(() => t(contributionToEdit.value ? "common.save" : "common.add"));
+const recurrenceOptions = computed(() => [
+  { title: t("contributions.recurrence.none"), value: "none" },
+  { title: t("contributions.recurrence.daily"), value: "daily" },
+  { title: t("contributions.recurrence.weekly"), value: "weekly" },
+]);
 const emptyStateIsOpen = computed(() => statusFilter.value === "open");
 const emptyStateTitle = computed(() =>
   t(emptyStateIsOpen.value ? "contributions.empty.openTitle" : "contributions.empty.completedTitle"),
@@ -771,12 +956,14 @@ const reviewableTaskCards = computed(() =>
 const canSaveContribution = computed(() =>
   Boolean(
     newContribution.description.trim() &&
+    newContribution.category.trim() &&
     newContribution.icon.trim() &&
     newContribution.title.trim() &&
     newContribution.reward >= 0 &&
     Number.isInteger(newContribution.quantity) &&
     newContribution.quantity >= 1 &&
     newContribution.quantity <= 20 &&
+    (newContribution.recurrence === "none" || Boolean(newContribution.dueDate)) &&
     (newContribution.kind === "extra" || newContribution.energy >= 1),
   ),
 );
@@ -805,6 +992,101 @@ function toggleEmptyStateFilter() {
 
 .contribution-card-list {
   padding-inline: rem(17);
+}
+
+.task-calendar {
+  padding: 16px;
+  border: 1px solid var(--lad-border);
+  border-radius: 20px;
+  background: var(--lad-surface);
+}
+
+.week-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.calendar-member-groups {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+
+.calendar-member-group {
+  min-width: 0;
+}
+
+.calendar-member-group + .calendar-member-group {
+  padding-top: 18px;
+  border-top: 1px solid var(--lad-border);
+}
+
+.calendar-member-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.week-day {
+  min-height: 130px;
+  padding: 8px;
+  border: 1px solid var(--lad-border);
+  border-radius: 14px;
+  background: var(--lad-surface-soft);
+}
+
+.week-day--today {
+  border-color: var(--lad-color-primary);
+  box-shadow: inset 0 0 0 1px var(--lad-color-primary);
+}
+
+.week-day__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+}
+
+.week-day__empty {
+  color: var(--lad-muted);
+}
+
+.calendar-task {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  padding: 7px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lad-color-primary) 12%, var(--lad-surface));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-task--school {
+  background: color-mix(in srgb, var(--lad-color-info) 16%, var(--lad-surface));
+}
+
+.calendar-task__title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .management-member-filter {
@@ -980,6 +1262,24 @@ function toggleEmptyStateFilter() {
 @include reduced-motion {
   .task-icon-avatar {
     animation: none;
+  }
+}
+
+@include respond-down(shell) {
+  .week-grid {
+    grid-template-columns: none;
+    grid-auto-columns: calc(33.333333% - 5.333333px);
+    grid-auto-flow: column;
+    padding-bottom: 8px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    scroll-snap-type: inline mandatory;
+    touch-action: pan-x;
+  }
+
+  .week-day {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 }
 

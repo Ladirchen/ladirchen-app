@@ -1,6 +1,6 @@
 import type { RewardShopState } from "@/application/contracts/reward-shop-contract";
 import { SHOP_REWARD_STATUSES } from "@/domain/shop/types";
-import type { ShopReward, ShopRewardCategory, ShopRewardStatus } from "@/domain/shop/types";
+import type { ShopReward, ShopRewardCategory, ShopRewardStatus, ShopTimeReward } from "@/domain/shop/types";
 import {
   exhaustiveValues,
   hasLocalizedValue,
@@ -48,6 +48,9 @@ function isShopReward(value: unknown): value is ShopReward {
     isNonEmptyString(value.icon) &&
     hasValidPromotion(value) &&
     isKnownString(value.category, categories) &&
+    (value.category === "time"
+      ? isNonNegativeInteger(value.durationMinutes) && value.durationMinutes > 0 && value.durationMinutes <= 1_440
+      : value.durationMinutes === undefined) &&
     isNonNegativeInteger(value.quantity) &&
     typeof value.conditions === "string" &&
     (value.availableFrom === undefined || isCalendarDate(value.availableFrom)) &&
@@ -66,11 +69,33 @@ function isShopReward(value: unknown): value is ShopReward {
     hasOptionalDomainId(value.requesterId)
   );
 }
+function isShopTimeReward(value: unknown): value is ShopTimeReward {
+  return (
+    isRecord(value) &&
+    isDomainId(value.requestId) &&
+    isDomainId(value.rewardId) &&
+    isDomainId(value.childId) &&
+    isNonEmptyString(value.title) &&
+    isNonEmptyString(value.icon) &&
+    isNonNegativeInteger(value.durationMinutes) &&
+    value.durationMinutes > 0 &&
+    isNonNegativeInteger(value.remainingSeconds) &&
+    (value.status === "running" || value.status === "paused" || value.status === "expired") &&
+    isOptionalString(value.startedAt) &&
+    isOptionalString(value.endsAt) &&
+    typeof value.canPause === "boolean" &&
+    typeof value.canResume === "boolean" &&
+    typeof value.canReset === "boolean" &&
+    typeof value.canCancel === "boolean"
+  );
+}
 export function isRewardShopState(value: unknown): value is RewardShopState {
   return (
     isRecord(value) &&
     typeof value.redemptionOpen === "boolean" &&
+    isUniqueDomainIdArray(value.shopTaskGateOverrideMemberIds) &&
     isArrayOf(value.rewards, isShopReward) &&
+    isArrayOf(value.timeRewards, isShopTimeReward) &&
     hasUniqueIds(value.rewards) &&
     value.rewards.every(
       (reward) =>
