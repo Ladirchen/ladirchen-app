@@ -28,6 +28,7 @@ interface RewardDraft {
   icon: string;
   price: number;
   category: ShopRewardCategory;
+  durationMinutes: number;
   quantity: number;
   conditions: string;
   publicationMode: PublicationMode;
@@ -58,6 +59,7 @@ function createEmptyReward(): RewardDraft {
     icon: "🎁",
     price: 100,
     category: "activity",
+    durationMinutes: 120,
     quantity: 1,
     conditions: "",
     publicationMode: "now",
@@ -174,6 +176,7 @@ export function useShopPage() {
       newReward.conditions.trim() &&
       newReward.price >= 1 &&
       newReward.quantity >= 1 &&
+      (newReward.category !== "time" || (newReward.durationMinutes >= 1 && newReward.durationMinutes <= 1_440)) &&
       (newReward.publicationMode !== "scheduled" || newReward.availableFrom) &&
       (newReward.unlimited || newReward.availableUntil) &&
       (!newReward.availableFrom || !newReward.availableUntil || newReward.availableFrom <= newReward.availableUntil) &&
@@ -294,6 +297,23 @@ export function useShopPage() {
     return store.ownedFurnitureSetIds.includes(id);
   }
   const redemptionOpen = computed(() => store.rewardShopRedemptionOpen);
+  const canOverrideShopTaskGate = computed(
+    () => store.permissions.canManageShop && store.signedInMember?.guardianAccess === "admin",
+  );
+  const shopTaskGateOverridden = computed(() => store.shopTaskGateOverrideMemberIds.includes(store.activeChildId));
+  const shopTaskGateControl = computed(() => ({
+    color: shopTaskGateOverridden.value ? "warning" : "primary",
+    icon: shopTaskGateOverridden.value ? "i-mdi:lock-reset" : "i-mdi:lock-open-variant-outline",
+    label: t(shopTaskGateOverridden.value ? "shop.taskGate.restore" : "shop.taskGate.open"),
+    message: t(shopTaskGateOverridden.value ? "shop.taskGate.overridden" : "shop.taskGate.automatic"),
+  }));
+  function toggleShopTaskGateOverride() {
+    if (!store.activeChild) {
+      return;
+    }
+
+    void store.setShopTaskGateOverride(store.activeChild.id, !shopTaskGateOverridden.value);
+  }
   function canRequest(reward: ShopReward) {
     return reward.requestableByMemberIds.includes(store.activeChildId);
   }
@@ -328,6 +348,7 @@ export function useShopPage() {
       icon: newReward.icon.trim(),
       price: newReward.price,
       category: newReward.category,
+      durationMinutes: newReward.category === "time" ? newReward.durationMinutes : undefined,
       quantity: newReward.quantity,
       conditions: newReward.conditions.trim(),
       availableFrom: newReward.publicationMode === "scheduled" ? newReward.availableFrom : undefined,
@@ -377,6 +398,7 @@ export function useShopPage() {
       availableFrom: reward.publicationStatus === "scheduled" ? (reward.availableFrom ?? "") : "",
       availableUntil: reward.availableUntil ?? "",
       category: reward.category,
+      durationMinutes: reward.durationMinutes ?? 120,
       conditions: reward.conditions,
       description: reward.description,
       icon: reward.icon,
@@ -452,6 +474,7 @@ export function useShopPage() {
     activeTab,
     canSaveCatalogPrice,
     canSaveReward,
+    canOverrideShopTaskGate,
     canRequest,
     catalogItemsEyebrow,
     catalogItemsTitle,
@@ -484,7 +507,9 @@ export function useShopPage() {
     saveCatalogPrice,
     setPreviewAccessories,
     shopViewOptions,
+    shopTaskGateControl,
     store,
+    toggleShopTaskGateOverride,
     visibleAccessories,
     visibleFurnitureSets,
   };

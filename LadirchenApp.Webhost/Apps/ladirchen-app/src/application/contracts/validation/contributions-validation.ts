@@ -20,18 +20,20 @@ import {
   isRecord,
   values,
 } from "./runtime-validation";
-import { CONTRIBUTION_STATUSES } from "@/domain/contributions/types";
+import { CONTRIBUTION_RECURRENCES, CONTRIBUTION_STATUSES } from "@/domain/contributions/types";
 import { CONTRIBUTION_RATING } from "@/domain/contributions/rating";
 import type {
   Contribution,
   ContributionKind,
+  ContributionRecurrence,
   ContributionStatus,
   Promotion,
   WorldEffect,
 } from "@/domain/contributions/types";
 import type { ContributionId } from "@/domain/shared/identifiers";
-const contributionKinds = exhaustiveValues<ContributionKind>({ basic: true, extra: true });
+const contributionKinds = exhaustiveValues<ContributionKind>({ basic: true, extra: true, school: true });
 const contributionStatuses = values<ContributionStatus>(CONTRIBUTION_STATUSES);
+const contributionRecurrences = values<ContributionRecurrence>(CONTRIBUTION_RECURRENCES);
 const worldEffects = exhaustiveValues<WorldEffect>({
   flowers: true,
   garden: true,
@@ -45,10 +47,13 @@ function hasValidContent(value: Record<string, unknown>): boolean {
     hasLocalizedValue(value, "title") &&
     typeof value.description === "string" &&
     isNonEmptyString(value.icon) &&
+    isOptionalString(value.category) &&
     (hasLocalizedValue(value, "area") || isNonEmptyString(value.areaKey)) &&
     isOptionalString(value.areaKey) &&
     typeof value.dueLabel === "string" &&
-    isOptionalString(value.dueLabelKey)
+    isOptionalString(value.dueLabelKey) &&
+    (value.dueDate === undefined || /^\d{4}-\d{2}-\d{2}$/.test(String(value.dueDate))) &&
+    isKnownString(value.recurrence, contributionRecurrences)
   );
 }
 function hasValidResult(value: Record<string, unknown>): boolean {

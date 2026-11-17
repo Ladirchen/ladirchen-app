@@ -40,15 +40,16 @@ export function useSavingsPiggy() {
       .map(function callback(member) {
         const available = store.availableBalances[member.id] ?? 0;
         const saved = store.totalVisibleSavedFor(member.id);
-        const ladiLevel = store.memberProgressions[member.id]?.ladiStagePosition ?? 1;
+        const progression = store.memberProgressions[member.id];
 
         return {
           available,
           completedThisWeek: store.currentWeekApprovedContributionCountFor(member.id),
           id: member.id,
-          ladiLevel,
+          ladiLevel: progression?.ladiStagePosition ?? 1,
           name: member.nickname?.trim() || member.name,
           saved,
+          streakDays: progression?.streakDays ?? 0,
           total: available + saved,
           weekEarned: store.currentWeekEarnedFor(member.id),
         };

@@ -17,11 +17,11 @@
       </div>
       <div>
         <h2 id="contribution-filter-title">{{ t("contributions.filter.title") }}</h2>
-        <p>{{ t("contributions.filter.description") }}</p>
+        <p>{{ filterDescription }}</p>
       </div>
     </div>
 
-    <fieldset class="scope-options" :aria-label="t('contributions.filter.scopeAria')">
+    <fieldset v-if="showScope" class="scope-options" :aria-label="t('contributions.filter.scopeAria')">
       <button
         v-for="option in scopeOptions"
         :key="option.value"
@@ -60,7 +60,7 @@
       <legend class="kind-filter-label">{{ t("contributions.filter.kind") }}</legend>
       <div class="kind-options">
         <button
-          v-for="option in kindOptions"
+          v-for="option in categoryOptions"
           :key="option.value"
           :aria-pressed="kind === option.value"
           :class="{ active: kind === option.value }"
@@ -78,13 +78,14 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { ContributionKind } from "@/domain/contributions/types";
 import { UI_ICONS } from "@/shared/ui-icons";
 export interface Props {
+  categoryOptions: ReadonlyArray<{ icon: string; title: string; value: string }>;
   openCount: number;
+  showScope?: boolean;
 }
 type ContributionScope = "all" | "mine" | "open";
-type KindFilter = "all" | ContributionKind;
+type KindFilter = string;
 type StatusFilter = "open" | "completed";
 const scope = defineModel<ContributionScope>("scope", { required: true });
 const kind = defineModel<KindFilter>("kind", { required: true });
@@ -117,16 +118,14 @@ const scopeOptions = computed<
     icon: UI_ICONS.contributionScope.all,
   },
 ]);
-const kindOptions = computed<
-  Array<{
-    icon: string;
-    title: string;
-    value: KindFilter;
-  }>
->(() => [
+const props = withDefaults(defineProps<Props>(), { showScope: true });
+const showScope = computed(() => props.showScope);
+const filterDescription = computed(() =>
+  t(props.showScope ? "contributions.filter.description" : "contributions.filter.childDescription"),
+);
+const categoryOptions = computed(() => [
   { value: "all", title: t("contributions.filter.kinds.all"), icon: "✨" },
-  { value: "basic", title: t("contributions.filter.kinds.energy"), icon: "⚡" },
-  { value: "extra", title: t("contributions.filter.kinds.extra"), icon: "🪙" },
+  ...props.categoryOptions,
 ]);
 const statusOptions = computed<
   Array<{
@@ -148,9 +147,7 @@ function selectStatus(value: StatusFilter) {
   if (value === "completed" && scope.value === "open") {
     scope.value = "mine";
   }
-
 }
-defineProps<Props>();
 </script>
 
 <style lang="scss" scoped>

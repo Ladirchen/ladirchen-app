@@ -101,7 +101,9 @@ export const lifecycleActions = {
       this.savingsVouchers = [...savings.state.vouchers];
       this.sharedSavedBalances = { ...savings.state.sharedSavedBalances };
       this.shopRewards = [...rewardShop.state.rewards];
+      this.shopTimeRewards = [...rewardShop.state.timeRewards];
       this.rewardShopRedemptionOpen = rewardShop.state.redemptionOpen;
+      this.shopTaskGateOverrideMemberIds = [...rewardShop.state.shopTaskGateOverrideMemberIds];
 
       if (familyProgression) {
         this.completedWeeklyStreak = familyProgression.state.completedWeeklyStreak;
@@ -309,6 +311,7 @@ async function refreshFamilyReadModelSnapshot(
       if (snapshot) {
         context.shopRewards = [...snapshot.state.rewards];
         context.rewardShopRedemptionOpen = snapshot.state.redemptionOpen;
+        context.shopTaskGateOverrideMemberIds = [...snapshot.state.shopTaskGateOverrideMemberIds];
         context.readModelRevisions[readModelType] = snapshot.revision;
       }
 
