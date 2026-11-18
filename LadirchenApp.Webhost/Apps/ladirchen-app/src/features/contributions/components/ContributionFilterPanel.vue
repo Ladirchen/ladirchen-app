@@ -72,23 +72,43 @@
         </button>
       </div>
     </fieldset>
+
+    <fieldset class="kind-filter kind-filter--type">
+      <legend class="kind-filter-label">{{ t("contributions.filter.person") }}</legend>
+      <div class="kind-options">
+        <button
+          v-for="option in personOptions"
+          :key="option.value"
+          :aria-pressed="person === option.value"
+          :class="{ active: person === option.value }"
+          type="button"
+          @click="person = option.value"
+        >
+          {{ option.title }}
+        </button>
+      </div>
+    </fieldset>
   </section>
 </template>
 
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { UI_ICONS } from "@/shared/ui-icons";
 export interface Props {
   categoryOptions: ReadonlyArray<{ icon: string; title: string; value: string }>;
   openCount: number;
+  personOptions: ReadonlyArray<{ title: string; value: "all" | FamilyMemberId }>;
   showScope?: boolean;
 }
 type ContributionScope = "all" | "mine" | "open";
 type KindFilter = string;
+type PersonFilter = "all" | FamilyMemberId;
 type StatusFilter = "open" | "completed";
 const scope = defineModel<ContributionScope>("scope", { required: true });
 const kind = defineModel<KindFilter>("kind", { required: true });
+const person = defineModel<PersonFilter>("person", { required: true });
 const status = defineModel<StatusFilter>("status", { required: true });
 const { t } = useI18n();
 const scopeOptions = computed<

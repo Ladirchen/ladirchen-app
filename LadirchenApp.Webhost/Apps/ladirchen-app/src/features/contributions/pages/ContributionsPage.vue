@@ -125,11 +125,13 @@
 
       <ContributionFilterPanel
         v-model:kind="filter"
+        v-model:person="personFilter"
         v-model:scope="scopeFilter"
         v-model:status="statusFilter"
         class="mb-4"
         :category-options="categoryFilterOptions"
         :open-count="openContributionCount"
+        :person-options="personFilterOptions"
         :show-scope="false"
       />
 
@@ -794,6 +796,8 @@ const {
   openContributionEditor,
   openOwnTaskDialog,
   openTeamInvite,
+  personFilter,
+  personFilterOptions,
   promotionContributionOptions,
   promotionDialog,
   promotionFor,
