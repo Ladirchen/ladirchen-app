@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import { FURNITURE_SETS, HOUSE_STAGES, HOUSE_THEMES } from "@/domain/house";
 import type { FurnitureSetId, HouseAccessoryId, HouseThemeId } from "@/domain/house";
 import type { ShopReward, ShopRewardCategory } from "@/domain/shop";
+import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import {
   getHouseExteriorAssetUrl,
@@ -300,19 +301,25 @@ export function useShopPage() {
   const canOverrideShopTaskGate = computed(
     () => store.permissions.canManageShop && store.signedInMember?.guardianAccess === "admin",
   );
-  const shopTaskGateOverridden = computed(() => store.shopTaskGateOverrideMemberIds.includes(store.activeChildId));
-  const shopTaskGateControl = computed(() => ({
-    color: shopTaskGateOverridden.value ? "warning" : "primary",
-    icon: shopTaskGateOverridden.value ? "i-mdi:lock-reset" : "i-mdi:lock-open-variant-outline",
-    label: t(shopTaskGateOverridden.value ? "shop.taskGate.restore" : "shop.taskGate.open"),
-    message: t(shopTaskGateOverridden.value ? "shop.taskGate.overridden" : "shop.taskGate.automatic"),
-  }));
-  function toggleShopTaskGateOverride() {
-    if (!store.activeChild) {
-      return;
-    }
+  const shopTaskGateControls = computed(() =>
+    store.members
+      .filter((member) => member.role === "child" && !member.invitationPending)
+      .map((member) => {
+        const overridden = store.shopTaskGateOverrideMemberIds.includes(member.id);
 
-    void store.setShopTaskGateOverride(store.activeChild.id, !shopTaskGateOverridden.value);
+        return {
+          color: overridden ? "warning" : "primary",
+          icon: overridden ? "i-mdi:lock-reset" : "i-mdi:lock-open-variant-outline",
+          label: t(overridden ? "shop.taskGate.restore" : "shop.taskGate.open"),
+          memberId: member.id,
+          memberName: member.nickname?.trim() || member.name,
+          message: t(overridden ? "shop.taskGate.overridden" : "shop.taskGate.automatic"),
+          overridden,
+        };
+      }),
+  );
+  function toggleShopTaskGateOverride(memberId: FamilyMemberId, overridden: boolean) {
+    void store.setShopTaskGateOverride(memberId, !overridden);
   }
   function canRequest(reward: ShopReward) {
     return reward.requestableByMemberIds.includes(store.activeChildId);
@@ -507,7 +514,7 @@ export function useShopPage() {
     saveCatalogPrice,
     setPreviewAccessories,
     shopViewOptions,
-    shopTaskGateControl,
+    shopTaskGateControls,
     store,
     toggleShopTaskGateOverride,
     visibleAccessories,

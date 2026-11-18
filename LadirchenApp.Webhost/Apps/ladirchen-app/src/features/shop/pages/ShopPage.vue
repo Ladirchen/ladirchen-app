@@ -10,30 +10,31 @@
       />
 
       <template v-if="activeTab === 'family'">
-        <BrandedCard
-          v-if="canOverrideShopTaskGate && store.activeChild"
-          class="d-flex align-center justify-space-between ga-4 pa-4 mb-4"
-          tone="shop"
-        >
-          <div>
-            <strong>{{
-              t("shop.taskGate.title", { name: store.activeChild.nickname ?? store.activeChild.name })
-            }}</strong>
-            <p class="text-caption text-medium-emphasis mb-0">
-              {{ shopTaskGateControl.message }}
-            </p>
-          </div>
-          <v-btn
-            :color="shopTaskGateControl.color"
-            :prepend-icon="shopTaskGateControl.icon"
-            rounded="lg"
-            size="small"
-            variant="tonal"
-            @click="toggleShopTaskGateOverride"
+        <div v-if="canOverrideShopTaskGate && shopTaskGateControls.length > 0" class="d-grid ga-3 mb-4">
+          <BrandedCard
+            v-for="control in shopTaskGateControls"
+            :key="control.memberId"
+            class="d-flex align-center justify-space-between ga-4 pa-4"
+            tone="shop"
           >
-            {{ shopTaskGateControl.label }}
-          </v-btn>
-        </BrandedCard>
+            <div>
+              <strong>{{ t("shop.taskGate.title", { name: control.memberName }) }}</strong>
+              <p class="text-caption text-medium-emphasis mb-0">
+                {{ control.message }}
+              </p>
+            </div>
+            <v-btn
+              :color="control.color"
+              :prepend-icon="control.icon"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="toggleShopTaskGateOverride(control.memberId, control.overridden)"
+            >
+              {{ control.label }}
+            </v-btn>
+          </BrandedCard>
+        </div>
 
         <section v-if="store.shopTimeRewards.length > 0" class="mb-6">
           <div class="mb-3">
@@ -546,7 +547,7 @@ const {
   saveCatalogPrice,
   setPreviewAccessories,
   shopViewOptions,
-  shopTaskGateControl,
+  shopTaskGateControls,
   store,
   toggleShopTaskGateOverride,
   visibleAccessories,
