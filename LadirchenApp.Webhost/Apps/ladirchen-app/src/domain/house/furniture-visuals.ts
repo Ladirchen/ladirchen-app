@@ -13,7 +13,6 @@ export interface FurnitureVisualDefinition {
 }
 const DEFAULT_COLLISION: FurnitureCollisionBounds = { horizontalRadius: 8, verticalRadius: 9 };
 function decoration(minimumY?: number): FurnitureVisualDefinition {
-
   return { minimumY };
 }
 function solid(
@@ -21,7 +20,6 @@ function solid(
   verticalRadius = DEFAULT_COLLISION.verticalRadius,
   options: Omit<FurnitureVisualDefinition, "collision"> = {},
 ): FurnitureVisualDefinition {
-
   return { collision: { horizontalRadius, verticalRadius }, ...options };
 }
 export const FURNITURE_VISUAL_DEFINITIONS = {
@@ -36,17 +34,25 @@ export const FURNITURE_VISUAL_DEFINITIONS = {
   "dining-table": solid(9, 8, { locksScale: true, placementY: 66 }),
   "dog-blanket": decoration(),
   "double-bed": solid(15, 13),
+  "dance-studio-mirror": solid(13, 9),
+  "fairy-lantern": solid(6, 12),
   "family-flag": decoration(),
   "flower-box": { ...decoration(), renderInLayout: false },
   "food-bowl": decoration(),
+  "forest-rug": decoration(),
+  "forest-treasure-chest": solid(10, 8),
   "garden-chair": solid(),
   "garden-table": solid(),
   hammock: solid(),
   "kitchen-counter": solid(12, 7),
   lamp: solid(),
+  "magical-clock": solid(7, 12),
+  "microphone-stand": solid(5, 12),
+  "neon-eye-light": { ...decoration(12), maximumY: 46, placementY: 28 },
   "pet-bed": decoration(),
   plant: solid(),
   pool: solid(),
+  "popstar-vanity": solid(12, 10),
   "pumpkin-arch": solid(),
   "retro-fridge": solid(6, 13),
   rug: decoration(),
@@ -61,6 +67,5 @@ export const FURNITURE_VISUAL_DEFINITIONS = {
   wardrobe: solid(8, 13),
 } as const satisfies Record<FurnitureVisualId, FurnitureVisualDefinition>;
 export function furnitureVisualDefinitionFor(visual: FurnitureVisualId): FurnitureVisualDefinition {
-
   return FURNITURE_VISUAL_DEFINITIONS[visual];
 }

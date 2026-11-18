@@ -457,6 +457,54 @@ export const HOUSE_ACCESSORY_DEFINITIONS: ReadonlyArray<HouseAccessoryDefinition
     motion: "wave",
     visual: "family-flag",
   }),
+  defineIndoorFurniture({
+    id: "dance-studio-mirror",
+    icon: "🪞",
+    roomId: "makeup-room",
+    visual: "dance-studio-mirror",
+  }),
+  defineIndoorFurniture({
+    id: "neon-eye-light",
+    icon: "✨",
+    roomId: "gamer-room",
+    visual: "neon-eye-light",
+  }),
+  defineIndoorFurniture({
+    id: "microphone-stand",
+    icon: "🎤",
+    roomId: "creative-room",
+    visual: "microphone-stand",
+  }),
+  defineIndoorFurniture({
+    id: "popstar-vanity",
+    icon: "💄",
+    roomId: "makeup-room",
+    visual: "popstar-vanity",
+  }),
+  defineIndoorFurniture({
+    id: "forest-treasure-chest",
+    icon: "🧰",
+    roomId: "children-room",
+    visual: "forest-treasure-chest",
+  }),
+  defineIndoorFurniture({
+    id: "fairy-lantern",
+    icon: "🏮",
+    roomId: "children-room",
+    visual: "fairy-lantern",
+  }),
+  defineIndoorFurniture({
+    id: "forest-rug",
+    icon: "🌿",
+    roomId: "play-room",
+    visual: "forest-rug",
+  }),
+  defineIndoorFurniture({
+    id: "magical-clock",
+    icon: "🕰️",
+    roomId: "children-room",
+    visual: "magical-clock",
+  }),
   // design-generator:house-accessory-definition
 ];
 export function createHouseAccessories(

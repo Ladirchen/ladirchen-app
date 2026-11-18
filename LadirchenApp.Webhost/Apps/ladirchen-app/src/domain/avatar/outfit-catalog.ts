@@ -22,6 +22,8 @@ const BUILT_IN_AVATAR_OUTFIT_CATALOG = [
 ] as const;
 
 export const AVATAR_OUTFIT_EXTENSION_CATALOG = [
+  defineAvatarPart("glitter-stage-jacket", ["child"]),
+  defineAvatarPart("forest-adventurer", ["child"]),
   // design-generator:avatar-outfit-id
 ] as const;
 

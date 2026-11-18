@@ -10,6 +10,10 @@ export const AVATAR_ACCESSORY_CATALOG = [
   defineAvatarPart("star-glasses"),
   defineAvatarPart("flower-crown"),
   defineAvatarPart("propeller-cap"),
+  defineAvatarPart("gemstone-earrings", ["child"]),
+  defineAvatarPart("headset-microphone", ["child"]),
+  defineAvatarPart("fantasy-ears", ["child"]),
+  defineAvatarPart("blue-ocarina", ["child"]),
   // design-generator:avatar-accessory-id
 ] as const;
 

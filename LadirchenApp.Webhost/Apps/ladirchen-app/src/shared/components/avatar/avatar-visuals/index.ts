@@ -8,12 +8,20 @@ import type {
   AvatarOutfitExtensionId,
   AvatarSeasonalAccessoryExtensionId,
 } from "@/domain/avatar";
+import BlueOcarinaVisual from "./BlueOcarinaVisual.vue";
 import CapVisual from "./CapVisual.vue";
 import CatEarsVisual from "./CatEarsVisual.vue";
 import CrownVisual from "./CrownVisual.vue";
+import FantasyEarsVisual from "./FantasyEarsVisual.vue";
 import FlowerCrownVisual from "./FlowerCrownVisual.vue";
+import ForestAdventurerVisual from "./ForestAdventurerVisual.vue";
+import ForestBraidVisual from "./ForestBraidVisual.vue";
+import GemstoneEarringsVisual from "./GemstoneEarringsVisual.vue";
+import GlitterStageJacketVisual from "./GlitterStageJacketVisual.vue";
 import GlassesVisual from "./GlassesVisual.vue";
 import HeadphonesVisual from "./HeadphonesVisual.vue";
+import HeadsetMicrophoneVisual from "./HeadsetMicrophoneVisual.vue";
+import PopstarSpaceBunsVisual from "./PopstarSpaceBunsVisual.vue";
 import PropellerCapVisual from "./PropellerCapVisual.vue";
 import StarGlassesVisual from "./StarGlassesVisual.vue";
 // design-generator:avatar-visual-import
@@ -30,6 +38,10 @@ export const avatarAccessoryVisuals = {
   "star-glasses": { component: StarGlassesVisual, requiresHeadClearance: false },
   "flower-crown": { component: FlowerCrownVisual, requiresHeadClearance: true },
   "propeller-cap": { component: PropellerCapVisual, requiresHeadClearance: true },
+  "gemstone-earrings": { component: GemstoneEarringsVisual, requiresHeadClearance: false },
+  "headset-microphone": { component: HeadsetMicrophoneVisual, requiresHeadClearance: false },
+  "fantasy-ears": { component: FantasyEarsVisual, requiresHeadClearance: false },
+  "blue-ocarina": { component: BlueOcarinaVisual, requiresHeadClearance: false },
   // design-generator:avatar-accessory-visual
 } satisfies Record<Exclude<AvatarAccessoryId, "none">, AvatarAccessoryVisualDefinition>;
 export interface AvatarExtensionVisualRegistry {
@@ -51,9 +63,13 @@ export const avatarExtensionVisuals: AvatarExtensionVisualRegistry = {
     // design-generator:avatar-fun-accessory-visual
   },
   hair: {
+    "popstar-space-buns": PopstarSpaceBunsVisual,
+    "forest-braid": ForestBraidVisual,
     // design-generator:avatar-hair-visual
   },
   outfit: {
+    "glitter-stage-jacket": GlitterStageJacketVisual,
+    "forest-adventurer": ForestAdventurerVisual,
     // design-generator:avatar-outfit-visual
   },
   "seasonal-accessory": {
@@ -64,6 +80,5 @@ export function avatarExtensionVisualFor(
   category: keyof AvatarExtensionVisualRegistry,
   id: string,
 ): Component | undefined {
-
   return (avatarExtensionVisuals[category] as Readonly<Record<string, Component>>)[id];
 }
