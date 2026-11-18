@@ -4,6 +4,10 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { Contribution, NewContribution, NewPromotion, Promotion } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
+import {
+  matchesContributionPersonFilter,
+  type ContributionPersonFilter,
+} from "@/features/contributions/contribution-person-filter";
 import { useLocalizedDomainContent } from "@/shared/composables/use-localized-domain-content";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { ladiGuideController } from "@/shared/services/ladi-guide-controller";
@@ -15,6 +19,7 @@ export function useContributionsPage() {
   const { t } = useI18n();
   const localize = useLocalizedDomainContent();
   const filter = ref<string>("all");
+  const personFilter = ref<ContributionPersonFilter>("all");
   const scopeFilter = ref<"all" | "mine" | "open">("mine");
   const statusFilter = ref<"open" | "completed">("open");
   const managedMemberFilter = ref<"all" | "open" | FamilyMemberId>("all");
@@ -121,21 +126,24 @@ export function useContributionsPage() {
       .sort((left, right) => left.localeCompare(right))
       .map((category) => ({ icon: "🏷️", title: category, value: category })),
   );
+  const personFilterOptions = computed(() => [
+    { title: t("contributions.filter.persons.all"), value: "all" as const },
+    ...store.members.map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
+  ]);
   const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
   const activePromotions = computed(() => localizedPromotions.value.filter((item) => item.active));
   const filteredContributions = computed(() =>
     localizedContributions.value.filter(
       (contribution) =>
         (filter.value === "all" || contribution.category === filter.value) &&
+        matchesContributionPersonFilter(contribution.assigneeId, personFilter.value) &&
         (statusFilter.value === "completed"
           ? contribution.status === "approved"
           : contribution.status !== "approved") &&
-        (store.viewerRole === "child"
-          ? contribution.assigneeId === store.signedInMemberId ||
-            (!contribution.assigneeId && contribution.status === "available")
-          : scopeFilter.value === "all" ||
-            (scopeFilter.value === "mine" && contribution.assigneeId === store.activeChildId) ||
-            (scopeFilter.value === "open" && !contribution.assigneeId && contribution.status === "available")),
+        (store.viewerRole === "child" ||
+          scopeFilter.value === "all" ||
+          (scopeFilter.value === "mine" && contribution.assigneeId === store.activeChildId) ||
+          (scopeFilter.value === "open" && !contribution.assigneeId && contribution.status === "available")),
     ),
   );
   const managedContributions = computed(() =>
@@ -486,6 +494,8 @@ export function useContributionsPage() {
     openContributionEditor,
     openOwnTaskDialog,
     openTeamInvite,
+    personFilter,
+    personFilterOptions,
     promotionContributionOptions,
     promotionDialog,
     promotionFor,
