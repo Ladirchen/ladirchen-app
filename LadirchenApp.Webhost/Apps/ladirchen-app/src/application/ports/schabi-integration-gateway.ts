@@ -3,6 +3,7 @@ import type { FamilyId, FamilyMemberId } from "@/domain/shared/identifiers";
 export interface SchabiIntegration {
   readonly memberId: FamilyMemberId;
   readonly username: string;
+  readonly configured: boolean;
   readonly enabled: boolean;
   readonly syncDayOfWeek: number;
   readonly syncTimeLocal: string;

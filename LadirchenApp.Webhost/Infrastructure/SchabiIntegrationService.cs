@@ -56,6 +56,7 @@ public sealed class SchabiIntegrationService
           member.Id.Value,
           string.Empty,
           false,
+          false,
           (int)DayOfWeek.Thursday,
           "06:00",
           null,
@@ -175,6 +176,7 @@ public sealed class SchabiIntegrationService
     return new SchabiIntegrationResponse(
       integration.MemberId,
       integration.SchabiUsername,
+      true,
       integration.Enabled,
       integration.SyncDayOfWeek,
       integration.SyncTimeLocal.ToString("HH:mm", CultureInfo.InvariantCulture),

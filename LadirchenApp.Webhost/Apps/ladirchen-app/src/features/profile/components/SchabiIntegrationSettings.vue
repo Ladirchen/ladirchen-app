@@ -126,7 +126,6 @@ import { useFamilyWorldStore } from "@/stores/family-world";
 interface SchabiIntegrationDraft extends SchabiIntegration {
   busy: boolean;
   calendarUrl: string;
-  configured: boolean;
   syncing: boolean;
 }
 
@@ -183,7 +182,6 @@ async function load(): Promise<void> {
       ...integration,
       busy: false,
       calendarUrl: "",
-      configured: integration.username.length > 0,
       syncing: false,
     }));
   } catch {

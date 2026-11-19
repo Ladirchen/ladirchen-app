@@ -15,6 +15,7 @@ import {
 interface SchabiIntegrationDto {
   readonly memberId: string;
   readonly username: string;
+  readonly configured: boolean;
   readonly enabled: boolean;
   readonly syncDayOfWeek: number;
   readonly syncTimeLocal: string;
@@ -27,6 +28,7 @@ function isSchabiIntegrationDto(value: unknown): value is SchabiIntegrationDto {
     isRecord(value) &&
     isFamilyMemberId(value.memberId) &&
     typeof value.username === "string" &&
+    typeof value.configured === "boolean" &&
     typeof value.enabled === "boolean" &&
     typeof value.syncDayOfWeek === "number" &&
     Number.isInteger(value.syncDayOfWeek) &&
@@ -43,6 +45,7 @@ function isSchabiIntegrationDto(value: unknown): value is SchabiIntegrationDto {
 
 function fromDto(value: SchabiIntegrationDto): SchabiIntegration {
   return {
+    configured: value.configured,
     enabled: value.enabled,
     lastError: value.lastError ?? undefined,
     lastSuccessfulSyncAt: value.lastSuccessfulSyncAt ?? undefined,
