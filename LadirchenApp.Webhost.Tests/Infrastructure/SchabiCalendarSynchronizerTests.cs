@@ -8,6 +8,28 @@ namespace LadirchenApp.Webhost.Tests.Infrastructure;
 public sealed class SchabiCalendarSynchronizerTests
 {
   [Test]
+  [Arguments(2026, 11, 16, 7, 2026, 11, 23)]
+  [Arguments(2026, 11, 19, 14, 2026, 12, 3)]
+  [Arguments(2026, 11, 22, 30, 2026, 12, 22)]
+  public async Task SynchronizationUsesTheConfiguredRange(
+    int year,
+    int month,
+    int day,
+    int syncHorizonDays,
+    int expectedYear,
+    int expectedMonth,
+    int expectedDay
+  )
+  {
+    var periodEnd = SchabiCalendarSynchronizer.GetSynchronizationPeriodEnd(
+      new DateOnly(year, month, day),
+      syncHorizonDays
+    );
+
+    await Assert.That(periodEnd).IsEqualTo(new DateOnly(expectedYear, expectedMonth, expectedDay));
+  }
+
+  [Test]
   public async Task NewIntegrationIsDueImmediately()
   {
     var due = SchabiCalendarSynchronizer.IsScheduledSyncDue(

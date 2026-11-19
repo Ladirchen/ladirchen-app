@@ -292,6 +292,11 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<int>("SyncDayOfWeek")
                         .HasColumnType("integer");
 
+                    b.Property<int>("SyncHorizonDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(14);
+
                     b.Property<TimeOnly>("SyncTimeLocal")
                         .HasColumnType("time without time zone");
 
@@ -302,7 +307,10 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Enabled");
 
-                    b.ToTable("SchabiCalendarIntegrations", (string)null);
+                    b.ToTable("SchabiCalendarIntegrations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SchabiCalendarIntegrations_SyncHorizonDays", "\"SyncHorizonDays\" >= 1 AND \"SyncHorizonDays\" <= 90");
+                        });
                 });
 
             modelBuilder.Entity("LadirchenApp.Webhost.Infrastructure.Persistence.Typed.Entities.ClosedFamilyWeekEntity", b =>

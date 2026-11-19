@@ -2481,8 +2481,10 @@ export interface SavingsVoucherReadModel {
 export interface SchabiIntegrationResponse {
   memberId?: string;
   username?: string;
+  configured?: boolean;
   enabled?: boolean;
   syncDayOfWeek?: number;
+  syncHorizonDays?: number;
   syncTimeLocal?: string;
   lastSuccessfulSyncAt?: Date | null;
   lastError?: string | null;
@@ -2493,6 +2495,7 @@ export interface SchabiIntegrationRequest {
   calendarUrl?: string | null;
   enabled?: boolean;
   syncDayOfWeek?: number;
+  syncHorizonDays?: number;
   syncTimeLocal: string;
 }
 
