@@ -106,7 +106,7 @@ public sealed class FamilyEconomyGoalLifecycleTests
   }
 
   [Test]
-  public async Task PersonalVoucherCanBeConvertedBackToTheOwnersLadirchenBalance()
+  public async Task PersonalVoucherConversionRefundsOnlyTheOwnersWalletContribution()
   {
     var economy = CreateEconomy();
     var goalId = new SavingGoalId("convertible-personal-goal");
@@ -138,10 +138,49 @@ public sealed class FamilyEconomyGoalLifecycleTests
       _now
     );
 
-    await Assert.That(returned).IsEqualTo(10);
-    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(25);
+    await Assert.That(returned).IsEqualTo(5);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(20);
     await Assert.That(economy.SavingsVouchers).IsEmpty();
     await Assert.That(economy.SavingsGoals.Select(goal => goal.Id)).DoesNotContain(goalId);
+  }
+
+  [Test]
+  public async Task StarterBonusOnlyVoucherConversionDoesNotIncreaseTheOwnersBalance()
+  {
+    var economy = CreateEconomy();
+    var goalId = new SavingGoalId("starter-bonus-only-goal");
+    GiveBalance(economy, _childId, "fund-starter-bonus-only-goal");
+    economy.AddGoal(
+      _childId,
+      goalId,
+      new SavingGoalDefinition(
+        GoalOwner.Member(_childId),
+        "Starter bonus only goal",
+        new LadirchenAmount(5),
+        GoalVisibility.Private
+      ),
+      new TransactionId("create-starter-bonus-only-goal"),
+      _now
+    );
+
+    var returned = economy.ConvertSavingsVoucherToLadirchen(
+      _childId,
+      goalId,
+      new TransactionId("convert-starter-bonus-only-voucher"),
+      _now
+    );
+
+    await Assert.That(returned).IsEqualTo(0);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(20);
+    await Assert.That(economy.SavingsVouchers).IsEmpty();
+    await Assert.That(economy.SavingsGoals.Select(goal => goal.Id)).DoesNotContain(goalId);
+    await Assert.That(() => economy.ConvertSavingsVoucherToLadirchen(
+      _childId,
+      goalId,
+      new TransactionId("convert-starter-bonus-only-voucher-again"),
+      _now
+    )).Throws<DomainRuleException>();
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(20);
   }
 
   [Test]

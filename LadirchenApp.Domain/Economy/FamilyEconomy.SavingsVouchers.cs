@@ -104,9 +104,7 @@ public sealed partial class FamilyEconomy
       DomainError.InvalidState,
       "The savings voucher is not convertible or was already redeemed."
     );
-    var refunds = voucher.OwnerId is null
-      ? goal.RefundableContributions.ToArray()
-      : [new KeyValuePair<FamilyMemberId, decimal>(voucher.OwnerId, voucher.Amount)];
+    var refunds = goal.RefundableContributions.ToArray();
     var returned = refunds.Sum(refund => refund.Value);
     var forfeited = voucher.Amount - returned;
     Rules.Require(forfeited >= 0, DomainError.InvalidState, "Voucher refunds exceed the voucher amount.");
