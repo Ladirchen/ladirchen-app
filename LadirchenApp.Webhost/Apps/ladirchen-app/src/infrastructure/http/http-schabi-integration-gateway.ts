@@ -18,6 +18,7 @@ interface SchabiIntegrationDto {
   readonly configured: boolean;
   readonly enabled: boolean;
   readonly syncDayOfWeek: number;
+  readonly syncHorizonDays: number;
   readonly syncTimeLocal: string;
   readonly lastSuccessfulSyncAt?: string | null;
   readonly lastError?: string | null;
@@ -34,6 +35,10 @@ function isSchabiIntegrationDto(value: unknown): value is SchabiIntegrationDto {
     Number.isInteger(value.syncDayOfWeek) &&
     value.syncDayOfWeek >= 0 &&
     value.syncDayOfWeek <= 6 &&
+    typeof value.syncHorizonDays === "number" &&
+    Number.isInteger(value.syncHorizonDays) &&
+    value.syncHorizonDays >= 1 &&
+    value.syncHorizonDays <= 90 &&
     typeof value.syncTimeLocal === "string" &&
     /^(?:[01]\d|2[0-3]):[0-5]\d$/u.test(value.syncTimeLocal) &&
     (value.lastSuccessfulSyncAt === null ||
@@ -51,6 +56,7 @@ function fromDto(value: SchabiIntegrationDto): SchabiIntegration {
     lastSuccessfulSyncAt: value.lastSuccessfulSyncAt ?? undefined,
     memberId: createDomainId.familyMember(value.memberId),
     syncDayOfWeek: value.syncDayOfWeek,
+    syncHorizonDays: value.syncHorizonDays,
     syncTimeLocal: value.syncTimeLocal,
     username: value.username,
   };

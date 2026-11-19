@@ -805,6 +805,7 @@
   "profile.schabi.notConfigured": "Noch nicht eingerichtet",
   "profile.schabi.schedule": "Individueller Zeitplan",
   "profile.schabi.syncDay": "Wochentag",
+  "profile.schabi.syncDays": "Zeitraum (Tage)",
   "profile.schabi.syncNow": "Jetzt synchronisieren",
   "profile.schabi.syncTime": "Uhrzeit",
   "profile.schabi.title": "Schabi-Integration",

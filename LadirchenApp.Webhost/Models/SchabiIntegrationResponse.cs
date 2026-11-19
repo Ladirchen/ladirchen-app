@@ -8,6 +8,7 @@ public sealed record SchabiIntegrationResponse(
   bool Configured,
   bool Enabled,
   int SyncDayOfWeek,
+  int SyncHorizonDays,
   string SyncTimeLocal,
   DateTimeOffset? LastSuccessfulSyncAt,
   string? LastError

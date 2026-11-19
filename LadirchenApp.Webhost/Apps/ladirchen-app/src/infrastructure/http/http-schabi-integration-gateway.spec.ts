@@ -10,6 +10,7 @@ const integration = {
   lastSuccessfulSyncAt: "2026-11-19T06:00:00Z",
   memberId: "child-1",
   syncDayOfWeek: 4,
+  syncHorizonDays: 14,
   syncTimeLocal: "06:00",
   username: "student",
 };
@@ -30,6 +31,7 @@ describe("HttpSchabiIntegrationGateway", () => {
         lastSuccessfulSyncAt: "2026-11-19T06:00:00Z",
         memberId: "child-1",
         syncDayOfWeek: 4,
+        syncHorizonDays: 14,
         syncTimeLocal: "06:00",
         username: "",
       },

@@ -58,6 +58,7 @@ public sealed class SchabiIntegrationService
           false,
           false,
           (int)DayOfWeek.Thursday,
+          14,
           "06:00",
           null,
           null
@@ -91,6 +92,7 @@ public sealed class SchabiIntegrationService
 
     var now = _timeProvider.GetUtcNow();
     var syncDayOfWeek = RequiredDayOfWeek(request.SyncDayOfWeek);
+    var syncHorizonDays = RequiredSyncHorizonDays(request.SyncHorizonDays);
     var syncTimeLocal = RequiredTime(request.SyncTimeLocal);
     var integration = await _database.SchabiCalendarIntegrations.SingleOrDefaultAsync(
       item => item.FamilyId == familyId.Value && item.MemberId == childId.Value,
@@ -123,6 +125,7 @@ public sealed class SchabiIntegrationService
 
     integration.SchabiUsername = username;
     integration.SyncDayOfWeek = (int)syncDayOfWeek;
+    integration.SyncHorizonDays = syncHorizonDays;
     integration.SyncTimeLocal = syncTimeLocal;
     integration.UpdatedAt = now;
     integration.LastError = null;
@@ -179,6 +182,7 @@ public sealed class SchabiIntegrationService
       true,
       integration.Enabled,
       integration.SyncDayOfWeek,
+      integration.SyncHorizonDays,
       integration.SyncTimeLocal.ToString("HH:mm", CultureInfo.InvariantCulture),
       integration.LastSuccessfulSyncAt,
       integration.LastError
@@ -193,6 +197,19 @@ public sealed class SchabiIntegrationService
     }
 
     return (DayOfWeek)value;
+  }
+
+  private static int RequiredSyncHorizonDays(int value)
+  {
+    if (value is < 1 or > 90)
+    {
+      throw new ArgumentException(
+        "The synchronization range must be between 1 and 90 days.",
+        nameof(value)
+      );
+    }
+
+    return value;
   }
 
   private static TimeOnly RequiredTime(string value)

@@ -213,11 +213,18 @@ public sealed class LadirchenDbContext : DbContext, IDataProtectionKeyContext
       .OnDelete(DeleteBehavior.Cascade);
 
     var schabiIntegration = modelBuilder.Entity<SchabiCalendarIntegrationEntity>();
-    schabiIntegration.ToTable("SchabiCalendarIntegrations");
+    schabiIntegration.ToTable(
+      "SchabiCalendarIntegrations",
+      table => table.HasCheckConstraint(
+        "CK_SchabiCalendarIntegrations_SyncHorizonDays",
+        "\"SyncHorizonDays\" >= 1 AND \"SyncHorizonDays\" <= 90"
+      )
+    );
     schabiIntegration.HasKey(item => new { item.FamilyId, item.MemberId });
     schabiIntegration.Property(item => item.MemberId).HasMaxLength(128);
     schabiIntegration.Property(item => item.SchabiUsername).HasMaxLength(128);
     schabiIntegration.Property(item => item.ProtectedCalendarUrl).IsRequired();
+    schabiIntegration.Property(item => item.SyncHorizonDays).HasDefaultValue(14);
     schabiIntegration.Property(item => item.LastError).HasMaxLength(2000);
     schabiIntegration.HasIndex(item => item.Enabled);
     schabiIntegration

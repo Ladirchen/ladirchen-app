@@ -7,5 +7,6 @@ public sealed record SchabiIntegrationRequest(
   string? CalendarUrl,
   bool Enabled,
   int SyncDayOfWeek,
+  int SyncHorizonDays,
   [property: JsonRequired] string SyncTimeLocal
 );

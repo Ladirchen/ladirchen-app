@@ -65,6 +65,15 @@
               type="time"
               variant="outlined"
             />
+            <v-text-field
+              v-model.number="draft.syncHorizonDays"
+              density="compact"
+              :label="t('profile.schabi.syncDays')"
+              :max="90"
+              :min="1"
+              type="number"
+              variant="outlined"
+            />
           </div>
         </div>
 
@@ -146,6 +155,9 @@ function canSave(draft: SchabiIntegrationDraft): boolean {
     !draft.busy &&
     !draft.syncing &&
     Number.isInteger(draft.syncDayOfWeek) &&
+    Number.isInteger(draft.syncHorizonDays) &&
+    draft.syncHorizonDays >= 1 &&
+    draft.syncHorizonDays <= 90 &&
     /^(?:[01]\d|2[0-3]):[0-5]\d$/u.test(draft.syncTimeLocal) &&
     draft.username.trim().length > 0 &&
     (draft.configured || draft.calendarUrl.trim().length > 0)
@@ -203,6 +215,7 @@ async function remove(draft: SchabiIntegrationDraft): Promise<void> {
       lastError: undefined,
       lastSuccessfulSyncAt: undefined,
       syncDayOfWeek: 4,
+      syncHorizonDays: 14,
       syncTimeLocal: "06:00",
       username: "",
     });
@@ -219,6 +232,7 @@ async function save(draft: SchabiIntegrationDraft): Promise<void> {
       calendarUrl: draft.calendarUrl.trim(),
       enabled: draft.enabled,
       syncDayOfWeek: draft.syncDayOfWeek,
+      syncHorizonDays: draft.syncHorizonDays,
       syncTimeLocal: draft.syncTimeLocal,
       username: draft.username.trim(),
     });
@@ -251,7 +265,7 @@ onMounted(load);
 
 .schedule-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.6fr);
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(8rem, 0.6fr));
   gap: 0.75rem;
 }
 

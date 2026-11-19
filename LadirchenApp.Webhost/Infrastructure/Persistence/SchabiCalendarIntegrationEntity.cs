@@ -10,6 +10,7 @@ public sealed class SchabiCalendarIntegrationEntity
   public string ProtectedCalendarUrl { get; set; } = string.Empty;
   public bool Enabled { get; set; }
   public int SyncDayOfWeek { get; set; } = (int)DayOfWeek.Thursday;
+  public int SyncHorizonDays { get; set; } = 14;
   public TimeOnly SyncTimeLocal { get; set; } = new(6, 0);
   public DateTimeOffset CreatedAt { get; set; }
   public DateTimeOffset UpdatedAt { get; set; }

@@ -129,7 +129,7 @@ public sealed class SchabiCalendarSynchronizer
     try
     {
       var tasks = await DownloadTasksAsync(integration, cancellationToken);
-      var periodEnd = GetSynchronizationPeriodEnd(today);
+      var periodEnd = GetSynchronizationPeriodEnd(today, integration.SyncHorizonDays);
 
       foreach (var task in tasks.Where(item => item.DueDate >= today && item.DueDate < periodEnd))
       {
@@ -161,12 +161,9 @@ public sealed class SchabiCalendarSynchronizer
     }
   }
 
-  internal static DateOnly GetSynchronizationPeriodEnd(DateOnly today)
+  internal static DateOnly GetSynchronizationPeriodEnd(DateOnly today, int syncHorizonDays)
   {
-    var daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
-    var currentWeekMonday = today.AddDays(-daysSinceMonday);
-
-    return currentWeekMonday.AddDays(14);
+    return today.AddDays(syncHorizonDays);
   }
 
   internal static bool IsScheduledSyncDue(
