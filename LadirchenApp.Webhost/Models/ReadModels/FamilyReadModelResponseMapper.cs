@@ -27,6 +27,11 @@ internal static class FamilyReadModelResponseMapper
     );
     var contributions = source.Economy.Contributions
       .Where(contribution => source.CalculatedState.Contributions.ContainsKey(contribution.Id))
+      .Where(contribution => !Required(
+        presentations,
+        contribution.Id,
+        "The contribution presentation is missing."
+      ).IsFocus)
       .Select(contribution =>
     {
       var presentation = Required(
@@ -75,6 +80,41 @@ internal static class FamilyReadModelResponseMapper
         presentation.Recurrence
       );
     }).ToArray();
+    var focusGoals = source.Economy.Contributions
+      .Where(contribution => presentations.GetValueOrDefault(contribution.Id)?.IsFocus == true)
+      .Select(focus =>
+      {
+        var presentation = Required(presentations, focus.Id, "The focus presentation is missing.");
+        var preparations = source.Economy.Contributions
+          .Where(item => presentations.GetValueOrDefault(item.Id)?.FocusId == focus.Id.Value)
+          .ToArray();
+        var completed = preparations.Count(item => item.Status == ContributionStatus.Approved);
+        var progress = preparations.Length == 0
+          ? 0
+          : (int)Math.Round(completed * 100m / preparations.Length, MidpointRounding.AwayFromZero);
+        var assigneeId = focus.AssigneeId
+          ?? throw new InvalidOperationException("A focus requires an assignee.");
+        var startDate = presentation.FocusStartDate
+          ?? throw new InvalidOperationException("A focus requires a start date.");
+        var endDate = presentation.FocusEndDate
+          ?? throw new InvalidOperationException("A focus requires an end date.");
+
+        return new FocusGoalReadModelItem(
+          focus.Id.Value,
+          focus.Title,
+          presentation.Description,
+          presentation.Icon,
+          presentation.FocusPeriod ?? "date",
+          startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+          endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+          assigneeId.Value,
+          presentation.FocusCompletionBonus,
+          presentation.FocusBonusPaid,
+          progress,
+          100 - progress,
+          preparations.Select(item => item.Id.Value).ToArray()
+        );
+      }).ToArray();
     var promotions = source.Economy.Promotions
       .Where(promotion => source.CalculatedState.Contributions.ContainsKey(promotion.ContributionId))
       .Select(promotion =>
@@ -105,7 +145,8 @@ internal static class FamilyReadModelResponseMapper
         DecimalMap(source.CalculatedState.CurrentWeekEarnedByMember),
         source.CalculatedState.PerfectRatingBonusPercent,
         promotions,
-        DecimalMap(source.CalculatedState.TodayEarnedByMember)
+        DecimalMap(source.CalculatedState.TodayEarnedByMember),
+        focusGoals
       )
     );
   }

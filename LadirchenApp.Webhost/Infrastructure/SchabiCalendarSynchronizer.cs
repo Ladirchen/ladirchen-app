@@ -136,6 +136,25 @@ public sealed class SchabiCalendarSynchronizer
         await CreateTaskAsync(integration, family.AdministratorId, task, cancellationToken);
       }
 
+      if (!string.IsNullOrWhiteSpace(integration.ProtectedAppointmentsCalendarUrl))
+      {
+        var appointments = await DownloadCalendarAsync(
+          integration.ProtectedAppointmentsCalendarUrl,
+          cancellationToken
+        );
+
+        foreach (var appointment in appointments.Where(item => item.DueDate >= today && item.DueDate < periodEnd))
+        {
+          await CreateFocusAsync(
+            integration,
+            family.AdministratorId,
+            appointment,
+            today,
+            cancellationToken
+          );
+        }
+      }
+
       integration.LastSuccessfulSyncAt = _timeProvider.GetUtcNow();
       await _database.SaveChangesAsync(cancellationToken);
       _logger.LogInformation(
@@ -185,14 +204,76 @@ public sealed class SchabiCalendarSynchronizer
     CancellationToken cancellationToken
   )
   {
-    var calendarUrl = SchabiCalendarUrl.Parse(
-      _integrations.UnprotectCalendarUrl(integration.ProtectedCalendarUrl)
-    );
+    return await DownloadCalendarAsync(integration.ProtectedCalendarUrl, cancellationToken);
+  }
+
+  private async Task<SchabiCalendarTask[]> DownloadCalendarAsync(
+    string protectedCalendarUrl,
+    CancellationToken cancellationToken
+  )
+  {
+    var calendarUrl = SchabiCalendarUrl.Parse(_integrations.UnprotectCalendarUrl(protectedCalendarUrl));
     var client = _httpClientFactory.CreateClient(nameof(SchabiCalendarSynchronizer));
     client.Timeout = _calendarRequestTimeout;
     var content = await client.GetStringAsync(calendarUrl, cancellationToken);
 
     return SchabiCalendarParser.Parse(content).ToArray();
+  }
+
+  private async Task CreateFocusAsync(
+    SchabiCalendarIntegrationEntity integration,
+    string administratorId,
+    SchabiCalendarTask appointment,
+    DateOnly today,
+    CancellationToken cancellationToken
+  )
+  {
+    var alreadyImported = await _database.Set<ContributionPresentationEntity>()
+      .Where(item => item.FamilyId == integration.FamilyId
+        && item.IsFocus
+        && item.FocusEndDate == appointment.DueDate)
+      .Join(
+        _database.FamilyEconomies.SelectMany(item => item.Contributions),
+        presentation => new { presentation.FamilyId, presentation.ContributionId },
+        contribution => new { contribution.FamilyId, contribution.ContributionId },
+        (presentation, contribution) => contribution
+      )
+      .AnyAsync(item => item.AssigneeId == integration.MemberId && item.Title == appointment.Title, cancellationToken);
+
+    if (alreadyImported)
+    {
+      return;
+    }
+
+    var identity = string.Join(
+      '|',
+      "focus",
+      integration.FamilyId.ToString("D", CultureInfo.InvariantCulture),
+      integration.MemberId,
+      appointment.ExternalId,
+      appointment.DueDate.ToString("O", CultureInfo.InvariantCulture)
+    );
+    var hash = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
+    var payload = JsonSerializer.SerializeToElement(new
+    {
+      id = $"schabi-focus-{Convert.ToHexString(hash.AsSpan(0, 16)).ToLowerInvariant()}",
+      title = appointment.Title,
+      description = appointment.Description,
+      icon = "Ⓢ",
+      period = "date",
+      startDate = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+      endDate = appointment.DueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+      assigneeId = integration.MemberId,
+      completionBonus = 0,
+    });
+    var command = new FamilyCommand(
+      new Guid(hash.AsSpan(0, 16)),
+      new FamilyId(integration.FamilyId),
+      new FamilyMemberId(administratorId),
+      "contributions.add-focus",
+      payload
+    );
+    _ = await _commands.HandleAsync(command, cancellationToken);
   }
 
   private async Task CreateTaskAsync(

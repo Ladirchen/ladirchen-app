@@ -6,6 +6,8 @@ import type {
   BehaviorResetStatusCommandRequest,
   ContributionsAcknowledgeRewardCommandRequest,
   ContributionsAddCommandRequest,
+  ContributionsAddFocusCommandRequest,
+  ContributionsAddFocusPreparationsCommandRequest,
   ContributionsAddPromotionCommandRequest,
   ContributionsApproveCommandRequest,
   ContributionsAssignCommandRequest,
@@ -80,6 +82,8 @@ import type { ContributionId, SavingGoalId } from "@/domain/shared/identifiers";
 interface GeneratedFamilyCommandRequestMap {
   readonly "contributions.acknowledge-reward": ContributionsAcknowledgeRewardCommandRequest;
   readonly "contributions.add": ContributionsAddCommandRequest;
+  readonly "contributions.add-focus": ContributionsAddFocusCommandRequest;
+  readonly "contributions.add-focus-preparations": ContributionsAddFocusPreparationsCommandRequest;
   readonly "contributions.add-promotion": ContributionsAddPromotionCommandRequest;
   readonly "contributions.approve": ContributionsApproveCommandRequest;
   readonly "contributions.assign": ContributionsAssignCommandRequest;

@@ -18,6 +18,7 @@ import type {
 } from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
+import type { FocusGoal } from "@/domain/contributions/types";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 import type { MemberProgression } from "@/application/contracts/family-progression-contract";
 import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
@@ -174,6 +175,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     members: normalizeFamilyMembers(initialData.members),
     pets: normalizeFamilyPets(initialData.pets),
     contributions: initialData.contributions,
+    focusGoals: [] as FocusGoal[],
     goals: initialData.goals,
     accessories: initialData.accessories,
     promotions: initialData.promotions,

@@ -88,7 +88,15 @@ internal static partial class FamilyEconomyPersistenceMapper
           item.RewardCelebrated,
           item.Category,
           item.DueDate,
-          item.Recurrence
+          item.Recurrence,
+          item.IsFocus,
+          item.FocusPeriod,
+          item.FocusStartDate,
+          item.FocusEndDate,
+          item.FocusCompletionBonus,
+          item.FocusId,
+          item.PreparationMinutes,
+          item.FocusBonusPaid
         )),
       entity.SavingGoalPresentations
         .OrderBy(item => item.GoalId, StringComparer.Ordinal)
@@ -233,6 +241,14 @@ internal static partial class FamilyEconomyPersistenceMapper
         Category = item.Category,
         DueDate = item.DueDate,
         Recurrence = item.Recurrence,
+        IsFocus = item.IsFocus,
+        FocusPeriod = item.FocusPeriod,
+        FocusStartDate = item.FocusStartDate,
+        FocusEndDate = item.FocusEndDate,
+        FocusCompletionBonus = item.FocusCompletionBonus,
+        FocusId = item.FocusId,
+        PreparationMinutes = item.PreparationMinutes,
+        FocusBonusPaid = item.FocusBonusPaid,
         RewardCelebrated = item.RewardCelebrated,
       });
     }

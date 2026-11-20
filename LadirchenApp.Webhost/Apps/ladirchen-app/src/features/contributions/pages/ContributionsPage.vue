@@ -11,6 +11,63 @@
       {{ t("contributions.guardianContext") }}
     </v-alert>
 
+    <section class="focus-goals mb-6">
+      <SectionHeader :description="t('contributions.focus.description')" :title="t('contributions.focus.title')">
+        <template v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks" #action>
+          <v-btn
+            color="primary"
+            prepend-icon="i-mdi:target"
+            rounded="lg"
+            size="small"
+            variant="tonal"
+            @click="focusDialog = true"
+          >
+            {{ t("contributions.focus.add") }}
+          </v-btn>
+        </template>
+      </SectionHeader>
+      <div v-if="visibleFocusGoals.length" class="focus-grid">
+        <BrandedCard v-for="focus in visibleFocusGoals" :key="focus.id" class="focus-card pa-4" tone="contributions">
+          <div class="d-flex align-start ga-3">
+            <v-avatar color="warning" rounded="lg" size="52" variant="tonal">{{ focus.icon }}</v-avatar>
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex align-center justify-space-between ga-2">
+                <strong>{{ focus.title }}</strong>
+                <v-chip color="warning" size="x-small" variant="tonal">{{ focusPeriodLabel(focus.period) }}</v-chip>
+              </div>
+              <p class="text-caption text-medium-emphasis">{{ focus.description }}</p>
+              <p class="text-caption mt-1">
+                <v-icon icon="i-mdi:timer-sand" size="15" /> {{ focusCountdown(focus.endDate) }}
+              </p>
+            </div>
+          </div>
+          <v-progress-linear class="mt-4" color="success" height="10" rounded :model-value="focus.progressPercent" />
+          <div class="d-flex justify-space-between text-caption mt-1">
+            <span>{{ focus.progressPercent }} %</span>
+            <span>{{ t("contributions.focus.remaining", { value: focus.remainingPercent }) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between ga-2 mt-3">
+            <v-chip v-if="focus.completionBonus > 0" color="warning" size="small" variant="tonal">
+              5 ★ · +{{ focus.completionBonus }} L
+            </v-chip>
+            <span v-else></span>
+            <v-btn
+              v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
+              color="primary"
+              prepend-icon="i-mdi:calendar-plus"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="openPreparationDialog(focus.id)"
+            >
+              {{ t("contributions.focus.addPreparation") }}
+            </v-btn>
+          </div>
+        </BrandedCard>
+      </div>
+      <p v-else class="text-caption text-medium-emphasis">{{ t("contributions.focus.empty") }}</p>
+    </section>
+
     <section class="task-calendar mb-6">
       <div class="d-flex align-center justify-space-between ga-3 mb-3">
         <div>
@@ -588,6 +645,119 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="focusDialog" max-width="500">
+      <v-card class="pa-5" rounded="xl">
+        <v-card-title class="pa-0 mb-1">{{ t("contributions.focus.formTitle") }}</v-card-title>
+        <v-card-subtitle class="pa-0 mb-4">{{ t("contributions.focus.formDescription") }}</v-card-subtitle>
+        <v-text-field v-model="newFocus.title" :label="t('common.title')" variant="outlined" />
+        <v-textarea
+          v-model="newFocus.description"
+          :label="t('contributions.form.shortDescription')"
+          rows="2"
+          variant="outlined"
+        />
+        <div class="d-grid form-columns ga-3">
+          <v-text-field
+            v-model="newFocus.icon"
+            :label="t('contributions.form.icon')"
+            maxlength="4"
+            variant="outlined"
+          />
+          <v-select
+            v-model="newFocus.period"
+            :items="focusPeriodOptions"
+            item-title="title"
+            item-value="value"
+            :label="t('contributions.focus.period')"
+            variant="outlined"
+          />
+        </div>
+        <v-select
+          v-model="newFocus.assigneeId"
+          :items="childAssignmentOptions"
+          item-title="title"
+          item-value="value"
+          :label="t('contributions.form.assignment')"
+          variant="outlined"
+        />
+        <div class="d-grid form-columns ga-3">
+          <v-text-field
+            v-model="newFocus.startDate"
+            :label="t('contributions.focus.startDate')"
+            type="date"
+            variant="outlined"
+          />
+          <v-text-field
+            v-model="newFocus.endDate"
+            :label="t('contributions.focus.endDate')"
+            type="date"
+            variant="outlined"
+          />
+        </div>
+        <v-text-field
+          v-model.number="newFocus.completionBonus"
+          :label="t('contributions.focus.completionBonus')"
+          min="0"
+          type="number"
+          variant="outlined"
+        />
+        <div class="d-flex justify-end ga-2">
+          <v-btn rounded="lg" variant="text" @click="focusDialog = false">{{ t("common.cancel") }}</v-btn>
+          <v-btn color="primary" :disabled="!canSaveFocus" rounded="lg" variant="flat" @click="saveFocus">
+            {{ t("common.add") }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="preparationDialog" max-width="500">
+      <v-card class="pa-5" rounded="xl">
+        <v-card-title class="pa-0 mb-1">{{ t("contributions.focus.preparationTitle") }}</v-card-title>
+        <v-card-subtitle class="pa-0 mb-4">{{ selectedFocus?.title }}</v-card-subtitle>
+        <div v-for="(_, index) in preparationDates" :key="index" class="d-flex align-center ga-2">
+          <v-text-field
+            v-model="preparationDates[index]"
+            :label="t('contributions.focus.preparationDay')"
+            type="date"
+            variant="outlined"
+          />
+          <v-btn
+            v-if="preparationDates.length > 1"
+            :aria-label="t('common.delete')"
+            icon="i-mdi:close"
+            size="small"
+            variant="text"
+            @click="preparationDates.splice(index, 1)"
+          />
+        </div>
+        <v-btn class="mb-4" prepend-icon="i-mdi:plus" size="small" variant="text" @click="preparationDates.push('')">
+          {{ t("contributions.focus.addDay") }}
+        </v-btn>
+        <div class="d-grid form-columns ga-3">
+          <v-text-field
+            v-model.number="preparationMinutes"
+            :label="t('contributions.focus.minutes')"
+            min="1"
+            type="number"
+            variant="outlined"
+          />
+          <v-text-field
+            v-model.number="preparationReward"
+            :label="t('contributions.focus.reward')"
+            min="0"
+            type="number"
+            variant="outlined"
+          />
+        </div>
+        <div class="d-flex justify-end ga-2">
+          <v-btn rounded="lg" variant="text" @click="preparationDialog = false">{{ t("common.cancel") }}</v-btn>
+          <v-btn color="primary" :disabled="!canSavePreparations" rounded="lg" variant="flat" @click="savePreparations">
+            {{ t("common.add") }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
     <v-dialog
       :model-value="Boolean(contributionToDelete)"
       max-width="390"
@@ -746,7 +916,8 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { Contribution } from "@/domain/contributions/types";
+import type { Contribution, FocusPeriod, NewFocusGoal } from "@/domain/contributions/types";
+import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { isSchabiContributionId } from "@/domain/contributions/source";
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
 import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
@@ -816,7 +987,100 @@ const {
   teamDialog,
 } = useContributionsPage();
 const { locale, t } = useI18n();
+const focusDialog = ref(false);
+const preparationDialog = ref(false);
+const selectedFocusId = ref<ContributionId>();
+const preparationDates = ref([""]);
+const preparationMinutes = ref(30);
+const preparationReward = ref(1);
+const newFocus = ref<NewFocusGoal>(createEmptyFocus());
 const weekOffset = ref(0);
+const visibleFocusGoals = computed(() =>
+  store.focusGoals.filter((focus) => store.viewerRole !== "child" || focus.assigneeId === store.signedInMemberId),
+);
+const selectedFocus = computed(() => store.focusGoals.find((focus) => focus.id === selectedFocusId.value));
+const focusPeriodOptions = computed(() => [
+  { title: t("contributions.focus.periodDate"), value: "date" },
+  { title: t("contributions.focus.periodWeekly"), value: "weekly" },
+  { title: t("contributions.focus.periodMonthly"), value: "monthly" },
+]);
+const canSaveFocus = computed(
+  () =>
+    newFocus.value.title.trim().length > 0 &&
+    newFocus.value.assigneeId.length > 0 &&
+    newFocus.value.startDate.length > 0 &&
+    newFocus.value.endDate >= newFocus.value.startDate &&
+    newFocus.value.completionBonus >= 0,
+);
+const canSavePreparations = computed(
+  () =>
+    Boolean(selectedFocus.value) &&
+    preparationDates.value.length > 0 &&
+    preparationDates.value.every(
+      (date) => date >= (selectedFocus.value?.startDate ?? "") && date <= (selectedFocus.value?.endDate ?? ""),
+    ) &&
+    preparationMinutes.value > 0 &&
+    preparationReward.value >= 0,
+);
+function createEmptyFocus(): NewFocusGoal {
+  const today = localIsoDate(new Date());
+
+  return {
+    assigneeId: "" as FamilyMemberId,
+    completionBonus: 5,
+    description: "",
+    endDate: today,
+    icon: "🎯",
+    period: "date",
+    startDate: today,
+    title: "",
+  };
+}
+function focusPeriodLabel(period: FocusPeriod): string {
+  if (period === "weekly") {
+    return t("contributions.focus.periodWeekly");
+  }
+
+  if (period === "monthly") {
+    return t("contributions.focus.periodMonthly");
+  }
+
+  return t("contributions.focus.periodDate");
+}
+function focusCountdown(endDate: string): string {
+  const end = new Date(`${endDate}T23:59:59`).getTime();
+  const days = Math.max(0, Math.ceil((end - store.currentTimeMilliseconds) / 86_400_000));
+
+  return t("contributions.focus.countdown", { days });
+}
+async function saveFocus() {
+  if (!canSaveFocus.value) {
+    return;
+  }
+
+  await store.addFocus({ ...newFocus.value });
+  focusDialog.value = false;
+  newFocus.value = createEmptyFocus();
+}
+function openPreparationDialog(focusId: ContributionId) {
+  selectedFocusId.value = focusId;
+  preparationDates.value = [selectedFocus.value?.startDate ?? ""];
+  preparationMinutes.value = 30;
+  preparationReward.value = 1;
+  preparationDialog.value = true;
+}
+async function savePreparations() {
+  if (!selectedFocusId.value || !canSavePreparations.value) {
+    return;
+  }
+
+  await store.addFocusPreparations(selectedFocusId.value, {
+    dates: [...preparationDates.value],
+    minutes: preparationMinutes.value,
+    reward: preparationReward.value,
+  });
+  preparationDialog.value = false;
+}
 function localIsoDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -1193,6 +1457,16 @@ function toggleEmptyStateFilter() {
 }
 
 .rating-setting {
+  border: 1px solid var(--lad-border);
+}
+
+.focus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+}
+
+.focus-card {
   border: 1px solid var(--lad-border);
 }
 

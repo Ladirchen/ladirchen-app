@@ -1,5 +1,5 @@
 import type { AvatarAppearance } from "@/domain/avatar";
-import type { NewContribution, NewPromotion } from "@/domain/contributions/types";
+import type { NewContribution, NewFocusGoal, NewPromotion } from "@/domain/contributions/types";
 import type { FamilyMember, FamilyPet, GuardianAccessLevel } from "@/domain/family/types";
 import type { FurnitureSetId, HouseAccessoryId, HouseThemeId, HouseZoneId, RoomDesignId } from "@/domain/house";
 import type { FamilyCurrency, NewGoal, SavingGoalOwnerId } from "@/domain/savings/types";
@@ -24,6 +24,14 @@ type FamilySetupPetPayload = Readonly<FamilyPet>;
 export interface FamilyCommandPayloadMap {
   readonly "contributions.acknowledge-reward": IdFamilyCommandPayload<ContributionId>;
   readonly "contributions.add": Readonly<{ id: ContributionId } & NewContribution>;
+  readonly "contributions.add-focus": Readonly<{ id: ContributionId } & NewFocusGoal>;
+  readonly "contributions.add-focus-preparations": Readonly<{
+    focusId: ContributionId;
+    ids: ReadonlyArray<ContributionId>;
+    dates: ReadonlyArray<string>;
+    minutes: number;
+    reward: number;
+  }>;
   readonly "contributions.copy": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
   readonly "contributions.reactivate": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
   readonly "contributions.add-promotion": Readonly<{ id: PromotionId } & NewPromotion>;

@@ -295,6 +295,61 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(0);
   }
 
+  [Test]
+  public async Task FocusPreparationsTrackProgressAndPayTheFiveStarBonusOnce()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus", new
+    {
+      id = "english-test",
+      title = "English test",
+      description = "Prepare Unit 2",
+      icon = "🎯",
+      period = "date",
+      startDate = "2026-10-12",
+      endDate = "2026-10-18",
+      assigneeId = _childId.Value,
+      completionBonus = 5,
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus-preparations", new
+    {
+      focusId = "english-test",
+      ids = new[] { "english-test-1", "english-test-2" },
+      dates = new[] { "2026-10-12", "2026-10-14" },
+      minutes = 30,
+      reward = 2,
+    });
+
+    foreach (var id in new[] { "english-test-1", "english-test-2" })
+    {
+      await ExecuteAsync(handler, _childId, "contributions.submit", new
+      {
+        id,
+      });
+    }
+
+    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    {
+      id = "english-test-1",
+      stars = 4,
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    {
+      id = "english-test-2",
+      stars = 5,
+    });
+
+    var economy = store.RequiredEconomy();
+    var focusPresentation = store.EconomyPresentation.Contributions
+      .Single(item => item.ContributionId.Value == "english-test");
+    await Assert.That(focusPresentation.IsFocus).IsTrue();
+    await Assert.That(focusPresentation.FocusBonusPaid).IsTrue();
+    await Assert.That(economy.Ledger.Count(item => item.Reason.Contains("5-Sterne-Abschlussbonus")))
+      .IsEqualTo(1);
+  }
+
   private static TestTypedAggregateStore CreateStore(params ContributionSeed[] contributions)
   {
     return CreateStore(contributions, []);

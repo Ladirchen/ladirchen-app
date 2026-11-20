@@ -83,6 +83,7 @@ export const lifecycleActions = {
       this.familyTimeZone = familyProfile.state.timeZone;
       this.avatarCatalog = familyProfile.state.avatarCatalog;
       this.contributions = [...contributions.state.contributions];
+      this.focusGoals = [...(contributions.state.focusGoals ?? [])];
       this.perfectRatingBonusPercent = contributions.state.perfectRatingBonusPercent;
       this.promotions = [...contributions.state.promotions];
       this.todayEarnedByMember = { ...contributions.state.todayEarnedByMember };
@@ -269,6 +270,7 @@ async function refreshFamilyReadModelSnapshot(
 
       if (snapshot) {
         context.contributions = [...snapshot.state.contributions];
+        context.focusGoals = [...(snapshot.state.focusGoals ?? [])];
         context.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent;
         context.promotions = [...snapshot.state.promotions];
         context.todayEarnedByMember = { ...snapshot.state.todayEarnedByMember };

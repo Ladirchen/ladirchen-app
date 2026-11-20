@@ -9,5 +9,6 @@ public sealed record ContributionsReadModelState(
   [property: JsonRequired] IReadOnlyDictionary<string, decimal> CurrentWeekEarnedByMember,
   decimal? PerfectRatingBonusPercent,
   [property: JsonRequired] IReadOnlyList<ContributionPromotionReadModelItem> Promotions,
-  IReadOnlyDictionary<string, decimal>? TodayEarnedByMember
+  IReadOnlyDictionary<string, decimal>? TodayEarnedByMember,
+  IReadOnlyList<FocusGoalReadModelItem>? FocusGoals = null
 );

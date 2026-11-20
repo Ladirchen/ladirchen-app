@@ -1459,6 +1459,34 @@ export interface AddContributionPayload {
   recurrence?: string | null;
 }
 
+export interface ContributionsAddFocusCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddFocusPayload;
+}
+
+export interface AddFocusPayload {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  period: string;
+  startDate: string;
+  endDate: string;
+  assigneeId: string;
+  completionBonus: number;
+}
+
+export interface ContributionsAddFocusPreparationsCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddFocusPreparationsPayload;
+}
+
+export interface AddFocusPreparationsPayload {
+  focusId: string;
+  ids: string[];
+  dates: string[];
+  minutes: number;
+  reward: number;
+}
+
 export interface ContributionsCopyCommandRequest extends ExecuteFamilyCommandRequest {
   payload: CopyContributionPayload;
 }
@@ -2026,6 +2054,7 @@ export interface ContributionsReadModelState {
   perfectRatingBonusPercent?: number | null;
   promotions: ContributionPromotionReadModelItem[];
   todayEarnedByMember?: { [key: string]: number } | null;
+  focusGoals?: FocusGoalReadModelItem[] | null;
 }
 
 export interface ContributionReadModelItem {
@@ -2069,6 +2098,22 @@ export interface ContributionPromotionReadModelItem {
   teamworkBonus: number;
   active: boolean;
   available?: boolean | null;
+}
+
+export interface FocusGoalReadModelItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  period: string;
+  startDate: string;
+  endDate: string;
+  assigneeId: string;
+  completionBonus: number;
+  bonusPaid: boolean;
+  progressPercent: number;
+  remainingPercent: number;
+  preparationContributionIds: string[];
 }
 
 export interface FamilyProfileReadModelResponse {
@@ -2482,6 +2527,7 @@ export interface SchabiIntegrationResponse {
   memberId?: string;
   username?: string;
   configured?: boolean;
+  appointmentsConfigured?: boolean;
   enabled?: boolean;
   syncDayOfWeek?: number;
   syncHorizonDays?: number;
@@ -2493,6 +2539,7 @@ export interface SchabiIntegrationResponse {
 export interface SchabiIntegrationRequest {
   username: string;
   calendarUrl?: string | null;
+  appointmentsCalendarUrl?: string | null;
   enabled?: boolean;
   syncDayOfWeek?: number;
   syncHorizonDays?: number;
