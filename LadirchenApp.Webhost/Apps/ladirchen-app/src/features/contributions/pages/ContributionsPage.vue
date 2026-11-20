@@ -189,7 +189,9 @@
         :category-options="categoryFilterOptions"
         :open-count="openContributionCount"
         :person-options="personFilterOptions"
+        :show-person="false"
         :show-scope="false"
+        :show-status="false"
       />
 
       <TransitionGroup class="contribution-card-list d-flex flex-column ga-3" name="list" tag="div">
@@ -1121,7 +1123,10 @@ const calendarGroups = computed(() => {
     taskCount: number;
     title: string;
   }> = children.map((member) => {
-    const tasks = calendarTasks.value.filter((contribution) => contribution.assigneeId === member.id);
+    const tasks = calendarTasks.value.filter(
+      (contribution) =>
+        contribution.assigneeId === member.id || (store.viewerRole === "child" && !contribution.assigneeId),
+    );
 
     return {
       avatar: member.avatar,

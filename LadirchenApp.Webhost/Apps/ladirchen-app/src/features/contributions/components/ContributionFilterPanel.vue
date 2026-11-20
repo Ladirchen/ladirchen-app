@@ -39,7 +39,7 @@
       </button>
     </fieldset>
 
-    <fieldset class="kind-filter">
+    <fieldset v-if="showStatus" class="kind-filter">
       <legend class="kind-filter-label">{{ t("contributions.filter.status") }}</legend>
       <div class="status-options">
         <button
@@ -73,7 +73,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="kind-filter kind-filter--type">
+    <fieldset v-if="showPerson" class="kind-filter kind-filter--type">
       <legend class="kind-filter-label">{{ t("contributions.filter.person") }}</legend>
       <div class="kind-options">
         <button
@@ -100,7 +100,9 @@ export interface Props {
   categoryOptions: ReadonlyArray<{ icon: string; title: string; value: string }>;
   openCount: number;
   personOptions: ReadonlyArray<{ title: string; value: "all" | FamilyMemberId }>;
+  showPerson?: boolean;
   showScope?: boolean;
+  showStatus?: boolean;
 }
 type ContributionScope = "all" | "mine" | "open";
 type KindFilter = string;
@@ -138,8 +140,10 @@ const scopeOptions = computed<
     icon: UI_ICONS.contributionScope.all,
   },
 ]);
-const props = withDefaults(defineProps<Props>(), { showScope: true });
+const props = withDefaults(defineProps<Props>(), { showPerson: true, showScope: true, showStatus: true });
+const showPerson = computed(() => props.showPerson);
 const showScope = computed(() => props.showScope);
+const showStatus = computed(() => props.showStatus);
 const filterDescription = computed(() =>
   t(props.showScope ? "contributions.filter.description" : "contributions.filter.childDescription"),
 );
