@@ -143,23 +143,25 @@ export function useContributionsPage() {
   const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
   const activePromotions = computed(() => localizedPromotions.value.filter((item) => item.active));
   const filteredContributions = computed(() =>
-    localizedContributions.value.filter(
-      (contribution) =>
+    localizedContributions.value.filter((contribution) => {
+      const matchesStatus =
+        store.viewerRole === "child"
+          ? contribution.status !== "approved"
+          : (statusFilter.value === "completed") === (contribution.status === "approved");
+
+      return (
         (store.viewerRole !== "child" ||
           !contribution.assigneeId ||
           contribution.assigneeId === store.signedInMemberId) &&
         (filter.value === "all" || contribution.category === filter.value) &&
         matchesContributionPersonFilter(contribution.assigneeId, personFilter.value) &&
-        (store.viewerRole === "child"
-          ? contribution.status !== "approved"
-          : statusFilter.value === "completed"
-            ? contribution.status === "approved"
-            : contribution.status !== "approved") &&
+        matchesStatus &&
         (store.viewerRole === "child" ||
           scopeFilter.value === "all" ||
           (scopeFilter.value === "mine" && contribution.assigneeId === store.activeChildId) ||
-          (scopeFilter.value === "open" && !contribution.assigneeId && contribution.status === "available")),
-    ),
+          (scopeFilter.value === "open" && !contribution.assigneeId && contribution.status === "available"))
+      );
+    }),
   );
   const managedContributions = computed(() =>
     localizedContributions.value
