@@ -190,7 +190,6 @@
         :open-count="openContributionCount"
         :person-options="personFilterOptions"
         :show-person="false"
-        :show-scope="false"
         :show-status="false"
       />
 
