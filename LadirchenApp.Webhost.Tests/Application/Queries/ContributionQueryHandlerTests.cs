@@ -8,6 +8,7 @@ using LadirchenApp.Application.Persistence;
 using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.Shared;
+using LadirchenApp.Webhost.Models.ReadModels;
 using LadirchenApp.Webhost.Tests.Application.Commands;
 
 namespace LadirchenApp.Webhost.Tests.Application.Queries;
@@ -81,6 +82,31 @@ public sealed class ContributionQueryHandlerTests
     await Assert.That(result.CalculatedState.TodayEarnedByMember).IsEmpty();
   }
 
+  [Test]
+  public async Task ChildResponseContainsOnlyOwnOpenAndUnassignedTasks()
+  {
+    var store = CreateStore();
+    var handler = new GetFamilyAggregateQueryHandler(
+      store,
+      store,
+      store,
+      store,
+      new FixedTimeProvider(new DateTimeOffset(2026, 10, 29, 10, 0, 0, TimeSpan.Zero))
+    );
+
+    var result = await handler.HandleAsync(
+      new GetFamilyAggregateQuery(_familyId, "contributions", _assigneeId),
+      CancellationToken.None
+    ) as ContributionsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The contribution read model is missing.");
+    var response = ContributionsReadModelResponse.FromProjection(result);
+
+    await Assert.That(response.State.Contributions.Select(item => item.Id))
+      .IsEquivalentTo(["external-child-task", "extra-task", "unassigned-task"]);
+    await Assert.That(response.State.Promotions.Select(item => item.ContributionId))
+      .IsEquivalentTo(["extra-task"]);
+  }
+
   private static TestTypedAggregateStore CreateStore()
   {
     var family = Family.Reconstitute(new FamilyState(
@@ -129,6 +155,36 @@ public sealed class ContributionQueryHandlerTests
         10,
         _assigneeId,
         ContributionStatus.Available
+      ),
+      Contribution(
+        "unassigned-task",
+        "Unassigned task",
+        ContributionKind.Extra,
+        3,
+        10,
+        null,
+        ContributionStatus.Available
+      ),
+      Contribution(
+        "sibling-open-task",
+        "Sibling open task",
+        ContributionKind.Basic,
+        3,
+        10,
+        _siblingId,
+        ContributionStatus.Available
+      ),
+      Contribution(
+        "own-approved-task",
+        "Own approved task",
+        ContributionKind.Basic,
+        3,
+        10,
+        _assigneeId,
+        ContributionStatus.Approved,
+        5,
+        new ContributionRewardBreakdown(3, 0, 1),
+        new DateTimeOffset(2026, 10, 29, 9, 0, 0, TimeSpan.Zero)
       ),
       Contribution(
         "approved-task",
@@ -236,7 +292,7 @@ public sealed class ContributionQueryHandlerTests
     ContributionKind kind,
     decimal reward,
     decimal energy,
-    FamilyMemberId assigneeId,
+    FamilyMemberId? assigneeId,
     ContributionStatus status,
     int? stars = null,
     ContributionRewardBreakdown? earnedReward = null,

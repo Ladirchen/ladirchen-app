@@ -32,6 +32,13 @@ internal static class FamilyReadModelResponseMapper
         contribution.Id,
         "The contribution presentation is missing."
       ).IsFocus)
+      .Where(contribution =>
+        source.ViewerRole != MemberRole.Child
+        || (
+          contribution.Status != ContributionStatus.Approved
+          && (contribution.AssigneeId is null || contribution.AssigneeId == source.ViewerId)
+        )
+      )
       .Select(contribution =>
     {
       var presentation = Required(
@@ -80,8 +87,12 @@ internal static class FamilyReadModelResponseMapper
         presentation.Recurrence
       );
     }).ToArray();
+    var visibleContributionIds = contributions
+      .Select(contribution => new ContributionId(contribution.Id))
+      .ToHashSet();
     var focusGoals = source.Economy.Contributions
       .Where(contribution => presentations.GetValueOrDefault(contribution.Id)?.IsFocus == true)
+      .Where(focus => source.ViewerRole != MemberRole.Child || focus.AssigneeId == source.ViewerId)
       .Select(focus =>
       {
         var presentation = Required(presentations, focus.Id, "The focus presentation is missing.");
@@ -116,7 +127,7 @@ internal static class FamilyReadModelResponseMapper
         );
       }).ToArray();
     var promotions = source.Economy.Promotions
-      .Where(promotion => source.CalculatedState.Contributions.ContainsKey(promotion.ContributionId))
+      .Where(promotion => visibleContributionIds.Contains(promotion.ContributionId))
       .Select(promotion =>
       new ContributionPromotionReadModelItem(
         promotion.Id.Value,

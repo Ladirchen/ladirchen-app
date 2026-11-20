@@ -114,10 +114,20 @@ export function useContributionsPage() {
   const localizedContributions = computed(() =>
     store.contributions.map((contribution) => {
       const localized = localize.contribution(contribution);
+      const category = localized.category?.trim();
+      const legacyExtraCategories = new Set([
+        "Special task",
+        "Special task (optional)",
+        "Spezialaufgabe",
+        "Spezialaufgabe (freiwillig)",
+      ]);
 
       return {
         ...localized,
-        category: localized.category?.trim() || t(`contributions.kind.${localized.kind}`),
+        category:
+          localized.kind === "extra" && category && legacyExtraCategories.has(category)
+            ? t("contributions.kind.extra")
+            : category || t(`contributions.kind.${localized.kind}`),
       };
     }),
   );
@@ -135,11 +145,16 @@ export function useContributionsPage() {
   const filteredContributions = computed(() =>
     localizedContributions.value.filter(
       (contribution) =>
+        (store.viewerRole !== "child" ||
+          !contribution.assigneeId ||
+          contribution.assigneeId === store.signedInMemberId) &&
         (filter.value === "all" || contribution.category === filter.value) &&
         matchesContributionPersonFilter(contribution.assigneeId, personFilter.value) &&
-        (statusFilter.value === "completed"
-          ? contribution.status === "approved"
-          : contribution.status !== "approved") &&
+        (store.viewerRole === "child"
+          ? contribution.status !== "approved"
+          : statusFilter.value === "completed"
+            ? contribution.status === "approved"
+            : contribution.status !== "approved") &&
         (store.viewerRole === "child" ||
           scopeFilter.value === "all" ||
           (scopeFilter.value === "mine" && contribution.assigneeId === store.activeChildId) ||

@@ -31,6 +31,7 @@ public sealed partial class GetFamilyAggregateQueryHandler
     FamilyMemberId viewerId
   )
   {
+    var viewer = family.ActiveMember(viewerId);
     var calculatedState = ContributionReadModelProjector.Project(
       new ContributionReadModelState(family, loadedEconomy.Root),
       viewerId,
@@ -39,6 +40,8 @@ public sealed partial class GetFamilyAggregateQueryHandler
 
     return new ContributionsFamilyReadModelProjection(
       loadedEconomy.Revision,
+      viewer.Id,
+      viewer.Role,
       loadedEconomy.Root,
       loadedEconomy.Presentation,
       calculatedState
