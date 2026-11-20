@@ -1,27 +1,40 @@
 <template>
   <section class="contribution-filter" aria-labelledby="contribution-filter-title">
     <div class="filter-heading">
-      <div class="filter-mascot" aria-hidden="true">
-        <svg class="filter-eyes" viewBox="0 0 42 28">
-          <g class="filter-eye filter-eye--left">
-            <ellipse cx="12" cy="14" rx="9" ry="11" />
-            <circle class="filter-pupil" cx="14" cy="15" r="3" />
-            <circle class="filter-glint" cx="15" cy="14" r="1" />
-          </g>
-          <g class="filter-eye filter-eye--right">
-            <ellipse cx="30" cy="14" rx="9" ry="11" />
-            <circle class="filter-pupil" cx="32" cy="15" r="3" />
-            <circle class="filter-glint" cx="33" cy="14" r="1" />
-          </g>
-        </svg>
+      <div class="filter-heading__copy">
+        <div class="filter-mascot" aria-hidden="true">
+          <svg class="filter-eyes" viewBox="0 0 42 28">
+            <g class="filter-eye filter-eye--left">
+              <ellipse cx="12" cy="14" rx="9" ry="11" />
+              <circle class="filter-pupil" cx="14" cy="15" r="3" />
+              <circle class="filter-glint" cx="15" cy="14" r="1" />
+            </g>
+            <g class="filter-eye filter-eye--right">
+              <ellipse cx="30" cy="14" rx="9" ry="11" />
+              <circle class="filter-pupil" cx="32" cy="15" r="3" />
+              <circle class="filter-glint" cx="33" cy="14" r="1" />
+            </g>
+          </svg>
+        </div>
+        <div>
+          <h2 id="contribution-filter-title">{{ t("contributions.filter.title") }}</h2>
+          <p>{{ filterDescription }}</p>
+        </div>
       </div>
-      <div>
-        <h2 id="contribution-filter-title">{{ t("contributions.filter.title") }}</h2>
-        <p>{{ filterDescription }}</p>
-      </div>
+      <v-btn
+        v-if="collapsible"
+        :aria-expanded="expanded"
+        :prepend-icon="toggleIcon"
+        rounded="lg"
+        size="small"
+        variant="tonal"
+        @click="expanded = !expanded"
+      >
+        {{ toggleLabel }}
+      </v-btn>
     </div>
 
-    <fieldset v-if="showScope" class="scope-options" :aria-label="t('contributions.filter.scopeAria')">
+    <fieldset v-if="expanded && showScope" class="scope-options" :aria-label="t('contributions.filter.scopeAria')">
       <button
         v-for="option in scopeOptions"
         :key="option.value"
@@ -39,7 +52,7 @@
       </button>
     </fieldset>
 
-    <fieldset v-if="showStatus" class="kind-filter">
+    <fieldset v-if="expanded && showStatus" class="kind-filter">
       <legend class="kind-filter-label">{{ t("contributions.filter.status") }}</legend>
       <div class="status-options">
         <button
@@ -56,7 +69,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="kind-filter kind-filter--type">
+    <fieldset v-if="expanded" class="kind-filter kind-filter--type">
       <legend class="kind-filter-label">{{ t("contributions.filter.kind") }}</legend>
       <div class="kind-options">
         <button
@@ -73,7 +86,7 @@
       </div>
     </fieldset>
 
-    <fieldset v-if="showPerson" class="kind-filter kind-filter--type">
+    <fieldset v-if="expanded && showPerson" class="kind-filter kind-filter--type">
       <legend class="kind-filter-label">{{ t("contributions.filter.person") }}</legend>
       <div class="kind-options">
         <button
@@ -92,12 +105,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
 import { UI_ICONS } from "@/shared/ui-icons";
 export interface Props {
   categoryOptions: ReadonlyArray<{ icon: string; title: string; value: string }>;
+  collapsible?: boolean;
   openCount: number;
   personOptions: ReadonlyArray<{ title: string; value: "all" | FamilyMemberId }>;
   showPerson?: boolean;
@@ -140,10 +154,19 @@ const scopeOptions = computed<
     icon: UI_ICONS.contributionScope.all,
   },
 ]);
-const props = withDefaults(defineProps<Props>(), { showPerson: true, showScope: true, showStatus: true });
+const props = withDefaults(defineProps<Props>(), {
+  collapsible: false,
+  showPerson: true,
+  showScope: true,
+  showStatus: true,
+});
+const collapsible = computed(() => props.collapsible);
+const expanded = ref(true);
 const showPerson = computed(() => props.showPerson);
 const showScope = computed(() => props.showScope);
 const showStatus = computed(() => props.showStatus);
+const toggleIcon = computed(() => (expanded.value ? "i-mdi:chevron-up" : "i-mdi:chevron-down"));
+const toggleLabel = computed(() => t(expanded.value ? "contributions.filter.hide" : "contributions.filter.show"));
 const filterDescription = computed(() =>
   t(props.showScope ? "contributions.filter.description" : "contributions.filter.childDescription"),
 );
@@ -201,6 +224,11 @@ function selectStatus(value: StatusFilter) {
 }
 .filter-heading {
   margin-bottom: rem(13);
+  --uno: d-flex align-center justify-space-between;
+  gap: rem(10);
+}
+.filter-heading__copy {
+  min-width: 0;
   --uno: d-flex align-center;
   gap: rem(10);
 }
