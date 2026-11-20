@@ -6,12 +6,12 @@
     :data-ladi-tip="tip"
     tone="contributions"
   >
-    <div class="d-flex align-start ga-3">
+    <div class="contribution-content d-flex ga-3">
       <v-avatar class="task-icon-avatar" color="blue-lighten-5" rounded="lg" size="58">
         <SchabiTaskIcon v-if="isSchabiTask" />
         <template v-else>{{ contribution.icon }}</template>
       </v-avatar>
-      <div class="flex-grow-1 min-w-0">
+      <div class="contribution-card-body flex-grow-1 min-w-0">
         <div class="d-flex align-center flex-wrap ga-2 mb-1">
           <strong>{{ contribution.title }}</strong>
           <span class="contribution-label" :class="kindLabelClass">
@@ -24,7 +24,20 @@
           </span>
         </div>
         <ContributionDescription :text="contribution.description" />
-        <div v-if="contribution.status === 'approved'" class="approved-reward-summary mt-3">
+        <ActiveContributionBonus
+          v-if="activePromotion"
+          class="mt-2"
+          :deadline="activePromotion.deadline"
+          :multiplier="activePromotion.multiplier"
+          :time-zone="familyTimeZone"
+        />
+        <div v-if="invitedPartnerNames.length" class="invited-team mt-3">
+          <span>{{ t("contributions.togetherWith") }}</span>
+          <v-chip v-for="name in invitedPartnerNames" :key="name" color="info" size="x-small" variant="tonal">
+            {{ name }}
+          </v-chip>
+        </div>
+        <div v-if="contribution.status === 'approved'" class="approved-reward-summary">
           <MetricCard class="approved-reward-main" compact tone="reward">
             <ContributionMetaIcon kind="reward" />
             <span>
@@ -40,7 +53,7 @@
             </span>
           </MetricCard>
         </div>
-        <div v-else class="mt-3 contribution-meta">
+        <div v-else class="contribution-meta">
           <MetricCard class="contribution-meta-chip contribution-meta-chip--time" compact tone="info">
             <ContributionMetaIcon kind="time" />
             <span>
@@ -67,19 +80,6 @@
               <strong>{{ t("contributions.reward.energy", { value: contribution.energy }) }}</strong>
             </span>
           </MetricCard>
-        </div>
-        <ActiveContributionBonus
-          v-if="activePromotion"
-          class="mt-2"
-          :deadline="activePromotion.deadline"
-          :multiplier="activePromotion.multiplier"
-          :time-zone="familyTimeZone"
-        />
-        <div v-if="invitedPartnerNames.length" class="invited-team mt-3">
-          <span>{{ t("contributions.togetherWith") }}</span>
-          <v-chip v-for="name in invitedPartnerNames" :key="name" color="info" size="x-small" variant="tonal">
-            {{ name }}
-          </v-chip>
         </div>
       </div>
     </div>
@@ -272,6 +272,22 @@ const approvalMessage = computed(function callback() {
 @use "@/styles/mixins" as *;
 .contribution-item {
   --uno: position-relative overflow-hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.contribution-content {
+  flex: 1 1 auto;
+}
+.contribution-card-body {
+  display: flex;
+  flex-direction: column;
+}
+.contribution-card-body > .contribution-meta,
+.contribution-card-body > .approved-reward-summary {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 12px;
 }
 .contribution-item--approved {
   border-color: color-mix(in srgb, var(--lad-color-primary) 30%, transparent);
@@ -304,7 +320,7 @@ const approvalMessage = computed(function callback() {
 }
 .contribution-meta {
   --uno: d-grid;
-  grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 6px;
 }
 .contribution-meta-chip > span {

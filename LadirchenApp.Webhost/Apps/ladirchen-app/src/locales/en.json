@@ -391,6 +391,8 @@
   "contributions.assignment.own": "{name} (own task)",
   "contributions.assignment.stillOpen": "Still open",
   "contributions.calendar.empty": "No tasks are scheduled for this week.",
+  "contributions.calendar.focusGoal": "Focus goal",
+  "contributions.calendar.focusPreparation": "Preparation for",
   "contributions.calendar.hide": "Hide calendar",
   "contributions.calendar.next": "Next week",
   "contributions.calendar.previous": "Previous week",
