@@ -28,6 +28,7 @@ import type {
   ContributionRecurrence,
   ContributionStatus,
   Promotion,
+  FocusGoal,
   WorldEffect,
 } from "@/domain/contributions/types";
 import type { ContributionId } from "@/domain/shared/identifiers";
@@ -114,6 +115,29 @@ function isPromotion(value: unknown): value is Promotion {
     isOptionalBoolean(value.available)
   );
 }
+function isFocusGoal(value: unknown): value is FocusGoal {
+  return (
+    isRecord(value) &&
+    isDomainId(value.id) &&
+    isNonEmptyString(value.title) &&
+    typeof value.description === "string" &&
+    isNonEmptyString(value.icon) &&
+    isKnownString(value.period, new Set(["date", "weekly", "monthly"])) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(value.startDate)) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(value.endDate)) &&
+    isFamilyMemberId(value.assigneeId) &&
+    isFiniteNumber(value.completionBonus) &&
+    value.completionBonus >= 0 &&
+    typeof value.bonusPaid === "boolean" &&
+    isInteger(value.progressPercent) &&
+    value.progressPercent >= 0 &&
+    value.progressPercent <= 100 &&
+    isInteger(value.remainingPercent) &&
+    value.remainingPercent === 100 - value.progressPercent &&
+    isArrayOf(value.preparationContributionIds, isDomainId) &&
+    new Set(value.preparationContributionIds).size === value.preparationContributionIds.length
+  );
+}
 function isNonNegativeAmountMap(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -133,6 +157,8 @@ export function isContributionsState(value: unknown): value is ContributionsStat
     !isRecord(value) ||
     !isArrayOf(value.contributions, isContribution) ||
     !hasUniqueIds(value.contributions) ||
+    (value.focusGoals !== undefined &&
+      (!isArrayOf(value.focusGoals, isFocusGoal) || !hasUniqueIds(value.focusGoals))) ||
     !isNonNegativeIntegerMap(value.currentWeekApprovedContributionCountByMember) ||
     !isNonNegativeAmountMap(value.currentWeekEarnedByMember) ||
     !isFiniteNumber(value.perfectRatingBonusPercent) ||

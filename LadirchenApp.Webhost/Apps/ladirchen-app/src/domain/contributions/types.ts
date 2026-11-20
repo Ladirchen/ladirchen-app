@@ -74,3 +74,32 @@ export interface NewContribution {
   dueDate?: string;
   recurrence: ContributionRecurrence;
 }
+
+export type FocusPeriod = "date" | "weekly" | "monthly";
+
+export interface FocusGoal {
+  id: ContributionId;
+  title: string;
+  description: string;
+  icon: string;
+  period: FocusPeriod;
+  startDate: string;
+  endDate: string;
+  assigneeId: FamilyMemberId;
+  completionBonus: number;
+  bonusPaid: boolean;
+  progressPercent: number;
+  remainingPercent: number;
+  preparationContributionIds: ContributionId[];
+}
+
+export interface NewFocusGoal {
+  title: string;
+  description: string;
+  icon: string;
+  period: FocusPeriod;
+  startDate: string;
+  endDate: string;
+  assigneeId: FamilyMemberId;
+  completionBonus: number;
+}

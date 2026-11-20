@@ -138,6 +138,33 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     }
   }
 
+  public void GrantFocusCompletionBonus(
+    FamilyMemberId actor,
+    FamilyMemberId childId,
+    LadirchenAmount amount,
+    string reason,
+    TransactionId operationId,
+    DateTimeOffset now
+  )
+  {
+    RequireGuardian(actor);
+    RequireChild(childId);
+    var value = Rules.Round(Rules.Positive(amount));
+    Rules.Require(
+      value >= SpecialGiftPolicy.MinimumAmount && value <= SpecialGiftPolicy.MaximumAmount,
+      DomainError.InvalidValue,
+      $"A focus completion bonus must be between {SpecialGiftPolicy.MinimumAmount} and {SpecialGiftPolicy.MaximumAmount}."
+    );
+    var text = Rules.Text(reason);
+    RequireNewOperation(operationId);
+    var wallet = WalletFor(childId);
+    wallet.Set(checked(wallet.Balance + value), wallet.Reserved);
+    Record(
+      operationId,
+      new LedgerEntry(operationId, childId, null, LedgerKind.Credit, value, childId, text, now.ToUniversalTime(), actor)
+    );
+  }
+
   public void AddContribution(
     FamilyMemberId actor,
     ContributionId id,

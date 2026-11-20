@@ -10,6 +10,8 @@ namespace LadirchenApp.Webhost.Models.Commands;
 [JsonDerivedType(typeof(BehaviorIssueWarningCommandRequest), "savings.issue-behavior-warning")]
 [JsonDerivedType(typeof(BehaviorResetStatusCommandRequest), "savings.reset-behavior-status")]
 [JsonDerivedType(typeof(ContributionsAddCommandRequest), "contributions.add")]
+[JsonDerivedType(typeof(ContributionsAddFocusCommandRequest), "contributions.add-focus")]
+[JsonDerivedType(typeof(ContributionsAddFocusPreparationsCommandRequest), "contributions.add-focus-preparations")]
 [JsonDerivedType(typeof(ContributionsCopyCommandRequest), "contributions.copy")]
 [JsonDerivedType(typeof(ContributionsReactivateCommandRequest), "contributions.reactivate")]
 [JsonDerivedType(typeof(ContributionsAddPromotionCommandRequest), "contributions.add-promotion")]

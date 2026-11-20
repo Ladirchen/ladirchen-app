@@ -4,6 +4,7 @@ export interface SchabiIntegration {
   readonly memberId: FamilyMemberId;
   readonly username: string;
   readonly configured: boolean;
+  readonly appointmentsConfigured: boolean;
   readonly enabled: boolean;
   readonly syncDayOfWeek: number;
   readonly syncHorizonDays: number;
@@ -14,6 +15,7 @@ export interface SchabiIntegration {
 
 export interface SaveSchabiIntegrationCommand {
   readonly calendarUrl: string;
+  readonly appointmentsCalendarUrl: string;
   readonly enabled: boolean;
   readonly syncDayOfWeek: number;
   readonly syncHorizonDays: number;

@@ -6,6 +6,7 @@ public sealed record SchabiIntegrationResponse(
   string MemberId,
   string Username,
   bool Configured,
+  bool AppointmentsConfigured,
   bool Enabled,
   int SyncDayOfWeek,
   int SyncHorizonDays,

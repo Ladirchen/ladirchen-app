@@ -280,6 +280,9 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LastSuccessfulSyncAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ProtectedAppointmentsCalendarUrl")
+                        .HasColumnType("text");
+
                     b.Property<string>("ProtectedCalendarUrl")
                         .IsRequired()
                         .HasColumnType("text");
@@ -418,9 +421,35 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("DueDate")
                         .HasColumnType("date");
 
+                    b.Property<bool>("FocusBonusPaid")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("FocusCompletionBonus")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateOnly?>("FocusEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FocusId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("FocusPeriod")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateOnly?>("FocusStartDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Icon")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsFocus")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("PreparationMinutes")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Recurrence")
                         .IsRequired()

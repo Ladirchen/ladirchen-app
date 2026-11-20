@@ -8,6 +8,7 @@ public sealed class SchabiCalendarIntegrationEntity
   public string MemberId { get; set; } = string.Empty;
   public string SchabiUsername { get; set; } = string.Empty;
   public string ProtectedCalendarUrl { get; set; } = string.Empty;
+  public string? ProtectedAppointmentsCalendarUrl { get; set; }
   public bool Enabled { get; set; }
   public int SyncDayOfWeek { get; set; } = (int)DayOfWeek.Thursday;
   public int SyncHorizonDays { get; set; } = 14;

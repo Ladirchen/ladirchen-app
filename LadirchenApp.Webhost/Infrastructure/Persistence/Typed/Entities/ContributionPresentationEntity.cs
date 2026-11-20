@@ -11,6 +11,14 @@ public sealed class ContributionPresentationEntity
   public string? Category { get; set; }
   public DateOnly? DueDate { get; set; }
   public string Recurrence { get; set; } = "none";
+  public bool IsFocus { get; set; }
+  public string? FocusPeriod { get; set; }
+  public DateOnly? FocusStartDate { get; set; }
+  public DateOnly? FocusEndDate { get; set; }
+  public decimal FocusCompletionBonus { get; set; }
+  public string? FocusId { get; set; }
+  public int? PreparationMinutes { get; set; }
+  public bool FocusBonusPaid { get; set; }
   public bool RewardCelebrated { get; set; }
   public FamilyEconomyRootEntity Economy { get; set; } = null!;
 }

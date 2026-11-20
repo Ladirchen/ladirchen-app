@@ -1,4 +1,4 @@
-import type { Contribution, NewContribution, NewPromotion } from "@/domain/contributions/types";
+import type { Contribution, NewContribution, NewFocusGoal, NewPromotion } from "@/domain/contributions/types";
 import { totalEarnedContributionReward } from "@/domain/contributions/rating";
 import { createDomainId } from "@/domain/shared/identifiers";
 import type { ContributionId, FamilyMemberId, PromotionId } from "@/domain/shared/identifiers";
@@ -8,6 +8,30 @@ import { executeBackendFamilyCommand } from "./backend-family-command";
 import { createUuid } from "./family-world-store-utils";
 
 export const contributionsActions = {
+  async addFocus(this: FamilyWorldStoreContext, input: NewFocusGoal) {
+    const id = createDomainId.contribution(createUuid());
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.add-focus",
+      { id, ...input },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.focusAdded"),
+    );
+  },
+  async addFocusPreparations(
+    this: FamilyWorldStoreContext,
+    focusId: ContributionId,
+    input: { dates: string[]; minutes: number; reward: number },
+  ) {
+    const ids = input.dates.map(() => createDomainId.contribution(createUuid()));
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.add-focus-preparations",
+      { focusId, ids, ...input },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.preparationsAdded", { quantity: ids.length }),
+    );
+  },
   async setPerfectRatingBonusPercent(this: FamilyWorldStoreContext, percent: number) {
     await executeBackendFamilyCommand(
       this,

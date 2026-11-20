@@ -4,6 +4,7 @@ import { HttpSchabiIntegrationGateway } from "./http-schabi-integration-gateway"
 
 const familyId = createDomainId.family("00000000-0000-0000-0000-000000000001");
 const integration = {
+  appointmentsConfigured: true,
   configured: true,
   enabled: true,
   lastError: null,
@@ -26,6 +27,7 @@ describe("HttpSchabiIntegrationGateway", () => {
 
     await expect(new HttpSchabiIntegrationGateway("").list(familyId)).resolves.toEqual([
       {
+        appointmentsConfigured: true,
         configured: true,
         enabled: true,
         lastSuccessfulSyncAt: "2026-11-19T06:00:00Z",

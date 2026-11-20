@@ -57,6 +57,7 @@ public sealed class SchabiIntegrationService
           string.Empty,
           false,
           false,
+          false,
           (int)DayOfWeek.Thursday,
           14,
           "06:00",
@@ -123,6 +124,12 @@ public sealed class SchabiIntegrationService
       integration.ProtectedCalendarUrl = _protector.Protect(calendarUrl.AbsoluteUri);
     }
 
+    if (!string.IsNullOrWhiteSpace(request.AppointmentsCalendarUrl))
+    {
+      var appointmentsCalendarUrl = SchabiCalendarUrl.Parse(request.AppointmentsCalendarUrl);
+      integration.ProtectedAppointmentsCalendarUrl = _protector.Protect(appointmentsCalendarUrl.AbsoluteUri);
+    }
+
     integration.SchabiUsername = username;
     integration.SyncDayOfWeek = (int)syncDayOfWeek;
     integration.SyncHorizonDays = syncHorizonDays;
@@ -180,6 +187,7 @@ public sealed class SchabiIntegrationService
       integration.MemberId,
       integration.SchabiUsername,
       true,
+      !string.IsNullOrWhiteSpace(integration.ProtectedAppointmentsCalendarUrl),
       integration.Enabled,
       integration.SyncDayOfWeek,
       integration.SyncHorizonDays,

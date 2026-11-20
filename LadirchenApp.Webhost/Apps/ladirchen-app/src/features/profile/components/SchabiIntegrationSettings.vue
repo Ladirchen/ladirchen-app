@@ -48,6 +48,16 @@
             type="password"
             variant="outlined"
           />
+          <v-text-field
+            v-model="draft.appointmentsCalendarUrl"
+            autocomplete="off"
+            density="compact"
+            :hint="appointmentsCalendarHint(draft)"
+            :label="t('profile.schabi.appointmentsCalendarUrl')"
+            persistent-hint
+            type="password"
+            variant="outlined"
+          />
           <div class="schedule-grid">
             <v-select
               v-model="draft.syncDayOfWeek"
@@ -133,6 +143,7 @@ import { familyContext, schabiIntegrationGateway } from "@/app/composition-root"
 import { useFamilyWorldStore } from "@/stores/family-world";
 
 interface SchabiIntegrationDraft extends SchabiIntegration {
+  appointmentsCalendarUrl: string;
   busy: boolean;
   calendarUrl: string;
   syncing: boolean;
@@ -168,6 +179,12 @@ function calendarHint(draft: SchabiIntegrationDraft): string {
   return draft.configured ? t("profile.schabi.calendarUrlConfigured") : t("profile.schabi.calendarUrlHint");
 }
 
+function appointmentsCalendarHint(draft: SchabiIntegrationDraft): string {
+  return draft.appointmentsConfigured
+    ? t("profile.schabi.appointmentsCalendarUrlConfigured")
+    : t("profile.schabi.appointmentsCalendarUrlHint");
+}
+
 function configurationStatus(draft: SchabiIntegrationDraft): string {
   return draft.configured ? t("profile.schabi.configured") : t("profile.schabi.notConfigured");
 }
@@ -192,6 +209,7 @@ async function load(): Promise<void> {
     const integrations = await schabiIntegrationGateway.list(familyContext.activeFamilyId);
     drafts.value = integrations.map((integration) => ({
       ...integration,
+      appointmentsCalendarUrl: "",
       busy: false,
       calendarUrl: "",
       syncing: false,
@@ -209,6 +227,8 @@ async function remove(draft: SchabiIntegrationDraft): Promise<void> {
   try {
     await schabiIntegrationGateway.remove(familyContext.activeFamilyId, draft.memberId);
     Object.assign(draft, {
+      appointmentsCalendarUrl: "",
+      appointmentsConfigured: false,
       calendarUrl: "",
       configured: false,
       enabled: false,
@@ -229,6 +249,7 @@ async function save(draft: SchabiIntegrationDraft): Promise<void> {
 
   try {
     const saved = await schabiIntegrationGateway.save(familyContext.activeFamilyId, draft.memberId, {
+      appointmentsCalendarUrl: draft.appointmentsCalendarUrl.trim(),
       calendarUrl: draft.calendarUrl.trim(),
       enabled: draft.enabled,
       syncDayOfWeek: draft.syncDayOfWeek,
@@ -236,7 +257,7 @@ async function save(draft: SchabiIntegrationDraft): Promise<void> {
       syncTimeLocal: draft.syncTimeLocal,
       username: draft.username.trim(),
     });
-    Object.assign(draft, saved, { calendarUrl: "", configured: true });
+    Object.assign(draft, saved, { appointmentsCalendarUrl: "", calendarUrl: "", configured: true });
   } finally {
     draft.busy = false;
   }
