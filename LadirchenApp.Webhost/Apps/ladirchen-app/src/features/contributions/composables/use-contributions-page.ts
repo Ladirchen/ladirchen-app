@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import type { Contribution, NewContribution, NewPromotion, Promotion } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import {
+  matchesChildContributionScope,
   matchesContributionPersonFilter,
   type ContributionPersonFilter,
 } from "@/features/contributions/contribution-person-filter";
@@ -151,8 +152,7 @@ export function useContributionsPage() {
 
       return (
         (store.viewerRole !== "child" ||
-          !contribution.assigneeId ||
-          contribution.assigneeId === store.signedInMemberId) &&
+          matchesChildContributionScope(contribution.assigneeId, store.signedInMemberId, scopeFilter.value)) &&
         (filter.value === "all" || contribution.category === filter.value) &&
         matchesContributionPersonFilter(contribution.assigneeId, personFilter.value) &&
         matchesStatus &&
