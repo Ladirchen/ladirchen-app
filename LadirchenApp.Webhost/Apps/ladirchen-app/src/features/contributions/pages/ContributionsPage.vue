@@ -27,13 +27,27 @@
         </template>
       </SectionHeader>
       <div v-if="visibleFocusGoals.length" class="focus-grid">
-        <BrandedCard v-for="focus in visibleFocusGoals" :key="focus.id" class="focus-card pa-4" tone="contributions">
+        <BrandedCard
+          v-for="focus in visibleFocusGoals"
+          :id="`focus-${focus.id}`"
+          :key="focus.id"
+          class="focus-card pa-4"
+          tabindex="-1"
+          tone="contributions"
+        >
           <div class="d-flex align-start ga-3">
             <v-avatar color="warning" rounded="lg" size="52" variant="tonal">{{ focus.icon }}</v-avatar>
             <div class="flex-grow-1 min-w-0">
-              <div class="d-flex align-center justify-space-between ga-2">
+              <div class="d-flex align-center justify-space-between flex-wrap ga-2">
                 <strong>{{ focus.title }}</strong>
-                <v-chip color="warning" size="x-small" variant="tonal">{{ focusPeriodLabel(focus.period) }}</v-chip>
+                <div class="d-flex align-center flex-wrap ga-1">
+                  <v-chip color="info" prepend-icon="i-mdi:account-child" size="x-small" variant="tonal">
+                    {{ memberName(focus.assigneeId) }}
+                  </v-chip>
+                  <v-chip color="warning" size="x-small" variant="tonal">
+                    {{ focusPeriodLabel(focus.period) }}
+                  </v-chip>
+                </div>
               </div>
               <p class="text-caption text-medium-emphasis">{{ focus.description }}</p>
               <p class="text-caption mt-1">
@@ -68,7 +82,7 @@
       <p v-else class="text-caption text-medium-emphasis">{{ t("contributions.focus.empty") }}</p>
     </section>
 
-    <section class="task-calendar mb-6">
+    <v-card class="task-calendar mb-6" elevation="0" rounded="xl">
       <div class="calendar-toolbar d-flex align-center justify-space-between flex-wrap ga-3 mb-3">
         <div>
           <strong>{{ t("contributions.calendar.title") }}</strong>
@@ -103,44 +117,63 @@
           />
         </div>
       </div>
-      <div v-if="calendarExpanded" class="calendar-member-groups">
-        <section v-for="group in calendarGroups" :key="group.memberId ?? 'open'" class="calendar-member-group">
-          <div class="calendar-member-heading">
-            <span v-if="group.appearance" class="calendar-member-avatar">
-              <AvatarFigure :appearance="group.appearance" calm :size="34" />
-            </span>
-            <v-avatar v-else :color="group.color" size="30" variant="tonal">{{ group.avatar }}</v-avatar>
-            <strong>{{ group.title }}</strong>
-            <v-chip size="x-small" variant="tonal">{{ group.taskCount }}</v-chip>
-          </div>
-          <div class="week-grid">
-            <div v-for="day in group.days" :key="day.iso" class="week-day" :class="{ 'week-day--today': day.isToday }">
-              <div class="week-day__heading">
-                <span>{{ day.weekday }}</span>
-                <strong>{{ day.day }}</strong>
-              </div>
-              <button
-                v-for="contribution in day.contributions"
-                :key="contribution.id"
-                class="calendar-task"
-                :class="`calendar-task--${contribution.kind}`"
-                type="button"
-                @click="openCalendarTask(contribution)"
-              >
-                <SchabiTaskIcon v-if="isSchabiContributionId(contribution.id)" />
-                <span v-else>{{ contribution.icon }}</span>
-                <span class="calendar-task__title">{{ contribution.title }}</span>
-                <v-icon v-if="contribution.recurrence !== 'none'" icon="i-mdi:repeat" size="14" />
-              </button>
-              <span v-if="!day.contributions.length" class="week-day__empty">—</span>
-            </div>
-          </div>
-        </section>
-        <p v-if="!calendarGroups.length" class="text-caption text-medium-emphasis">
-          {{ t("contributions.calendar.empty") }}
-        </p>
+      <div v-if="calendarExpanded && calendarLegend.length" class="calendar-legend mb-3">
+        <div v-for="member in calendarLegend" :key="member.memberId ?? 'open'" class="calendar-legend__member">
+          <span v-if="member.appearance" class="calendar-member-avatar">
+            <AvatarFigure :appearance="member.appearance" calm :size="34" />
+          </span>
+          <v-avatar v-else :color="member.color" size="32" variant="tonal">{{ member.avatar }}</v-avatar>
+          <span>{{ member.title }}</span>
+          <v-chip size="x-small" variant="tonal">{{ member.taskCount }}</v-chip>
+        </div>
       </div>
-    </section>
+      <div v-if="calendarExpanded && calendarLegend.length" class="week-grid">
+        <v-card
+          v-for="day in calendarDays"
+          :key="day.iso"
+          class="week-day"
+          :class="{ 'week-day--today': day.isToday }"
+          elevation="0"
+          rounded="lg"
+        >
+          <div class="week-day__heading">
+            <span>{{ day.weekday }}</span>
+            <strong>{{ day.day }}</strong>
+          </div>
+          <button
+            v-for="entry in day.entries"
+            :key="entry.contribution?.id ?? entry.focus?.id"
+            class="calendar-task"
+            :class="{
+              'calendar-task--focus-goal': entry.focus && !entry.contribution,
+              'calendar-task--focus-preparation': entry.focus && entry.contribution,
+            }"
+            :style="{ '--calendar-task-color': entry.color }"
+            type="button"
+            @click="openCalendarEntry(entry)"
+          >
+            <template v-if="entry.contribution">
+              <SchabiTaskIcon v-if="isSchabiContributionId(entry.contribution.id)" />
+              <span v-else>{{ entry.contribution.icon }}</span>
+            </template>
+            <v-icon v-else icon="i-mdi:target" size="17" />
+            <span class="calendar-task__copy">
+              <span class="calendar-task__title">{{ entry.contribution?.title ?? entry.focus?.title }}</span>
+              <small v-if="entry.focusLabel">{{ entry.focusLabel }}</small>
+            </span>
+            <v-icon
+              v-if="entry.contribution?.recurrence && entry.contribution.recurrence !== 'none'"
+              icon="i-mdi:repeat"
+              size="14"
+            />
+          </button>
+          <span v-if="!day.entries.length" class="week-day__empty">—</span>
+        </v-card>
+      </div>
+      <p v-else-if="calendarExpanded" class="text-caption text-medium-emphasis">
+        {{ t("contributions.calendar.empty") }}
+      </p>
+    </v-card>
 
     <template v-if="store.viewerRole === 'child'">
       <section v-if="guardianTasksToRate.length" class="mb-6">
@@ -208,7 +241,7 @@
         :show-status="false"
       />
 
-      <TransitionGroup class="contribution-card-list d-flex flex-column ga-3" name="list" tag="div">
+      <TransitionGroup class="contribution-card-list contribution-card-grid" name="list" tag="div">
         <ChildContributionCard
           v-for="contribution in filteredContributions"
           :key="contribution.id"
@@ -257,61 +290,6 @@
           </v-btn>
         </v-btn-toggle>
       </div>
-
-      <section v-if="store.signedInMember?.guardianAccess !== 'external'" class="guardian-own-tasks mb-6">
-        <SectionHeader
-          :description="t('contributions.guardianOwn.description')"
-          :title="t('contributions.guardianOwn.title')"
-        >
-          <template #action>
-            <v-btn
-              color="secondary"
-              prepend-icon="i-mdi:plus"
-              rounded="lg"
-              size="small"
-              variant="tonal"
-              @click="openOwnTaskDialog"
-            >
-              {{ t("contributions.guardianOwn.add") }}
-            </v-btn>
-          </template>
-        </SectionHeader>
-        <div v-if="guardianOwnContributions.length" class="d-flex flex-column ga-2">
-          <BrandedCard
-            v-for="{ contribution, statusDescription, statusColor, statusLabel } in guardianOwnCards"
-            :key="contribution.id"
-            class="basic-row pa-3"
-            tone="contributions"
-          >
-            <div class="d-flex align-center ga-3">
-              <v-avatar class="task-icon-avatar task-icon-avatar--small" color="surface-variant" rounded="lg" size="44">
-                {{ contribution.icon }}
-              </v-avatar>
-              <div class="flex-grow-1 min-w-0">
-                <strong class="text-body-small">{{ contribution.title }}</strong>
-                <ContributionDescription :text="contribution.description" />
-                <p class="text-caption text-medium-emphasis">{{ statusDescription }}</p>
-              </div>
-              <v-btn
-                v-if="contribution.status === 'available'"
-                class="finish-button guardian-finish-button"
-                color="info"
-                rounded="lg"
-                size="small"
-                variant="flat"
-                @click="store.submitContribution(contribution.id)"
-              >
-                <span class="finish-check" aria-hidden="true"><v-icon icon="i-mdi:check" size="24" /></span>
-                <span>{{ t("contributions.finish") }}</span>
-              </v-btn>
-              <v-chip v-else :color="statusColor" size="small" variant="tonal">{{ statusLabel }}</v-chip>
-            </div>
-          </BrandedCard>
-        </div>
-        <BrandedCard v-else class="empty-review pa-4 text-center" tone="contributions">
-          <p class="text-caption text-medium-emphasis">{{ t("contributions.guardianOwn.empty") }}</p>
-        </BrandedCard>
-      </section>
 
       <section v-if="showReviewableTasks" class="mb-6">
         <SectionHeader :description="t('contributions.review.description')" :title="t('contributions.review.title')">
@@ -480,7 +458,7 @@
               <strong>{{ group.title }}</strong>
               <v-chip size="x-small" variant="tonal">{{ group.contributions.length }}</v-chip>
             </div>
-            <div class="d-flex flex-column ga-3">
+            <div class="managed-contribution-grid">
               <ChildContributionCard
                 v-for="contribution in group.contributions"
                 :key="contribution.id"
@@ -551,6 +529,33 @@
         </div>
       </template>
     </template>
+
+    <v-dialog
+      :model-value="Boolean(selectedCalendarContribution)"
+      max-width="480"
+      @update:model-value="selectedCalendarContribution = undefined"
+    >
+      <v-card v-if="selectedCalendarContribution" class="pa-5" rounded="xl">
+        <div class="d-flex align-start ga-3">
+          <v-avatar color="primary" rounded="lg" size="52" variant="tonal">
+            <SchabiTaskIcon v-if="isSchabiContributionId(selectedCalendarContribution.id)" />
+            <template v-else>{{ selectedCalendarContribution.icon }}</template>
+          </v-avatar>
+          <div class="flex-grow-1 min-w-0">
+            <v-card-title class="pa-0">{{ selectedCalendarContribution.title }}</v-card-title>
+            <v-card-subtitle class="pa-0 mt-1">
+              {{ memberName(selectedCalendarContribution.assigneeId) }} · {{ selectedCalendarContribution.dueLabel }}
+            </v-card-subtitle>
+          </div>
+        </div>
+        <ContributionDescription class="mt-4" :text="selectedCalendarContribution.description" />
+        <div class="d-flex justify-end mt-5">
+          <v-btn rounded="lg" variant="tonal" @click="selectedCalendarContribution = undefined">
+            {{ t("common.close") }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="addDialog" max-width="440">
       <v-card class="pa-5" rounded="xl">
@@ -934,7 +939,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
-import type { Contribution, FocusPeriod, NewFocusGoal } from "@/domain/contributions/types";
+import type { Contribution, FocusGoal, FocusPeriod, NewFocusGoal } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { isSchabiContributionId } from "@/domain/contributions/source";
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
@@ -947,6 +952,15 @@ import PromotionCountdown from "@/shared/components/contributions/PromotionCount
 import SectionHeader from "@/shared/components/ui/SectionHeader.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import { useContributionsPage } from "@/features/contributions/composables/use-contributions-page";
+import { familyMemberColorPalette } from "@/theme/color-palette";
+
+interface CalendarEntry {
+  color: string;
+  contribution?: Contribution;
+  focus?: FocusGoal;
+  focusLabel?: string;
+}
+
 const {
   activePromotions,
   addDialog,
@@ -969,8 +983,6 @@ const {
   contributionToDelete,
   filter,
   filteredContributions,
-  guardianContributionStatus,
-  guardianOwnContributions,
   guardianTasksToRate,
   kindOptions,
   localizedContributions,
@@ -984,7 +996,6 @@ const {
   openContributionCount,
   openContributionDialog,
   openContributionEditor,
-  openOwnTaskDialog,
   openTeamInvite,
   personFilter,
   personFilterOptions,
@@ -1014,13 +1025,14 @@ const preparationMinutes = ref(30);
 const preparationReward = ref(1);
 const newFocus = ref<NewFocusGoal>(createEmptyFocus());
 const calendarExpanded = ref(true);
+const selectedCalendarContribution = ref<Contribution>();
+const weekOffset = ref(0);
 const calendarToggleIcon = computed(() =>
   calendarExpanded.value ? "i-mdi:calendar-collapse-horizontal" : "i-mdi:calendar-expand-horizontal",
 );
 const calendarToggleLabel = computed(() =>
   t(calendarExpanded.value ? "contributions.calendar.hide" : "contributions.calendar.show"),
 );
-const weekOffset = ref(0);
 const visibleFocusGoals = computed(() =>
   store.focusGoals.filter((focus) => store.viewerRole !== "child" || focus.assigneeId === store.signedInMemberId),
 );
@@ -1135,15 +1147,14 @@ const calendarDateSlots = computed(() => {
     };
   });
 });
-const calendarGroups = computed(() => {
+const calendarLegend = computed(() => {
   const children = store.members.filter(
     (member) => member.role === "child" && (store.viewerRole !== "child" || member.id === store.signedInMemberId),
   );
-  const groups: Array<{
+  const members: Array<{
     appearance?: AvatarAppearance;
     avatar: string;
     color: string;
-    days: Array<(typeof calendarDateSlots.value)[number] & { contributions: Contribution[] }>;
     memberId: string | undefined;
     taskCount: number;
     title: string;
@@ -1157,10 +1168,6 @@ const calendarGroups = computed(() => {
       appearance: resolveFamilyMemberAvatarAppearance(member, store.members),
       avatar: member.avatar,
       color: member.color,
-      days: calendarDateSlots.value.map((day) => ({
-        ...day,
-        contributions: tasks.filter((contribution) => contribution.dueDate === day.iso),
-      })),
       memberId: member.id,
       taskCount: tasks.length,
       title: member.name,
@@ -1169,21 +1176,49 @@ const calendarGroups = computed(() => {
   const openTasks = calendarTasks.value.filter((contribution) => !contribution.assigneeId);
 
   if (store.viewerRole !== "child" && openTasks.length) {
-    groups.push({
+    members.push({
       avatar: "✨",
-      color: "primary",
-      days: calendarDateSlots.value.map((day) => ({
-        ...day,
-        contributions: openTasks.filter((contribution) => contribution.dueDate === day.iso),
-      })),
+      color: familyMemberColorPalette.defaultGuardian,
       memberId: undefined,
       taskCount: openTasks.length,
       title: t("contributions.assignment.stillOpen"),
     });
   }
 
-  return groups;
+  return members;
 });
+const calendarDays = computed(() =>
+  calendarDateSlots.value.map((day) => {
+    const contributionEntries: CalendarEntry[] = calendarTasks.value
+      .filter((contribution) => contribution.dueDate === day.iso)
+      .map((contribution) => {
+        const focus = visibleFocusGoals.value.find((item) => item.preparationContributionIds.includes(contribution.id));
+
+        return {
+          color:
+            calendarLegend.value.find((member) => member.memberId === contribution.assigneeId)?.color ??
+            familyMemberColorPalette.defaultGuardian,
+          contribution,
+          focus,
+          focusLabel: focus ? `${t("contributions.calendar.focusPreparation")}: ${focus.title}` : undefined,
+        };
+      });
+    const focusEntries: CalendarEntry[] = visibleFocusGoals.value
+      .filter((focus) => focus.endDate === day.iso)
+      .map((focus) => ({
+        color:
+          calendarLegend.value.find((member) => member.memberId === focus.assigneeId)?.color ??
+          familyMemberColorPalette.defaultGuardian,
+        focus,
+        focusLabel: t("contributions.calendar.focusGoal"),
+      }));
+
+    return {
+      ...day,
+      entries: [...focusEntries, ...contributionEntries],
+    };
+  }),
+);
 const calendarRangeLabel = computed(() => {
   const first = calendarDateSlots.value.at(0)?.iso;
   const last = calendarDateSlots.value.at(-1)?.iso;
@@ -1193,9 +1228,17 @@ const calendarRangeLabel = computed(() => {
     ? `${formatter.format(new Date(`${first}T12:00:00`))} – ${formatter.format(new Date(`${last}T12:00:00`))}`
     : "";
 });
-function openCalendarTask(contribution: Contribution) {
-  if (store.viewerRole !== "child" && contribution.status === "available") {
-    openContributionEditor(contribution);
+function openCalendarEntry(entry: CalendarEntry) {
+  if (entry.contribution) {
+    selectedCalendarContribution.value = entry.contribution;
+
+    return;
+  }
+
+  if (entry.focus) {
+    const focusCard = document.getElementById(`focus-${entry.focus.id}`);
+    focusCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+    focusCard?.focus({ preventScroll: true });
   }
 }
 const contributionDialogTitle = computed(() =>
@@ -1229,18 +1272,6 @@ const childReviewCards = computed(() =>
     contribution,
     completedByLabel: t("contributions.completedBy", { name: memberName(contribution.assigneeId) }),
   })),
-);
-const guardianOwnCards = computed(() =>
-  guardianOwnContributions.value.map(function callback(contribution) {
-    const approved = contribution.status === "approved";
-
-    return {
-      contribution,
-      statusDescription: guardianContributionStatus(contribution),
-      statusColor: approved ? "success" : "warning",
-      statusLabel: t(approved ? "contributions.guardianOwn.rated" : "contributions.guardianOwn.submitted"),
-    };
-  }),
 );
 const showReviewableTasks = computed(
   () =>
@@ -1293,6 +1324,14 @@ function toggleEmptyStateFilter() {
   padding-inline: rem(17);
 }
 
+.contribution-card-grid,
+.managed-contribution-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, rem(350)), 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+
 .task-calendar {
   padding: 16px;
   border: 1px solid var(--lad-border);
@@ -1319,26 +1358,23 @@ function toggleEmptyStateFilter() {
   -webkit-overflow-scrolling: touch;
 }
 
-.calendar-member-groups {
-  min-width: 0;
-  display: grid;
-  gap: 20px;
-}
-
-.calendar-member-group {
-  min-width: 0;
-}
-
-.calendar-member-group + .calendar-member-group {
-  padding-top: 18px;
-  border-top: 1px solid var(--lad-border);
-}
-
-.calendar-member-heading {
+.calendar-legend {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+}
+
+.calendar-legend__member {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid var(--lad-border);
+  border-radius: var(--lad-radius-pill);
+  background: var(--lad-surface-soft);
+  font-size: rem(11);
+  font-weight: 800;
 }
 
 .calendar-member-avatar {
@@ -1388,19 +1424,41 @@ function toggleEmptyStateFilter() {
   padding: 7px;
   border: 0;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--lad-color-primary) 12%, var(--lad-surface));
+  border-inline-start: 4px solid var(--calendar-task-color);
+  background: color-mix(in srgb, var(--calendar-task-color) 16%, var(--lad-surface));
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.calendar-task--school {
-  background: color-mix(in srgb, var(--lad-color-info) 16%, var(--lad-surface));
+.calendar-task--focus-goal {
+  border: 1px solid var(--calendar-task-color);
+  border-inline-start-width: 4px;
+  background: color-mix(in srgb, var(--calendar-task-color) 26%, var(--lad-surface));
+}
+
+.calendar-task--focus-preparation {
+  border-block: 1px dashed color-mix(in srgb, var(--calendar-task-color) 55%, transparent);
+  border-inline-end: 1px dashed color-mix(in srgb, var(--calendar-task-color) 55%, transparent);
+}
+
+.calendar-task__copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.calendar-task__copy small {
+  display: block;
+  overflow: hidden;
+  color: var(--lad-muted);
+  font-size: rem(8);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-task__title {
-  min-width: 0;
-  flex: 1;
+  display: block;
   overflow: hidden;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1519,6 +1577,11 @@ function toggleEmptyStateFilter() {
 
 .focus-card {
   border: 1px solid var(--lad-border);
+}
+
+.focus-card:focus {
+  outline: 3px solid color-mix(in srgb, var(--lad-color-info) 42%, transparent);
+  outline-offset: 3px;
 }
 
 .bonus-value {
