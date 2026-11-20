@@ -69,12 +69,23 @@
     </section>
 
     <section class="task-calendar mb-6">
-      <div class="d-flex align-center justify-space-between ga-3 mb-3">
+      <div class="calendar-toolbar d-flex align-center justify-space-between flex-wrap ga-3 mb-3">
         <div>
           <strong>{{ t("contributions.calendar.title") }}</strong>
           <p class="text-caption text-medium-emphasis">{{ calendarRangeLabel }}</p>
         </div>
         <div class="d-flex align-center ga-1">
+          <v-btn
+            v-if="store.viewerRole === 'child'"
+            :aria-expanded="calendarExpanded"
+            :prepend-icon="calendarToggleIcon"
+            rounded="lg"
+            size="small"
+            variant="tonal"
+            @click="calendarExpanded = !calendarExpanded"
+          >
+            {{ calendarToggleLabel }}
+          </v-btn>
           <v-btn
             :aria-label="t('contributions.calendar.previous')"
             icon="i-mdi:chevron-left"
@@ -92,10 +103,13 @@
           />
         </div>
       </div>
-      <div class="calendar-member-groups">
+      <div v-if="calendarExpanded" class="calendar-member-groups">
         <section v-for="group in calendarGroups" :key="group.memberId ?? 'open'" class="calendar-member-group">
           <div class="calendar-member-heading">
-            <v-avatar :color="group.color" size="30" variant="tonal">{{ group.avatar }}</v-avatar>
+            <span v-if="group.appearance" class="calendar-member-avatar">
+              <AvatarFigure :appearance="group.appearance" calm :size="34" />
+            </span>
+            <v-avatar v-else :color="group.color" size="30" variant="tonal">{{ group.avatar }}</v-avatar>
             <strong>{{ group.title }}</strong>
             <v-chip size="x-small" variant="tonal">{{ group.taskCount }}</v-chip>
           </div>
@@ -187,6 +201,7 @@
         v-model:status="statusFilter"
         class="mb-4"
         :category-options="categoryFilterOptions"
+        collapsible
         :open-count="openContributionCount"
         :person-options="personFilterOptions"
         :show-person="false"
@@ -918,10 +933,13 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import type { AvatarAppearance } from "@/domain/avatar";
 import type { Contribution, FocusPeriod, NewFocusGoal } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { isSchabiContributionId } from "@/domain/contributions/source";
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
+import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
 import ContributionDescription from "@/shared/components/contributions/ContributionDescription.vue";
 import SchabiTaskIcon from "@/shared/components/contributions/SchabiTaskIcon.vue";
@@ -996,6 +1014,13 @@ const preparationDates = ref([""]);
 const preparationMinutes = ref(30);
 const preparationReward = ref(1);
 const newFocus = ref<NewFocusGoal>(createEmptyFocus());
+const calendarExpanded = ref(true);
+const calendarToggleIcon = computed(() =>
+  calendarExpanded.value ? "i-mdi:calendar-collapse-horizontal" : "i-mdi:calendar-expand-horizontal",
+);
+const calendarToggleLabel = computed(() =>
+  t(calendarExpanded.value ? "contributions.calendar.hide" : "contributions.calendar.show"),
+);
 const weekOffset = ref(0);
 const visibleFocusGoals = computed(() =>
   store.focusGoals.filter((focus) => store.viewerRole !== "child" || focus.assigneeId === store.signedInMemberId),
@@ -1116,6 +1141,7 @@ const calendarGroups = computed(() => {
     (member) => member.role === "child" && (store.viewerRole !== "child" || member.id === store.signedInMemberId),
   );
   const groups: Array<{
+    appearance?: AvatarAppearance;
     avatar: string;
     color: string;
     days: Array<(typeof calendarDateSlots.value)[number] & { contributions: Contribution[] }>;
@@ -1129,6 +1155,7 @@ const calendarGroups = computed(() => {
     );
 
     return {
+      appearance: resolveFamilyMemberAvatarAppearance(member, store.members),
       avatar: member.avatar,
       color: member.color,
       days: calendarDateSlots.value.map((day) => ({
@@ -1271,7 +1298,14 @@ function toggleEmptyStateFilter() {
   padding: 16px;
   border: 1px solid var(--lad-border);
   border-radius: 20px;
-  background: var(--lad-surface);
+  background:
+    radial-gradient(
+      circle at 96% 8%,
+      color-mix(in srgb, var(--lad-color-primary) 12%, transparent) 0 36px,
+      transparent 37px
+    ),
+    linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft));
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--lad-color-primary) 10%, transparent);
 }
 
 .week-grid {
@@ -1306,6 +1340,19 @@ function toggleEmptyStateFilter() {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.calendar-member-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid var(--lad-surface-raised);
+  border-radius: 50%;
+  background: var(--lad-color-primary-soft);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--lad-color-primary) 24%, transparent);
 }
 
 .week-day {
