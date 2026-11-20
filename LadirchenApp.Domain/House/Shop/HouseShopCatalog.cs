@@ -50,6 +50,14 @@ public static class HouseShopCatalog
       ["candy-cloud-bushes"] = (4, 0, true, "outside", "garden", new HousePlacement("garden", 30, 66, 0.86m)),
       ["candy-striped-fence"] = (4, 0, true, "outside", "garden", new HousePlacement("garden", 68, 70, 0.82m)),
       ["family-flag"] = (6, 0, true, "outside", "garden", new HousePlacement("garden", 84, 62, 0.9m)),
+      ["dance-studio-mirror"] = (5, 4, true, "inside", "makeup-room", new HousePlacement("makeup-room", 24, 52, 0.86m)),
+      ["neon-eye-light"] = (4, 3, true, "inside", "gamer-room", new HousePlacement("gamer-room", 50, 24, 0.78m)),
+      ["microphone-stand"] = (4, 4, true, "inside", "creative-room", new HousePlacement("creative-room", 74, 57, 0.76m)),
+      ["popstar-vanity"] = (6, 4, true, "inside", "makeup-room", new HousePlacement("makeup-room", 72, 58, 0.78m)),
+      ["forest-treasure-chest"] = (5, 1, true, "inside", "children-room", new HousePlacement("children-room", 20, 74, 0.72m)),
+      ["fairy-lantern"] = (4, 1, true, "inside", "children-room", new HousePlacement("children-room", 82, 55, 0.72m)),
+      ["forest-rug"] = (3, 2, true, "inside", "play-room", new HousePlacement("play-room", 49, 77, 0.92m)),
+      ["magical-clock"] = (4, 1, true, "inside", "children-room", new HousePlacement("children-room", 70, 47, 0.68m)),
     };
 
   public static readonly IReadOnlyDictionary<string, (decimal Price, int MinimumLevel, IReadOnlyList<string> AccessoryIds)> FurnitureSets =

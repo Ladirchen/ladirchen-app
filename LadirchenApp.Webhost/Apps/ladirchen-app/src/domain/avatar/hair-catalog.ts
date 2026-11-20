@@ -14,6 +14,8 @@ const BUILT_IN_AVATAR_HAIR_CATALOG = [
 ] as const;
 
 export const AVATAR_HAIR_EXTENSION_CATALOG = [
+  defineAvatarPart("popstar-space-buns", ["child"]),
+  defineAvatarPart("forest-braid", ["child"]),
   // design-generator:avatar-hair-id
 ] as const;
 

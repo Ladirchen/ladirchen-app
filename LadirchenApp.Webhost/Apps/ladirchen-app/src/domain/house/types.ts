@@ -35,6 +35,14 @@ export const FURNITURE_VISUAL_IDS = [
   "candy-bush",
   "candy-fence",
   "family-flag",
+  "dance-studio-mirror",
+  "neon-eye-light",
+  "microphone-stand",
+  "popstar-vanity",
+  "forest-treasure-chest",
+  "fairy-lantern",
+  "forest-rug",
+  "magical-clock",
   // design-generator:furniture-visual-id
 ] as const;
 export type FurnitureVisualId = (typeof FURNITURE_VISUAL_IDS)[number];
@@ -73,6 +81,14 @@ export const HOUSE_ACCESSORY_IDS = [
   "candy-cloud-bushes",
   "candy-striped-fence",
   "family-flag",
+  "dance-studio-mirror",
+  "neon-eye-light",
+  "microphone-stand",
+  "popstar-vanity",
+  "forest-treasure-chest",
+  "fairy-lantern",
+  "forest-rug",
+  "magical-clock",
   // design-generator:house-accessory-id
 ] as const;
 export type HouseAccessoryId = (typeof HOUSE_ACCESSORY_IDS)[number];
