@@ -56,7 +56,7 @@
       </div>
     </fieldset>
 
-    <fieldset v-if="showPerson" class="kind-filter kind-filter--type">
+    <fieldset class="kind-filter kind-filter--type">
       <legend class="kind-filter-label">{{ t("contributions.filter.kind") }}</legend>
       <div class="kind-options">
         <button
@@ -73,7 +73,7 @@
       </div>
     </fieldset>
 
-    <fieldset class="kind-filter kind-filter--type">
+    <fieldset v-if="showPerson" class="kind-filter kind-filter--type">
       <legend class="kind-filter-label">{{ t("contributions.filter.person") }}</legend>
       <div class="kind-options">
         <button
