@@ -185,6 +185,13 @@ public sealed class SchabiCalendarSynchronizer
     return today.AddDays(syncHorizonDays);
   }
 
+  internal static string GetFocusDescription(SchabiCalendarTask appointment)
+  {
+    return string.IsNullOrWhiteSpace(appointment.Description)
+      ? $"Schabi-Termin am {appointment.DueDate:dd.MM.yyyy}"
+      : appointment.Description;
+  }
+
   internal static bool IsScheduledSyncDue(
     DateOnly today,
     TimeOnly localTime,
@@ -258,7 +265,7 @@ public sealed class SchabiCalendarSynchronizer
     {
       id = $"schabi-focus-{Convert.ToHexString(hash.AsSpan(0, 16)).ToLowerInvariant()}",
       title = appointment.Title,
-      description = appointment.Description,
+      description = GetFocusDescription(appointment),
       icon = "Ⓢ",
       period = "date",
       startDate = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),

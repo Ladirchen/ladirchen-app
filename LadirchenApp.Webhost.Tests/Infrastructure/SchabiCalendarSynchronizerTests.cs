@@ -79,4 +79,34 @@ public sealed class SchabiCalendarSynchronizerTests
 
     await Assert.That(due).IsFalse();
   }
+
+  [Test]
+  public async Task AppointmentWithoutDescriptionReceivesFallbackDescription()
+  {
+    var appointment = new SchabiCalendarTask(
+      "appointment-1",
+      "EN: Test Unit 2",
+      string.Empty,
+      new DateOnly(2026, 12, 3)
+    );
+
+    var description = SchabiCalendarSynchronizer.GetFocusDescription(appointment);
+
+    await Assert.That(description).IsEqualTo("Schabi-Termin am 03.12.2026");
+  }
+
+  [Test]
+  public async Task AppointmentKeepsItsSchabiDescription()
+  {
+    var appointment = new SchabiCalendarTask(
+      "appointment-1",
+      "EN: Test Unit 2",
+      "Unit 2 vorbereiten",
+      new DateOnly(2026, 12, 3)
+    );
+
+    var description = SchabiCalendarSynchronizer.GetFocusDescription(appointment);
+
+    await Assert.That(description).IsEqualTo("Unit 2 vorbereiten");
+  }
 }
