@@ -11,169 +11,222 @@
       {{ t("contributions.guardianContext") }}
     </v-alert>
 
-    <section class="focus-goals mb-6">
-      <SectionHeader :description="t('contributions.focus.description')" :title="t('contributions.focus.title')">
-        <template v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks" #action>
-          <v-btn
-            color="primary"
-            prepend-icon="i-mdi:target"
-            rounded="lg"
-            size="small"
-            variant="tonal"
-            @click="focusDialog = true"
-          >
-            {{ t("contributions.focus.add") }}
-          </v-btn>
-        </template>
-      </SectionHeader>
-      <div v-if="visibleFocusGoals.length" class="focus-grid">
-        <BrandedCard
-          v-for="focus in visibleFocusGoals"
-          :id="`focus-${focus.id}`"
-          :key="focus.id"
-          class="focus-card pa-4"
-          tabindex="-1"
-          tone="contributions"
-        >
-          <div class="d-flex align-start ga-3">
-            <v-avatar color="warning" rounded="lg" size="52" variant="tonal">{{ focus.icon }}</v-avatar>
-            <div class="flex-grow-1 min-w-0">
-              <div class="d-flex align-center justify-space-between flex-wrap ga-2">
-                <strong>{{ focus.title }}</strong>
-                <div class="d-flex align-center flex-wrap ga-1">
-                  <v-chip color="info" prepend-icon="i-mdi:account-child" size="x-small" variant="tonal">
-                    {{ memberName(focus.assigneeId) }}
-                  </v-chip>
-                  <v-chip color="warning" size="x-small" variant="tonal">
-                    {{ focusPeriodLabel(focus.period) }}
-                  </v-chip>
-                </div>
-              </div>
-              <p class="text-caption text-medium-emphasis">{{ focus.description }}</p>
-              <p class="text-caption mt-1">
-                <v-icon icon="i-mdi:timer-sand" size="15" /> {{ focusCountdown(focus.endDate) }}
-              </p>
-            </div>
-          </div>
-          <v-progress-linear class="mt-4" color="success" height="10" rounded :model-value="focus.progressPercent" />
-          <div class="d-flex justify-space-between text-caption mt-1">
-            <span>{{ focus.progressPercent }} %</span>
-            <span>{{ t("contributions.focus.remaining", { value: focus.remainingPercent }) }}</span>
-          </div>
-          <div class="d-flex align-center justify-space-between ga-2 mt-3">
-            <v-chip v-if="focus.completionBonus > 0" color="warning" size="small" variant="tonal">
-              5 ★ · +{{ focus.completionBonus }} L
-            </v-chip>
-            <span v-else></span>
+    <ContributionFilterPanel
+      v-if="store.viewerRole !== 'child'"
+      v-model:kind="filter"
+      v-model:person="personFilter"
+      v-model:scope="scopeFilter"
+      v-model:status="statusFilter"
+      class="page-filter mb-6"
+      :category-options="categoryFilterOptions"
+      collapsible
+      description-key="contributions.filter.pageDescription"
+      :open-count="openContributionCount"
+      :person-options="personFilterOptions"
+      :show-scope="false"
+      :show-status="false"
+    />
+
+    <div class="schedule-and-focus">
+      <section class="focus-goals mb-6">
+        <SectionHeader :description="t('contributions.focus.description')" :title="t('contributions.focus.title')">
+          <template v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks" #action>
             <v-btn
-              v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
               color="primary"
-              prepend-icon="i-mdi:calendar-plus"
+              prepend-icon="i-mdi:target"
               rounded="lg"
               size="small"
               variant="tonal"
-              @click="openPreparationDialog(focus.id)"
+              @click="focusDialog = true"
             >
-              {{ t("contributions.focus.addPreparation") }}
+              {{ t("contributions.focus.add") }}
             </v-btn>
-          </div>
-        </BrandedCard>
-      </div>
-      <p v-else class="text-caption text-medium-emphasis">{{ t("contributions.focus.empty") }}</p>
-    </section>
+          </template>
+        </SectionHeader>
+        <div v-if="visibleFocusGoals.length" class="focus-grid">
+          <BrandedCard
+            v-for="focus in visibleFocusGoals"
+            :id="`focus-${focus.id}`"
+            :key="focus.id"
+            class="focus-card pa-4"
+            tabindex="-1"
+            tone="contributions"
+          >
+            <div class="d-flex align-start ga-3">
+              <span class="focus-target-badge" aria-hidden="true">
+                <span class="focus-target-badge__ring"></span>
+                <span class="focus-target-badge__dot"></span>
+                <v-icon icon="i-mdi:arrow-top-right-bold-outline" size="19" />
+              </span>
+              <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+                  <strong>{{ focus.title }}</strong>
+                  <div class="d-flex align-center flex-wrap ga-1">
+                    <span class="focus-owner-badge">
+                      <span v-if="memberAppearance(focus.assigneeId)" class="focus-owner-badge__avatar">
+                        <AvatarFigure :appearance="memberAppearance(focus.assigneeId)!" calm :size="24" />
+                      </span>
+                      <v-avatar v-else color="info" size="24" variant="tonal">
+                        {{ memberAvatar(focus.assigneeId) }}
+                      </v-avatar>
+                      {{ memberName(focus.assigneeId) }}
+                    </span>
+                    <v-chip class="focus-kind-badge" color="warning" size="x-small" variant="tonal">
+                      <span class="focus-kind-badge__target" aria-hidden="true">🎯</span>
+                      {{ focusPeriodLabel(focus.period) }}
+                    </v-chip>
+                  </div>
+                </div>
+                <p v-if="focusDescription(focus.description)" class="text-caption text-medium-emphasis">
+                  {{ focusDescription(focus.description) }}
+                </p>
+                <div class="focus-deadline mt-2">
+                  <span class="focus-deadline__icon" aria-hidden="true">⏳</span>
+                  <span>
+                    <strong>{{ dueCountdown(focus.endDate) }}</strong>
+                    <small>{{ dueDeadline(focus.endDate) }}</small>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <v-progress-linear class="mt-4" color="success" height="10" rounded :model-value="focus.progressPercent" />
+            <div class="d-flex justify-space-between text-caption mt-1">
+              <span>{{ focus.progressPercent }} %</span>
+              <span>{{ t("contributions.focus.remaining", { value: focus.remainingPercent }) }}</span>
+            </div>
+            <div class="d-flex align-center justify-space-between ga-2 mt-3">
+              <v-chip v-if="focus.completionBonus > 0" color="warning" size="small" variant="tonal">
+                5 ★ · +{{ focus.completionBonus }} L
+              </v-chip>
+              <span v-else></span>
+              <v-btn
+                v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
+                color="primary"
+                prepend-icon="i-mdi:calendar-plus"
+                rounded="lg"
+                size="small"
+                variant="tonal"
+                @click="openPreparationDialog(focus.id)"
+              >
+                {{ t("contributions.focus.addPreparation") }}
+              </v-btn>
+            </div>
+          </BrandedCard>
+        </div>
+        <p v-else class="text-caption text-medium-emphasis">{{ t("contributions.focus.empty") }}</p>
+      </section>
 
-    <v-card class="task-calendar mb-6" elevation="0" rounded="xl">
-      <div class="calendar-toolbar d-flex align-center justify-space-between flex-wrap ga-3 mb-3">
-        <div>
-          <strong>{{ t("contributions.calendar.title") }}</strong>
-          <p class="text-caption text-medium-emphasis">{{ calendarRangeLabel }}</p>
-        </div>
-        <div class="d-flex align-center ga-1">
-          <v-btn
-            v-if="store.viewerRole === 'child'"
-            :aria-expanded="calendarExpanded"
-            :prepend-icon="calendarToggleIcon"
-            rounded="lg"
-            size="small"
-            variant="tonal"
-            @click="calendarExpanded = !calendarExpanded"
-          >
-            {{ calendarToggleLabel }}
-          </v-btn>
-          <v-btn
-            :aria-label="t('contributions.calendar.previous')"
-            icon="i-mdi:chevron-left"
-            size="small"
-            variant="text"
-            @click="weekOffset -= 1"
-          />
-          <v-btn size="small" variant="tonal" @click="weekOffset = 0">{{ t("contributions.calendar.today") }}</v-btn>
-          <v-btn
-            :aria-label="t('contributions.calendar.next')"
-            icon="i-mdi:chevron-right"
-            size="small"
-            variant="text"
-            @click="weekOffset += 1"
-          />
-        </div>
-      </div>
-      <div v-if="calendarExpanded && calendarLegend.length" class="calendar-legend mb-3">
-        <div v-for="member in calendarLegend" :key="member.memberId ?? 'open'" class="calendar-legend__member">
-          <span v-if="member.appearance" class="calendar-member-avatar">
-            <AvatarFigure :appearance="member.appearance" calm :size="34" />
-          </span>
-          <v-avatar v-else :color="member.color" size="32" variant="tonal">{{ member.avatar }}</v-avatar>
-          <span>{{ member.title }}</span>
-          <v-chip size="x-small" variant="tonal">{{ member.taskCount }}</v-chip>
-        </div>
-      </div>
-      <div v-if="calendarExpanded && calendarLegend.length" class="week-grid">
-        <v-card
-          v-for="day in calendarDays"
-          :key="day.iso"
-          class="week-day"
-          :class="{ 'week-day--today': day.isToday }"
-          elevation="0"
-          rounded="lg"
-        >
-          <div class="week-day__heading">
-            <span>{{ day.weekday }}</span>
-            <strong>{{ day.day }}</strong>
+      <v-card class="task-calendar mb-6" elevation="0" rounded="xl">
+        <div class="calendar-toolbar d-flex align-center justify-space-between flex-wrap ga-3 mb-3">
+          <div>
+            <strong>{{ t("contributions.calendar.title") }}</strong>
+            <p class="text-caption text-medium-emphasis">{{ calendarRangeLabel }}</p>
           </div>
-          <button
-            v-for="entry in day.entries"
-            :key="entry.contribution?.id ?? entry.focus?.id"
-            class="calendar-task"
-            :class="{
-              'calendar-task--focus-goal': entry.focus && !entry.contribution,
-              'calendar-task--focus-preparation': entry.focus && entry.contribution,
-            }"
-            :style="{ '--calendar-task-color': entry.color }"
-            type="button"
-            @click="openCalendarEntry(entry)"
-          >
-            <template v-if="entry.contribution">
-              <SchabiTaskIcon v-if="isSchabiContributionId(entry.contribution.id)" />
-              <span v-else>{{ entry.contribution.icon }}</span>
-            </template>
-            <v-icon v-else icon="i-mdi:target" size="17" />
-            <span class="calendar-task__copy">
-              <span class="calendar-task__title">{{ entry.contribution?.title ?? entry.focus?.title }}</span>
-              <small v-if="entry.focusLabel">{{ entry.focusLabel }}</small>
-            </span>
-            <v-icon
-              v-if="entry.contribution?.recurrence && entry.contribution.recurrence !== 'none'"
-              icon="i-mdi:repeat"
-              size="14"
+          <div class="d-flex align-center ga-1">
+            <v-btn
+              :aria-expanded="calendarExpanded"
+              :prepend-icon="calendarToggleIcon"
+              color="primary"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="calendarExpanded = !calendarExpanded"
+            >
+              {{ calendarToggleLabel }}
+            </v-btn>
+            <v-btn
+              :aria-label="t('contributions.calendar.previous')"
+              color="primary"
+              icon="i-mdi:chevron-left"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="weekOffset -= calendarWeekSpan"
             />
-          </button>
-          <span v-if="!day.entries.length" class="week-day__empty">—</span>
-        </v-card>
-      </div>
-      <p v-else-if="calendarExpanded" class="text-caption text-medium-emphasis">
-        {{ t("contributions.calendar.empty") }}
-      </p>
-    </v-card>
+            <v-btn
+              color="primary"
+              prepend-icon="i-mdi:calendar-today-outline"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="showCurrentWeek"
+            >
+              {{ t("contributions.calendar.today") }}
+            </v-btn>
+            <v-btn
+              :aria-label="t('contributions.calendar.next')"
+              color="primary"
+              icon="i-mdi:chevron-right"
+              rounded="lg"
+              size="small"
+              variant="tonal"
+              @click="weekOffset += calendarWeekSpan"
+            />
+          </div>
+        </div>
+        <div v-if="calendarExpanded && calendarLegend.length" class="calendar-legend mb-3">
+          <div v-for="member in calendarLegend" :key="member.memberId ?? 'open'" class="calendar-legend__member">
+            <span v-if="member.appearance" class="calendar-member-avatar">
+              <AvatarFigure :appearance="member.appearance" calm :size="34" />
+            </span>
+            <v-avatar v-else :color="member.color" size="32" variant="tonal">{{ member.avatar }}</v-avatar>
+            <span>{{ member.title }}</span>
+            <v-chip size="x-small" variant="tonal">{{ member.taskCount }}</v-chip>
+          </div>
+        </div>
+        <div
+          v-if="calendarExpanded && calendarLegend.length"
+          class="week-grid"
+          :class="{ 'week-grid--multiweek': calendarWeekSpan > 1 }"
+        >
+          <v-card
+            v-for="day in calendarDays"
+            :key="day.iso"
+            class="week-day"
+            :class="{ 'week-day--today': day.isToday }"
+            elevation="0"
+            rounded="lg"
+          >
+            <div class="week-day__heading">
+              <span>{{ day.weekday }}</span>
+              <strong>{{ day.day }}</strong>
+            </div>
+            <button
+              v-for="entry in day.entries"
+              :key="entry.contribution?.id ?? entry.focus?.id"
+              class="calendar-task"
+              :class="{
+                'calendar-task--focus-goal': entry.focus && !entry.contribution,
+                'calendar-task--focus-preparation': entry.focus && entry.contribution,
+              }"
+              :style="{ '--calendar-task-color': entry.color }"
+              :title="entry.contribution?.title ?? entry.focus?.title"
+              type="button"
+              @click="openCalendarEntry(entry)"
+            >
+              <template v-if="entry.contribution">
+                <SchabiTaskIcon v-if="isSchabiContributionId(entry.contribution.id)" />
+                <span v-else>{{ entry.contribution.icon }}</span>
+              </template>
+              <v-icon v-else icon="i-mdi:target" size="17" />
+              <span class="calendar-task__copy">
+                <span class="calendar-task__title">{{ entry.contribution?.title ?? entry.focus?.title }}</span>
+                <small v-if="entry.focusLabel">{{ entry.focusLabel }}</small>
+              </span>
+              <v-icon
+                v-if="entry.contribution?.recurrence && entry.contribution.recurrence !== 'none'"
+                icon="i-mdi:repeat"
+                size="14"
+              />
+            </button>
+            <span v-if="!day.entries.length" class="week-day__empty">—</span>
+          </v-card>
+        </div>
+        <p v-else-if="calendarExpanded" class="text-caption text-medium-emphasis">
+          {{ t("contributions.calendar.empty") }}
+        </p>
+      </v-card>
+    </div>
 
     <template v-if="store.viewerRole === 'child'">
       <section v-if="guardianTasksToRate.length" class="mb-6">
@@ -185,7 +238,7 @@
             <v-chip color="secondary" size="small">{{ guardianTasksToRate.length }}</v-chip>
           </template>
         </SectionHeader>
-        <div class="d-flex flex-column ga-3">
+        <div class="review-card-grid">
           <BrandedCard
             v-for="{ contribution, completedByLabel } in childReviewCards"
             :key="contribution.id"
@@ -247,6 +300,7 @@
           :key="contribution.id"
           :active-child-id="store.activeChildId"
           :contribution="contribution"
+          :current-time-milliseconds="store.currentTimeMilliseconds"
           :family-members="store.members"
           :family-time-zone="store.familyTimeZone"
           :promotion="promotionFor(contribution.id)"
@@ -319,26 +373,34 @@
                 <p class="text-caption text-medium-emphasis">{{ metaLabel }}</p>
               </div>
             </div>
-            <div class="d-flex align-center justify-space-between ga-2 mt-3">
-              <p class="text-caption text-medium-emphasis">{{ t("contributions.review.question") }}</p>
-              <v-chip color="warning" size="x-small" variant="tonal">
-                5 ★ = +{{ store.perfectRatingBonusPercent }} %
-              </v-chip>
-            </div>
-            <v-rating v-model="ratings[contribution.id]" active-color="warning" class="my-2" density="compact" hover />
-            <div class="d-grid review-actions ga-2">
-              <v-btn rounded="lg" variant="tonal" @click="store.returnContribution(contribution.id)">
-                {{ t("contributions.review.return") }}
-              </v-btn>
-              <v-btn
-                class="raised-button"
-                color="primary"
-                rounded="lg"
-                variant="flat"
-                @click="approveWithRating(contribution.id)"
-              >
-                {{ t("contributions.review.confirm") }}
-              </v-btn>
+            <div class="review-card__assessment">
+              <div class="d-flex align-center justify-space-between ga-2 mt-3">
+                <p class="text-caption text-medium-emphasis">{{ t("contributions.review.question") }}</p>
+                <v-chip color="warning" size="x-small" variant="tonal">
+                  5 ★ = +{{ store.perfectRatingBonusPercent }} %
+                </v-chip>
+              </div>
+              <v-rating
+                v-model="ratings[contribution.id]"
+                active-color="warning"
+                class="my-2"
+                density="compact"
+                hover
+              />
+              <div class="d-grid review-actions ga-2">
+                <v-btn rounded="lg" variant="tonal" @click="store.returnContribution(contribution.id)">
+                  {{ t("contributions.review.return") }}
+                </v-btn>
+                <v-btn
+                  class="raised-button"
+                  color="primary"
+                  rounded="lg"
+                  variant="flat"
+                  @click="approveWithRating(contribution.id)"
+                >
+                  {{ t("contributions.review.confirm") }}
+                </v-btn>
+              </div>
             </div>
           </BrandedCard>
         </div>
@@ -397,40 +459,17 @@
                 <v-btn
                   :aria-label="t('contributions.promotions.deleteAria', { title: promotion.title })"
                   color="error"
-                  icon="i-mdi:delete-outline"
+                  prepend-icon="i-mdi:delete-outline"
+                  rounded="lg"
                   size="small"
                   variant="tonal"
                   @click.stop="promotionToDelete = promotion"
-                />
+                >
+                  {{ t("common.delete") }}
+                </v-btn>
               </div>
             </BrandedCard>
           </div>
-
-          <BrandedCard class="rating-setting pa-4 mb-6" tone="contributions">
-            <div class="d-flex align-start ga-3">
-              <v-avatar color="warning" variant="tonal">★</v-avatar>
-              <div class="flex-grow-1">
-                <div class="d-flex align-center justify-space-between ga-3">
-                  <div>
-                    <strong>{{ t("contributions.ratingBonus.title") }}</strong>
-                    <p class="text-caption text-medium-emphasis">{{ t("contributions.ratingBonus.description") }}</p>
-                  </div>
-                  <strong class="bonus-value">{{ store.perfectRatingBonusPercent }} %</strong>
-                </div>
-                <v-slider
-                  :model-value="store.perfectRatingBonusPercent"
-                  class="mt-3"
-                  color="warning"
-                  hide-details
-                  max="25"
-                  min="0"
-                  step="1"
-                  thumb-label
-                  @end="store.setPerfectRatingBonusPercent(Number($event))"
-                />
-              </div>
-            </div>
-          </BrandedCard>
         </template>
 
         <SectionHeader :description="t('contributions.manage.description')" :title="t('contributions.manage.title')">
@@ -438,17 +477,6 @@
             <v-btn color="primary" icon="i-mdi:plus" size="small" variant="tonal" @click="openContributionDialog" />
           </template>
         </SectionHeader>
-        <v-select
-          v-model="managedMemberFilter"
-          class="management-member-filter mb-4"
-          density="comfortable"
-          hide-details
-          :items="managedMemberOptions"
-          item-title="title"
-          item-value="value"
-          :label="t('contributions.manage.filterLabel')"
-          variant="outlined"
-        />
         <div class="contribution-card-list d-flex flex-column ga-5">
           <section v-for="group in managedContributionGroups" :key="group.memberId ?? 'open'">
             <div class="member-task-heading d-flex align-center ga-2 mb-2">
@@ -465,6 +493,7 @@
                 :active-child-id="store.activeChildId"
                 :allow-invite="false"
                 :contribution="contribution"
+                :current-time-milliseconds="store.currentTimeMilliseconds"
                 :family-members="store.members"
                 :family-time-zone="store.familyTimeZone"
                 :personalize-assignee="false"
@@ -491,35 +520,49 @@
                       <v-btn
                         v-if="contribution.status === 'approved'"
                         :aria-label="t('contributions.manage.reactivateAria', { title: contribution.title })"
-                        icon="i-mdi:restore"
+                        color="primary"
+                        prepend-icon="i-mdi:restore"
+                        rounded="lg"
                         size="small"
                         variant="tonal"
                         @click="reactivateContribution(contribution)"
-                      />
+                      >
+                        {{ t("contributions.manage.reactivate") }}
+                      </v-btn>
                       <v-btn
                         v-else
                         :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
-                        icon="i-mdi:content-copy"
+                        prepend-icon="i-mdi:content-copy"
+                        rounded="lg"
                         size="small"
                         variant="tonal"
                         @click="copyContribution(contribution)"
-                      />
+                      >
+                        {{ t("contributions.manage.copy") }}
+                      </v-btn>
                       <v-btn
                         v-if="contribution.status === 'available'"
                         :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
-                        icon="i-mdi:pencil-outline"
+                        color="info"
+                        prepend-icon="i-mdi:pencil-outline"
+                        rounded="lg"
                         size="small"
                         variant="tonal"
                         @click="openContributionEditor(contribution)"
-                      />
+                      >
+                        {{ t("contributions.manage.edit") }}
+                      </v-btn>
                       <v-btn
                         :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
                         color="error"
-                        icon="i-mdi:delete-outline"
+                        prepend-icon="i-mdi:delete-outline"
+                        rounded="lg"
                         size="small"
                         variant="tonal"
                         @click="requestContributionDelete(contribution)"
-                      />
+                      >
+                        {{ t("common.delete") }}
+                      </v-btn>
                     </div>
                   </div>
                 </template>
@@ -544,11 +587,14 @@
           <div class="flex-grow-1 min-w-0">
             <v-card-title class="pa-0">{{ selectedCalendarContribution.title }}</v-card-title>
             <v-card-subtitle class="pa-0 mt-1">
-              {{ memberName(selectedCalendarContribution.assigneeId) }} · {{ selectedCalendarContribution.dueLabel }}
+              {{ memberName(selectedCalendarContribution.assigneeId) }} · {{ selectedCalendarDueLabel }}
             </v-card-subtitle>
+            <p v-if="selectedCalendarDeadline" class="text-caption text-medium-emphasis mt-1">
+              {{ selectedCalendarDeadline }}
+            </p>
           </div>
         </div>
-        <ContributionDescription class="mt-4" :text="selectedCalendarContribution.description" />
+        <ContributionDescription v-if="selectedCalendarDescription" class="mt-4" :text="selectedCalendarDescription" />
         <div class="d-flex justify-end mt-5">
           <v-btn rounded="lg" variant="tonal" @click="selectedCalendarContribution = undefined">
             {{ t("common.close") }}
@@ -656,6 +702,14 @@
           min="5"
           step="5"
           thumb-label
+        />
+        <v-switch
+          v-if="store.permissions.canManageContent"
+          v-model="newContribution.isVisibleToChildren"
+          color="primary"
+          :hint="t('contributions.form.visibilityHint')"
+          :label="t('contributions.form.visibleToChildren')"
+          persistent-hint
         />
         <div class="d-flex justify-end ga-2 mt-2">
           <v-btn rounded="lg" variant="text" @click="closeContributionDialog">{{ t("common.cancel") }}</v-btn>
@@ -935,10 +989,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
+import { dueDateParts } from "@/domain/contributions/due-date";
 import type { Contribution, FocusGoal, FocusPeriod, NewFocusGoal } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { isSchabiContributionId } from "@/domain/contributions/source";
@@ -987,8 +1042,6 @@ const {
   kindOptions,
   localizedContributions,
   managedContributionGroups,
-  managedMemberFilter,
-  managedMemberOptions,
   memberName,
   multiplierOptions,
   newContribution,
@@ -1026,15 +1079,46 @@ const preparationReward = ref(1);
 const newFocus = ref<NewFocusGoal>(createEmptyFocus());
 const calendarExpanded = ref(true);
 const selectedCalendarContribution = ref<Contribution>();
+const selectedCalendarDueLabel = computed(() => {
+  const contribution = selectedCalendarContribution.value;
+
+  return contribution?.dueDate ? dueCountdown(contribution.dueDate) : (contribution?.dueLabel ?? "");
+});
+const selectedCalendarDeadline = computed(() => {
+  const dueDate = selectedCalendarContribution.value?.dueDate;
+
+  return dueDate ? dueDeadline(dueDate) : "";
+});
+const selectedCalendarDescription = computed(() => {
+  const contribution = selectedCalendarContribution.value;
+
+  if (!contribution) {
+    return "";
+  }
+
+  return isSchabiContributionId(contribution.id)
+    ? contribution.description.replace(/^Fällig am \d{2}\.\d{2}\.\d{4}(?:\s*\n\s*)?/, "").trim()
+    : contribution.description;
+});
 const weekOffset = ref(0);
-const calendarToggleIcon = computed(() =>
-  calendarExpanded.value ? "i-mdi:calendar-collapse-horizontal" : "i-mdi:calendar-expand-horizontal",
-);
+const calendarWeekSpan = computed(() => (store.viewerRole === "child" ? 1 : 3));
+const calendarToggleIcon = computed(() => (calendarExpanded.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline"));
 const calendarToggleLabel = computed(() =>
   t(calendarExpanded.value ? "contributions.calendar.hide" : "contributions.calendar.show"),
 );
 const visibleFocusGoals = computed(() =>
-  store.focusGoals.filter((focus) => store.viewerRole !== "child" || focus.assigneeId === store.signedInMemberId),
+  store.focusGoals.filter((focus) => {
+    const matchesViewer = store.viewerRole !== "child" || focus.assigneeId === store.signedInMemberId;
+    const matchesPerson = personFilter.value === "all" || focus.assigneeId === personFilter.value;
+    const matchesCategory =
+      filter.value === "all" ||
+      localizedContributions.value.some(
+        (contribution) =>
+          focus.preparationContributionIds.includes(contribution.id) && contribution.category === filter.value,
+      );
+
+    return matchesViewer && matchesPerson && matchesCategory;
+  }),
 );
 const selectedFocus = computed(() => store.focusGoals.find((focus) => focus.id === selectedFocusId.value));
 const focusPeriodOptions = computed(() => [
@@ -1085,11 +1169,35 @@ function focusPeriodLabel(period: FocusPeriod): string {
 
   return t("contributions.focus.periodDate");
 }
-function focusCountdown(endDate: string): string {
-  const end = new Date(`${endDate}T23:59:59`).getTime();
-  const days = Math.max(0, Math.ceil((end - store.currentTimeMilliseconds) / 86_400_000));
+function deadlineParts(endDate: string) {
+  return dueDateParts(endDate, store.currentTimeMilliseconds, store.familyTimeZone, locale.value);
+}
+function dueCountdown(endDate: string): string {
+  const parts = deadlineParts(endDate);
 
-  return t("contributions.focus.countdown", { days });
+  if (!parts || parts.daysRemaining === 0) {
+    return t("contributions.due.today");
+  }
+
+  return t(parts.daysRemaining === 1 ? "contributions.due.oneDay" : "contributions.due.days", {
+    days: parts.daysRemaining,
+  });
+}
+function dueDeadline(endDate: string): string {
+  const parts = deadlineParts(endDate);
+
+  return parts ? t("contributions.due.deadline", { date: parts.date, weekday: parts.weekday }) : "";
+}
+function focusDescription(description: string): string {
+  return description.replace(/^Schabi-Termin am \d{2}\.\d{2}\.\d{4}$/, "").trim();
+}
+function memberAppearance(memberId: FamilyMemberId): AvatarAppearance | undefined {
+  const member = store.members.find((item) => item.id === memberId);
+
+  return member ? resolveFamilyMemberAvatarAppearance(member, store.members) : undefined;
+}
+function memberAvatar(memberId: FamilyMemberId): string {
+  return store.members.find((member) => member.id === memberId)?.avatar ?? "✨";
 }
 async function saveFocus() {
   if (!canSaveFocus.value) {
@@ -1127,14 +1235,19 @@ function localIsoDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 const calendarTasks = computed(() =>
-  localizedContributions.value.filter((contribution) => contribution.status !== "approved"),
+  localizedContributions.value.filter(
+    (contribution) =>
+      contribution.status !== "approved" &&
+      (filter.value === "all" || contribution.category === filter.value) &&
+      (personFilter.value === "all" || contribution.assigneeId === personFilter.value),
+  ),
 );
 const calendarDateSlots = computed(() => {
   const today = new Date();
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) + weekOffset.value * 7);
 
-  return Array.from({ length: 7 }, (_, index) => {
+  return Array.from({ length: calendarWeekSpan.value * 7 }, (_, index) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + index);
     const iso = localIsoDate(date);
@@ -1149,7 +1262,10 @@ const calendarDateSlots = computed(() => {
 });
 const calendarLegend = computed(() => {
   const children = store.members.filter(
-    (member) => member.role === "child" && (store.viewerRole !== "child" || member.id === store.signedInMemberId),
+    (member) =>
+      member.role === "child" &&
+      (store.viewerRole !== "child" || member.id === store.signedInMemberId) &&
+      (personFilter.value === "all" || member.id === personFilter.value),
   );
   const members: Array<{
     appearance?: AvatarAppearance;
@@ -1228,6 +1344,14 @@ const calendarRangeLabel = computed(() => {
     ? `${formatter.format(new Date(`${first}T12:00:00`))} – ${formatter.format(new Date(`${last}T12:00:00`))}`
     : "";
 });
+async function showCurrentWeek() {
+  calendarExpanded.value = true;
+  weekOffset.value = 0;
+  await nextTick();
+  document
+    .querySelector(".week-day--today")
+    ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+}
 function openCalendarEntry(entry: CalendarEntry) {
   if (entry.contribution) {
     selectedCalendarContribution.value = entry.contribution;
@@ -1332,6 +1456,19 @@ function toggleEmptyStateFilter() {
   gap: 12px;
 }
 
+.schedule-and-focus {
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-and-focus .task-calendar {
+  order: 1;
+}
+
+.schedule-and-focus .focus-goals {
+  order: 2;
+}
+
 .task-calendar {
   padding: 16px;
   border: 1px solid var(--lad-border);
@@ -1344,6 +1481,24 @@ function toggleEmptyStateFilter() {
     ),
     linear-gradient(145deg, var(--lad-surface), var(--lad-surface-soft));
   box-shadow: 0 6px 0 color-mix(in srgb, var(--lad-color-primary) 10%, transparent);
+}
+
+.calendar-toolbar strong {
+  font-size: rem(17);
+  letter-spacing: -0.02em;
+}
+
+.calendar-toolbar strong::before {
+  display: inline-grid;
+  width: 29px;
+  height: 29px;
+  margin-inline-end: 7px;
+  place-items: center;
+  content: "🗓️";
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lad-color-primary) 12%, var(--lad-surface-raised));
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--lad-color-primary) 18%, transparent);
+  vertical-align: middle;
 }
 
 .week-grid {
@@ -1481,6 +1636,23 @@ function toggleEmptyStateFilter() {
   box-shadow: 0 4px 0 var(--lad-border);
 }
 
+.review-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, rem(350)), 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+
+.review-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-card__assessment {
+  margin-top: auto;
+}
+
 .task-icon-avatar {
   @include task-icon-tile;
 }
@@ -1565,14 +1737,30 @@ function toggleEmptyStateFilter() {
   line-height: 1.4;
 }
 
-.rating-setting {
-  border: 1px solid var(--lad-border);
-}
-
 .focus-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 12px;
+}
+
+.focus-goals :deep(.family-world-section-header) {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--lad-color-reward-border) 22%, transparent);
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at 94% 10%,
+      color-mix(in srgb, var(--lad-color-reward) 16%, transparent) 0 28px,
+      transparent 29px
+    ),
+    linear-gradient(145deg, var(--lad-surface-raised), var(--lad-color-reward-soft));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-reward-border) 14%, transparent);
+}
+
+.focus-goals :deep(.section-copy h2)::before {
+  display: inline-block;
+  margin-inline-end: 7px;
+  content: "🎯";
 }
 
 .focus-card {
@@ -1584,9 +1772,158 @@ function toggleEmptyStateFilter() {
   outline-offset: 3px;
 }
 
-.bonus-value {
-  color: var(--lad-color-reward-deep);
-  font-size: rem(18);
+.focus-target-badge {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  flex: 0 0 52px;
+  place-items: center;
+  overflow: hidden;
+  color: var(--lad-color-reward-ink);
+  border: 2px solid color-mix(in srgb, var(--lad-color-reward-border) 34%, transparent);
+  border-radius: 17px;
+  background: linear-gradient(145deg, var(--lad-color-reward-pale), var(--lad-surface-raised));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--lad-color-reward-border) 22%, transparent);
+}
+
+.focus-target-badge__ring,
+.focus-target-badge__dot {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.focus-target-badge__ring {
+  width: 30px;
+  height: 30px;
+  border: 4px solid var(--lad-color-reward);
+  box-shadow: inset 0 0 0 5px var(--lad-surface-raised);
+  animation: focus-target-pulse 2.4s ease-in-out infinite;
+}
+
+.focus-target-badge__dot {
+  width: 7px;
+  height: 7px;
+  background: var(--lad-color-reward-ink);
+}
+
+.focus-target-badge .v-icon {
+  position: absolute;
+  top: 5px;
+  right: 4px;
+  filter: drop-shadow(0 2px 0 var(--lad-surface-raised));
+  transform: rotate(-4deg);
+  animation: focus-arrow-float 2.4s ease-in-out infinite;
+}
+
+.focus-owner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 3px;
+  color: var(--lad-color-primary-deep);
+  border: 1px solid color-mix(in srgb, var(--lad-color-info) 25%, transparent);
+  border-radius: var(--lad-radius-pill);
+  background: color-mix(in srgb, var(--lad-color-info) 10%, var(--lad-surface-raised));
+  font-size: rem(10);
+  font-weight: 800;
+}
+
+.focus-owner-badge__avatar {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--lad-surface-raised);
+}
+
+.focus-kind-badge__target {
+  display: inline-block;
+  margin-inline-end: 3px;
+  animation: focus-target-wiggle 3s ease-in-out infinite;
+}
+
+.focus-deadline {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 7px 7px;
+  color: var(--lad-color-primary-deep);
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary) 24%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lad-color-primary) 9%, var(--lad-surface-raised));
+}
+
+.focus-deadline__icon {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--lad-surface-raised);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--lad-color-primary) 18%, transparent);
+}
+
+.focus-deadline strong,
+.focus-deadline small {
+  display: block;
+  line-height: 1.2;
+}
+
+.focus-deadline strong {
+  font-size: rem(12);
+}
+
+.focus-deadline small {
+  margin-top: 2px;
+  color: var(--lad-muted);
+  font-size: rem(9);
+  font-weight: 700;
+}
+
+@keyframes focus-target-pulse {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes focus-arrow-float {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-4deg);
+  }
+  50% {
+    transform: translate(2px, -2px) rotate(-4deg);
+  }
+}
+
+@keyframes focus-target-wiggle {
+  0%,
+  78%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  84% {
+    transform: rotate(-9deg) scale(1.08);
+  }
+  90% {
+    transform: rotate(8deg) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-target-badge__ring,
+  .focus-target-badge .v-icon,
+  .focus-kind-badge__target {
+    animation: none;
+  }
 }
 
 .section-title {
@@ -1658,7 +1995,7 @@ function toggleEmptyStateFilter() {
 }
 
 @include respond-down(shell) {
-  .week-grid {
+  .week-grid:not(.week-grid--multiweek) {
     grid-template-columns: none;
     grid-auto-columns: calc(33.333333% - 5.333333px);
     grid-auto-flow: column;
@@ -1672,6 +2009,48 @@ function toggleEmptyStateFilter() {
   .week-day {
     scroll-snap-align: start;
     scroll-snap-stop: always;
+  }
+
+  .week-grid--multiweek {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+    overflow: visible;
+  }
+
+  .week-grid--multiweek .week-day {
+    min-width: 0;
+    min-height: 76px;
+    padding: 4px 2px;
+    border-radius: 8px;
+    scroll-snap-align: none;
+  }
+
+  .week-grid--multiweek .week-day__heading {
+    margin-bottom: 4px;
+    font-size: rem(9);
+  }
+
+  .week-grid--multiweek .calendar-task {
+    min-width: 0;
+    gap: 2px;
+    margin-bottom: 3px;
+    padding: 3px 2px;
+    border-inline-start-width: 2px;
+    border-radius: 5px;
+    font-size: rem(8);
+  }
+
+  .week-grid--multiweek .calendar-task > :first-child:not(.calendar-task__copy),
+  .week-grid--multiweek .calendar-task > .v-icon:last-child,
+  .week-grid--multiweek .calendar-task__copy small {
+    display: none;
+  }
+
+  .week-grid--multiweek .calendar-task__title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

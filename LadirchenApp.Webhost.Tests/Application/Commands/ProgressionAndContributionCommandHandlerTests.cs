@@ -103,6 +103,34 @@ public sealed class ProgressionAndContributionCommandHandlerTests
   }
 
   [Test]
+  public async Task OnlyAdministratorCanCreateAContributionHiddenFromChildren()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+    var payload = new
+    {
+      id = "hidden-task",
+      title = "Hidden task",
+      description = "Hidden until it is ready",
+      icon = "hidden-icon",
+      category = "School",
+      kind = "school",
+      reward = 5,
+      energy = 10,
+      assigneeId = _childId.Value,
+      isVisibleToChildren = false,
+    };
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _supporterId, "contributions.add", payload)
+    ).Throws<DomainRuleException>();
+    await ExecuteAsync(handler, _guardianId, "contributions.add", payload);
+
+    await Assert.That(store.EconomyPresentation.Contributions.Single().IsVisibleToChildren)
+      .IsFalse();
+  }
+
+  [Test]
   public async Task SupporterCannotActAsAChildInsideTheCommandUnitOfWork()
   {
     var store = CreateStore();

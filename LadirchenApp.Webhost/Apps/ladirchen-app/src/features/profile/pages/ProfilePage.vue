@@ -92,6 +92,36 @@
       </template>
     </BrandedCard>
 
+    <BrandedCard
+      v-if="store.permissions.canManageContent"
+      class="settings-card rating-bonus-setting pa-4 mt-5"
+      tone="profile"
+    >
+      <div class="d-flex align-start ga-3">
+        <v-avatar color="warning" variant="tonal">★</v-avatar>
+        <div class="flex-grow-1 min-w-0">
+          <div class="d-flex align-center justify-space-between ga-3">
+            <div>
+              <strong>{{ t("contributions.ratingBonus.title") }}</strong>
+              <p class="text-caption text-medium-emphasis">{{ t("contributions.ratingBonus.description") }}</p>
+            </div>
+            <strong class="rating-bonus-value">{{ store.perfectRatingBonusPercent }} %</strong>
+          </div>
+          <v-slider
+            :model-value="store.perfectRatingBonusPercent"
+            class="mt-3"
+            color="warning"
+            hide-details
+            max="25"
+            min="0"
+            step="1"
+            thumb-label
+            @end="store.setPerfectRatingBonusPercent(Number($event))"
+          />
+        </div>
+      </div>
+    </BrandedCard>
+
     <BrandedCard v-if="store.isFamilyAdmin" class="settings-card pa-4 mt-5" tone="profile">
       <div class="d-flex align-center justify-space-between ga-2">
         <strong>{{ t("profile.permissions.title") }}</strong>
@@ -498,6 +528,16 @@ watch(
   min-height: rem(55);
   --uno: d-flex align-center justify-space-between;
   border-top: rem(1) dashed color-mix(in srgb, var(--lad-color-info) 20%, transparent);
+}
+
+.rating-bonus-setting {
+  border: rem(1) solid var(--lad-border);
+}
+
+.rating-bonus-value {
+  flex-shrink: 0;
+  color: var(--lad-color-reward-deep);
+  font-size: rem(18);
 }
 
 .setting-row > span {

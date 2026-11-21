@@ -32,6 +32,7 @@ export interface Contribution {
   worldEffect?: WorldEffect;
   stars?: number;
   invitedChildIds?: FamilyMemberId[];
+  isVisibleToChildren?: boolean;
   partnerableMemberIds?: FamilyMemberId[];
   earnedReward?: number;
   earnedRatingBonus?: number;
@@ -70,6 +71,7 @@ export interface NewContribution {
   reward: number;
   energy: number;
   kind: ContributionKind;
+  isVisibleToChildren: boolean;
   assigneeId?: FamilyMemberId;
   dueDate?: string;
   recurrence: ContributionRecurrence;

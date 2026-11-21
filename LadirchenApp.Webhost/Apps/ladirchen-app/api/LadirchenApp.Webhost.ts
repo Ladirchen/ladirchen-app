@@ -1457,6 +1457,7 @@ export interface AddContributionPayload {
   category?: string | null;
   dueDate?: string | null;
   recurrence?: string | null;
+  isVisibleToChildren?: boolean | null;
 }
 
 export interface ContributionsAddFocusCommandRequest extends ExecuteFamilyCommandRequest {
@@ -2085,6 +2086,7 @@ export interface ContributionReadModelItem {
   rewardCelebrated?: boolean | null;
   dueDate?: string | null;
   recurrence: string;
+  isVisibleToChildren: boolean;
 }
 
 export interface ContributionPromotionReadModelItem {

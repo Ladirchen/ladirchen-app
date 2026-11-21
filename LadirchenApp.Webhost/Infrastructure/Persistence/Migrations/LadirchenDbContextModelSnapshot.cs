@@ -448,6 +448,11 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsFocus")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsVisibleToChildren")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.Property<int?>("PreparationMinutes")
                         .HasColumnType("integer");
 

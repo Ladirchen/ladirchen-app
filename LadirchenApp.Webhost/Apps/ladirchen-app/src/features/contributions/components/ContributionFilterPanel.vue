@@ -112,6 +112,7 @@ import { UI_ICONS } from "@/shared/ui-icons";
 export interface Props {
   categoryOptions: ReadonlyArray<{ icon: string; title: string; value: string }>;
   collapsible?: boolean;
+  descriptionKey?: string;
   openCount: number;
   personOptions: ReadonlyArray<{ title: string; value: "all" | FamilyMemberId }>;
   showPerson?: boolean;
@@ -156,6 +157,7 @@ const scopeOptions = computed<
 ]);
 const props = withDefaults(defineProps<Props>(), {
   collapsible: false,
+  descriptionKey: undefined,
   showPerson: true,
   showScope: true,
   showStatus: true,
@@ -165,10 +167,13 @@ const expanded = ref(true);
 const showPerson = computed(() => props.showPerson);
 const showScope = computed(() => props.showScope);
 const showStatus = computed(() => props.showStatus);
-const toggleIcon = computed(() => (expanded.value ? "i-mdi:chevron-up" : "i-mdi:chevron-down"));
+const toggleIcon = computed(() => (expanded.value ? "i-mdi:eye-off-outline" : "i-mdi:eye-outline"));
 const toggleLabel = computed(() => t(expanded.value ? "contributions.filter.hide" : "contributions.filter.show"));
 const filterDescription = computed(() =>
-  t(props.showScope ? "contributions.filter.description" : "contributions.filter.childDescription"),
+  t(
+    props.descriptionKey ??
+      (props.showScope ? "contributions.filter.description" : "contributions.filter.childDescription"),
+  ),
 );
 const categoryOptions = computed(() => [
   { value: "all", title: t("contributions.filter.kinds.all"), icon: "✨" },

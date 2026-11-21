@@ -80,7 +80,13 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           CreateOptionalMemberId(OptionalString(payload, "memberId")),
           now
         );
-        AddAssignmentNotification(economy, payload, notifications);
+        AddAssignmentNotification(
+          family.Root,
+          economy,
+          payload,
+          notifications,
+          IsVisibleToChildren(loadedEconomy.Presentation, ContributionId(payload))
+        );
         break;
       case "contributions.approve":
         var approvedContribution = economy.Contributions.Single(item => item.Id == ContributionId(payload));
@@ -132,10 +138,18 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
         );
         break;
       case "contributions.add":
+        RequireAdministratorForHiddenContribution(family.Root, command.ActorId, payload);
         addedContribution = AddContribution(economy, command.ActorId, payload, now);
-        AddAssignmentNotification(economy, payload, notifications);
+        AddAssignmentNotification(
+          family.Root,
+          economy,
+          payload,
+          notifications,
+          IsVisibleToChildren(payload)
+        );
         break;
       case "contributions.update":
+        RequireAdministratorForHiddenContribution(family.Root, command.ActorId, payload);
         updatedContribution = UpdateContribution(economy, command.ActorId, payload, now);
         break;
       case "contributions.copy":
@@ -155,7 +169,16 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           payload,
           now
         );
-        AddAssignmentNotification(economy, payload, notifications);
+        AddAssignmentNotification(
+          family.Root,
+          economy,
+          payload,
+          notifications,
+          IsVisibleToChildren(
+            loadedEconomy.Presentation,
+            new ContributionId(RequiredString(payload, "sourceId"))
+          )
+        );
         break;
       case "contributions.delete":
         economy.DeleteContribution(command.ActorId, ContributionId(payload), now);
@@ -252,14 +275,23 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
   }
 
   private static void AddAssignmentNotification(
+    Family family,
     FamilyEconomy economy,
     JsonElement payload,
-    ICollection<FamilyUserNotification> notifications
+    ICollection<FamilyUserNotification> notifications,
+    bool isVisibleToChildren = true
   )
   {
     var contribution = economy.Contributions.Single(item => item.Id == ContributionId(payload));
 
     if (contribution.AssigneeId is null)
+    {
+      return;
+    }
+
+    var recipient = family.ActiveMember(contribution.AssigneeId);
+
+    if (!isVisibleToChildren && recipient.Role == MemberRole.Child)
     {
       return;
     }
@@ -311,7 +343,8 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       false,
       ContributionCategory(payload),
       ContributionDueDate(payload),
-      ContributionRecurrence(payload)
+      ContributionRecurrence(payload),
+      IsVisibleToChildren: IsVisibleToChildren(payload)
     );
   }
 
@@ -466,8 +499,35 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       false,
       ContributionCategory(payload),
       ContributionDueDate(payload),
-      ContributionRecurrence(payload)
+      ContributionRecurrence(payload),
+      IsVisibleToChildren: IsVisibleToChildren(payload)
     );
+  }
+
+  private static bool IsVisibleToChildren(JsonElement payload)
+  {
+    return OptionalBool(payload, "isVisibleToChildren") ?? true;
+  }
+
+  private static bool IsVisibleToChildren(
+    FamilyEconomyPresentationState presentation,
+    ContributionId contributionId
+  )
+  {
+    return presentation.Contributions.Single(item => item.ContributionId == contributionId)
+      .IsVisibleToChildren;
+  }
+
+  private static void RequireAdministratorForHiddenContribution(
+    Family family,
+    FamilyMemberId actorId,
+    JsonElement payload
+  )
+  {
+    if (!IsVisibleToChildren(payload))
+    {
+      family.RequireAdministrator(actorId);
+    }
   }
 
   private static ContributionPresentationState? CreateNextRecurringContribution(

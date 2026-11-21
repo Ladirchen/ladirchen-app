@@ -18,33 +18,42 @@
         <v-icon :icon="publicationStatus.icon" />
         {{ publicationStatus.label }}
       </span>
-      <span class="reward-admin-actions d-flex">
-        <button
+      <span class="reward-admin-actions d-flex flex-wrap justify-end">
+        <v-btn
           v-if="reward.status !== 'requested'"
           :aria-label="t('shop.rewards.editAria', { title: reward.title })"
-          class="reward-edit-button d-grid place-center cursor-pointer"
-          type="button"
+          color="info"
+          prepend-icon="i-mdi:pencil-outline"
+          rounded="lg"
+          size="small"
+          variant="tonal"
           @click="emit('edit', reward)"
         >
-          <v-icon :icon="editActionIcon" />
-        </button>
-        <button
+          {{ t("shop.rewards.edit") }}
+        </v-btn>
+        <v-btn
           :aria-label="visibilityActionLabel"
-          class="reward-visibility-button d-grid place-center cursor-pointer"
-          type="button"
+          :color="visibilityActionColor"
+          :prepend-icon="visibilityActionIcon"
+          rounded="lg"
+          size="small"
+          variant="tonal"
           @click="store.setShopRewardVisibility(reward.id, rewardIsHidden)"
         >
-          <v-icon :icon="visibilityActionIcon" />
-        </button>
-        <button
+          {{ visibilityActionText }}
+        </v-btn>
+        <v-btn
           v-if="canAdministerShop"
           :aria-label="t('shop.rewards.deleteAria', { title: reward.title })"
-          class="reward-delete-button d-grid place-center cursor-pointer"
-          type="button"
+          color="error"
+          prepend-icon="i-mdi:trash-can-outline"
+          rounded="lg"
+          size="small"
+          variant="tonal"
           @click="emit('delete', reward)"
         >
-          <v-icon icon="i-mdi:trash-can-outline" />
-        </button>
+          {{ t("common.delete") }}
+        </v-btn>
       </span>
     </div>
     <div class="reward-icon d-grid place-center">{{ reward.icon }}</div>
@@ -97,21 +106,28 @@
         <div v-if="reward.status === 'requested' && canAdministerShop" class="d-flex ga-1">
           <v-btn
             :aria-label="t('shop.rewards.reject')"
+            color="error"
             :disabled="!store.permissions.canManageContent"
-            icon="i-mdi:close"
+            prepend-icon="i-mdi:close"
+            rounded="lg"
             size="small"
             variant="tonal"
             @click="store.decideShopReward(reward.id, false)"
-          />
+          >
+            {{ t("shop.rewards.reject") }}
+          </v-btn>
           <v-btn
             :aria-label="t('shop.rewards.approve')"
             color="primary"
             :disabled="!reward.approvableByMemberIds?.includes(store.signedInMemberId)"
-            icon="i-mdi:check"
+            prepend-icon="i-mdi:check"
+            rounded="lg"
             size="small"
             variant="flat"
             @click="store.decideShopReward(reward.id, true)"
-          />
+          >
+            {{ t("shop.rewards.approve") }}
+          </v-btn>
         </div>
         <div v-else-if="rewardIsRedeemed" class="d-flex flex-wrap justify-end ga-1">
           <v-btn
@@ -173,8 +189,11 @@ const canCancelRequest = computed(() => props.reward.cancellableByMemberIds?.inc
 const visibilityActionLabel = computed(() =>
   t(rewardIsHidden.value ? "shop.rewards.show" : "shop.rewards.hide", { title: props.reward.title }),
 );
+const visibilityActionColor = computed(() => (rewardIsHidden.value ? "primary" : undefined));
 const visibilityActionIcon = computed(() => (rewardIsHidden.value ? "i-mdi:eye-outline" : "i-mdi:eye-off-outline"));
-const editActionIcon = "i-mdi:pencil-outline";
+const visibilityActionText = computed(() =>
+  t(rewardIsHidden.value ? "shop.rewards.showAction" : "shop.rewards.hideAction"),
+);
 const childStatusColor = computed(() => (rewardIsRedeemed.value ? "success" : "warning"));
 const childStatusLabel = computed(() => t(rewardIsRedeemed.value ? "shop.rewards.redeemed" : "shop.rewards.requested"));
 const guardianStatusColor = computed(() => (rewardIsRedeemed.value ? "success" : "primary"));
@@ -235,18 +254,6 @@ const durationLabel = computed(() => {
 }
 .reward-admin-actions {
   gap: rem(4);
-}
-.reward-visibility-button,
-.reward-edit-button,
-.reward-delete-button {
-  width: rem(28);
-  height: rem(28);
-  border: rem(1) solid var(--lad-border);
-  border-radius: rem(10);
-  background: var(--lad-surface-raised);
-}
-.reward-delete-button {
-  color: var(--lad-color-danger-muted);
 }
 .reward-icon {
   width: rem(78);

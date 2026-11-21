@@ -51,6 +51,7 @@ function hasValidContent(value: Record<string, unknown>): boolean {
     isOptionalString(value.category) &&
     (hasLocalizedValue(value, "area") || isNonEmptyString(value.areaKey)) &&
     isOptionalString(value.areaKey) &&
+    isOptionalBoolean(value.isVisibleToChildren) &&
     typeof value.dueLabel === "string" &&
     isOptionalString(value.dueLabelKey) &&
     (value.dueDate === undefined || /^\d{4}-\d{2}-\d{2}$/.test(String(value.dueDate))) &&
