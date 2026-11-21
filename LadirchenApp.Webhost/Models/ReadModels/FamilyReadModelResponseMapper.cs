@@ -34,6 +34,14 @@ internal static class FamilyReadModelResponseMapper
       ).IsFocus)
       .Where(contribution =>
         source.ViewerRole != MemberRole.Child
+        || Required(
+          presentations,
+          contribution.Id,
+          "The contribution presentation is missing."
+        ).IsVisibleToChildren
+      )
+      .Where(contribution =>
+        source.ViewerRole != MemberRole.Child
         || (
           contribution.Status != ContributionStatus.Approved
           && (contribution.AssigneeId is null || contribution.AssigneeId == source.ViewerId)
@@ -84,7 +92,8 @@ internal static class FamilyReadModelResponseMapper
           ? presentation.RewardCelebrated
           : null,
         presentation.DueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-        presentation.Recurrence
+        presentation.Recurrence,
+        presentation.IsVisibleToChildren
       );
     }).ToArray();
     var visibleContributionIds = contributions

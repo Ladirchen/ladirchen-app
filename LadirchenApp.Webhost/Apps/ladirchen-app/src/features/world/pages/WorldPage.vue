@@ -329,6 +329,7 @@
             :active-child-id="store.activeChildId"
             :allow-invite="false"
             :contribution="contribution"
+            :current-time-milliseconds="store.currentTimeMilliseconds"
             :family-members="store.members"
             :family-time-zone="store.familyTimeZone"
             :promotion="promotionFor(contribution.id)"

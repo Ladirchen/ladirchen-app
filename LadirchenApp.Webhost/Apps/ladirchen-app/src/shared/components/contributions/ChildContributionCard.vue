@@ -22,8 +22,12 @@
             <v-icon :icon="assigneeIcon" size="13" />
             {{ assigneeLabel }}
           </span>
+          <span v-if="contribution.isVisibleToChildren === false" class="contribution-label contribution-label--hidden">
+            <v-icon icon="i-mdi:eye-off-outline" size="13" />
+            {{ t("contributions.visibility.hidden") }}
+          </span>
         </div>
-        <ContributionDescription :text="contribution.description" />
+        <ContributionDescription v-if="displayDescription" :text="displayDescription" />
         <ActiveContributionBonus
           v-if="activePromotion"
           class="mt-2"
@@ -58,7 +62,8 @@
             <ContributionMetaIcon kind="time" />
             <span>
               <small>{{ t("contributions.reward.when") }}</small>
-              <strong>{{ contribution.dueLabel }}</strong>
+              <strong>{{ dueCountdownLabel }}</strong>
+              <small v-if="dueDeadlineLabel" class="contribution-deadline">{{ dueDeadlineLabel }}</small>
             </span>
           </MetricCard>
           <MetricCard class="contribution-meta-chip contribution-meta-chip--reward" compact tone="reward">
@@ -162,6 +167,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
+import { dueDateParts } from "@/domain/contributions/due-date";
 import { totalEarnedContributionReward } from "@/domain/contributions/rating";
 import { isSchabiContributionId } from "@/domain/contributions/source";
 import type { Contribution, Promotion } from "@/domain/contributions/types";
@@ -178,6 +184,7 @@ export interface Props {
   activeChildId: FamilyMemberId;
   allowInvite?: boolean;
   contribution: Contribution;
+  currentTimeMilliseconds: number;
   familyMembers: ReadonlyArray<FamilyMember>;
   familyTimeZone: IanaTimeZone;
   personalizeAssignee?: boolean;
@@ -197,8 +204,38 @@ const props = withDefaults(defineProps<Props>(), {
   showParticipantActions: true,
 });
 const emit = defineEmits<Emits>();
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const isSchabiTask = computed(() => isSchabiContributionId(props.contribution.id));
+const displayDescription = computed(() => {
+  if (!isSchabiTask.value) {
+    return props.contribution.description;
+  }
+
+  return props.contribution.description.replace(/^Fällig am \d{2}\.\d{2}\.\d{4}(?:\s*\n\s*)?/, "").trim();
+});
+const dueParts = computed(() =>
+  props.contribution.dueDate
+    ? dueDateParts(props.contribution.dueDate, props.currentTimeMilliseconds, props.familyTimeZone, locale.value)
+    : undefined,
+);
+const dueCountdownLabel = computed(() => {
+  if (!dueParts.value) {
+    return props.contribution.dueLabel;
+  }
+
+  if (dueParts.value.daysRemaining === 0) {
+    return t("contributions.due.today");
+  }
+
+  return t(dueParts.value.daysRemaining === 1 ? "contributions.due.oneDay" : "contributions.due.days", {
+    days: dueParts.value.daysRemaining,
+  });
+});
+const dueDeadlineLabel = computed(() =>
+  dueParts.value
+    ? t("contributions.due.deadline", { date: dueParts.value.date, weekday: dueParts.value.weekday })
+    : undefined,
+);
 const assignedMember = computed(() =>
   props.familyMembers.find((member) => member.id === props.contribution.assigneeId),
 );
@@ -318,6 +355,11 @@ const approvalMessage = computed(function callback() {
   border-color: color-mix(in srgb, var(--lad-color-reward-border) 20%, transparent);
   background: linear-gradient(145deg, var(--lad-color-reward-soft), var(--lad-surface-raised));
 }
+.contribution-label--hidden {
+  color: var(--lad-color-warning-ink);
+  border-color: color-mix(in srgb, var(--lad-color-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--lad-color-warning) 12%, var(--lad-surface-raised));
+}
 .contribution-meta {
   --uno: d-grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -334,6 +376,14 @@ const approvalMessage = computed(function callback() {
 .contribution-meta-chip strong {
   white-space: normal;
   font-size: 0.5rem;
+}
+.contribution-deadline {
+  display: block;
+  margin-top: 1px;
+  color: var(--lad-muted);
+  font-size: 0.42rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 .approved-reward-summary {
   --uno: d-grid;

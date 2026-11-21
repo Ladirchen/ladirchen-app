@@ -13,5 +13,6 @@ public sealed record AddContributionPayload(
   string? AssigneeId,
   string? Category,
   string? DueDate,
-  string? Recurrence
+  string? Recurrence,
+  bool? IsVisibleToChildren
 );

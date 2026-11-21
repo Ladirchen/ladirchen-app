@@ -107,6 +107,36 @@ public sealed class ContributionQueryHandlerTests
       .IsEquivalentTo(["extra-task"]);
   }
 
+  [Test]
+  public async Task HiddenContributionIsOnlyReturnedToGuardians()
+  {
+    var store = CreateStore();
+    var handler = new GetFamilyAggregateQueryHandler(
+      store,
+      store,
+      store,
+      store,
+      new FixedTimeProvider(new DateTimeOffset(2026, 10, 29, 10, 0, 0, TimeSpan.Zero))
+    );
+    var childProjection = await handler.HandleAsync(
+      new GetFamilyAggregateQuery(_familyId, "contributions", _assigneeId),
+      CancellationToken.None
+    ) as ContributionsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The child contribution read model is missing.");
+    var guardianProjection = await handler.HandleAsync(
+      new GetFamilyAggregateQuery(_familyId, "contributions", _administratorId),
+      CancellationToken.None
+    ) as ContributionsFamilyReadModelProjection
+      ?? throw new InvalidOperationException("The guardian contribution read model is missing.");
+    var childResponse = ContributionsReadModelResponse.FromProjection(childProjection);
+    var guardianResponse = ContributionsReadModelResponse.FromProjection(guardianProjection);
+
+    await Assert.That(childResponse.State.Contributions.Any(item => item.Id == "hidden-task"))
+      .IsFalse();
+    await Assert.That(guardianResponse.State.Contributions.Single(item => item.Id == "hidden-task")
+      .IsVisibleToChildren).IsFalse();
+  }
+
   private static TestTypedAggregateStore CreateStore()
   {
     var family = Family.Reconstitute(new FamilyState(
@@ -163,6 +193,15 @@ public sealed class ContributionQueryHandlerTests
         3,
         10,
         null,
+        ContributionStatus.Available
+      ),
+      Contribution(
+        "hidden-task",
+        "Hidden task",
+        ContributionKind.School,
+        3,
+        10,
+        _assigneeId,
         ContributionStatus.Available
       ),
       Contribution(
@@ -255,7 +294,8 @@ public sealed class ContributionQueryHandlerTests
         item.Id,
         item.Id.Value,
         "✅",
-        false
+        false,
+        IsVisibleToChildren: item.Id.Value != "hidden-task"
       )),
       [],
       [],

@@ -30,5 +30,6 @@ public sealed record ContributionReadModelItem(
   string? ApprovedAt,
   bool? RewardCelebrated,
   string? DueDate,
-  [property: JsonRequired] string Recurrence
+  [property: JsonRequired] string Recurrence,
+  [property: JsonRequired] bool IsVisibleToChildren = true
 );

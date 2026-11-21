@@ -23,7 +23,6 @@ export function useContributionsPage() {
   const personFilter = ref<ContributionPersonFilter>("all");
   const scopeFilter = ref<"all" | "mine" | "open">("mine");
   const statusFilter = ref<"open" | "completed">("open");
-  const managedMemberFilter = ref<"all" | "open" | FamilyMemberId>("all");
   const addDialog = ref(false);
   const contributionToEdit = ref<Contribution>();
   const promotionDialog = ref(false);
@@ -48,6 +47,7 @@ export function useContributionsPage() {
     reward: 10,
     energy: 10,
     kind: "basic",
+    isVisibleToChildren: true,
     dueDate: new Date().toISOString().slice(0, 10),
     recurrence: "none",
     assigneeId: "",
@@ -139,7 +139,9 @@ export function useContributionsPage() {
   );
   const personFilterOptions = computed(() => [
     { title: t("contributions.filter.persons.all"), value: "all" as const },
-    ...store.members.map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
+    ...store.members
+      .filter((member) => member.role === "child")
+      .map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
   ]);
   const localizedPromotions = computed(() => store.promotions.map(localize.promotion));
   const activePromotions = computed(() => localizedPromotions.value.filter((item) => item.active));
@@ -165,24 +167,19 @@ export function useContributionsPage() {
   );
   const managedContributions = computed(() =>
     localizedContributions.value
-      .filter((contribution) =>
-        statusFilter.value === "completed" ? contribution.status === "approved" : contribution.status !== "approved",
+      .filter(
+        (contribution) =>
+          (statusFilter.value === "completed"
+            ? contribution.status === "approved"
+            : contribution.status !== "approved") &&
+          (filter.value === "all" || contribution.category === filter.value) &&
+          matchesContributionPersonFilter(contribution.assigneeId, personFilter.value),
       )
       .sort((left, right) => Number(Boolean(left.assigneeId)) - Number(Boolean(right.assigneeId))),
   );
-  const managedMemberOptions = computed(() => [
-    { title: t("contributions.manage.filterAll"), value: "all" },
-    { title: t("contributions.manage.filterOpen"), value: "open" },
-    ...store.members.map((member) => ({ title: `${member.avatar} ${member.name}`, value: member.id })),
-  ]);
   const managedContributionGroups = computed(() => {
     const memberIds = store.members.map((member) => member.id);
-    const groupIds: Array<FamilyMemberId | undefined> = [undefined, ...memberIds].filter(
-      (memberId) =>
-        managedMemberFilter.value === "all" ||
-        (managedMemberFilter.value === "open" && memberId === undefined) ||
-        managedMemberFilter.value === memberId,
-    );
+    const groupIds: Array<FamilyMemberId | undefined> = [undefined, ...memberIds];
 
     return groupIds.flatMap((memberId) => {
       const contributions = managedContributions.value.filter((contribution) => contribution.assigneeId === memberId);
@@ -217,7 +214,9 @@ export function useContributionsPage() {
       (contribution) =>
         contribution.status === "pending" &&
         contribution.assigneeId !== store.signedInMemberId &&
-        store.members.some((member) => member.id === contribution.assigneeId),
+        store.members.some((member) => member.id === contribution.assigneeId) &&
+        (filter.value === "all" || contribution.category === filter.value) &&
+        matchesContributionPersonFilter(contribution.assigneeId, personFilter.value),
     ),
   );
   const openContributionCount = computed(
@@ -296,6 +295,7 @@ export function useContributionsPage() {
       icon: contribution.icon,
       category: contribution.category,
       kind: contribution.kind,
+      isVisibleToChildren: contribution.isVisibleToChildren !== false,
       reward: contribution.reward,
       title: contribution.title,
       dueDate: contribution.dueDate,
@@ -383,6 +383,7 @@ export function useContributionsPage() {
       reward: 10,
       energy: 10,
       kind: "basic",
+      isVisibleToChildren: true,
       dueDate: new Date().toISOString().slice(0, 10),
       recurrence: "none",
       assigneeId: "",
@@ -500,8 +501,6 @@ export function useContributionsPage() {
     localizedContributions,
     managedContributions,
     managedContributionGroups,
-    managedMemberFilter,
-    managedMemberOptions,
     memberName,
     multiplierOptions,
     newContribution,

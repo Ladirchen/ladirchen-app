@@ -201,11 +201,14 @@
                 <v-btn
                   v-if="canEditCatalogPrices"
                   :aria-label="t('shop.catalog.prices.editNamed', { title: set.name })"
-                  icon="i-mdi:pencil-outline"
+                  prepend-icon="i-mdi:pencil-outline"
+                  rounded="lg"
                   size="x-small"
-                  variant="text"
+                  variant="tonal"
                   @click="openCatalogPriceEditor('furniture-set', set, set.name)"
-                />
+                >
+                  {{ t("shop.catalog.prices.edit") }}
+                </v-btn>
                 <span v-if="status === 'owned'" class="catalog-status catalog-status--owned">
                   <i>✦</i>
                   <v-icon icon="i-mdi:check-decagram" size="16" />

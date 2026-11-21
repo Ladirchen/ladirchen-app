@@ -130,6 +130,7 @@ internal static partial class TypedAggregatePersistenceModel
     contribution.Property(item => item.FocusPeriod).HasMaxLength(16);
     contribution.Property(item => item.FocusCompletionBonus).HasColumnType("numeric");
     contribution.Property(item => item.FocusId).HasMaxLength(128);
+    contribution.Property(item => item.IsVisibleToChildren).HasDefaultValue(true);
 
     var goal = modelBuilder.Entity<SavingGoalPresentationEntity>();
     goal.ToTable("SavingGoalPresentations");
