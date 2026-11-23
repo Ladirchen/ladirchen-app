@@ -154,7 +154,8 @@ public sealed class DatabaseTypedAggregateUnitOfWork : ITypedAggregateUnitOfWork
       }
       else
       {
-        await DeleteFamilyChildrenAsync(batch.FamilyId.Value, cancellationToken);
+        await _database.Entry(entity).Collection(item => item.Members).LoadAsync(cancellationToken);
+        await _database.Entry(entity).Collection(item => item.Pets).LoadAsync(cancellationToken);
         FamilyPersistenceMapper.Apply(entity, pending.Root);
       }
 
@@ -418,16 +419,6 @@ public sealed class DatabaseTypedAggregateUnitOfWork : ITypedAggregateUnitOfWork
 
       entry.State = EntityState.Detached;
     }
-  }
-
-  private async Task DeleteFamilyChildrenAsync(Guid familyId, CancellationToken cancellationToken)
-  {
-    await _database.Set<FamilyMemberEntity>()
-      .Where(item => item.FamilyId == familyId)
-      .ExecuteDeleteAsync(cancellationToken);
-    await _database.Set<FamilyPetEntity>()
-      .Where(item => item.FamilyId == familyId)
-      .ExecuteDeleteAsync(cancellationToken);
   }
 
   private async Task DeleteFamilyEconomyChildrenAsync(
