@@ -379,7 +379,9 @@ async function synchronizeAll(): Promise<void> {
   syncingAll.value = true;
 
   try {
-    await Promise.allSettled(syncableDrafts.value.map(synchronize));
+    for (const draft of syncableDrafts.value) {
+      await synchronize(draft);
+    }
   } finally {
     syncingAll.value = false;
   }
