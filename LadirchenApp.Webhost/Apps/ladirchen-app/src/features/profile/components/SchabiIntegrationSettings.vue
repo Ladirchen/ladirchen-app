@@ -1,13 +1,26 @@
 <template>
   <BrandedCard class="settings-card pa-4 mt-5" tone="profile">
-    <div class="d-flex align-center justify-space-between ga-2">
+    <div class="d-flex align-center justify-space-between flex-wrap ga-2">
       <div>
         <strong>{{ t("profile.schabi.title") }}</strong>
         <p class="text-caption text-medium-emphasis mt-1">{{ t("profile.schabi.description") }}</p>
       </div>
-      <v-chip color="info" prepend-icon="i-mdi:school-outline" size="small" variant="tonal">
-        {{ t("profile.schabi.schedule") }}
-      </v-chip>
+      <div class="d-flex align-center flex-wrap ga-2">
+        <v-btn
+          color="info"
+          :disabled="syncableDrafts.length === 0"
+          :loading="syncingAll"
+          prepend-icon="i-mdi:sync"
+          size="small"
+          variant="tonal"
+          @click="synchronizeAll"
+        >
+          {{ t("profile.schabi.syncAll") }}
+        </v-btn>
+        <v-chip color="info" prepend-icon="i-mdi:school-outline" size="small" variant="tonal">
+          {{ t("profile.schabi.schedule") }}
+        </v-chip>
+      </div>
     </div>
 
     <v-progress-linear v-if="loading" class="mt-4" color="primary" indeterminate rounded />
@@ -27,7 +40,26 @@
               </small>
             </div>
           </div>
-          <v-switch v-model="draft.enabled" color="primary" density="compact" hide-details inset />
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              v-if="draft.configured"
+              :aria-label="editLockLabel(draft)"
+              color="info"
+              :icon="editLockIcon(draft)"
+              size="small"
+              :title="editLockLabel(draft)"
+              variant="text"
+              @click="toggleEditing(draft)"
+            />
+            <v-switch
+              v-model="draft.enabled"
+              color="primary"
+              density="compact"
+              :disabled="!draft.editing"
+              hide-details
+              inset
+            />
+          </div>
         </div>
 
         <div class="d-grid ga-3 mt-4">
@@ -36,6 +68,7 @@
             autocomplete="off"
             density="compact"
             :label="t('profile.schabi.username')"
+            :readonly="!draft.editing"
             variant="outlined"
           />
           <v-text-field
@@ -45,7 +78,10 @@
             :hint="calendarHint(draft)"
             :label="t('profile.schabi.calendarUrl')"
             persistent-hint
-            type="password"
+            :placeholder="secretPlaceholder(draft.configured, draft.editing)"
+            :prepend-inner-icon="secretIcon(draft.configured)"
+            :readonly="!draft.editing"
+            :type="secretFieldType(draft.editing)"
             variant="outlined"
           />
           <v-text-field
@@ -55,7 +91,10 @@
             :hint="appointmentsCalendarHint(draft)"
             :label="t('profile.schabi.appointmentsCalendarUrl')"
             persistent-hint
-            type="password"
+            :placeholder="secretPlaceholder(draft.appointmentsConfigured, draft.editing)"
+            :prepend-inner-icon="secretIcon(draft.appointmentsConfigured)"
+            :readonly="!draft.editing"
+            :type="secretFieldType(draft.editing)"
             variant="outlined"
           />
           <div class="schedule-grid">
@@ -66,12 +105,14 @@
               item-value="value"
               :items="weekdayOptions"
               :label="t('profile.schabi.syncDay')"
+              :readonly="!draft.editing"
               variant="outlined"
             />
             <v-text-field
               v-model="draft.syncTimeLocal"
               density="compact"
               :label="t('profile.schabi.syncTime')"
+              :readonly="!draft.editing"
               type="time"
               variant="outlined"
             />
@@ -81,6 +122,7 @@
               :label="t('profile.schabi.syncDays')"
               :max="90"
               :min="1"
+              :readonly="!draft.editing"
               type="number"
               variant="outlined"
             />
@@ -98,7 +140,7 @@
           <v-btn
             v-if="draft.configured"
             color="info"
-            :disabled="draft.busy || !draft.enabled"
+            :disabled="draft.busy || draft.editing || !draft.enabled"
             :loading="draft.syncing"
             prepend-icon="i-mdi:sync"
             size="small"
@@ -108,7 +150,7 @@
             {{ t("profile.schabi.syncNow") }}
           </v-btn>
           <v-btn
-            v-if="draft.configured"
+            v-if="draft.configured && draft.editing"
             color="error"
             :disabled="draft.busy || draft.syncing"
             size="small"
@@ -118,6 +160,7 @@
             {{ t("common.delete") }}
           </v-btn>
           <v-btn
+            v-if="draft.editing"
             color="primary"
             :disabled="!canSave(draft)"
             :loading="draft.busy"
@@ -146,6 +189,8 @@ interface SchabiIntegrationDraft extends SchabiIntegration {
   appointmentsCalendarUrl: string;
   busy: boolean;
   calendarUrl: string;
+  editing: boolean;
+  persisted: SchabiIntegration;
   syncing: boolean;
 }
 
@@ -154,6 +199,10 @@ const { locale, t } = useI18n();
 const drafts = ref<SchabiIntegrationDraft[]>([]);
 const loading = ref(true);
 const loadError = ref(false);
+const syncingAll = ref(false);
+const syncableDrafts = computed(() =>
+  drafts.value.filter((draft) => draft.configured && draft.enabled && !draft.busy && !draft.editing),
+);
 const weekdayOptions = computed(() =>
   Array.from({ length: 7 }, (_, value) => ({
     title: new Intl.DateTimeFormat(locale.value, { weekday: "long" }).format(new Date(Date.UTC(2024, 0, 7 + value))),
@@ -163,6 +212,7 @@ const weekdayOptions = computed(() =>
 
 function canSave(draft: SchabiIntegrationDraft): boolean {
   return (
+    draft.editing &&
     !draft.busy &&
     !draft.syncing &&
     Number.isInteger(draft.syncDayOfWeek) &&
@@ -186,7 +236,19 @@ function appointmentsCalendarHint(draft: SchabiIntegrationDraft): string {
 }
 
 function configurationStatus(draft: SchabiIntegrationDraft): string {
-  return draft.configured ? t("profile.schabi.configured") : t("profile.schabi.notConfigured");
+  if (!draft.configured) {
+    return t("profile.schabi.notConfigured");
+  }
+
+  return draft.editing ? t("profile.schabi.configuredEditing") : t("profile.schabi.configuredLocked");
+}
+
+function editLockLabel(draft: SchabiIntegrationDraft): string {
+  return draft.editing ? t("profile.schabi.cancelEditing") : t("profile.schabi.unlockEditing");
+}
+
+function editLockIcon(draft: SchabiIntegrationDraft): string {
+  return draft.editing ? "i-mdi:lock-open-variant-outline" : "i-mdi:lock-outline";
 }
 
 function formatDate(value: string): string {
@@ -201,19 +263,51 @@ function memberName(memberId: FamilyMemberId): string {
   return store.members.find((member) => member.id === memberId)?.name ?? memberId;
 }
 
+function secretPlaceholder(configured: boolean, editing: boolean): string | undefined {
+  return configured && !editing ? t("profile.schabi.storedSecret") : undefined;
+}
+
+function secretIcon(configured: boolean): string | undefined {
+  return configured ? "i-mdi:lock-outline" : undefined;
+}
+
+function secretFieldType(editing: boolean): "password" | "text" {
+  return editing ? "password" : "text";
+}
+
+function toDraft(integration: SchabiIntegration): SchabiIntegrationDraft {
+  return {
+    ...integration,
+    appointmentsCalendarUrl: "",
+    busy: false,
+    calendarUrl: "",
+    editing: !integration.configured,
+    persisted: { ...integration },
+    syncing: false,
+  };
+}
+
+function toggleEditing(draft: SchabiIntegrationDraft): void {
+  if (!draft.editing) {
+    draft.editing = true;
+
+    return;
+  }
+
+  Object.assign(draft, draft.persisted, {
+    appointmentsCalendarUrl: "",
+    calendarUrl: "",
+    editing: false,
+  });
+}
+
 async function load(): Promise<void> {
   loading.value = true;
   loadError.value = false;
 
   try {
     const integrations = await schabiIntegrationGateway.list(familyContext.activeFamilyId);
-    drafts.value = integrations.map((integration) => ({
-      ...integration,
-      appointmentsCalendarUrl: "",
-      busy: false,
-      calendarUrl: "",
-      syncing: false,
-    }));
+    drafts.value = integrations.map(toDraft);
   } catch {
     loadError.value = true;
   } finally {
@@ -231,6 +325,7 @@ async function remove(draft: SchabiIntegrationDraft): Promise<void> {
       appointmentsConfigured: false,
       calendarUrl: "",
       configured: false,
+      editing: true,
       enabled: false,
       lastError: undefined,
       lastSuccessfulSyncAt: undefined,
@@ -257,7 +352,13 @@ async function save(draft: SchabiIntegrationDraft): Promise<void> {
       syncTimeLocal: draft.syncTimeLocal,
       username: draft.username.trim(),
     });
-    Object.assign(draft, saved, { appointmentsCalendarUrl: "", calendarUrl: "", configured: true });
+    Object.assign(draft, saved, {
+      appointmentsCalendarUrl: "",
+      calendarUrl: "",
+      configured: true,
+      editing: false,
+      persisted: { ...saved, configured: true },
+    });
   } finally {
     draft.busy = false;
   }
@@ -268,9 +369,21 @@ async function synchronize(draft: SchabiIntegrationDraft): Promise<void> {
 
   try {
     const synchronized = await schabiIntegrationGateway.synchronize(familyContext.activeFamilyId, draft.memberId);
-    Object.assign(draft, synchronized);
+    Object.assign(draft, synchronized, { persisted: { ...synchronized } });
   } finally {
     draft.syncing = false;
+  }
+}
+
+async function synchronizeAll(): Promise<void> {
+  syncingAll.value = true;
+
+  try {
+    for (const draft of syncableDrafts.value) {
+      await synchronize(draft);
+    }
+  } finally {
+    syncingAll.value = false;
   }
 }
 

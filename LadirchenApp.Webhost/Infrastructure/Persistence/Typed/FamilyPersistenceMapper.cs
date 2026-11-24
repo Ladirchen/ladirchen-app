@@ -52,17 +52,51 @@ internal static class FamilyPersistenceMapper
     entity.LadirchenPerCurrencyUnit = state.ExchangeRate.LadirchenPerCurrencyUnit;
     entity.ActiveChildId = state.ActiveChildId?.Value;
     entity.OnboardingCompleted = state.OnboardingCompleted;
-    entity.Members.Clear();
-    entity.Pets.Clear();
+    ApplyMembers(entity, state);
+    ApplyPets(entity, state);
+  }
 
-    foreach (var member in state.Members)
-    {
-      entity.Members.Add(ToMemberEntity(state.Id.Value, member));
-    }
+  private static void ApplyPets(FamilyRootEntity entity, FamilyState state)
+  {
+    var existingPets = entity.Pets.ToDictionary(item => item.PetId, StringComparer.Ordinal);
 
     foreach (var pet in state.Pets)
     {
-      entity.Pets.Add(ToPetEntity(state.Id.Value, pet));
+      if (existingPets.Remove(pet.Id.Value, out var existingPet))
+      {
+        ApplyPet(existingPet, pet);
+      }
+      else
+      {
+        entity.Pets.Add(ToPetEntity(state.Id.Value, pet));
+      }
+    }
+
+    foreach (var removedPet in existingPets.Values)
+    {
+      _ = entity.Pets.Remove(removedPet);
+    }
+  }
+
+  private static void ApplyMembers(FamilyRootEntity entity, FamilyState state)
+  {
+    var existingMembers = entity.Members.ToDictionary(item => item.MemberId, StringComparer.Ordinal);
+
+    foreach (var member in state.Members)
+    {
+      if (existingMembers.Remove(member.Id.Value, out var existingMember))
+      {
+        ApplyMember(existingMember, member);
+      }
+      else
+      {
+        entity.Members.Add(ToMemberEntity(state.Id.Value, member));
+      }
+    }
+
+    foreach (var removedMember in existingMembers.Values)
+    {
+      _ = entity.Members.Remove(removedMember);
     }
   }
 
@@ -85,33 +119,39 @@ internal static class FamilyPersistenceMapper
 
   private static FamilyMemberEntity ToMemberEntity(Guid familyId, FamilyMemberState state)
   {
-    var appearance = state.Appearance;
-
-    return new FamilyMemberEntity
+    var entity = new FamilyMemberEntity
     {
       FamilyId = familyId,
       MemberId = state.Id.Value,
-      Name = state.Name,
-      Role = (int)state.Role,
-      GuardianAccess = (int)state.Access,
-      InvitationPending = state.InvitationPending,
-      Nickname = state.Nickname,
-      EmailAddress = state.EmailAddress,
-      ParticipatesInWeeklyGoal = state.ParticipatesInWeeklyGoal,
-      Avatar = state.Avatar,
-      Color = state.Color,
-      AppearanceAge = appearance?.Age,
-      AppearanceSkinTone = appearance?.SkinTone,
-      AppearanceFaceShape = appearance?.FaceShape,
-      AppearanceFace = appearance?.Face,
-      AppearanceHair = appearance?.Hair,
-      AppearanceHairColor = appearance?.HairColor,
-      AppearanceOutfit = appearance?.Outfit,
-      AppearanceOutfitColor = appearance?.OutfitColor,
-      AppearanceAccessory = appearance?.Accessory,
-      AppearanceFunAccessory = appearance?.FunAccessory,
-      AppearanceSeasonalAccessory = appearance?.SeasonalAccessory,
     };
+    ApplyMember(entity, state);
+
+    return entity;
+  }
+
+  private static void ApplyMember(FamilyMemberEntity entity, FamilyMemberState state)
+  {
+    var appearance = state.Appearance;
+    entity.Name = state.Name;
+    entity.Role = (int)state.Role;
+    entity.GuardianAccess = (int)state.Access;
+    entity.InvitationPending = state.InvitationPending;
+    entity.Nickname = state.Nickname;
+    entity.EmailAddress = state.EmailAddress;
+    entity.ParticipatesInWeeklyGoal = state.ParticipatesInWeeklyGoal;
+    entity.Avatar = state.Avatar;
+    entity.Color = state.Color;
+    entity.AppearanceAge = appearance?.Age;
+    entity.AppearanceSkinTone = appearance?.SkinTone;
+    entity.AppearanceFaceShape = appearance?.FaceShape;
+    entity.AppearanceFace = appearance?.Face;
+    entity.AppearanceHair = appearance?.Hair;
+    entity.AppearanceHairColor = appearance?.HairColor;
+    entity.AppearanceOutfit = appearance?.Outfit;
+    entity.AppearanceOutfitColor = appearance?.OutfitColor;
+    entity.AppearanceAccessory = appearance?.Accessory;
+    entity.AppearanceFunAccessory = appearance?.FunAccessory;
+    entity.AppearanceSeasonalAccessory = appearance?.SeasonalAccessory;
   }
 
   private static FamilyPetState ToPetState(FamilyPetEntity entity)
@@ -127,15 +167,22 @@ internal static class FamilyPersistenceMapper
 
   private static FamilyPetEntity ToPetEntity(Guid familyId, FamilyPetState state)
   {
-    return new FamilyPetEntity
+    var entity = new FamilyPetEntity
     {
       FamilyId = familyId,
       PetId = state.Id.Value,
-      Name = state.Name,
-      Kind = (int)state.Kind,
-      Avatar = state.Avatar,
-      Color = state.Color,
     };
+    ApplyPet(entity, state);
+
+    return entity;
+  }
+
+  private static void ApplyPet(FamilyPetEntity entity, FamilyPetState state)
+  {
+    entity.Name = state.Name;
+    entity.Kind = (int)state.Kind;
+    entity.Avatar = state.Avatar;
+    entity.Color = state.Color;
   }
 
   private static AvatarAppearance? ToAppearance(FamilyMemberEntity entity)

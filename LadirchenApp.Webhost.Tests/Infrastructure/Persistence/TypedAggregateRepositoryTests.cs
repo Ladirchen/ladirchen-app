@@ -55,6 +55,20 @@ public sealed class TypedAggregateRepositoryTests
         administratorId,
         CancellationToken.None
       );
+      database.SchabiCalendarIntegrations.Add(new SchabiCalendarIntegrationEntity
+      {
+        CreatedAt = now,
+        Enabled = true,
+        FamilyId = familyId.Value,
+        MemberId = childId.Value,
+        ProtectedCalendarUrl = "protected-calendar-url",
+        SchabiUsername = "child-user",
+        SyncDayOfWeek = (int)DayOfWeek.Thursday,
+        SyncHorizonDays = 14,
+        SyncTimeLocal = new TimeOnly(6, 0),
+        UpdatedAt = now,
+      });
+      await database.SaveChangesAsync();
       var loaded = await repository.LoadAsync(familyId, CancellationToken.None);
       await Assert.That(loaded).IsNotNull();
       loaded!.Root.RenameMember(administratorId, childId, "After", now.AddMinutes(1));
@@ -81,6 +95,11 @@ public sealed class TypedAggregateRepositoryTests
       await Assert.That(loaded!.Revision).IsEqualTo(2);
       await Assert.That(loaded.Root.Members.Single(item => item.Id == childId).Name)
         .IsEqualTo("After");
+      var schabiIntegration = await restartedDatabase.SchabiCalendarIntegrations
+        .AsNoTracking()
+        .SingleAsync();
+      await Assert.That(schabiIntegration.MemberId).IsEqualTo(childId.Value);
+      await Assert.That(schabiIntegration.SchabiUsername).IsEqualTo("child-user");
     }
   }
 
