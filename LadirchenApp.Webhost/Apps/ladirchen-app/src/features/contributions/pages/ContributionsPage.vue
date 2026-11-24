@@ -516,54 +516,52 @@
                       variant="outlined"
                       @update:model-value="assignContribution(contribution.id, $event)"
                     />
-                    <div class="management-action-buttons">
-                      <v-btn
-                        v-if="contribution.status === 'approved'"
-                        :aria-label="t('contributions.manage.reactivateAria', { title: contribution.title })"
-                        color="primary"
-                        prepend-icon="i-mdi:restore"
-                        rounded="lg"
-                        size="small"
-                        variant="tonal"
-                        @click="reactivateContribution(contribution)"
-                      >
-                        {{ t("contributions.manage.reactivate") }}
-                      </v-btn>
-                      <v-btn
-                        v-else
-                        :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
-                        prepend-icon="i-mdi:content-copy"
-                        rounded="lg"
-                        size="small"
-                        variant="tonal"
-                        @click="copyContribution(contribution)"
-                      >
-                        {{ t("contributions.manage.copy") }}
-                      </v-btn>
-                      <v-btn
-                        v-if="contribution.status === 'available'"
-                        :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
-                        color="info"
-                        prepend-icon="i-mdi:pencil-outline"
-                        rounded="lg"
-                        size="small"
-                        variant="tonal"
-                        @click="openContributionEditor(contribution)"
-                      >
-                        {{ t("contributions.manage.edit") }}
-                      </v-btn>
-                      <v-btn
-                        :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
-                        color="error"
-                        prepend-icon="i-mdi:delete-outline"
-                        rounded="lg"
-                        size="small"
-                        variant="tonal"
-                        @click="requestContributionDelete(contribution)"
-                      >
-                        {{ t("common.delete") }}
-                      </v-btn>
-                    </div>
+                    <v-btn
+                      v-if="contribution.status === 'approved'"
+                      :aria-label="t('contributions.manage.reactivateAria', { title: contribution.title })"
+                      color="primary"
+                      prepend-icon="i-mdi:restore"
+                      rounded="lg"
+                      size="small"
+                      variant="tonal"
+                      @click="reactivateContribution(contribution)"
+                    >
+                      {{ t("contributions.manage.reactivate") }}
+                    </v-btn>
+                    <v-btn
+                      v-else
+                      :aria-label="t('contributions.manage.copyAria', { title: contribution.title })"
+                      prepend-icon="i-mdi:content-copy"
+                      rounded="lg"
+                      size="small"
+                      variant="tonal"
+                      @click="copyContribution(contribution)"
+                    >
+                      {{ t("contributions.manage.copy") }}
+                    </v-btn>
+                    <v-btn
+                      v-if="contribution.status === 'available'"
+                      :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
+                      color="info"
+                      prepend-icon="i-mdi:pencil-outline"
+                      rounded="lg"
+                      size="small"
+                      variant="tonal"
+                      @click="openContributionEditor(contribution)"
+                    >
+                      {{ t("contributions.manage.edit") }}
+                    </v-btn>
+                    <v-btn
+                      :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
+                      color="error"
+                      prepend-icon="i-mdi:delete-outline"
+                      rounded="lg"
+                      size="small"
+                      variant="tonal"
+                      @click="requestContributionDelete(contribution)"
+                    >
+                      {{ t("common.delete") }}
+                    </v-btn>
                   </div>
                 </template>
               </ChildContributionCard>
