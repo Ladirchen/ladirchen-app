@@ -19,6 +19,7 @@ namespace LadirchenApp.Webhost.Models.Commands;
 [JsonDerivedType(typeof(ContributionsAssignCommandRequest), "contributions.assign")]
 [JsonDerivedType(typeof(ContributionsClaimCommandRequest), "contributions.claim")]
 [JsonDerivedType(typeof(ContributionsDeleteCommandRequest), "contributions.delete")]
+[JsonDerivedType(typeof(ContributionsResolveOverdueCommandRequest), "contributions.resolve-overdue")]
 [JsonDerivedType(typeof(ContributionsDeletePromotionCommandRequest), "contributions.delete-promotion")]
 [JsonDerivedType(typeof(ContributionsReturnCommandRequest), "contributions.return")]
 [JsonDerivedType(typeof(ContributionsSetPartnersCommandRequest), "contributions.set-partners")]

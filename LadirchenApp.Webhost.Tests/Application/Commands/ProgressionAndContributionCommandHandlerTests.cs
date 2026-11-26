@@ -378,6 +378,120 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       .IsEqualTo(1);
   }
 
+  [Test]
+  public async Task AdministratorCanResolveAnOverdueTaskWithoutPayingAReward()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add", new
+    {
+      id = "overdue-task",
+      title = "Overdue task",
+      description = "This task is no longer needed.",
+      icon = "🧹",
+      category = "Grundbeitrag",
+      kind = "basic",
+      reward = 10,
+      energy = 25,
+      assigneeId = _childId.Value,
+      dueDate = "2026-10-11",
+      recurrence = "none",
+    });
+
+    await ExecuteAsync(handler, _guardianId, "contributions.resolve-overdue", new
+    {
+      id = "overdue-task",
+    });
+
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.Contributions).IsEmpty();
+    await Assert.That(store.EconomyPresentation.Contributions).IsEmpty();
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(0);
+    await Assert.That(economy.Ledger).IsEmpty();
+  }
+
+  [Test]
+  public async Task ResolvingAnOverdueFocusRemovesOpenPreparationsWithoutAnotherPayment()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus", new
+    {
+      id = "overdue-focus",
+      title = "Overdue focus",
+      description = "The deadline has passed.",
+      icon = "🎯",
+      period = "date",
+      startDate = "2026-10-10",
+      endDate = "2026-10-11",
+      assigneeId = _childId.Value,
+      completionBonus = 5,
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus-preparations", new
+    {
+      focusId = "overdue-focus",
+      ids = new[] { "completed-preparation", "open-preparation" },
+      dates = new[] { "2026-10-10", "2026-10-11" },
+      minutes = 30,
+      reward = 2,
+    });
+    await ExecuteAsync(handler, _childId, "contributions.submit", new
+    {
+      id = "completed-preparation",
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    {
+      id = "completed-preparation",
+      stars = 4,
+    });
+    var ledgerCountBeforeResolution = store.RequiredEconomy().Ledger.Count;
+    var balanceBeforeResolution = store.RequiredEconomy().WalletFor(_childId).Balance;
+
+    await ExecuteAsync(handler, _guardianId, "contributions.resolve-overdue", new
+    {
+      id = "overdue-focus",
+    });
+
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.Contributions.Select(item => item.Id.Value))
+      .IsEquivalentTo(["completed-preparation"]);
+    await Assert.That(economy.Contributions.Single().Status).IsEqualTo(ContributionStatus.Approved);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(balanceBeforeResolution);
+    await Assert.That(economy.Ledger.Count).IsEqualTo(ledgerCountBeforeResolution);
+  }
+
+  [Test]
+  public async Task CurrentWorkCannotBeResolvedAsOverdue()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add", new
+    {
+      id = "current-task",
+      title = "Current task",
+      description = "This task is still current.",
+      icon = "📌",
+      category = "Schule",
+      kind = "school",
+      reward = 10,
+      energy = 25,
+      assigneeId = _childId.Value,
+      dueDate = "2026-10-12",
+      recurrence = "none",
+    });
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _guardianId, "contributions.resolve-overdue", new
+      {
+        id = "current-task",
+      })
+    ).Throws<FamilyCommandException>();
+    await Assert.That(store.RequiredEconomy().Contributions).HasSingleItem();
+  }
+
   private static TestTypedAggregateStore CreateStore(params ContributionSeed[] contributions)
   {
     return CreateStore(contributions, []);

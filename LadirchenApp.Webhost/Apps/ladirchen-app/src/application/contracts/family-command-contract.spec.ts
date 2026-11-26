@@ -15,6 +15,7 @@ import type {
   ContributionsCopyCommandRequest,
   ContributionsReactivateCommandRequest,
   ContributionsDeleteCommandRequest,
+  ContributionsResolveOverdueCommandRequest,
   ContributionsDeletePromotionCommandRequest,
   ContributionsReturnCommandRequest,
   ContributionsSetPartnersCommandRequest,
@@ -91,6 +92,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "contributions.copy": ContributionsCopyCommandRequest;
   readonly "contributions.reactivate": ContributionsReactivateCommandRequest;
   readonly "contributions.delete": ContributionsDeleteCommandRequest;
+  readonly "contributions.resolve-overdue": ContributionsResolveOverdueCommandRequest;
   readonly "contributions.delete-promotion": ContributionsDeletePromotionCommandRequest;
   readonly "contributions.return": ContributionsReturnCommandRequest;
   readonly "contributions.set-partners": ContributionsSetPartnersCommandRequest;
