@@ -43,9 +43,9 @@
             </v-btn>
           </template>
         </SectionHeader>
-        <div v-if="visibleFocusGoals.length" class="focus-grid">
+        <div v-if="openFocusGoals.length" class="focus-grid">
           <BrandedCard
-            v-for="focus in visibleFocusGoals"
+            v-for="focus in openFocusGoals"
             :id="`focus-${focus.id}`"
             :key="focus.id"
             class="focus-card pa-4"
@@ -114,6 +114,28 @@
           </BrandedCard>
         </div>
         <p v-else class="text-caption text-medium-emphasis">{{ t("contributions.focus.empty") }}</p>
+        <div v-if="completedFocusGoals.length" class="mt-5">
+          <strong class="text-subtitle-2">{{ t("contributions.focus.achievedTitle") }}</strong>
+          <v-list class="focus-achieved-list mt-2" rounded="xl">
+            <v-list-item
+              v-for="focus in completedFocusGoals"
+              :key="focus.id"
+              :subtitle="memberName(focus.assigneeId)"
+              :title="focus.title"
+            >
+              <template #prepend>
+                <v-avatar color="success" size="36" variant="tonal">
+                  <v-icon icon="i-mdi:check-bold" />
+                </v-avatar>
+              </template>
+              <template #append>
+                <v-chip color="success" prepend-icon="i-mdi:trophy-outline" size="small" variant="tonal">
+                  {{ t("contributions.focus.achieved") }}
+                </v-chip>
+              </template>
+            </v-list-item>
+          </v-list>
+        </div>
       </section>
 
       <v-card class="task-calendar mb-6" elevation="0" rounded="xl">
@@ -1120,6 +1142,8 @@ const visibleFocusGoals = computed(() =>
     return matchesViewer && matchesPerson && matchesCategory;
   }),
 );
+const openFocusGoals = computed(() => visibleFocusGoals.value.filter((focus) => !focus.completed));
+const completedFocusGoals = computed(() => visibleFocusGoals.value.filter((focus) => focus.completed));
 const selectedFocus = computed(() => store.focusGoals.find((focus) => focus.id === selectedFocusId.value));
 const focusPeriodOptions = computed(() => [
   { title: t("contributions.focus.periodDate"), value: "date" },

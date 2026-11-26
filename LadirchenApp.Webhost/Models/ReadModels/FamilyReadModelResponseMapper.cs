@@ -130,6 +130,7 @@ internal static class FamilyReadModelResponseMapper
           assigneeId.Value,
           presentation.FocusCompletionBonus,
           presentation.FocusBonusPaid,
+          presentation.FocusCompleted,
           progress,
           100 - progress,
           preparations.Select(item => item.Id.Value).ToArray()

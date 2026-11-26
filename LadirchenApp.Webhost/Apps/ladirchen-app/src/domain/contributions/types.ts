@@ -90,6 +90,7 @@ export interface FocusGoal {
   assigneeId: FamilyMemberId;
   completionBonus: number;
   bonusPaid: boolean;
+  completed: boolean;
   progressPercent: number;
   remainingPercent: number;
   preparationContributionIds: ContributionId[];

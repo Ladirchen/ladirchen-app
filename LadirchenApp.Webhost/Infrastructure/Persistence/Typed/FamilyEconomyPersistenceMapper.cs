@@ -97,6 +97,7 @@ internal static partial class FamilyEconomyPersistenceMapper
           item.FocusId,
           item.PreparationMinutes,
           item.FocusBonusPaid,
+          item.FocusCompleted,
           item.IsVisibleToChildren
         )),
       entity.SavingGoalPresentations
@@ -250,6 +251,7 @@ internal static partial class FamilyEconomyPersistenceMapper
         FocusId = item.FocusId,
         PreparationMinutes = item.PreparationMinutes,
         FocusBonusPaid = item.FocusBonusPaid,
+        FocusCompleted = item.FocusCompleted,
         IsVisibleToChildren = item.IsVisibleToChildren,
         RewardCelebrated = item.RewardCelebrated,
       });

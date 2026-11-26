@@ -19,6 +19,7 @@ public sealed class ContributionPresentationEntity
   public string? FocusId { get; set; }
   public int? PreparationMinutes { get; set; }
   public bool FocusBonusPaid { get; set; }
+  public bool FocusCompleted { get; set; }
   public bool IsVisibleToChildren { get; set; } = true;
   public bool RewardCelebrated { get; set; }
   public FamilyEconomyRootEntity Economy { get; set; } = null!;

@@ -424,6 +424,9 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<bool>("FocusBonusPaid")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("FocusCompleted")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("FocusCompletionBonus")
                         .HasColumnType("numeric");
 

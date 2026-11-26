@@ -130,6 +130,7 @@ function isFocusGoal(value: unknown): value is FocusGoal {
     isFiniteNumber(value.completionBonus) &&
     value.completionBonus >= 0 &&
     typeof value.bonusPaid === "boolean" &&
+    typeof value.completed === "boolean" &&
     isInteger(value.progressPercent) &&
     value.progressPercent >= 0 &&
     value.progressPercent <= 100 &&

@@ -20,5 +20,6 @@ public sealed record ContributionPresentationState(
   string? FocusId = null,
   int? PreparationMinutes = null,
   bool FocusBonusPaid = false,
+  bool FocusCompleted = false,
   bool IsVisibleToChildren = true
 );
