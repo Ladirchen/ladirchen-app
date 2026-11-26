@@ -33,6 +33,7 @@ export interface FamilyCommandPayloadMap {
     reward: number;
   }>;
   readonly "contributions.copy": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
+  readonly "contributions.convert-to-focus": Readonly<{ id: ContributionId } & NewFocusGoal>;
   readonly "contributions.reactivate": Readonly<{ id: ContributionId; sourceId: ContributionId }>;
   readonly "contributions.add-promotion": Readonly<{ id: PromotionId } & NewPromotion>;
   readonly "contributions.approve": Readonly<{ id: ContributionId; stars: number }>;

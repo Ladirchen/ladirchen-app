@@ -37,7 +37,7 @@
               rounded="lg"
               size="small"
               variant="tonal"
-              @click="focusDialog = true"
+              @click="openFocusDialog"
             >
               {{ t("contributions.focus.add") }}
             </v-btn>
@@ -541,6 +541,18 @@
                         {{ t("contributions.manage.copy") }}
                       </v-btn>
                       <v-btn
+                        v-if="canConvertToFocus(contribution)"
+                        :aria-label="t('contributions.manage.convertToFocusAria', { title: contribution.title })"
+                        color="warning"
+                        prepend-icon="i-mdi:target"
+                        rounded="lg"
+                        size="small"
+                        variant="tonal"
+                        @click="openFocusConversion(contribution)"
+                      >
+                        {{ t("contributions.manage.convertToFocus") }}
+                      </v-btn>
+                      <v-btn
                         v-if="contribution.status === 'available'"
                         :aria-label="t('contributions.manage.editAria', { title: contribution.title })"
                         color="info"
@@ -722,8 +734,8 @@
 
     <v-dialog v-model="focusDialog" max-width="500">
       <v-card class="pa-5" rounded="xl">
-        <v-card-title class="pa-0 mb-1">{{ t("contributions.focus.formTitle") }}</v-card-title>
-        <v-card-subtitle class="pa-0 mb-4">{{ t("contributions.focus.formDescription") }}</v-card-subtitle>
+        <v-card-title class="pa-0 mb-1">{{ focusDialogTitle }}</v-card-title>
+        <v-card-subtitle class="pa-0 mb-4">{{ focusDialogDescription }}</v-card-subtitle>
         <v-text-field v-model="newFocus.title" :label="t('common.title')" variant="outlined" />
         <v-textarea
           v-model="newFocus.description"
@@ -777,9 +789,9 @@
           variant="outlined"
         />
         <div class="d-flex justify-end ga-2">
-          <v-btn rounded="lg" variant="text" @click="focusDialog = false">{{ t("common.cancel") }}</v-btn>
+          <v-btn rounded="lg" variant="text" @click="closeFocusDialog">{{ t("common.cancel") }}</v-btn>
           <v-btn color="primary" :disabled="!canSaveFocus" rounded="lg" variant="flat" @click="saveFocus">
-            {{ t("common.add") }}
+            {{ t(contributionToConvert ? "common.save" : "common.add") }}
           </v-btn>
         </div>
       </v-card>
@@ -1077,6 +1089,7 @@ const preparationDates = ref([""]);
 const preparationMinutes = ref(30);
 const preparationReward = ref(1);
 const newFocus = ref<NewFocusGoal>(createEmptyFocus());
+const contributionToConvert = ref<Contribution>();
 const calendarExpanded = ref(true);
 const selectedCalendarContribution = ref<Contribution>();
 const selectedCalendarDueLabel = computed(() => {
@@ -1133,6 +1146,12 @@ const canSaveFocus = computed(
     newFocus.value.startDate.length > 0 &&
     newFocus.value.endDate >= newFocus.value.startDate &&
     newFocus.value.completionBonus >= 0,
+);
+const focusDialogTitle = computed(() =>
+  t(contributionToConvert.value ? "contributions.focus.convertTitle" : "contributions.focus.formTitle"),
+);
+const focusDialogDescription = computed(() =>
+  t(contributionToConvert.value ? "contributions.focus.convertDescription" : "contributions.focus.formDescription"),
 );
 const canSavePreparations = computed(
   () =>
@@ -1204,8 +1223,49 @@ async function saveFocus() {
     return;
   }
 
-  await store.addFocus({ ...newFocus.value });
+  if (contributionToConvert.value) {
+    await store.convertContributionToFocus(contributionToConvert.value.id, { ...newFocus.value });
+  } else {
+    await store.addFocus({ ...newFocus.value });
+  }
+
+  closeFocusDialog();
+}
+function openFocusDialog() {
+  contributionToConvert.value = undefined;
+  newFocus.value = createEmptyFocus();
+  focusDialog.value = true;
+}
+function openFocusConversion(contribution: Contribution) {
+  if (!canConvertToFocus(contribution) || !contribution.assigneeId) {
+    return;
+  }
+
+  const today = localIsoDate(new Date());
+  contributionToConvert.value = contribution;
+  newFocus.value = {
+    ...createEmptyFocus(),
+    assigneeId: contribution.assigneeId,
+    description: contribution.description,
+    endDate: contribution.dueDate && contribution.dueDate >= today ? contribution.dueDate : today,
+    icon: contribution.icon,
+    startDate: today,
+    title: contribution.title,
+  };
+  focusDialog.value = true;
+}
+function canConvertToFocus(contribution: Contribution): boolean {
+  return (
+    contribution.status === "available" &&
+    Boolean(
+      contribution.assigneeId &&
+      store.members.some((member) => member.id === contribution.assigneeId && member.role === "child"),
+    )
+  );
+}
+function closeFocusDialog() {
   focusDialog.value = false;
+  contributionToConvert.value = undefined;
   newFocus.value = createEmptyFocus();
 }
 function openPreparationDialog(focusId: ContributionId) {

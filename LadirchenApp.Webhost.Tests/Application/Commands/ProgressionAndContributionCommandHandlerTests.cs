@@ -378,6 +378,76 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       .IsEqualTo(1);
   }
 
+  [Test]
+  public async Task AvailableTaskCanBeConvertedToAFocusGoalWithoutChangingItsIdentity()
+  {
+    var store = CreateStore(Contribution("math-homework", ContributionKind.School, _childId));
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.convert-to-focus", new
+    {
+      id = "math-homework",
+      title = "Prepare for math test",
+      description = "Repeat fractions",
+      icon = "🎯",
+      period = "weekly",
+      startDate = "2026-10-12",
+      endDate = "2026-10-18",
+      assigneeId = _childId.Value,
+      completionBonus = 5,
+    });
+
+    var contribution = store.RequiredEconomy().Contributions.Single();
+    var presentation = store.EconomyPresentation.Contributions.Single();
+    await Assert.That(contribution.Id.Value).IsEqualTo("math-homework");
+    await Assert.That(contribution.Title).IsEqualTo("Prepare for math test");
+    await Assert.That(contribution.Kind).IsEqualTo(ContributionKind.Extra);
+    await Assert.That(contribution.Reward.Value).IsEqualTo(0);
+    await Assert.That(contribution.Energy.Value).IsEqualTo(0);
+    await Assert.That(contribution.AssigneeId).IsEqualTo(_childId);
+    await Assert.That(presentation.IsFocus).IsTrue();
+    await Assert.That(presentation.FocusPeriod).IsEqualTo("weekly");
+    await Assert.That(presentation.FocusStartDate).IsEqualTo(new DateOnly(2026, 10, 12));
+    await Assert.That(presentation.FocusEndDate).IsEqualTo(new DateOnly(2026, 10, 18));
+    await Assert.That(presentation.FocusCompletionBonus).IsEqualTo(5);
+  }
+
+  [Test]
+  public async Task PendingTaskCannotBeConvertedToAFocusGoal()
+  {
+    var pending = new ContributionSeed(
+      new ContributionId("submitted-homework"),
+      ContributionKind.School,
+      _childId,
+      [],
+      ContributionStatus.Pending,
+      null,
+      null,
+      null
+    );
+    var store = CreateStore(pending);
+    var handler = store.CreateCommandHandler();
+
+    await Assert.That(async () =>
+      await ExecuteAsync(handler, _guardianId, "contributions.convert-to-focus", new
+      {
+        id = "submitted-homework",
+        title = "Submitted homework",
+        description = "Already submitted",
+        icon = "🎯",
+        period = "date",
+        startDate = "2026-10-12",
+        endDate = "2026-10-12",
+        assigneeId = _childId.Value,
+        completionBonus = 0,
+      })
+    ).Throws<FamilyCommandException>();
+
+    await Assert.That(store.RequiredEconomy().Contributions.Single().Status)
+      .IsEqualTo(ContributionStatus.Pending);
+    await Assert.That(store.EconomyPresentation.Contributions.Single().IsFocus).IsFalse();
+  }
+
   private static TestTypedAggregateStore CreateStore(params ContributionSeed[] contributions)
   {
     return CreateStore(contributions, []);

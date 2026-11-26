@@ -12,6 +12,7 @@ namespace LadirchenApp.Webhost.Models.Commands;
 [JsonDerivedType(typeof(ContributionsAddCommandRequest), "contributions.add")]
 [JsonDerivedType(typeof(ContributionsAddFocusCommandRequest), "contributions.add-focus")]
 [JsonDerivedType(typeof(ContributionsAddFocusPreparationsCommandRequest), "contributions.add-focus-preparations")]
+[JsonDerivedType(typeof(ContributionsConvertToFocusCommandRequest), "contributions.convert-to-focus")]
 [JsonDerivedType(typeof(ContributionsCopyCommandRequest), "contributions.copy")]
 [JsonDerivedType(typeof(ContributionsReactivateCommandRequest), "contributions.reactivate")]
 [JsonDerivedType(typeof(ContributionsAddPromotionCommandRequest), "contributions.add-promotion")]

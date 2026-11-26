@@ -32,6 +32,15 @@ export const contributionsActions = {
       () => this.notify("notifications.contributions.preparationsAdded", { quantity: ids.length }),
     );
   },
+  async convertContributionToFocus(this: FamilyWorldStoreContext, id: ContributionId, input: NewFocusGoal) {
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.convert-to-focus",
+      { id, ...input },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.focusConverted"),
+    );
+  },
   async setPerfectRatingBonusPercent(this: FamilyWorldStoreContext, percent: number) {
     await executeBackendFamilyCommand(
       this,
