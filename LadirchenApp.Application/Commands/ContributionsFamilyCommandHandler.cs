@@ -408,6 +408,8 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       item => item.ContributionId == focusId && item.IsFocus
     ) ?? throw new FamilyCommandException("The focus does not exist.");
     var focus = economy.Contributions.Single(item => item.Id == focusId);
+    var focusAssigneeId = focus.AssigneeId
+      ?? throw new FamilyCommandException("The focus does not have an assignee.");
     var minutes = RequiredInt(payload, "minutes");
     Require(minutes >= 1 && minutes <= 1440, "Preparation minutes must be between 1 and 1440.");
     var reward = Round(RequiredDecimal(payload, "reward"));
@@ -434,7 +436,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           ContributionKind.School,
           new LadirchenAmount(reward),
           new Percentage(0),
-          focus.AssigneeId
+          focusAssigneeId
         ),
         now
       );

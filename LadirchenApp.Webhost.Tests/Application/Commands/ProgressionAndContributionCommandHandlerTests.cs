@@ -350,6 +350,13 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       reward = 2,
     });
 
+    var preparations = store.RequiredEconomy().Contributions
+      .Where(item => item.Id.Value is "english-test-1" or "english-test-2")
+      .ToArray();
+    await Assert.That(preparations).Count().IsEqualTo(2);
+    await Assert.That(preparations.Select(item => item.AssigneeId))
+      .IsEquivalentTo(new FamilyMemberId?[] { _childId, _childId });
+
     foreach (var id in new[] { "english-test-1", "english-test-2" })
     {
       await ExecuteAsync(handler, _childId, "contributions.submit", new
