@@ -1488,6 +1488,10 @@ export interface AddFocusPreparationsPayload {
   reward: number;
 }
 
+export interface ContributionsConvertToFocusCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: AddFocusPayload;
+}
+
 export interface ContributionsCopyCommandRequest extends ExecuteFamilyCommandRequest {
   payload: CopyContributionPayload;
 }

@@ -127,6 +127,17 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
         family.Root.RequireAdministrator(command.ActorId);
         addedContribution = AddFocus(economy, command.ActorId, payload, now);
         break;
+      case "contributions.convert-to-focus":
+        family.Root.RequireAdministrator(command.ActorId);
+        updatedContribution = ConvertToFocus(
+          family.Root,
+          economy,
+          loadedEconomy.Presentation,
+          command.ActorId,
+          payload,
+          now
+        );
+        break;
       case "contributions.add-focus-preparations":
         family.Root.RequireAdministrator(command.ActorId);
         addedContributions = AddFocusPreparations(
@@ -379,6 +390,74 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       now
     );
 
+    return FocusPresentation(id, payload, period, startDate, endDate, completionBonus);
+  }
+
+  private static ContributionPresentationState ConvertToFocus(
+    Family family,
+    FamilyEconomy economy,
+    FamilyEconomyPresentationState presentation,
+    FamilyMemberId actorId,
+    JsonElement payload,
+    DateTimeOffset now
+  )
+  {
+    var id = ContributionId(payload);
+    var contribution = economy.Contributions.SingleOrDefault(item => item.Id == id)
+      ?? throw new FamilyCommandException("The contribution does not exist.");
+    var contributionPresentation = presentation.Contributions.SingleOrDefault(
+      item => item.ContributionId == id
+    ) ?? throw new FamilyCommandException("Presentation data for the contribution is missing.");
+    Require(!contributionPresentation.IsFocus, "The contribution is already a focus goal.");
+    Require(
+      contribution.Status == ContributionStatus.Available,
+      "Only an available contribution can be converted to a focus goal."
+    );
+    Require(
+      economy.Promotions.All(item => item.ContributionId != id),
+      "A contribution with a promotion cannot be converted to a focus goal."
+    );
+    Require(contribution.AssigneeId is not null, "An assigned contribution is required.");
+    var assigneeId = new FamilyMemberId(RequiredString(payload, "assigneeId"));
+    Require(
+      family.ActiveMember(assigneeId).Role == MemberRole.Child,
+      "A focus goal must be assigned to a child."
+    );
+    var period = RequiredString(payload, "period");
+    Require(period is "date" or "weekly" or "monthly", "The focus period is invalid.");
+    var startDate = RequiredDate(payload, "startDate");
+    var endDate = RequiredDate(payload, "endDate");
+    Require(endDate >= startDate, "The focus end date must not be before its start date.");
+    var completionBonus = Round(RequiredDecimal(payload, "completionBonus"));
+    Require(
+      completionBonus >= 0 && completionBonus <= SpecialGiftPolicy.MaximumAmount,
+      "The focus completion bonus is invalid."
+    );
+    economy.UpdateContribution(
+      actorId,
+      id,
+      new ContributionDefinition(
+        RequiredString(payload, "title"),
+        ContributionKind.Extra,
+        new LadirchenAmount(0),
+        new Percentage(0),
+        assigneeId
+      ),
+      now
+    );
+
+    return FocusPresentation(id, payload, period, startDate, endDate, completionBonus);
+  }
+
+  private static ContributionPresentationState FocusPresentation(
+    ContributionId id,
+    JsonElement payload,
+    string period,
+    DateOnly startDate,
+    DateOnly endDate,
+    decimal completionBonus
+  )
+  {
     return new ContributionPresentationState(
       id,
       RequiredString(payload, "description"),

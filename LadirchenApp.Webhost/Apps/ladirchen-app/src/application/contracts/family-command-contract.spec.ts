@@ -12,6 +12,7 @@ import type {
   ContributionsApproveCommandRequest,
   ContributionsAssignCommandRequest,
   ContributionsClaimCommandRequest,
+  ContributionsConvertToFocusCommandRequest,
   ContributionsCopyCommandRequest,
   ContributionsReactivateCommandRequest,
   ContributionsDeleteCommandRequest,
@@ -88,6 +89,7 @@ interface GeneratedFamilyCommandRequestMap {
   readonly "contributions.approve": ContributionsApproveCommandRequest;
   readonly "contributions.assign": ContributionsAssignCommandRequest;
   readonly "contributions.claim": ContributionsClaimCommandRequest;
+  readonly "contributions.convert-to-focus": ContributionsConvertToFocusCommandRequest;
   readonly "contributions.copy": ContributionsCopyCommandRequest;
   readonly "contributions.reactivate": ContributionsReactivateCommandRequest;
   readonly "contributions.delete": ContributionsDeleteCommandRequest;
