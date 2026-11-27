@@ -112,6 +112,8 @@ internal static class FamilyReadModelResponseMapper
         var progress = preparations.Length == 0
           ? 0
           : (int)Math.Round(completed * 100m / preparations.Length, MidpointRounding.AwayFromZero);
+        var focusCompleted = presentation.FocusCompleted
+          || (preparations.Length > 0 && completed == preparations.Length);
         var assigneeId = focus.AssigneeId
           ?? throw new InvalidOperationException("A focus requires an assignee.");
         var startDate = presentation.FocusStartDate
@@ -130,7 +132,7 @@ internal static class FamilyReadModelResponseMapper
           assigneeId.Value,
           presentation.FocusCompletionBonus,
           presentation.FocusBonusPaid,
-          presentation.FocusCompleted,
+          focusCompleted,
           progress,
           100 - progress,
           preparations.Select(item => item.Id.Value).ToArray()

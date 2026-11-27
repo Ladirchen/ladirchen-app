@@ -440,6 +440,57 @@ public sealed class ProgressionAndContributionCommandHandlerTests
   }
 
   [Test]
+  public async Task AdministratorCanResolveACompletedFocusBeforeItsDeadlineWithoutAnotherPayment()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus", new
+    {
+      id = "completed-focus",
+      title = "Completed focus",
+      description = "Finished ahead of time",
+      icon = "🎯",
+      period = "weekly",
+      startDate = "2026-10-12",
+      endDate = "2026-10-18",
+      assigneeId = _childId.Value,
+      completionBonus = 0,
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus-preparations", new
+    {
+      focusId = "completed-focus",
+      ids = new[] { "completed-focus-preparation" },
+      dates = new[] { "2026-10-12" },
+      minutes = 20,
+      reward = 1,
+    });
+    await ExecuteAsync(handler, _childId, "contributions.submit", new
+    {
+      id = "completed-focus-preparation",
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    {
+      id = "completed-focus-preparation",
+      stars = 4,
+    });
+    var ledgerCountBeforeResolution = store.RequiredEconomy().Ledger.Count;
+    var balanceBeforeResolution = store.RequiredEconomy().WalletFor(_childId).Balance;
+
+    await ExecuteAsync(handler, _guardianId, "contributions.resolve-overdue", new
+    {
+      id = "completed-focus",
+    });
+
+    var economy = store.RequiredEconomy();
+    await Assert.That(economy.Contributions.Select(item => item.Id.Value))
+      .IsEquivalentTo(["completed-focus-preparation"]);
+    await Assert.That(economy.Contributions.Single().Status).IsEqualTo(ContributionStatus.Approved);
+    await Assert.That(economy.Ledger.Count).IsEqualTo(ledgerCountBeforeResolution);
+    await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(balanceBeforeResolution);
+  }
+
+  [Test]
   public async Task AvailableTaskCanBeConvertedToAFocusGoalWithoutChangingItsIdentity()
   {
     var store = CreateStore(Contribution("math-homework", ContributionKind.School, _childId));

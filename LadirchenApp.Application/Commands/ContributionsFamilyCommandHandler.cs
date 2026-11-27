@@ -388,18 +388,28 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var dueDate = contributionPresentation.IsFocus
       ? contributionPresentation.FocusEndDate
       : contributionPresentation.DueDate;
+    var preparationIds = contributionPresentation.IsFocus
+      ? presentation.Contributions
+        .Where(item => item.FocusId == contributionId.Value)
+        .Select(item => item.ContributionId)
+        .ToArray()
+      : [];
+    var focusIsComplete = preparationIds.Length > 0 && economy.Contributions
+      .Where(item => preparationIds.Contains(item.Id))
+      .All(item => item.Status == ContributionStatus.Approved);
 
     Require(
       contribution.Status != ContributionStatus.Approved,
       "An approved contribution cannot be resolved."
     );
-    Require(dueDate is not null && dueDate < localDate, "Only overdue work can be resolved.");
+    Require(
+      (dueDate is not null && dueDate < localDate) || focusIsComplete,
+      "Only overdue work or a completed focus goal can be resolved."
+    );
 
     if (contributionPresentation.IsFocus)
     {
-      var openPreparationIds = presentation.Contributions
-        .Where(item => item.FocusId == contributionId.Value)
-        .Select(item => item.ContributionId)
+      var openPreparationIds = preparationIds
         .Where(id => economy.Contributions.Single(item => item.Id == id).Status != ContributionStatus.Approved)
         .ToArray();
 
