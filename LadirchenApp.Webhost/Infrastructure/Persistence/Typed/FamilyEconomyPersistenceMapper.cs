@@ -210,7 +210,8 @@ internal static partial class FamilyEconomyPersistenceMapper
         new LedgerSourceState((LedgerSourceKind)item.SourceKind, item.SourceId),
         item.Reason,
         item.OccurredAtUtc,
-        OptionalMemberId(item.InitiatorMemberId)
+        OptionalMemberId(item.InitiatorMemberId),
+        item.SourceTitle
       ))
       .ToArray();
   }
@@ -253,6 +254,7 @@ internal static partial class FamilyEconomyPersistenceMapper
         SourceKind = (int)entry.Source.Kind,
         SourceId = entry.Source.Id,
         Reason = entry.Reason,
+        SourceTitle = entry.SourceTitle,
         OccurredAtUtc = entry.OccurredAtUtc,
         InitiatorMemberId = entry.InitiatorId?.Value,
       });

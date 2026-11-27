@@ -114,6 +114,7 @@ internal static partial class TypedAggregatePersistenceModel
     ledger.Property(item => item.GoalId).HasMaxLength(128);
     ledger.Property(item => item.Amount).HasColumnType("numeric");
     ledger.Property(item => item.SourceId).HasMaxLength(128);
+    ledger.Property(item => item.SourceTitle).HasMaxLength(256);
     ledger.Property(item => item.InitiatorMemberId).HasMaxLength(128);
     ledger.HasOne<EconomyAppliedOperationEntity>().WithMany()
       .HasForeignKey(item => new { item.FamilyId, item.OperationId })

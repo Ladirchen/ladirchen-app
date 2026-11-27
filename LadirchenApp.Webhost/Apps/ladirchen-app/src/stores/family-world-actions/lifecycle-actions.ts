@@ -97,6 +97,8 @@ export const lifecycleActions = {
       };
       this.totalEarnedByMember = { ...contributions.state.totalEarnedByMember };
       this.balances = { ...savings.state.balances };
+      this.accountStatement = [...savings.state.accountStatement];
+      this.accountStatementMemberIds = [...savings.state.accountStatementMemberIds];
       this.availableBalances = { ...savings.state.availableBalances };
       this.behaviorStatuses = { ...savings.state.behaviorStatuses };
       this.familyCurrencyCode = savings.state.familyCurrencyCode;
@@ -300,6 +302,8 @@ async function refreshFamilyReadModelSnapshot(
 
       if (snapshot) {
         context.balances = { ...snapshot.state.balances };
+        context.accountStatement = [...snapshot.state.accountStatement];
+        context.accountStatementMemberIds = [...snapshot.state.accountStatementMemberIds];
         context.availableBalances = { ...snapshot.state.availableBalances };
         context.behaviorStatuses = { ...snapshot.state.behaviorStatuses };
         context.familyCurrencyCode = snapshot.state.familyCurrencyCode;

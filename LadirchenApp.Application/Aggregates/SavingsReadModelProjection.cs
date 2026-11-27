@@ -12,6 +12,7 @@ public sealed record SavingsReadModelProjection(
   IReadOnlyDictionary<SavingGoalId, SavingsVoucherReadProjection> Vouchers,
   IReadOnlyDictionary<FamilyMemberId, decimal> SharedSavedBalances,
   IReadOnlySet<FamilyMemberId> VisibleBalanceMemberIds,
+  IReadOnlySet<FamilyMemberId> VisibleStatementMemberIds,
   IReadOnlyDictionary<FamilyMemberId, ChildBehaviorStatus> BehaviorStatuses,
   IReadOnlyList<PendingBehaviorNotice> PendingBehaviorNotices
 );

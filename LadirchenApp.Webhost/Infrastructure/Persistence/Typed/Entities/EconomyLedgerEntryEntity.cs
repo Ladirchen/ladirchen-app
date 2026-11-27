@@ -14,6 +14,7 @@ public sealed class EconomyLedgerEntryEntity
   public int SourceKind { get; set; }
   public string SourceId { get; set; } = string.Empty;
   public string Reason { get; set; } = string.Empty;
+  public string? SourceTitle { get; set; }
   public DateTimeOffset OccurredAtUtc { get; set; }
   public string? InitiatorMemberId { get; set; }
   public FamilyEconomyRootEntity Economy { get; set; } = null!;

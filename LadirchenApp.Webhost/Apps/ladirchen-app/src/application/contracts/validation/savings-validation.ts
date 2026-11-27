@@ -1,6 +1,9 @@
 import type { SavingsState } from "@/application/contracts/savings-contract";
 import type {
   FamilyCurrency,
+  AccountStatementDirection,
+  AccountStatementEntry,
+  AccountStatementTransactionType,
   BehaviorNotice,
   ChildBehaviorStatus,
   GoalVisibility,
@@ -33,9 +36,60 @@ const behaviorLevels = exhaustiveValues<ChildBehaviorStatus["level"]>({
   orange: true,
   red: true,
 });
+const accountStatementDirections = exhaustiveValues<AccountStatementDirection>({
+  credit: true,
+  debit: true,
+  "goal-credit": true,
+  "goal-debit": true,
+  neutral: true,
+});
+const accountStatementTransactionTypes = exhaustiveValues<AccountStatementTransactionType>({
+  adjustment: true,
+  "behavior-acknowledgement": true,
+  "behavior-reset": true,
+  "behavior-warning": true,
+  "gift-to-goal": true,
+  "goal-cancellation": true,
+  "goal-starter-bonus": true,
+  "guardian-support": true,
+  "house-purchase": true,
+  interest: true,
+  "manual-adjustment": true,
+  "member-gift": true,
+  "saving-deposit": true,
+  "saving-withdrawal": true,
+  "shop-purchase": true,
+  "shop-refund": true,
+  "shop-release": true,
+  "shop-reservation": true,
+  "task-reward": true,
+  "voucher-conversion": true,
+  "voucher-redemption": true,
+});
+function isAccountStatementEntry(value: unknown): value is AccountStatementEntry {
+  return (
+    isRecord(value) &&
+    isDomainId(value.id) &&
+    isFamilyMemberId(value.memberId) &&
+    isNonEmptyString(value.occurredAtUtc) &&
+    isFiniteNumber(value.amount) &&
+    value.amount >= 0 &&
+    isFiniteNumber(value.balanceChange) &&
+    isFiniteNumber(value.resultingBalance) &&
+    value.resultingBalance >= 0 &&
+    isKnownString(value.direction, accountStatementDirections) &&
+    isKnownString(value.transactionType, accountStatementTransactionTypes) &&
+    isOptionalString(value.sourceTitle) &&
+    (value.counterpartyMemberId === undefined || isFamilyMemberId(value.counterpartyMemberId))
+  );
+}
 function isChildBehaviorStatus(value: unknown): value is ChildBehaviorStatus {
   return (
     isRecord(value) &&
+    isArrayOf(value.accountStatement, isAccountStatementEntry) &&
+    hasUniqueIds(value.accountStatement) &&
+    isArrayOf(value.accountStatementMemberIds, isFamilyMemberId) &&
+    new Set(value.accountStatementMemberIds).size === value.accountStatementMemberIds.length &&
     isFamilyMemberId(value.childId) &&
     isKnownString(value.level, behaviorLevels) &&
     isFiniteNumber(value.warningCount) &&

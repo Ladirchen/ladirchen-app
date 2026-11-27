@@ -585,7 +585,8 @@ public sealed partial class FamilyEconomy
         ReconstituteLedgerSource(state.Source),
         state.Reason,
         state.OccurredAtUtc.ToUniversalTime(),
-        state.InitiatorId
+        state.InitiatorId,
+        state.SourceTitle
       )
       {
         EntryId = state.EntryId,
@@ -637,7 +638,8 @@ public sealed partial class FamilyEconomy
       CaptureLedgerSource(entry.SourceId),
       entry.Reason,
       entry.OccurredAtUtc,
-      entry.InitiatorId
+      entry.InitiatorId,
+      entry.SourceTitle
     );
   }
 

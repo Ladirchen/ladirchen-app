@@ -11,7 +11,8 @@ public sealed partial class FamilyEconomy
     LadirchenAmount price,
     HouseContentId contentId,
     TransactionId operationId,
-    DateTimeOffset now
+    DateTimeOffset now,
+    string? contentTitle = null
   )
   {
     ArgumentNullException.ThrowIfNull(price);
@@ -41,7 +42,9 @@ public sealed partial class FamilyEconomy
         price.Value,
         contentId,
         "House content purchase",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        contentTitle is null ? contentId.Value : Rules.Text(contentTitle)
       )
     );
   }

@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 namespace LadirchenApp.Webhost.Models.ReadModels;
 
 public sealed record SavingsReadModelState(
+  [property: JsonRequired] IReadOnlyList<AccountStatementReadModelItem> AccountStatement,
+  [property: JsonRequired] IReadOnlyList<string> AccountStatementMemberIds,
   [property: JsonRequired] IReadOnlyDictionary<string, decimal> AvailableBalances,
   [property: JsonRequired] IReadOnlyDictionary<string, decimal> Balances,
   [property: JsonRequired] IReadOnlyDictionary<string, ChildBehaviorStatusReadModel> BehaviorStatuses,

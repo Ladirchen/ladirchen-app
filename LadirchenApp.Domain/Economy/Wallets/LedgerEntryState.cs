@@ -14,5 +14,6 @@ internal sealed record LedgerEntryState(
   LedgerSourceState Source,
   string Reason,
   DateTimeOffset OccurredAtUtc,
-  FamilyMemberId? InitiatorId
+  FamilyMemberId? InitiatorId,
+  string? SourceTitle = null
 );

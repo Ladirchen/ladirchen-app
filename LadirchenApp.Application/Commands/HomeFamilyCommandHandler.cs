@@ -109,7 +109,8 @@ internal sealed class HomeFamilyCommandHandler : TypedFamilyCommandAreaHandler
         new LadirchenAmount(purchase.Price),
         new HouseContentId($"{command.CommandType}:{purchase.ContentId}"),
         new TransactionId(command.CommandId.ToString("N", CultureInfo.InvariantCulture)),
-        TimeProvider.GetUtcNow()
+        TimeProvider.GetUtcNow(),
+        purchase.ContentId
       );
     }
 

@@ -2455,6 +2455,8 @@ export interface SavingsReadModelResponse {
 }
 
 export interface SavingsReadModelState {
+  accountStatement: AccountStatementReadModelItem[];
+  accountStatementMemberIds: string[];
   availableBalances: { [key: string]: number };
   balances: { [key: string]: number };
   behaviorStatuses: { [key: string]: ChildBehaviorStatusReadModel };
@@ -2466,6 +2468,19 @@ export interface SavingsReadModelState {
   settledInterestPeriods: string[];
   sharedSavedBalances: { [key: string]: number };
   vouchers: SavingsVoucherReadModel[];
+}
+
+export interface AccountStatementReadModelItem {
+  id: string;
+  memberId: string;
+  occurredAtUtc: string;
+  amount: number;
+  balanceChange: number;
+  resultingBalance: number;
+  direction: string;
+  transactionType: string;
+  sourceTitle?: string | null;
+  counterpartyMemberId?: string | null;
 }
 
 export interface ChildBehaviorStatusReadModel {

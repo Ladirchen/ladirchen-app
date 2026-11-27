@@ -7,6 +7,42 @@ export type SavingGoalOwnerId = FamilyMemberId | "family";
 export type FamilyGoalParticipantScope = "family" | "children" | "selected";
 export type SavingsVoucherStatus = "pending" | "redeemable" | "redeemed";
 export type BehaviorLightLevel = "green" | "yellow" | "orange" | "red";
+export type AccountStatementDirection = "credit" | "debit" | "goal-credit" | "goal-debit" | "neutral";
+export type AccountStatementTransactionType =
+  | "adjustment"
+  | "behavior-acknowledgement"
+  | "behavior-reset"
+  | "behavior-warning"
+  | "gift-to-goal"
+  | "goal-cancellation"
+  | "goal-starter-bonus"
+  | "guardian-support"
+  | "house-purchase"
+  | "interest"
+  | "manual-adjustment"
+  | "member-gift"
+  | "saving-deposit"
+  | "saving-withdrawal"
+  | "shop-purchase"
+  | "shop-refund"
+  | "shop-release"
+  | "shop-reservation"
+  | "task-reward"
+  | "voucher-conversion"
+  | "voucher-redemption";
+
+export interface AccountStatementEntry {
+  id: string;
+  memberId: FamilyMemberId;
+  occurredAtUtc: string;
+  amount: number;
+  balanceChange: number;
+  resultingBalance: number;
+  direction: AccountStatementDirection;
+  transactionType: AccountStatementTransactionType;
+  sourceTitle?: string;
+  counterpartyMemberId?: FamilyMemberId;
+}
 
 export interface ChildBehaviorStatus {
   childId: FamilyMemberId;

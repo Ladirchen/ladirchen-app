@@ -127,7 +127,18 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     wallet.Set(balance, wallet.Reserved);
     Record(
       operationId,
-      new LedgerEntry(operationId, childId, null, LedgerKind.Credit, value, childId, text, now.ToUniversalTime(), actor)
+      new LedgerEntry(
+        operationId,
+        childId,
+        null,
+        LedgerKind.Credit,
+        value,
+        childId,
+        text,
+        now.ToUniversalTime(),
+        actor,
+        text
+      )
     );
 
     if (giftId is not null)
@@ -161,7 +172,18 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
     wallet.Set(checked(wallet.Balance + value), wallet.Reserved);
     Record(
       operationId,
-      new LedgerEntry(operationId, childId, null, LedgerKind.Credit, value, childId, text, now.ToUniversalTime(), actor)
+      new LedgerEntry(
+        operationId,
+        childId,
+        null,
+        LedgerKind.Credit,
+        value,
+        childId,
+        text,
+        now.ToUniversalTime(),
+        actor,
+        text
+      )
     );
   }
 
@@ -419,7 +441,8 @@ public sealed partial class FamilyEconomy : AggregateRoot<FamilyId>
         id,
         "Contribution reward",
         now.ToUniversalTime(),
-        actor
+        actor,
+        contribution.Title
       )
     );
     AddDomainEvent(new ContributionApproved(Id, id, actor, wallet.Id, rating, reward, now));

@@ -104,6 +104,8 @@ describe("family aggregate runtime validation", () => {
 
   it("requires backend-projected available and shared savings balances", () => {
     const savings = {
+      accountStatement: [],
+      accountStatementMemberIds: [],
       availableBalances: {},
       balances: {},
       behaviorStatuses: {},
@@ -153,6 +155,8 @@ describe("family aggregate runtime validation", () => {
       visibility: "family",
     };
     const savings = {
+      accountStatement: [],
+      accountStatementMemberIds: [],
       availableBalances: {},
       balances: {},
       behaviorStatuses: {},
