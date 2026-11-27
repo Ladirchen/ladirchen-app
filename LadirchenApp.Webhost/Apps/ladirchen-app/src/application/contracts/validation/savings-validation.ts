@@ -86,10 +86,6 @@ function isAccountStatementEntry(value: unknown): value is AccountStatementEntry
 function isChildBehaviorStatus(value: unknown): value is ChildBehaviorStatus {
   return (
     isRecord(value) &&
-    isArrayOf(value.accountStatement, isAccountStatementEntry) &&
-    hasUniqueIds(value.accountStatement) &&
-    isArrayOf(value.accountStatementMemberIds, isFamilyMemberId) &&
-    new Set(value.accountStatementMemberIds).size === value.accountStatementMemberIds.length &&
     isFamilyMemberId(value.childId) &&
     isKnownString(value.level, behaviorLevels) &&
     isFiniteNumber(value.warningCount) &&
@@ -203,6 +199,10 @@ function isGuardianGift(value: unknown): value is GuardianGift {
 export function isSavingsState(value: unknown): value is SavingsState {
   return (
     isRecord(value) &&
+    isArrayOf(value.accountStatement, isAccountStatementEntry) &&
+    hasUniqueIds(value.accountStatement) &&
+    isArrayOf(value.accountStatementMemberIds, isFamilyMemberId) &&
+    new Set(value.accountStatementMemberIds).size === value.accountStatementMemberIds.length &&
     isRecord(value.balances) &&
     Object.entries(value.balances).every(
       ([memberId, balance]) => isFamilyMemberId(memberId) && isFiniteNumber(balance) && balance >= 0,

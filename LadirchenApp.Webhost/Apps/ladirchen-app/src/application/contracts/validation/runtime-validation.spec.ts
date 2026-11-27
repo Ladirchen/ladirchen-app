@@ -104,11 +104,30 @@ describe("family aggregate runtime validation", () => {
 
   it("requires backend-projected available and shared savings balances", () => {
     const savings = {
-      accountStatement: [],
-      accountStatementMemberIds: [],
+      accountStatement: [
+        {
+          amount: 9,
+          balanceChange: 9,
+          direction: "credit",
+          id: "statement-1",
+          memberId: "child-1",
+          occurredAtUtc: "2026-11-27T15:00:00Z",
+          resultingBalance: 18,
+          sourceTitle: "Mathematik",
+          transactionType: "task-reward",
+        },
+      ],
+      accountStatementMemberIds: ["child-1"],
       availableBalances: {},
       balances: {},
-      behaviorStatuses: {},
+      behaviorStatuses: {
+        "child-1": {
+          childId: "child-1",
+          level: "green",
+          tasksBlocked: false,
+          warningCount: 0,
+        },
+      },
       familyCurrencyCode: "CHF",
       goals: [],
       ladirchenPerCurrencyUnit: 1,
@@ -120,6 +139,7 @@ describe("family aggregate runtime validation", () => {
     };
 
     expect(isSavingsState(savings)).toBe(true);
+    expect(isSavingsState({ ...savings, accountStatement: undefined })).toBe(false);
     expect(isSavingsState({ ...savings, availableBalances: undefined })).toBe(false);
     expect(isSavingsState({ ...savings, sharedSavedBalances: undefined })).toBe(false);
   });
