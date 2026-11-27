@@ -100,7 +100,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           now
         );
         notifications.Add(RewardNotification(approvedContribution, reward.Total));
-        updatedFocus = SettleFocusBonus(
+        updatedFocus = SettleFocusCompletion(
           economy,
           loadedEconomy.Presentation,
           command,
@@ -701,7 +701,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     return id;
   }
 
-  private static ContributionPresentationState? SettleFocusBonus(
+  private static ContributionPresentationState? SettleFocusCompletion(
     FamilyEconomy economy,
     FamilyEconomyPresentationState presentation,
     FamilyCommand command,
@@ -726,7 +726,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       item => item.ContributionId == focusId && item.IsFocus
     ) ?? throw new FamilyCommandException("The linked focus does not exist.");
 
-    if (focusPresentation.FocusBonusPaid || focusPresentation.FocusCompletionBonus <= 0 || stars != 5)
+    if (focusPresentation.FocusCompleted)
     {
       return null;
     }
@@ -747,27 +747,41 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     var focus = economy.Contributions.Single(item => item.Id == focusId);
     var childId = focus.AssigneeId
       ?? throw new FamilyCommandException("The focus does not have a child.");
-    economy.GrantFocusCompletionBonus(
-      actorId,
-      childId,
-      new LadirchenAmount(focusPresentation.FocusCompletionBonus),
-      $"5-Sterne-Abschlussbonus: {focus.Title}",
-      new TransactionId($"{command.CommandId:N}-focus"),
-      now
-    );
+    var bonusPaid = focusPresentation.FocusBonusPaid;
+
+    if (!bonusPaid && focusPresentation.FocusCompletionBonus > 0 && stars == 5)
+    {
+      economy.GrantFocusCompletionBonus(
+        actorId,
+        childId,
+        new LadirchenAmount(focusPresentation.FocusCompletionBonus),
+        $"5-Sterne-Abschlussbonus: {focus.Title}",
+        new TransactionId($"{command.CommandId:N}-focus"),
+        now
+      );
+      bonusPaid = true;
+    }
+
+    var bodyDe = bonusPaid
+      ? $"Du hast den Fokus „{focus.Title}“ abgeschlossen und {focusPresentation.FocusCompletionBonus:0.##} Ladirchen Bonus erhalten."
+      : $"Du hast den Fokus „{focus.Title}“ erreicht. Stark gemacht!";
+    var bodyEn = bonusPaid
+      ? $"You completed “{focus.Title}” and received a {focusPresentation.FocusCompletionBonus:0.##} Ladirchen bonus."
+      : $"You reached the focus goal “{focus.Title}”. Great work!";
     notifications.Add(new FamilyUserNotification(
       childId,
       "Fokusziel erreicht",
-      $"Du hast den Fokus „{focus.Title}“ mit 5 Sternen abgeschlossen und {focusPresentation.FocusCompletionBonus:0.##} Ladirchen Bonus erhalten.",
+      bodyDe,
       "Focus goal reached",
-      $"You completed “{focus.Title}” with five stars and received a {focusPresentation.FocusCompletionBonus:0.##} Ladirchen bonus.",
+      bodyEn,
       "/#/contributions",
-      $"focus-bonus-{focusId.Value}"
+      $"focus-completed-{focusId.Value}"
     ));
 
     return focusPresentation with
     {
-      FocusBonusPaid = true
+      FocusBonusPaid = bonusPaid,
+      FocusCompleted = true
     };
   }
 

@@ -14,6 +14,7 @@ public sealed record FocusGoalReadModelItem(
   [property: JsonRequired] string AssigneeId,
   [property: JsonRequired] decimal CompletionBonus,
   [property: JsonRequired] bool BonusPaid,
+  [property: JsonRequired] bool Completed,
   [property: JsonRequired] int ProgressPercent,
   [property: JsonRequired] int RemainingPercent,
   [property: JsonRequired] IReadOnlyList<string> PreparationContributionIds

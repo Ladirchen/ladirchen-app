@@ -370,7 +370,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       id = "english-test-1",
       stars = 4,
     });
-    await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    var result = await ExecuteAsync(handler, _guardianId, "contributions.approve", new
     {
       id = "english-test-2",
       stars = 5,
@@ -381,8 +381,62 @@ public sealed class ProgressionAndContributionCommandHandlerTests
       .Single(item => item.ContributionId.Value == "english-test");
     await Assert.That(focusPresentation.IsFocus).IsTrue();
     await Assert.That(focusPresentation.FocusBonusPaid).IsTrue();
+    await Assert.That(focusPresentation.FocusCompleted).IsTrue();
     await Assert.That(economy.Ledger.Count(item => item.Reason.Contains("5-Sterne-Abschlussbonus")))
       .IsEqualTo(1);
+    var completionNotification = result.UserNotifications
+      .Single(item => item.Tag == "focus-completed-english-test");
+    await Assert.That(completionNotification.RecipientId).IsEqualTo(_childId);
+    await Assert.That(completionNotification.TitleDe).IsEqualTo("Fokusziel erreicht");
+  }
+
+  [Test]
+  public async Task CompletingFocusPreparationsClosesTheGoalAndNotifiesTheChildWithoutABonus()
+  {
+    var store = CreateStore();
+    var handler = store.CreateCommandHandler();
+
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus", new
+    {
+      id = "reading-goal",
+      title = "Read a chapter",
+      description = "Read every day",
+      icon = "📖",
+      period = "weekly",
+      startDate = "2026-10-12",
+      endDate = "2026-10-18",
+      assigneeId = _childId.Value,
+      completionBonus = 0,
+    });
+    await ExecuteAsync(handler, _guardianId, "contributions.add-focus-preparations", new
+    {
+      focusId = "reading-goal",
+      ids = new[] { "reading-goal-1" },
+      dates = new[] { "2026-10-12" },
+      minutes = 20,
+      reward = 1,
+    });
+    await ExecuteAsync(handler, _childId, "contributions.submit", new
+    {
+      id = "reading-goal-1",
+    });
+    var result = await ExecuteAsync(handler, _guardianId, "contributions.approve", new
+    {
+      id = "reading-goal-1",
+      stars = 4,
+    });
+
+    var focusPresentation = store.EconomyPresentation.Contributions
+      .Single(item => item.ContributionId.Value == "reading-goal");
+    await Assert.That(focusPresentation.FocusCompleted).IsTrue();
+    await Assert.That(focusPresentation.FocusBonusPaid).IsFalse();
+    await Assert.That(store.RequiredEconomy().Ledger.Any(
+      item => item.Reason.Contains("5-Sterne-Abschlussbonus")
+    )).IsFalse();
+    var completionNotification = result.UserNotifications
+      .Single(item => item.Tag == "focus-completed-reading-goal");
+    await Assert.That(completionNotification.RecipientId).IsEqualTo(_childId);
+    await Assert.That(completionNotification.BodyDe).Contains("Stark gemacht");
   }
 
   private static TestTypedAggregateStore CreateStore(params ContributionSeed[] contributions)
