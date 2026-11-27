@@ -121,6 +121,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   };
 
   return {
+    accountStatementOpen: false,
     currentTimeMilliseconds: Date.now(),
     isAuthenticated: false,
     sessionRestorationFailed: false,

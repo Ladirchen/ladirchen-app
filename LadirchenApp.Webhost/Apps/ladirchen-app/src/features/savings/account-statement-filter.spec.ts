@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import type { IanaTimeZone } from "@/domain/family/time-zone";
 import type { AccountStatementEntry } from "@/domain/savings/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
-import { filterAccountStatementEntries } from "./account-statement-filter";
+import { filterAccountStatementEntries, recentAccountStatementDateRange } from "./account-statement-filter";
 
 const timeZone = "Europe/Zurich" as IanaTimeZone;
 const childOne = "child-one" as FamilyMemberId;
@@ -40,5 +40,12 @@ describe("filterAccountStatementEntries", () => {
     expect(filterAccountStatementEntries(entries, { dateFrom: "2026-11-27", dateTo: "2026-11-27" }, timeZone)).toEqual(
       entries,
     );
+  });
+
+  it("defaults to the latest seven calendar days in the family time zone", () => {
+    expect(recentAccountStatementDateRange(new Date("2026-11-27T23:30:00Z"), timeZone)).toEqual({
+      dateFrom: "2026-11-22",
+      dateTo: "2026-11-28",
+    });
   });
 });

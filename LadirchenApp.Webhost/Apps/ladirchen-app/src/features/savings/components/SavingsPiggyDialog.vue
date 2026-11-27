@@ -74,6 +74,17 @@
             </MetricCard>
           </div>
         </template>
+        <v-btn
+          class="account-statement-button mt-3"
+          block
+          color="primary"
+          prepend-icon="i-mdi:receipt-text-clock-outline"
+          rounded="lg"
+          variant="tonal"
+          @click="openAccountStatement"
+        >
+          {{ t("savings.piggy.accountStatement.open") }}
+        </v-btn>
       </div>
 
       <v-card-text class="piggy-content pa-3">
@@ -436,6 +447,10 @@ const canDeposit = computed(() => hasTransferAmount.value && amount.value <= max
 const canGiftToMember = computed(
   () => Boolean(selectedMemberId.value) && hasTransferAmount.value && amount.value <= store.availableBalance,
 );
+function openAccountStatement() {
+  store.piggyBankOpen = false;
+  store.accountStatementOpen = true;
+}
 </script>
 
 <style lang="scss" scoped>
@@ -459,6 +474,10 @@ const canGiftToMember = computed(
   --uno: position-relative;
   flex: 0 0 auto;
   background: var(--lad-surface);
+}
+.account-statement-button {
+  font-weight: var(--lad-font-weight-heavy);
+  letter-spacing: 0;
 }
 .piggy-content {
   background: linear-gradient(180deg, var(--lad-surface), var(--lad-surface-soft));
