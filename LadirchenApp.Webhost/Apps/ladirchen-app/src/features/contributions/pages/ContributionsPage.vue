@@ -99,17 +99,30 @@
                 5 ★ · +{{ focus.completionBonus }} L
               </v-chip>
               <span v-else></span>
-              <v-btn
-                v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
-                color="primary"
-                prepend-icon="i-mdi:calendar-plus"
-                rounded="lg"
-                size="small"
-                variant="tonal"
-                @click="openPreparationDialog(focus.id)"
-              >
-                {{ t("contributions.focus.addPreparation") }}
-              </v-btn>
+              <div class="d-flex align-center ga-2">
+                <v-btn
+                  v-if="store.permissions.canManageContent && isOverdue(focus.endDate)"
+                  color="error"
+                  prepend-icon="i-mdi:archive-remove-outline"
+                  rounded="lg"
+                  size="small"
+                  variant="tonal"
+                  @click="requestOverdueResolution(focus)"
+                >
+                  {{ t("contributions.resolveOverdue.action") }}
+                </v-btn>
+                <v-btn
+                  v-if="store.permissions.canManageContent || store.permissions.canManageChildTasks"
+                  color="primary"
+                  prepend-icon="i-mdi:calendar-plus"
+                  rounded="lg"
+                  size="small"
+                  variant="tonal"
+                  @click="openPreparationDialog(focus.id)"
+                >
+                  {{ t("contributions.focus.addPreparation") }}
+                </v-btn>
+              </div>
             </div>
           </BrandedCard>
         </div>
@@ -587,6 +600,18 @@
                         {{ t("contributions.manage.edit") }}
                       </v-btn>
                       <v-btn
+                        v-if="contribution.status !== 'approved' && isOverdue(contribution.dueDate)"
+                        :aria-label="t('contributions.resolveOverdue.taskAria', { title: contribution.title })"
+                        color="error"
+                        prepend-icon="i-mdi:archive-remove-outline"
+                        rounded="lg"
+                        size="small"
+                        variant="tonal"
+                        @click="requestOverdueResolution(contribution)"
+                      >
+                        {{ t("contributions.resolveOverdue.action") }}
+                      </v-btn>
+                      <v-btn
                         :aria-label="t('contributions.manage.deleteAria', { title: contribution.title })"
                         color="error"
                         prepend-icon="i-mdi:delete-outline"
@@ -910,6 +935,31 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog
+      :model-value="Boolean(overdueResolutionTarget)"
+      max-width="410"
+      @update:model-value="overdueResolutionTarget = undefined"
+    >
+      <v-card v-if="overdueResolutionTarget" class="pa-5" rounded="xl">
+        <v-avatar class="mb-3" color="error" size="52" variant="tonal">
+          <v-icon icon="i-mdi:archive-remove-outline" />
+        </v-avatar>
+        <v-card-title class="pa-0">{{ t("contributions.resolveOverdue.title") }}</v-card-title>
+        <v-card-subtitle class="pa-0 mt-1 mb-4">{{ overdueResolutionTarget.title }}</v-card-subtitle>
+        <v-alert class="mb-4" color="warning" density="compact" variant="tonal">
+          {{ overdueResolutionWarning }}
+        </v-alert>
+        <div class="d-flex justify-end ga-2">
+          <v-btn rounded="lg" variant="text" @click="overdueResolutionTarget = undefined">
+            {{ t("common.cancel") }}
+          </v-btn>
+          <v-btn color="error" rounded="lg" variant="flat" @click="confirmOverdueResolution">
+            {{ t("contributions.resolveOverdue.confirm") }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="teamDialog" max-width="420">
       <v-card class="pa-5" rounded="xl">
         <div class="team-dialog-icon mb-3">🤝</div>
@@ -1028,6 +1078,7 @@ import { useI18n } from "vue-i18n";
 import { resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import type { AvatarAppearance } from "@/domain/avatar";
 import { dueDateParts } from "@/domain/contributions/due-date";
+import { calendarDateInTimeZone } from "@/domain/shared/zoned-calendar";
 import type { Contribution, FocusGoal, FocusPeriod, NewFocusGoal } from "@/domain/contributions/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import { isSchabiContributionId } from "@/domain/contributions/source";
@@ -1107,6 +1158,7 @@ const { locale, t } = useI18n();
 const focusDialog = ref(false);
 const preparationDialog = ref(false);
 const selectedFocusId = ref<ContributionId>();
+const overdueResolutionTarget = ref<{ id: ContributionId; title: string; isFocus: boolean }>();
 const preparationDates = ref([""]);
 const preparationMinutes = ref(30);
 const preparationReward = ref(1);
@@ -1158,6 +1210,14 @@ const visibleFocusGoals = computed(() =>
 const openFocusGoals = computed(() => visibleFocusGoals.value.filter((focus) => !focus.completed));
 const completedFocusGoals = computed(() => visibleFocusGoals.value.filter((focus) => focus.completed));
 const selectedFocus = computed(() => store.focusGoals.find((focus) => focus.id === selectedFocusId.value));
+const today = computed(() => calendarDateInTimeZone(new Date(store.currentTimeMilliseconds), store.familyTimeZone));
+const overdueResolutionWarning = computed(() =>
+  t(
+    overdueResolutionTarget.value?.isFocus
+      ? "contributions.resolveOverdue.focusWarning"
+      : "contributions.resolveOverdue.taskWarning",
+  ),
+);
 const focusPeriodOptions = computed(() => [
   { title: t("contributions.focus.periodDate"), value: "date" },
   { title: t("contributions.focus.periodWeekly"), value: "weekly" },
@@ -1310,6 +1370,26 @@ async function savePreparations() {
     reward: preparationReward.value,
   });
   preparationDialog.value = false;
+}
+function isOverdue(dueDate?: string): boolean {
+  return Boolean(dueDate && dueDate < today.value);
+}
+function requestOverdueResolution(item: Contribution | FocusGoal) {
+  overdueResolutionTarget.value = {
+    id: item.id,
+    title: item.title,
+    isFocus: "endDate" in item,
+  };
+}
+async function confirmOverdueResolution() {
+  const target = overdueResolutionTarget.value;
+
+  if (!target) {
+    return;
+  }
+
+  await store.resolveOverdueContribution(target.id);
+  overdueResolutionTarget.value = undefined;
 }
 function localIsoDate(date: Date): string {
   const year = date.getFullYear();

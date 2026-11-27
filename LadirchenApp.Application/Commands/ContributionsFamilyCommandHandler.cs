@@ -48,6 +48,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       ?? throw new FamilyCommandException("The family progression has not been initialized.");
     var payload = RequiredObject(command.Payload);
     var now = TimeProvider.GetUtcNow();
+    var localDate = family.Root.TimeZone.LocalDate(now);
     var operationId = OperationId(command);
     ContributionPresentationState? addedContribution = null;
     IReadOnlyList<ContributionPresentationState> addedContributions = [];
@@ -193,6 +194,17 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
         break;
       case "contributions.delete":
         economy.DeleteContribution(command.ActorId, ContributionId(payload), now);
+        break;
+      case "contributions.resolve-overdue":
+        family.Root.RequireAdministrator(command.ActorId);
+        ResolveOverdueContribution(
+          economy,
+          loadedEconomy.Presentation,
+          command.ActorId,
+          ContributionId(payload),
+          localDate,
+          now
+        );
         break;
       case "contributions.delete-promotion":
         economy.DeletePromotion(
@@ -357,6 +369,47 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       ContributionRecurrence(payload),
       IsVisibleToChildren: IsVisibleToChildren(payload)
     );
+  }
+
+  private static void ResolveOverdueContribution(
+    FamilyEconomy economy,
+    FamilyEconomyPresentationState presentation,
+    FamilyMemberId actorId,
+    ContributionId contributionId,
+    DateOnly localDate,
+    DateTimeOffset now
+  )
+  {
+    var contribution = economy.Contributions.SingleOrDefault(item => item.Id == contributionId)
+      ?? throw new FamilyCommandException("The contribution does not exist.");
+    var contributionPresentation = presentation.Contributions.SingleOrDefault(
+      item => item.ContributionId == contributionId
+    ) ?? throw new FamilyCommandException("Presentation data for the contribution is missing.");
+    var dueDate = contributionPresentation.IsFocus
+      ? contributionPresentation.FocusEndDate
+      : contributionPresentation.DueDate;
+
+    Require(
+      contribution.Status != ContributionStatus.Approved,
+      "An approved contribution cannot be resolved."
+    );
+    Require(dueDate is not null && dueDate < localDate, "Only overdue work can be resolved.");
+
+    if (contributionPresentation.IsFocus)
+    {
+      var openPreparationIds = presentation.Contributions
+        .Where(item => item.FocusId == contributionId.Value)
+        .Select(item => item.ContributionId)
+        .Where(id => economy.Contributions.Single(item => item.Id == id).Status != ContributionStatus.Approved)
+        .ToArray();
+
+      foreach (var preparationId in openPreparationIds)
+      {
+        economy.DeleteContribution(actorId, preparationId, now);
+      }
+    }
+
+    economy.DeleteContribution(actorId, contributionId, now);
   }
 
   private static ContributionPresentationState AddFocus(

@@ -1543,6 +1543,10 @@ export interface ContributionsDeleteCommandRequest extends ExecuteFamilyCommandR
   payload: IdFamilyCommandPayload;
 }
 
+export interface ContributionsResolveOverdueCommandRequest extends ExecuteFamilyCommandRequest {
+  payload: IdFamilyCommandPayload;
+}
+
 export interface ContributionsDeletePromotionCommandRequest extends ExecuteFamilyCommandRequest {
   payload: IdFamilyCommandPayload;
 }

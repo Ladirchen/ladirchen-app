@@ -40,6 +40,7 @@ export interface FamilyCommandPayloadMap {
   readonly "contributions.assign": Readonly<{ id: ContributionId; memberId?: FamilyMemberId }>;
   readonly "contributions.claim": IdFamilyCommandPayload<ContributionId>;
   readonly "contributions.delete": IdFamilyCommandPayload<ContributionId>;
+  readonly "contributions.resolve-overdue": IdFamilyCommandPayload<ContributionId>;
   readonly "contributions.delete-promotion": IdFamilyCommandPayload<PromotionId>;
   readonly "contributions.return": IdFamilyCommandPayload<ContributionId>;
   readonly "contributions.set-partners": Readonly<{

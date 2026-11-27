@@ -170,6 +170,15 @@ export const contributionsActions = {
       ),
     );
   },
+  async resolveOverdueContribution(this: FamilyWorldStoreContext, id: ContributionId) {
+    await executeBackendFamilyCommand(
+      this,
+      "contributions.resolve-overdue",
+      { id },
+      "notifications.save.contributions",
+      () => this.notify("notifications.contributions.resolvedOverdue"),
+    );
+  },
   async deletePromotion(this: FamilyWorldStoreContext, id: PromotionId) {
     const title = this.promotions.find((item) => item.id === id)?.title ?? "";
     await executeBackendFamilyCommand(
