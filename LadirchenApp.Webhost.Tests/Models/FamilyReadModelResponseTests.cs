@@ -79,6 +79,8 @@ public sealed class FamilyReadModelResponseTests
       "savings",
       7,
       new SavingsReadModelState(
+        [],
+        [],
         new Dictionary<string, decimal>(),
         new Dictionary<string, decimal>(),
         new Dictionary<string, ChildBehaviorStatusReadModel>(),
@@ -131,6 +133,9 @@ public sealed class FamilyReadModelResponseTests
       "canDissolve: boolean;",
       "canRejectCancellation: boolean;",
       "canRequestCancellation: boolean;",
+      "accountStatement: AccountStatementReadModelItem[];",
+      "accountStatementMemberIds: string[];",
+      "balanceChange: number;",
       "focusAchievements: FocusAchievementReadModelItem[];",
       "totalApprovedContributionCountByMember: { [key: string]: number; };",
       "totalEarnedByMember: { [key: string]: number; };",
@@ -221,6 +226,8 @@ public sealed class FamilyReadModelResponseTests
   private static SavingsReadModelState EmptySavings()
   {
     return new SavingsReadModelState(
+      [],
+      [],
       new Dictionary<string, decimal>(),
       new Dictionary<string, decimal>(),
       new Dictionary<string, ChildBehaviorStatusReadModel>(),

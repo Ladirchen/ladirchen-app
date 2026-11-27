@@ -706,6 +706,10 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<int>("SourceKind")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SourceTitle")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.HasKey("FamilyId", "EntryId");
 
                     b.HasIndex("FamilyId", "OperationId");

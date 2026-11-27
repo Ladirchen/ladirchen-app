@@ -117,7 +117,8 @@ public sealed partial class FamilyEconomy
         change.Goal.Id,
         $"Weekly interest {period.Year}-W{period.Week:D2}",
         now.ToUniversalTime(),
-        actor
+        actor,
+        change.Goal.Title
       ))
       .ToArray();
 

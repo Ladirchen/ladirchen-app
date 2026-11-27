@@ -107,7 +107,8 @@ public sealed partial class FamilyEconomy
         id,
         "Goal starter bonus",
         now.ToUniversalTime(),
-        actor
+        actor,
+        goal.Title
       )
     );
     AddDomainEvent(new GoalCreated(Id, id, owner, goal.StarterBonus, now));
@@ -180,8 +181,30 @@ public sealed partial class FamilyEconomy
 
     Record(
       operationId,
-      new LedgerEntry(operationId, actor, null, LedgerKind.Debit, value, id, "Saving deposit", now.ToUniversalTime()),
-      new LedgerEntry(operationId, actor, id, LedgerKind.GoalCredit, value, id, "Saving deposit", now.ToUniversalTime())
+      new LedgerEntry(
+        operationId,
+        actor,
+        null,
+        LedgerKind.Debit,
+        value,
+        id,
+        "Saving deposit",
+        now.ToUniversalTime(),
+        null,
+        goal.Title
+      ),
+      new LedgerEntry(
+        operationId,
+        actor,
+        id,
+        LedgerKind.GoalCredit,
+        value,
+        id,
+        "Saving deposit",
+        now.ToUniversalTime(),
+        null,
+        goal.Title
+      )
     );
     AddDomainEvent(new GoalChanged(Id, id, "Deposited", value, now));
 
@@ -226,7 +249,9 @@ public sealed partial class FamilyEconomy
         value,
         id,
         "Saving withdrawal",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       ),
       new LedgerEntry(
         operationId,
@@ -236,7 +261,9 @@ public sealed partial class FamilyEconomy
         value,
         id,
         "Saving withdrawal",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       )
     );
     AddDomainEvent(new GoalChanged(Id, id, "Withdrawn", value, now));
@@ -392,7 +419,9 @@ public sealed partial class FamilyEconomy
         saved,
         goal.Id,
         "Goal cancellation",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       ),
     };
 
@@ -408,7 +437,8 @@ public sealed partial class FamilyEconomy
         goal.Id,
         "Goal cancellation refund",
         now.ToUniversalTime(),
-        actor
+        actor,
+        goal.Title
       ));
     }
 
@@ -422,7 +452,9 @@ public sealed partial class FamilyEconomy
         forfeited,
         goal.Id,
         "Non-refundable goal credits forfeited",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       ));
     }
 
@@ -486,7 +518,8 @@ public sealed partial class FamilyEconomy
         id,
         "Guardian support",
         now.ToUniversalTime(),
-        actor
+        actor,
+        goal.Title
       )
     );
     AddDomainEvent(new GoalChanged(Id, id, "Supported", value, now));
@@ -533,7 +566,18 @@ public sealed partial class FamilyEconomy
     wallet.Set(wallet.Balance - value, wallet.Reserved);
     Record(
       operationId,
-      new LedgerEntry(operationId, actor, null, LedgerKind.Debit, value, id, "Gift to goal", now.ToUniversalTime()),
+      new LedgerEntry(
+        operationId,
+        actor,
+        null,
+        LedgerKind.Debit,
+        value,
+        id,
+        "Gift to goal",
+        now.ToUniversalTime(),
+        null,
+        goal.Title
+      ),
       new LedgerEntry(
         operationId,
         goal.Owner.MemberId ?? actor,
@@ -543,7 +587,8 @@ public sealed partial class FamilyEconomy
         id,
         "Gift to goal",
         now.ToUniversalTime(),
-        actor
+        actor,
+        goal.Title
       )
     );
     AddDomainEvent(new LadirchenTransferred(Id, actor, goal.Owner.MemberId, id, value, operationId, now));

@@ -178,7 +178,9 @@ public sealed partial class FamilyEconomy
         effectivePrice.Value,
         requestId,
         "Shop reservation",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        reward.Title
       )
     );
     AddDomainEvent(new ShopRewardRequested(Id, requestId, actor, rewardId, effectivePrice.Value, now));
@@ -295,7 +297,8 @@ public sealed partial class FamilyEconomy
         requestId,
         "Shop redemption",
         now.ToUniversalTime(),
-        actor
+        actor,
+        reward.Title
       )
     );
     AddDomainEvent(new ShopRewardDecided(Id, requestId, actor, RedemptionStatus.Approved, price, now));
@@ -337,6 +340,7 @@ public sealed partial class FamilyEconomy
     RequireAdministrator(actor);
     RequireNewOperation(operationId);
     var request = FindApprovedTimeReward(requestId);
+    var reward = FindShopReward(request.RewardId);
     request.CancelTimer(now);
     var wallet = WalletFor(request.RequesterId);
     wallet.Set(checked(wallet.Balance + request.Price.Value), wallet.Reserved);
@@ -351,7 +355,8 @@ public sealed partial class FamilyEconomy
         request.Id,
         "Cancelled time reward refund",
         now.ToUniversalTime(),
-        actor
+        actor,
+        reward.Title
       )
     );
   }
@@ -408,7 +413,8 @@ public sealed partial class FamilyEconomy
         request.Id,
         "Shop reservation released",
         now.ToUniversalTime(),
-        actor
+        actor,
+        reward.Title
       )
     );
     AddDomainEvent(new ShopRewardDecided(Id, request.Id, actor, decision, request.Price.Value, now));

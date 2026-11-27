@@ -77,7 +77,9 @@ public sealed partial class FamilyEconomy
         voucher.Amount,
         goal.Id,
         "Savings voucher redeemed",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       )
     );
     AddDomainEvent(new GoalChanged(Id, voucher.Id, "VoucherRedeemed", voucher.Amount, now));
@@ -129,7 +131,9 @@ public sealed partial class FamilyEconomy
         voucher.Amount,
         goal.Id,
         "Savings voucher converted",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       ),
     };
 
@@ -145,7 +149,8 @@ public sealed partial class FamilyEconomy
         goal.Id,
         "Savings voucher converted to Ladirchen",
         now.ToUniversalTime(),
-        actor
+        actor,
+        goal.Title
       ));
     }
 
@@ -159,7 +164,9 @@ public sealed partial class FamilyEconomy
         forfeited,
         goal.Id,
         "Non-refundable voucher credits forfeited",
-        now.ToUniversalTime()
+        now.ToUniversalTime(),
+        null,
+        goal.Title
       ));
     }
 

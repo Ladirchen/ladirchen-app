@@ -645,6 +645,10 @@ public sealed class TypedAggregateRepositoryTests
     await Assert.That(loadedEconomy.Presentation.ShopRewards).IsEmpty();
     await Assert.That(loadedEconomy.Presentation.SavingGoals).IsEmpty();
     await Assert.That(loadedEconomy.Presentation.GuardianGifts).IsEmpty();
+    await Assert.That(loadedEconomy.Root.Ledger.Single(entry => entry.Reason == "Contribution reward").SourceTitle)
+      .IsEqualTo("Help");
+    await Assert.That(loadedEconomy.Root.Ledger.Single(entry => entry.Reason == "Bonus").SourceTitle)
+      .IsEqualTo("Bonus");
   }
 
   private static DbContextOptions<LadirchenDbContext> CreateOptions(string connectionString)

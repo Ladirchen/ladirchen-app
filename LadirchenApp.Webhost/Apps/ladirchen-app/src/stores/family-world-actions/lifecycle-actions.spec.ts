@@ -98,6 +98,8 @@ function createBootstrapReadModel(
       readModelType: "savings",
       revision: 1,
       state: {
+        accountStatement: context.accountStatement,
+        accountStatementMemberIds: context.accountStatementMemberIds,
         availableBalances: context.availableBalances,
         balances: context.balances,
         behaviorStatuses: context.behaviorStatuses,
@@ -404,6 +406,8 @@ describe("refreshFamilyReadModel", () => {
       readModelType: "savings",
       revision: 5,
       state: {
+        accountStatement: [],
+        accountStatementMemberIds: [],
         availableBalances: initialData.balances,
         balances: initialData.balances,
         behaviorStatuses: {},

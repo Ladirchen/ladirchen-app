@@ -1,6 +1,7 @@
 import type { FamilyReadModel } from "./family-read-model-contract";
 import type {
   BehaviorNotice,
+  AccountStatementEntry,
   ChildBehaviorStatus,
   FamilyCurrency,
   GuardianGift,
@@ -12,6 +13,8 @@ import type { FamilyMemberId } from "@/domain/shared/identifiers";
 export const SAVINGS_READ_MODEL_TYPE = "savings";
 
 export interface SavingsState {
+  readonly accountStatement: ReadonlyArray<AccountStatementEntry>;
+  readonly accountStatementMemberIds: ReadonlyArray<FamilyMemberId>;
   readonly availableBalances: Readonly<Record<FamilyMemberId, number>>;
   readonly balances: Readonly<Record<FamilyMemberId, number>>;
   readonly behaviorStatuses: Readonly<Record<FamilyMemberId, ChildBehaviorStatus>>;

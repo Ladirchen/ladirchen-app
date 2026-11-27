@@ -41,6 +41,13 @@
       </button>
     </div>
 
+    <AccountStatement
+      :entries="store.accountStatement"
+      :member-ids="store.accountStatementMemberIds"
+      :members="store.members"
+      :time-zone="store.familyTimeZone"
+    />
+
     <BrandedCard class="settings-card pa-4" tone="profile">
       <strong>{{ t("profile.settings.title") }}</strong>
       <div class="setting-row mt-3">
@@ -229,6 +236,7 @@ import AvatarFigure from "@/shared/components/avatar/AvatarFigure.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 import PageHeader from "@/shared/components/ui/PageHeader.vue";
 import ApplicationVersion from "@/shared/components/ApplicationVersion.vue";
+import AccountStatement from "@/features/profile/components/AccountStatement.vue";
 import { createDefaultAvatarAppearance, resolveFamilyMemberAvatarAppearance } from "@/domain/avatar";
 import { useFamilyWorldStore } from "@/stores/family-world";
 import { setActiveLocale } from "@/plugins/i18n";

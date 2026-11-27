@@ -583,6 +583,7 @@ internal static class FamilyReadModelResponseMapper
   public static SavingsReadModelResponse Map(SavingsFamilyReadModelProjection source)
   {
     ArgumentNullException.ThrowIfNull(source);
+    var accountStatement = MapAccountStatement(source);
     var goalPresentations = source.Presentation.SavingGoals.ToDictionary(item => item.GoalId);
     var giftPresentations = source.Presentation.GuardianGifts.ToDictionary(item => item.GiftId);
     var goals = source.Economy.SavingsGoals
@@ -688,6 +689,8 @@ internal static class FamilyReadModelResponseMapper
       source.ReadModelType,
       source.Revision,
       new SavingsReadModelState(
+        accountStatement,
+        Identifiers(source.CalculatedState.VisibleStatementMemberIds.OrderBy(item => item.Value, StringComparer.Ordinal)),
         DecimalMap(source.CalculatedState.AvailableBalances),
         DecimalMap(source.CalculatedState.Balances),
         source.CalculatedState.BehaviorStatuses.ToDictionary(
@@ -723,6 +726,198 @@ internal static class FamilyReadModelResponseMapper
         vouchers
       )
     );
+  }
+
+  private static IReadOnlyList<AccountStatementReadModelItem> MapAccountStatement(
+    SavingsFamilyReadModelProjection source
+  )
+  {
+    var visibleMemberIds = source.CalculatedState.VisibleStatementMemberIds;
+    var walletBalances = source.Economy.Wallets.ToDictionary(wallet => wallet.Id, wallet => wallet.Balance);
+    var groupsByMember = source.Economy.Ledger
+      .Where(entry => visibleMemberIds.Contains(entry.MemberId))
+      .GroupBy(entry => entry.MemberId)
+      .ToDictionary(group => group.Key, group => group
+        .GroupBy(entry => entry.OperationId)
+        .Select(operation => operation.OrderBy(entry => entry.EntryId).ToArray())
+        .OrderBy(operation => operation[0].OccurredAtUtc)
+        .ThenBy(operation => operation[0].EntryId)
+        .ToArray());
+    var result = new List<AccountStatementReadModelItem>();
+
+    foreach (var memberId in visibleMemberIds.OrderBy(item => item.Value, StringComparer.Ordinal))
+    {
+      var operations = groupsByMember.GetValueOrDefault(memberId, []);
+      var walletDelta = operations.Sum(BalanceChange);
+      var runningBalance = walletBalances.GetValueOrDefault(memberId) - walletDelta;
+
+      foreach (var operation in operations)
+      {
+        var balanceChange = BalanceChange(operation);
+        var goalChange = GoalChange(operation);
+        var amount = balanceChange != 0
+          ? Math.Abs(balanceChange)
+          : goalChange != 0
+            ? Math.Abs(goalChange)
+            : operation.Max(entry => entry.Amount);
+        runningBalance += balanceChange;
+        var representative = operation[0];
+        result.Add(new AccountStatementReadModelItem(
+          representative.EntryId.ToString("N", CultureInfo.InvariantCulture),
+          memberId.Value,
+          FormatInstant(representative.OccurredAtUtc)!,
+          amount,
+          balanceChange,
+          runningBalance,
+          Direction(balanceChange, goalChange),
+          TransactionType(operation),
+          SourceTitle(source.Economy, operation),
+          CounterpartyMemberId(operation)?.Value
+        ));
+      }
+    }
+
+    return result
+      .OrderByDescending(item => item.OccurredAtUtc, StringComparer.Ordinal)
+      .ThenByDescending(item => item.Id, StringComparer.Ordinal)
+      .ToArray();
+  }
+
+  private static decimal BalanceChange(IReadOnlyList<LedgerEntry> entries)
+  {
+    return entries.Sum(entry => entry.Kind switch
+    {
+      LedgerKind.Credit => entry.Amount,
+      LedgerKind.Debit or LedgerKind.Capture or LedgerKind.BehaviorWarning => -entry.Amount,
+      _ => 0,
+    });
+  }
+
+  private static decimal GoalChange(IReadOnlyList<LedgerEntry> entries)
+  {
+    return entries.Sum(entry => entry.Kind switch
+    {
+      LedgerKind.GoalCredit => entry.Amount,
+      LedgerKind.GoalDebit or LedgerKind.BonusForfeited => -entry.Amount,
+      _ => 0,
+    });
+  }
+
+  private static string Direction(decimal balanceChange, decimal goalChange)
+  {
+    if (balanceChange > 0)
+    {
+      return "credit";
+    }
+
+    if (balanceChange < 0)
+    {
+      return "debit";
+    }
+
+    if (goalChange > 0)
+    {
+      return "goal-credit";
+    }
+
+    if (goalChange < 0)
+    {
+      return "goal-debit";
+    }
+
+    return "neutral";
+  }
+
+  private static string TransactionType(IReadOnlyList<LedgerEntry> entries)
+  {
+    var reasons = entries.Select(entry => entry.Reason).ToHashSet(StringComparer.Ordinal);
+
+    if (reasons.Contains("Contribution reward"))
+    {
+      return "task-reward";
+    }
+
+    if (reasons.Any(reason => reason.StartsWith("Weekly interest ", StringComparison.Ordinal)))
+    {
+      return "interest";
+    }
+
+    return reasons.FirstOrDefault() switch
+    {
+      "Saving deposit" => "saving-deposit",
+      "Saving withdrawal" => "saving-withdrawal",
+      "Goal starter bonus" => "goal-starter-bonus",
+      "Guardian support" => "guardian-support",
+      "Gift to goal" => "gift-to-goal",
+      "Gift to family member" or "Gift from family member" => "member-gift",
+      "Goal cancellation" or "Goal cancellation refund" or "Non-refundable goal credits forfeited"
+        => "goal-cancellation",
+      "Savings voucher redeemed" => "voucher-redemption",
+      "Savings voucher converted" or "Savings voucher converted to Ladirchen"
+        or "Non-refundable voucher credits forfeited" => "voucher-conversion",
+      "Shop reservation" => "shop-reservation",
+      "Shop reservation released" => "shop-release",
+      "Shop redemption" => "shop-purchase",
+      "Cancelled time reward refund" => "shop-refund",
+      "House content purchase" => "house-purchase",
+      "Behavior warning deduction" => "behavior-warning",
+      "Behavior status reset" => "behavior-reset",
+      "Behavior notice acknowledged" => "behavior-acknowledgement",
+      _ when entries.Any(entry => entry.InitiatorId is not null && entry.InitiatorId != entry.MemberId)
+        => "manual-adjustment",
+      _ => "adjustment",
+    };
+  }
+
+  private static FamilyMemberId? CounterpartyMemberId(IReadOnlyList<LedgerEntry> entries)
+  {
+    var representative = entries[0];
+
+    if (representative.Reason == "Gift to family member"
+      || representative.Reason == "Gift from family member")
+    {
+      return representative.SourceId as FamilyMemberId;
+    }
+
+    return entries
+      .Select(entry => entry.InitiatorId)
+      .FirstOrDefault(memberId => memberId is not null && memberId != representative.MemberId);
+  }
+
+  private static string? SourceTitle(FamilyEconomy economy, IReadOnlyList<LedgerEntry> entries)
+  {
+    var storedTitle = entries
+      .Select(entry => entry.SourceTitle)
+      .FirstOrDefault(title => !string.IsNullOrWhiteSpace(title));
+
+    if (storedTitle is not null)
+    {
+      return storedTitle;
+    }
+
+    foreach (var entry in entries)
+    {
+      if (entry.SourceId is ContributionId contributionId)
+      {
+        return economy.Contributions.FirstOrDefault(item => item.Id == contributionId)?.Title;
+      }
+
+      if (entry.SourceId is SavingGoalId savingGoalId)
+      {
+        return economy.SavingsGoals.FirstOrDefault(item => item.Id == savingGoalId)?.Title;
+      }
+
+      if (entry.SourceId is RedemptionRequestId requestId)
+      {
+        var rewardId = economy.RedemptionRequests.FirstOrDefault(item => item.Id == requestId)?.RewardId;
+
+        return rewardId is null
+          ? null
+          : economy.ShopRewards.FirstOrDefault(item => item.Id == rewardId)?.Title;
+      }
+    }
+
+    return null;
   }
 
   private static T Required<TKey, T>(

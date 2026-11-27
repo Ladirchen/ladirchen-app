@@ -28,6 +28,15 @@ internal static class SavingsReadModelProjector
       );
     }
 
+    var visibleStatementMemberIds = viewer.Role == MemberRole.Child
+      ? new HashSet<FamilyMemberId> { viewer.Id }
+      : viewer.Access != GuardianAccess.External
+        ? activeMembers
+          .Select(member => member.Id)
+          .Where(state.StoredBalanceMemberIds.Contains)
+          .ToHashSet()
+        : new HashSet<FamilyMemberId>();
+
     var visibleGoals = state.Economy.GoalsFor(viewerId);
     var allVouchers = state.Economy.SavingsVouchers.ToDictionary(voucher => voucher.Id);
     var balances = state.Economy.Wallets
@@ -71,6 +80,7 @@ internal static class SavingsReadModelProjector
       voucherProjections,
       sharedSavedBalances,
       visibleBalanceMemberIds,
+      visibleStatementMemberIds,
       behaviorStatuses,
       pendingBehaviorNotices
     );

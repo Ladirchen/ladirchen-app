@@ -11,6 +11,7 @@ import type { FamilyMember, FamilyPet, SubscriptionTier, ViewerRole } from "@/do
 import { DEFAULT_FAMILY_TIME_ZONE } from "@/domain/family/time-zone";
 import type {
   BehaviorNotice,
+  AccountStatementEntry,
   ChildBehaviorStatus,
   FamilyCurrency,
   GuardianGift,
@@ -72,6 +73,8 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const pendingGuardianGifts: GuardianGift[] = [];
   const behaviorStatuses: Partial<Record<FamilyMemberId, ChildBehaviorStatus>> = {};
   const pendingBehaviorNotices: BehaviorNotice[] = [];
+  const accountStatement: AccountStatementEntry[] = [];
+  const accountStatementMemberIds: FamilyMemberId[] = [];
   const behaviorNoticeRevealInProgress = false;
   const behaviorNoticeAnimation: {
     visible: boolean;
@@ -155,6 +158,8 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     pendingGuardianGifts,
     behaviorStatuses,
     pendingBehaviorNotices,
+    accountStatement,
+    accountStatementMemberIds,
     behaviorNoticeRevealInProgress,
     behaviorNoticeAnimation,
     savingsVouchers,

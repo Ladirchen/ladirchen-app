@@ -9,6 +9,7 @@ using LadirchenApp.Domain.Economy;
 using LadirchenApp.Domain.Family;
 using LadirchenApp.Domain.House;
 using LadirchenApp.Domain.Shared;
+using LadirchenApp.Webhost.Models.ReadModels;
 using LadirchenApp.Webhost.Tests.Application.Commands;
 
 namespace LadirchenApp.Webhost.Tests.Application.Queries;
@@ -80,6 +81,27 @@ public sealed class SavingsQueryHandlerTests
     await Assert.That(limits.CanRequestCancellation).IsFalse();
     await Assert.That(limits.CanApproveCancellation).IsTrue();
     await Assert.That(limits.CanRejectCancellation).IsTrue();
+  }
+
+  [Test]
+  public async Task AccountStatementsRespectViewerVisibilityAndReconcileTheWalletBalance()
+  {
+    var store = CreateStore();
+    var childProjection = await QueryAsync(store, _childId);
+    var guardianProjection = await QueryAsync(store, _guardianId);
+    var childState = FamilyReadModelResponseMapper.Map(childProjection).State;
+    var guardianState = FamilyReadModelResponseMapper.Map(guardianProjection).State;
+    var entry = childState.AccountStatement.Single();
+
+    await Assert.That(childState.AccountStatementMemberIds).IsEquivalentTo([_childId.Value]);
+    await Assert.That(entry.MemberId).IsEqualTo(_childId.Value);
+    await Assert.That(entry.SourceTitle).IsEqualTo("Completed basic");
+    await Assert.That(entry.TransactionType).IsEqualTo("task-reward");
+    await Assert.That(entry.BalanceChange).IsEqualTo(5);
+    await Assert.That(entry.ResultingBalance).IsEqualTo(100);
+    await Assert.That(guardianState.AccountStatementMemberIds)
+      .IsEquivalentTo([_guardianId.Value, _childId.Value]);
+    await Assert.That(guardianState.AccountStatement).HasSingleItem();
   }
 
   [Test]
@@ -155,6 +177,7 @@ public sealed class SavingsQueryHandlerTests
       []
     ));
     var contributionId = new ContributionId("completed-basic");
+    var contributionRewardOperationId = new TransactionId("completed-basic-reward");
     var goals = Goals();
     var rewardId = new ShopRewardId("reserved-reward");
     var economy = FamilyEconomy.Reconstitute(family, new FamilyEconomyState(
@@ -181,8 +204,20 @@ public sealed class SavingsQueryHandlerTests
       ],
       [contributionId],
       [],
-      [],
-      [],
+      [contributionRewardOperationId],
+      [new LedgerEntryState(
+        Guid.Parse("52da0618-b8ae-4a41-8777-aaecfa2eff2b"),
+        contributionRewardOperationId,
+        _childId,
+        null,
+        LedgerKind.Credit,
+        5,
+        new LedgerSourceState(LedgerSourceKind.Contribution, contributionId.Value),
+        "Contribution reward",
+        new DateTimeOffset(2026, 9, 1, 10, 0, 0, TimeSpan.Zero),
+        _guardianId,
+        "Completed basic"
+      )],
       goals,
       [
         new SavingsVoucherState(
