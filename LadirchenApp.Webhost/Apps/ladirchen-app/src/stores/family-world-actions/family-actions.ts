@@ -22,6 +22,7 @@ export const familyActions = {
     } finally {
       await this.$familyWorld.familyAggregateUpdates.disconnect();
       this.isAuthenticated = false;
+      this.accountStatementOpen = false;
       this.familySetupOpen = false;
       this.piggyBankOpen = false;
       this.rewardAnimation.visible = false;

@@ -9,6 +9,7 @@
   <BehaviorNoticeDialog />
   <GoalCancellationDialog />
   <AsyncFamilySetupDialog v-if="store.familySetupOpen" />
+  <AsyncAccountStatementDialog v-if="store.accountStatementOpen" />
   <AsyncSavingsPiggyDialog v-if="store.piggyBankOpen" />
 </template>
 
@@ -23,6 +24,9 @@ import GuardianGiftDialog from "./GuardianGiftDialog.vue";
 import HouseLevelUpDialog from "./HouseLevelUpDialog.vue";
 
 const AsyncFamilySetupDialog = defineAsyncComponent(() => import("@/features/family/components/FamilySetupDialog.vue"));
+const AsyncAccountStatementDialog = defineAsyncComponent(
+  () => import("@/features/savings/components/AccountStatementDialog.vue"),
+);
 const AsyncSavingsPiggyDialog = defineAsyncComponent(
   () => import("@/features/savings/components/SavingsPiggyDialog.vue"),
 );

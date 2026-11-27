@@ -1,5 +1,5 @@
 <template>
-  <BrandedCard class="account-statement pa-4 mt-5" tone="profile">
+  <BrandedCard class="account-statement pa-4" tone="profile">
     <div class="d-flex align-start justify-space-between ga-3">
       <div>
         <p class="eyebrow mb-1">{{ t("profile.accountStatement.eyebrow") }}</p>
@@ -9,6 +9,17 @@
       <v-avatar color="primary" size="44" variant="tonal">
         <v-icon icon="i-mdi:receipt-text-clock-outline" />
       </v-avatar>
+    </div>
+
+    <div class="current-balance mt-4">
+      <span class="current-balance-icon" aria-hidden="true">
+        <v-icon icon="i-mdi:wallet-outline" />
+      </span>
+      <span>
+        <small>{{ t("profile.accountStatement.currentBalance") }}</small>
+        <strong>{{ selectedMemberLabel }}</strong>
+      </span>
+      <LadirchenAmount :value="currentBalance" />
     </div>
 
     <div class="statement-filters mt-4">
@@ -91,13 +102,18 @@ import type { FamilyMember } from "@/domain/family/types";
 import type { IanaTimeZone } from "@/domain/family/time-zone";
 import type { AccountStatementEntry, AccountStatementTransactionType } from "@/domain/savings/types";
 import type { FamilyMemberId } from "@/domain/shared/identifiers";
-import { filterAccountStatementEntries } from "@/features/profile/account-statement-filter";
+import {
+  filterAccountStatementEntries,
+  recentAccountStatementDateRange,
+} from "@/features/savings/account-statement-filter";
+import LadirchenAmount from "@/shared/components/LadirchenAmount.vue";
 import BrandedCard from "@/shared/components/ui/BrandedCard.vue";
 
 const ALL_MEMBERS = "all";
 const ALL_TYPES = "all";
 
 export interface Props {
+  balances: Readonly<Partial<Record<FamilyMemberId, number>>>;
   entries: ReadonlyArray<AccountStatementEntry>;
   memberIds: ReadonlyArray<FamilyMemberId>;
   members: ReadonlyArray<FamilyMember>;
@@ -108,8 +124,9 @@ const props = defineProps<Props>();
 const { locale, t } = useI18n();
 const selectedMemberId = ref<string>(props.memberIds.length > 1 ? ALL_MEMBERS : (props.memberIds[0] ?? ALL_MEMBERS));
 const selectedTransactionType = ref<string>(ALL_TYPES);
-const dateFrom = ref("");
-const dateTo = ref("");
+const initialDateRange = recentAccountStatementDateRange(new Date(), props.timeZone);
+const dateFrom = ref(initialDateRange.dateFrom);
+const dateTo = ref(initialDateRange.dateTo);
 const memberOptions = computed(() => {
   const options = props.memberIds.map((memberId) => ({
     title: displayNameFor(memberId),
@@ -127,6 +144,17 @@ const transactionTypeOptions = computed(() => {
     { title: t("profile.accountStatement.filters.allTypes"), value: ALL_TYPES },
     ...types.map((type) => ({ title: typeLabel(type), value: type })),
   ];
+});
+const selectedMemberLabel = computed(() =>
+  selectedMemberId.value === ALL_MEMBERS
+    ? t("profile.accountStatement.filters.allPeople")
+    : displayNameFor(selectedMemberId.value as FamilyMemberId),
+);
+const currentBalance = computed(() => {
+  const visibleMemberIds =
+    selectedMemberId.value === ALL_MEMBERS ? props.memberIds : [selectedMemberId.value as FamilyMemberId];
+
+  return visibleMemberIds.reduce((total, memberId) => total + (props.balances[memberId] ?? 0), 0);
 });
 const filteredEntries = computed(() =>
   filterAccountStatementEntries(
@@ -237,6 +265,43 @@ watch(
 <style scoped>
 .account-statement h2 {
   font-size: 1.2rem;
+}
+
+.current-balance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 13px;
+  color: var(--lad-color-primary-deep);
+  border: 1px solid color-mix(in srgb, var(--lad-color-primary-muted) 25%, transparent);
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--lad-color-primary-soft), var(--lad-surface-raised));
+}
+
+.current-balance-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: var(--lad-text-inverse);
+  border-radius: 14px;
+  background: var(--lad-color-primary);
+}
+
+.current-balance small,
+.current-balance strong {
+  display: block;
+}
+
+.current-balance small {
+  color: var(--lad-muted);
+  font-size: 0.7rem;
+}
+
+.current-balance > :deep(.ladirchen-amount) {
+  font-size: 1.2rem;
+  font-weight: var(--lad-font-weight-black);
 }
 
 .statement-filters {
