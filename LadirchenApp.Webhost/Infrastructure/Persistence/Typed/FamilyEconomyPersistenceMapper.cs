@@ -120,6 +120,24 @@ internal static partial class FamilyEconomyPersistenceMapper
           new GuardianGiftId(item.GiftId),
           item.SenderName,
           item.GoalTitle
+        )),
+      (JsonSerializer.Deserialize<FocusAchievementPersistenceState[]>(
+        entity.FocusAchievementsJson,
+        _jsonOptions
+      ) ?? [])
+        .OrderBy(item => item.AchievedAt)
+        .Select(item => new FocusAchievementPresentationState(
+          new ContributionId(item.FocusId),
+          new FamilyMemberId(item.ChildId),
+          item.Title,
+          item.Description,
+          item.Icon,
+          item.StartDate,
+          item.EndDate,
+          item.AchievedAt,
+          item.PreparationCount,
+          item.EarnedLadirchen,
+          item.EarnedEnergy
         ))
     );
   }
@@ -151,6 +169,22 @@ internal static partial class FamilyEconomyPersistenceMapper
     entity.PerfectRatingBonusPercent = state.ContributionSettings.PerfectRatingBonus.Value;
     entity.ShopTaskGateOverrideMemberIdsJson = JsonSerializer.Serialize(
       state.ShopTaskGateOverrideMemberIds.Select(item => item.Value),
+      _jsonOptions
+    );
+    entity.FocusAchievementsJson = JsonSerializer.Serialize(
+      presentation.FocusAchievements.Select(item => new FocusAchievementPersistenceState(
+        item.FocusId.Value,
+        item.ChildId.Value,
+        item.Title,
+        item.Description,
+        item.Icon,
+        item.StartDate,
+        item.EndDate,
+        item.AchievedAt,
+        item.PreparationCount,
+        item.EarnedLadirchen,
+        item.EarnedEnergy
+      )),
       _jsonOptions
     );
     ClearCollections(entity);

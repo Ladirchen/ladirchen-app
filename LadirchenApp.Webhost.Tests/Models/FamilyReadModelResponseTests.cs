@@ -131,6 +131,9 @@ public sealed class FamilyReadModelResponseTests
       "canDissolve: boolean;",
       "canRejectCancellation: boolean;",
       "canRequestCancellation: boolean;",
+      "focusAchievements: FocusAchievementReadModelItem[];",
+      "totalApprovedContributionCountByMember: { [key: string]: number; };",
+      "totalEarnedByMember: { [key: string]: number; };",
     };
 
     foreach (var stateProperty in expectedStateProperties)
@@ -162,7 +165,11 @@ public sealed class FamilyReadModelResponseTests
       new Dictionary<string, decimal>(),
       15,
       [],
-      new Dictionary<string, decimal>()
+      new Dictionary<string, decimal>(),
+      [],
+      [],
+      new Dictionary<string, decimal>(),
+      new Dictionary<string, int>()
     );
   }
 

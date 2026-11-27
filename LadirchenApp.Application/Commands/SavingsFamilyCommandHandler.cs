@@ -632,7 +632,8 @@ internal sealed class SavingsFamilyCommandHandler : TypedFamilyCommandAreaHandle
       presentation.Contributions,
       goals,
       presentation.ShopRewards,
-      gifts
+      gifts,
+      presentation.FocusAchievements
     );
   }
 

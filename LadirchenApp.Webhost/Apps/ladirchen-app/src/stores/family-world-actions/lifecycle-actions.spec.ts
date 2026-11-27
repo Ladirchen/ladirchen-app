@@ -44,11 +44,14 @@ function createBootstrapReadModel(
       revision: 1,
       state: {
         contributions,
+        focusAchievements: context.focusAchievements,
         currentWeekApprovedContributionCountByMember: context.currentWeekApprovedContributionCountByMember,
         currentWeekEarnedByMember: context.currentWeekEarnedByMember,
         perfectRatingBonusPercent: context.perfectRatingBonusPercent,
         promotions: context.promotions,
         todayEarnedByMember: context.todayEarnedByMember,
+        totalApprovedContributionCountByMember: context.totalApprovedContributionCountByMember,
+        totalEarnedByMember: context.totalEarnedByMember,
       },
     },
     familyProfile: {
@@ -375,11 +378,14 @@ describe("refreshFamilyReadModel", () => {
       revision: 4,
       state: {
         contributions,
+        focusAchievements: [],
         currentWeekApprovedContributionCountByMember: {},
         currentWeekEarnedByMember: {},
         perfectRatingBonusPercent: 5,
         promotions: [],
         todayEarnedByMember: {},
+        totalApprovedContributionCountByMember: {},
+        totalEarnedByMember: {},
       },
     });
     const context = createFamilyWorldTestStore(dependencies, { create: createFamilyWorldInitialData });

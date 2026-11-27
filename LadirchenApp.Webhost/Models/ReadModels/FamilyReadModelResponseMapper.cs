@@ -138,6 +138,70 @@ internal static class FamilyReadModelResponseMapper
           preparations.Select(item => item.Id.Value).ToArray()
         );
       }).ToArray();
+    var persistedAchievementIds = source.Presentation.FocusAchievements
+      .Select(item => item.FocusId)
+      .ToHashSet();
+    var derivedAchievements = source.Economy.Contributions
+      .Where(focus => presentations.GetValueOrDefault(focus.Id)?.IsFocus == true)
+      .Where(focus => !persistedAchievementIds.Contains(focus.Id))
+      .Select(focus =>
+      {
+        var focusPresentation = Required(presentations, focus.Id, "The focus presentation is missing.");
+        var preparations = source.Economy.Contributions
+          .Where(item => presentations.GetValueOrDefault(item.Id)?.FocusId == focus.Id.Value)
+          .ToArray();
+        var completedPreparations = preparations
+          .Where(item => item.Status == ContributionStatus.Approved)
+          .ToArray();
+
+        if (preparations.Length == 0 || completedPreparations.Length != preparations.Length)
+        {
+          return null;
+        }
+
+        return new FocusAchievementPresentationState(
+          focus.Id,
+          focus.AssigneeId ?? throw new InvalidOperationException("A focus requires an assignee."),
+          focus.Title,
+          focusPresentation.Description,
+          focusPresentation.Icon,
+          focusPresentation.FocusStartDate
+            ?? throw new InvalidOperationException("A focus requires a start date."),
+          focusPresentation.FocusEndDate
+            ?? throw new InvalidOperationException("A focus requires an end date."),
+          completedPreparations
+            .Select(item => item.ApprovedAt)
+            .OfType<DateTimeOffset>()
+            .DefaultIfEmpty(new DateTimeOffset(
+              (focusPresentation.FocusEndDate
+                ?? throw new InvalidOperationException("A focus requires an end date."))
+                .ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+            ))
+            .Max(),
+          completedPreparations.Length,
+          completedPreparations.Sum(item => item.EarnedReward?.Total ?? item.Reward.Value),
+          completedPreparations.Sum(item => item.Energy.Value)
+        );
+      })
+      .OfType<FocusAchievementPresentationState>();
+    var focusAchievements = source.Presentation.FocusAchievements
+      .Concat(derivedAchievements)
+      .Where(item => source.ViewerRole != MemberRole.Child || item.ChildId == source.ViewerId)
+      .OrderByDescending(item => item.AchievedAt)
+      .Select(item => new FocusAchievementReadModelItem(
+        item.FocusId.Value,
+        item.ChildId.Value,
+        item.Title,
+        item.Description,
+        item.Icon,
+        item.StartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        item.EndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        FormatInstant(item.AchievedAt),
+        item.PreparationCount,
+        item.EarnedLadirchen,
+        item.EarnedEnergy
+      ))
+      .ToArray();
     var promotions = source.Economy.Promotions
       .Where(promotion => visibleContributionIds.Contains(promotion.ContributionId))
       .Select(promotion =>
@@ -169,7 +233,10 @@ internal static class FamilyReadModelResponseMapper
         source.CalculatedState.PerfectRatingBonusPercent,
         promotions,
         DecimalMap(source.CalculatedState.TodayEarnedByMember),
-        focusGoals
+        focusGoals,
+        focusAchievements,
+        DecimalMap(source.CalculatedState.TotalEarnedByMember),
+        IntegerMap(source.CalculatedState.TotalApprovedContributionCountByMember)
       )
     );
   }

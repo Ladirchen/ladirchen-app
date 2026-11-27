@@ -50,6 +50,8 @@ export type FamilyWorldStoreContext = FamilyWorldState & {
   savingsInterestRateFor: (memberId: FamilyMemberId) => number;
   signInToFamily: (familyId: FamilyId, memberId: FamilyMemberId) => Promise<boolean>;
   todayEarnedFor: (memberId: FamilyMemberId) => number;
+  totalApprovedContributionCountFor: (memberId: FamilyMemberId) => number;
+  totalEarnedFor: (memberId: FamilyMemberId) => number;
   withdrawableGoalBalance: (goal?: SavingGoal) => number;
   $reset: () => void;
 };

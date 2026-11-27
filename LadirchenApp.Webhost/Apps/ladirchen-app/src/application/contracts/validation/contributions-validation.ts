@@ -27,6 +27,7 @@ import type {
   ContributionKind,
   ContributionRecurrence,
   ContributionStatus,
+  FocusAchievement,
   Promotion,
   FocusGoal,
   WorldEffect,
@@ -140,6 +141,25 @@ function isFocusGoal(value: unknown): value is FocusGoal {
     new Set(value.preparationContributionIds).size === value.preparationContributionIds.length
   );
 }
+function isFocusAchievement(value: unknown): value is FocusAchievement {
+  return (
+    isRecord(value) &&
+    isDomainId(value.id) &&
+    isFamilyMemberId(value.childId) &&
+    isNonEmptyString(value.title) &&
+    typeof value.description === "string" &&
+    isNonEmptyString(value.icon) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(value.startDate)) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(value.endDate)) &&
+    isIsoDateTime(value.achievedAt) &&
+    isInteger(value.preparationCount) &&
+    value.preparationCount >= 0 &&
+    isFiniteNumber(value.earnedLadirchen) &&
+    value.earnedLadirchen >= 0 &&
+    isFiniteNumber(value.earnedEnergy) &&
+    value.earnedEnergy >= 0
+  );
+}
 function isNonNegativeAmountMap(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -159,6 +179,8 @@ export function isContributionsState(value: unknown): value is ContributionsStat
     !isRecord(value) ||
     !isArrayOf(value.contributions, isContribution) ||
     !hasUniqueIds(value.contributions) ||
+    !isArrayOf(value.focusAchievements, isFocusAchievement) ||
+    !hasUniqueIds(value.focusAchievements) ||
     (value.focusGoals !== undefined &&
       (!isArrayOf(value.focusGoals, isFocusGoal) || !hasUniqueIds(value.focusGoals))) ||
     !isNonNegativeIntegerMap(value.currentWeekApprovedContributionCountByMember) ||
@@ -168,7 +190,9 @@ export function isContributionsState(value: unknown): value is ContributionsStat
     value.perfectRatingBonusPercent > 100 ||
     !isArrayOf(value.promotions, isPromotion) ||
     !hasUniqueIds(value.promotions) ||
-    !isNonNegativeAmountMap(value.todayEarnedByMember)
+    !isNonNegativeAmountMap(value.todayEarnedByMember) ||
+    !isNonNegativeIntegerMap(value.totalApprovedContributionCountByMember) ||
+    !isNonNegativeAmountMap(value.totalEarnedByMember)
   ) {
     return false;
   }

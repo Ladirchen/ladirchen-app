@@ -96,6 +96,20 @@ export interface FocusGoal {
   preparationContributionIds: ContributionId[];
 }
 
+export interface FocusAchievement {
+  id: ContributionId;
+  childId: FamilyMemberId;
+  title: string;
+  description: string;
+  icon: string;
+  startDate: string;
+  endDate: string;
+  achievedAt: string;
+  preparationCount: number;
+  earnedLadirchen: number;
+  earnedEnergy: number;
+}
+
 export interface NewFocusGoal {
   title: string;
   description: string;

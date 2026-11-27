@@ -2062,8 +2062,11 @@ export interface ContributionsReadModelState {
   currentWeekEarnedByMember: { [key: string]: number };
   perfectRatingBonusPercent?: number | null;
   promotions: ContributionPromotionReadModelItem[];
-  todayEarnedByMember?: { [key: string]: number } | null;
-  focusGoals?: FocusGoalReadModelItem[] | null;
+  todayEarnedByMember: { [key: string]: number };
+  focusGoals: FocusGoalReadModelItem[];
+  focusAchievements: FocusAchievementReadModelItem[];
+  totalEarnedByMember: { [key: string]: number };
+  totalApprovedContributionCountByMember: { [key: string]: number };
 }
 
 export interface ContributionReadModelItem {
@@ -2125,6 +2128,20 @@ export interface FocusGoalReadModelItem {
   progressPercent: number;
   remainingPercent: number;
   preparationContributionIds: string[];
+}
+
+export interface FocusAchievementReadModelItem {
+  id: string;
+  childId: string;
+  title: string;
+  description: string;
+  icon: string;
+  startDate: string;
+  endDate: string;
+  achievedAt: string;
+  preparationCount: number;
+  earnedLadirchen: number;
+  earnedEnergy: number;
 }
 
 export interface FamilyProfileReadModelResponse {

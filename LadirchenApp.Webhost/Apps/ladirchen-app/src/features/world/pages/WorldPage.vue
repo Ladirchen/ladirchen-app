@@ -50,6 +50,16 @@
     </section>
 
     <div class="page-padding pt-5">
+      <FocusAchievementCollection
+        :achievements="activeChildAchievements"
+        :child-id="store.activeChildId"
+        :current-time-milliseconds="store.currentTimeMilliseconds"
+        :initial-achievement-id="linkedAchievementId"
+        :time-zone="store.familyTimeZone"
+        :total-completed-tasks="store.totalApprovedContributionCountFor(store.activeChildId)"
+        :total-earned="store.totalEarnedFor(store.activeChildId)"
+      />
+
       <BrandedCard
         v-if="store.viewerRole === 'child' && activeChildBehaviorStatus"
         class="behavior-status-card pa-4 mb-6"
@@ -518,8 +528,10 @@
 <script lang="ts" setup>
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import AnimatedHouseEnergy from "@/features/world/components/AnimatedHouseEnergy.vue";
 import FamilyWorldScene from "@/features/world/components/FamilyWorldScene.vue";
+import FocusAchievementCollection from "@/features/world/components/FocusAchievementCollection.vue";
 import HouseEnergyDialog from "@/features/world/components/HouseEnergyDialog.vue";
 import ChildContributionCard from "@/shared/components/contributions/ChildContributionCard.vue";
 import AnimatedCompletionMark from "@/shared/components/AnimatedCompletionMark.vue";
@@ -532,6 +544,7 @@ import { useFamilyWorldStore } from "@/stores/family-world";
 import { ROOM_DESIGNS } from "@/domain/house";
 const store = useFamilyWorldStore();
 const { t } = useI18n();
+const route = useRoute();
 const localize = useLocalizedDomainContent();
 const promoDetailsOpen = ref(false);
 const giftDialogOpen = ref(false);
@@ -600,6 +613,12 @@ const showBehaviorManagement = computed(
   () => store.viewerRole === "guardian" && store.signedInMember?.guardianAccess !== "external",
 );
 const activeChildBehaviorStatus = computed(() => store.behaviorStatuses[store.activeChildId]);
+const activeChildAchievements = computed(() =>
+  store.focusAchievements.filter((achievement) => achievement.childId === store.activeChildId),
+);
+const linkedAchievementId = computed(() =>
+  typeof route.query.achievement === "string" ? route.query.achievement : undefined,
+);
 const nextBehaviorWarning = computed(() => (store.behaviorStatuses[behavior.childId]?.warningCount ?? 0) + 1);
 const behaviorDialogColor = computed(() => {
   if (nextBehaviorWarning.value === 1) {

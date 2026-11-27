@@ -179,6 +179,12 @@ export function createFamilyWorldStoreDefinition(initialDataFactory: FamilyWorld
       currentWeekApprovedContributionCountFor(this: void, state) {
         return (memberId: FamilyMemberId): number => state.currentWeekApprovedContributionCountByMember[memberId] ?? 0;
       },
+      totalApprovedContributionCountFor(this: void, state) {
+        return (memberId: FamilyMemberId): number => state.totalApprovedContributionCountByMember[memberId] ?? 0;
+      },
+      totalEarnedFor(this: void, state) {
+        return (memberId: FamilyMemberId): number => state.totalEarnedByMember[memberId] ?? 0;
+      },
       withdrawableGoalBalance(this: void) {
         return (goal?: SavingGoal): number => {
           if (!goal) {

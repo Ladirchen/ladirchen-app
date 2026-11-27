@@ -84,6 +84,15 @@ internal static class ContributionReadModelProjector
     var currentWeekApprovedContributionCountByMember = currentWeekContributions
       .GroupBy(contribution => contribution.AssigneeId!)
       .ToDictionary(group => group.Key, group => group.Count());
+    var contributionRewardEntries = state.Economy.Ledger
+      .Where(entry => entry.Kind == LedgerKind.Credit && entry.SourceId is ContributionId)
+      .ToArray();
+    var totalEarnedByMember = contributionRewardEntries
+      .GroupBy(entry => entry.MemberId)
+      .ToDictionary(group => group.Key, group => group.Sum(entry => entry.Amount));
+    var totalApprovedContributionCountByMember = contributionRewardEntries
+      .GroupBy(entry => entry.MemberId)
+      .ToDictionary(group => group.Key, group => group.Count());
 
     return new ContributionReadModelProjection(
       state.Economy.ContributionSettings.PerfectRatingBonus.Value,
@@ -91,7 +100,9 @@ internal static class ContributionReadModelProjector
       promotionAvailability,
       todayEarnedByMember,
       currentWeekEarnedByMember,
-      currentWeekApprovedContributionCountByMember
+      currentWeekApprovedContributionCountByMember,
+      totalEarnedByMember,
+      totalApprovedContributionCountByMember
     );
   }
 }

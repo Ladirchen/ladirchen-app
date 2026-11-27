@@ -345,7 +345,8 @@ internal sealed class RewardShopFamilyCommandHandler : TypedFamilyCommandAreaHan
       presentation.Contributions,
       presentation.SavingGoals,
       rewards,
-      presentation.GuardianGifts
+      presentation.GuardianGifts,
+      presentation.FocusAchievements
     );
   }
 
