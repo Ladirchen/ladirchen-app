@@ -142,9 +142,21 @@
                 </v-avatar>
               </template>
               <template #append>
-                <v-chip color="success" prepend-icon="i-mdi:trophy-outline" size="small" variant="tonal">
-                  {{ t("contributions.focus.achieved") }}
-                </v-chip>
+                <div class="d-flex align-center ga-2">
+                  <v-chip color="success" prepend-icon="i-mdi:trophy-outline" size="small" variant="tonal">
+                    {{ t("contributions.focus.achieved") }}
+                  </v-chip>
+                  <v-btn
+                    v-if="store.permissions.canManageContent"
+                    :aria-label="t('contributions.resolveOverdue.focusAria', { title: focus.title })"
+                    color="error"
+                    icon="i-mdi:archive-remove-outline"
+                    rounded="lg"
+                    size="small"
+                    variant="tonal"
+                    @click="requestOverdueResolution(focus)"
+                  />
+                </div>
               </template>
             </v-list-item>
           </v-list>
@@ -231,6 +243,8 @@
               :key="entry.contribution?.id ?? entry.focus?.id"
               class="calendar-task"
               :class="{
+                'calendar-task--completed':
+                  entry.contribution?.status === 'approved' || Boolean(entry.focus?.completed),
                 'calendar-task--focus-goal': entry.focus && !entry.contribution,
                 'calendar-task--focus-preparation': entry.focus && entry.contribution,
               }"
@@ -248,6 +262,12 @@
                 <span class="calendar-task__title">{{ entry.contribution?.title ?? entry.focus?.title }}</span>
                 <small v-if="entry.focusLabel">{{ entry.focusLabel }}</small>
               </span>
+              <v-icon
+                v-if="entry.contribution?.status === 'approved' || entry.focus?.completed"
+                color="success"
+                icon="i-mdi:check-circle"
+                size="17"
+              />
               <v-icon
                 v-if="entry.contribution?.recurrence && entry.contribution.recurrence !== 'none'"
                 icon="i-mdi:repeat"
@@ -838,7 +858,7 @@
         <div class="d-flex justify-end ga-2">
           <v-btn rounded="lg" variant="text" @click="closeFocusDialog">{{ t("common.cancel") }}</v-btn>
           <v-btn color="primary" :disabled="!canSaveFocus" rounded="lg" variant="flat" @click="saveFocus">
-            {{ t(contributionToConvert ? "common.save" : "common.add") }}
+            {{ focusSubmitLabel }}
           </v-btn>
         </div>
       </v-card>
@@ -1234,6 +1254,7 @@ const canSaveFocus = computed(
 const focusDialogTitle = computed(() =>
   t(contributionToConvert.value ? "contributions.focus.convertTitle" : "contributions.focus.formTitle"),
 );
+const focusSubmitLabel = computed(() => t(contributionToConvert.value ? "common.save" : "common.add"));
 const focusDialogDescription = computed(() =>
   t(contributionToConvert.value ? "contributions.focus.convertDescription" : "contributions.focus.formDescription"),
 );
@@ -1401,7 +1422,6 @@ function localIsoDate(date: Date): string {
 const calendarTasks = computed(() =>
   localizedContributions.value.filter(
     (contribution) =>
-      contribution.status !== "approved" &&
       (filter.value === "all" || contribution.category === filter.value) &&
       (personFilter.value === "all" || contribution.assigneeId === personFilter.value),
   ),
@@ -1759,6 +1779,15 @@ function toggleEmptyStateFilter() {
 .calendar-task--focus-preparation {
   border-block: 1px dashed color-mix(in srgb, var(--calendar-task-color) 55%, transparent);
   border-inline-end: 1px dashed color-mix(in srgb, var(--calendar-task-color) 55%, transparent);
+}
+
+.calendar-task--completed {
+  background: var(--lad-gradient-success);
+  opacity: 0.82;
+}
+
+.calendar-task--completed .calendar-task__title {
+  text-decoration: line-through;
 }
 
 .calendar-task__copy {

@@ -2121,6 +2121,7 @@ export interface FocusGoalReadModelItem {
   assigneeId: string;
   completionBonus: number;
   bonusPaid: boolean;
+  completed: boolean;
   progressPercent: number;
   remainingPercent: number;
   preparationContributionIds: string[];
