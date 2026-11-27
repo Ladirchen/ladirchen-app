@@ -18,7 +18,7 @@ import type {
 } from "@/domain/savings/types";
 import type { ContributionId, FamilyMemberId } from "@/domain/shared/identifiers";
 import type { TranslationKey } from "@/locales/translation-keys";
-import type { FocusGoal } from "@/domain/contributions/types";
+import type { FocusAchievement, FocusGoal } from "@/domain/contributions/types";
 import type { FamilyWorldInitialData } from "@/application/ports/family-world-initial-data";
 import type { MemberProgression } from "@/application/contracts/family-progression-contract";
 import type { HouseCatalogState } from "@/application/contracts/home-customization-contract";
@@ -95,6 +95,8 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
   const todayEarnedByMember: Partial<Record<FamilyMemberId, number>> = {};
   const currentWeekEarnedByMember: Partial<Record<FamilyMemberId, number>> = {};
   const currentWeekApprovedContributionCountByMember: Partial<Record<FamilyMemberId, number>> = {};
+  const totalApprovedContributionCountByMember: Partial<Record<FamilyMemberId, number>> = {};
+  const totalEarnedByMember: Partial<Record<FamilyMemberId, number>> = {};
   const avatarCatalog = initialStateValue<Readonly<Record<ViewerRole, AvatarProfileCatalog>> | undefined>(undefined);
   const houseAtmosphere = initialStateValue<HouseAtmosphere>("cloudy");
   const houseVisualLevel = initialStateValue<HouseEnergyVisualLevel>(1);
@@ -131,6 +133,8 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     todayEarnedByMember,
     currentWeekEarnedByMember,
     currentWeekApprovedContributionCountByMember,
+    totalApprovedContributionCountByMember,
+    totalEarnedByMember,
     familyCurrencyCode,
     familyTimeZone: DEFAULT_FAMILY_TIME_ZONE,
     ladirchenPerCurrencyUnit: 1,
@@ -176,6 +180,7 @@ export function createFamilyWorldState(initialData: FamilyWorldInitialData) {
     pets: normalizeFamilyPets(initialData.pets),
     contributions: initialData.contributions,
     focusGoals: [] as FocusGoal[],
+    focusAchievements: [] as FocusAchievement[],
     goals: initialData.goals,
     accessories: initialData.accessories,
     promotions: initialData.promotions,

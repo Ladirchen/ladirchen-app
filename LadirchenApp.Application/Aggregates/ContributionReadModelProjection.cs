@@ -10,5 +10,7 @@ public sealed record ContributionReadModelProjection(
   IReadOnlyDictionary<PromotionId, bool> PromotionAvailability,
   IReadOnlyDictionary<FamilyMemberId, decimal> TodayEarnedByMember,
   IReadOnlyDictionary<FamilyMemberId, decimal> CurrentWeekEarnedByMember,
-  IReadOnlyDictionary<FamilyMemberId, int> CurrentWeekApprovedContributionCountByMember
+  IReadOnlyDictionary<FamilyMemberId, int> CurrentWeekApprovedContributionCountByMember,
+  IReadOnlyDictionary<FamilyMemberId, decimal> TotalEarnedByMember,
+  IReadOnlyDictionary<FamilyMemberId, int> TotalApprovedContributionCountByMember
 );

@@ -54,6 +54,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     IReadOnlyList<ContributionPresentationState> addedContributions = [];
     ContributionPresentationState? updatedContribution = null;
     ContributionPresentationState? updatedFocus = null;
+    FocusAchievementPresentationState? addedFocusAchievement = null;
     ContributionId? celebratedContributionId = null;
     var notifications = new List<FamilyUserNotification>();
 
@@ -101,7 +102,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           now
         );
         notifications.Add(RewardNotification(approvedContribution, reward.Total));
-        updatedFocus = SettleFocusCompletion(
+        var focusSettlement = SettleFocusCompletion(
           economy,
           loadedEconomy.Presentation,
           command,
@@ -111,6 +112,8 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
           now,
           notifications
         );
+        updatedFocus = focusSettlement.UpdatedFocus;
+        addedFocusAchievement = focusSettlement.Achievement;
         addedContribution = CreateNextRecurringContribution(
           economy,
           loadedEconomy.Presentation,
@@ -197,7 +200,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
         break;
       case "contributions.resolve-overdue":
         family.Root.RequireAdministrator(command.ActorId);
-        ResolveOverdueContribution(
+        addedFocusAchievement = ResolveOverdueContribution(
           economy,
           loadedEconomy.Presentation,
           command.ActorId,
@@ -244,6 +247,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       addedContributions,
       updatedContribution,
       updatedFocus,
+      addedFocusAchievement,
       celebratedContributionId
     );
     var period = IsoWeekPeriod.For(family.Root.TimeZone.LocalDate(now));
@@ -371,7 +375,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     );
   }
 
-  private static void ResolveOverdueContribution(
+  private static FocusAchievementPresentationState? ResolveOverdueContribution(
     FamilyEconomy economy,
     FamilyEconomyPresentationState presentation,
     FamilyMemberId actorId,
@@ -407,8 +411,20 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       "Only overdue work or a completed focus goal can be resolved."
     );
 
+    FocusAchievementPresentationState? achievement = null;
+
     if (contributionPresentation.IsFocus)
     {
+      if (focusIsComplete && presentation.FocusAchievements.All(item => item.FocusId != contributionId))
+      {
+        achievement = CreateFocusAchievement(
+          contribution,
+          contributionPresentation,
+          economy.Contributions.Where(item => preparationIds.Contains(item.Id)),
+          now
+        );
+      }
+
       var openPreparationIds = preparationIds
         .Where(id => economy.Contributions.Single(item => item.Id == id).Status != ContributionStatus.Approved)
         .ToArray();
@@ -420,6 +436,8 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     }
 
     economy.DeleteContribution(actorId, contributionId, now);
+
+    return achievement;
   }
 
   private static ContributionPresentationState AddFocus(
@@ -843,7 +861,10 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     return id;
   }
 
-  private static ContributionPresentationState? SettleFocusCompletion(
+  private static (
+    ContributionPresentationState? UpdatedFocus,
+    FocusAchievementPresentationState? Achievement
+  ) SettleFocusCompletion(
     FamilyEconomy economy,
     FamilyEconomyPresentationState presentation,
     FamilyCommand command,
@@ -860,7 +881,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
 
     if (approvedPresentation.FocusId is null)
     {
-      return null;
+      return (null, null);
     }
 
     var focusId = new ContributionId(approvedPresentation.FocusId);
@@ -870,7 +891,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
 
     if (focusPresentation.FocusCompleted)
     {
-      return null;
+      return (null, null);
     }
 
     var preparationIds = presentation.Contributions
@@ -883,7 +904,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
 
     if (!allCompleted)
     {
-      return null;
+      return (null, null);
     }
 
     var focus = economy.Contributions.Single(item => item.Id == focusId);
@@ -905,26 +926,67 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     }
 
     var bodyDe = bonusPaid
-      ? $"Du hast den Fokus „{focus.Title}“ abgeschlossen und {focusPresentation.FocusCompletionBonus:0.##} Ladirchen Bonus erhalten."
-      : $"Du hast den Fokus „{focus.Title}“ erreicht. Stark gemacht!";
+      ? $"Du hast für „{focus.Title}“ einen Pokal gewonnen und {focusPresentation.FocusCompletionBonus:0.##} Ladirchen Bonus erhalten."
+      : $"Du hast für „{focus.Title}“ einen Pokal gewonnen. Stark gemacht!";
     var bodyEn = bonusPaid
-      ? $"You completed “{focus.Title}” and received a {focusPresentation.FocusCompletionBonus:0.##} Ladirchen bonus."
-      : $"You reached the focus goal “{focus.Title}”. Great work!";
+      ? $"You earned a trophy for “{focus.Title}” and received a {focusPresentation.FocusCompletionBonus:0.##} Ladirchen bonus."
+      : $"You earned a trophy for “{focus.Title}”. Great work!";
     notifications.Add(new FamilyUserNotification(
       childId,
-      "Fokusziel erreicht",
+      "Pokal gewonnen",
       bodyDe,
-      "Focus goal reached",
+      "Trophy earned",
       bodyEn,
-      "/#/contributions",
+      $"/app?achievement={focusId.Value}",
       $"focus-completed-{focusId.Value}"
     ));
 
-    return focusPresentation with
-    {
-      FocusBonusPaid = bonusPaid,
-      FocusCompleted = true
-    };
+    return (
+      focusPresentation with
+      {
+        FocusBonusPaid = bonusPaid,
+        FocusCompleted = true
+      },
+      CreateFocusAchievement(focus, focusPresentation, economy.Contributions
+        .Where(item => preparationIds.Contains(item.Id)), now)
+    );
+  }
+
+  private static FocusAchievementPresentationState CreateFocusAchievement(
+    Contribution focus,
+    ContributionPresentationState presentation,
+    IEnumerable<Contribution> preparations,
+    DateTimeOffset achievedAt
+  )
+  {
+    var completedPreparations = preparations
+      .Where(item => item.Status == ContributionStatus.Approved)
+      .ToArray();
+    var childId = focus.AssigneeId
+      ?? throw new FamilyCommandException("The focus does not have a child.");
+    var startDate = presentation.FocusStartDate
+      ?? throw new FamilyCommandException("The focus does not have a start date.");
+    var endDate = presentation.FocusEndDate
+      ?? throw new FamilyCommandException("The focus does not have an end date.");
+    var effectiveAchievedAt = completedPreparations
+      .Select(item => item.ApprovedAt)
+      .OfType<DateTimeOffset>()
+      .DefaultIfEmpty(achievedAt)
+      .Max();
+
+    return new FocusAchievementPresentationState(
+      focus.Id,
+      childId,
+      focus.Title,
+      presentation.Description,
+      presentation.Icon,
+      startDate,
+      endDate,
+      effectiveAchievedAt,
+      completedPreparations.Length,
+      completedPreparations.Sum(item => item.EarnedReward?.Total ?? item.Reward.Value),
+      completedPreparations.Sum(item => item.Energy.Value)
+    );
   }
 
   private static void RequireNotFocus(
@@ -945,6 +1007,7 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
     IReadOnlyList<ContributionPresentationState> addedContributions,
     ContributionPresentationState? updatedContribution,
     ContributionPresentationState? updatedFocus,
+    FocusAchievementPresentationState? addedFocusAchievement,
     ContributionId? celebratedContributionId
   )
   {
@@ -995,12 +1058,20 @@ internal sealed class ContributionsFamilyCommandHandler : TypedFamilyCommandArea
       liveIds.All(id => contributions.Any(item => item.ContributionId == id)),
       "Presentation data for a contribution is missing."
     );
+    var focusAchievements = presentation.FocusAchievements.ToList();
+
+    if (addedFocusAchievement is not null
+      && focusAchievements.All(item => item.FocusId != addedFocusAchievement.FocusId))
+    {
+      focusAchievements.Add(addedFocusAchievement);
+    }
 
     return new FamilyEconomyPresentationState(
       contributions,
       presentation.SavingGoals,
       presentation.ShopRewards,
-      presentation.GuardianGifts
+      presentation.GuardianGifts,
+      focusAchievements
     );
   }
 

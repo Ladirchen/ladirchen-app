@@ -1105,6 +1105,12 @@ namespace LadirchenApp.Webhost.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("FocusAchievementsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
                     b.Property<decimal>("PerfectRatingBonusPercent")
                         .HasColumnType("numeric");
 

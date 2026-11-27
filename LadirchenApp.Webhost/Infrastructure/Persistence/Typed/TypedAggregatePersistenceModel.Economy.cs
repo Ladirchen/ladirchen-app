@@ -30,6 +30,9 @@ internal static partial class TypedAggregatePersistenceModel
     economy.Property(item => item.ShopTaskGateOverrideMemberIdsJson)
       .HasColumnType("jsonb")
       .HasDefaultValueSql("'[]'::jsonb");
+    economy.Property(item => item.FocusAchievementsJson)
+      .HasColumnType("jsonb")
+      .HasDefaultValueSql("'[]'::jsonb");
     ConfigureEconomyRootCollections(economy);
     ConfigureEconomyWalletsAndHistory(modelBuilder);
     ConfigureContributions(modelBuilder);

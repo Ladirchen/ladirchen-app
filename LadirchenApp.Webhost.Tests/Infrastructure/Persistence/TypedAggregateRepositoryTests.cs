@@ -177,7 +177,22 @@ public sealed class TypedAggregateRepositoryTests
         [new ContributionPresentationState(contributionId, "Description", "icon", false, "Hausaufgabe")],
         [],
         [new ShopRewardPresentationState(rewardId, "Details", "reward-icon", "Conditions")],
-        []
+        [],
+        [
+          new FocusAchievementPresentationState(
+            contributionId,
+            childId,
+            "Reading goal",
+            "Read every day",
+            "📖",
+            new DateOnly(2026, 10, 26),
+            new DateOnly(2026, 11, 1),
+            now,
+            4,
+            12,
+            40
+          ),
+        ]
       );
       await economyRepository.SaveAsync(
         economy,
@@ -247,6 +262,12 @@ public sealed class TypedAggregateRepositoryTests
         .IsEqualTo("Hausaufgabe");
       await Assert.That(loadedEconomy.Presentation.ShopRewards.Single().Conditions)
         .IsEqualTo("Conditions");
+      var achievement = loadedEconomy.Presentation.FocusAchievements.Single();
+      await Assert.That(achievement.Title).IsEqualTo("Reading goal");
+      await Assert.That(achievement.ChildId).IsEqualTo(childId);
+      await Assert.That(achievement.PreparationCount).IsEqualTo(4);
+      await Assert.That(achievement.EarnedLadirchen).IsEqualTo(12);
+      await Assert.That(achievement.EarnedEnergy).IsEqualTo(40);
     }
   }
 

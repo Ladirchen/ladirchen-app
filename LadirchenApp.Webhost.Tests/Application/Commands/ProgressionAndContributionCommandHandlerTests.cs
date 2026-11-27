@@ -382,12 +382,19 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     await Assert.That(focusPresentation.IsFocus).IsTrue();
     await Assert.That(focusPresentation.FocusBonusPaid).IsTrue();
     await Assert.That(focusPresentation.FocusCompleted).IsTrue();
+    var achievement = store.EconomyPresentation.FocusAchievements
+      .Single(item => item.FocusId.Value == "english-test");
+    await Assert.That(achievement.ChildId).IsEqualTo(_childId);
+    await Assert.That(achievement.PreparationCount).IsEqualTo(2);
+    await Assert.That(achievement.EarnedLadirchen).IsEqualTo(5);
+    await Assert.That(achievement.EarnedEnergy).IsEqualTo(0);
     await Assert.That(economy.Ledger.Count(item => item.Reason.Contains("5-Sterne-Abschlussbonus")))
       .IsEqualTo(1);
     var completionNotification = result.UserNotifications
       .Single(item => item.Tag == "focus-completed-english-test");
     await Assert.That(completionNotification.RecipientId).IsEqualTo(_childId);
-    await Assert.That(completionNotification.TitleDe).IsEqualTo("Fokusziel erreicht");
+    await Assert.That(completionNotification.TitleDe).IsEqualTo("Pokal gewonnen");
+    await Assert.That(completionNotification.Url).IsEqualTo("/app?achievement=english-test");
   }
 
   [Test]
@@ -436,7 +443,7 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     var completionNotification = result.UserNotifications
       .Single(item => item.Tag == "focus-completed-reading-goal");
     await Assert.That(completionNotification.RecipientId).IsEqualTo(_childId);
-    await Assert.That(completionNotification.BodyDe).Contains("Stark gemacht");
+    await Assert.That(completionNotification.BodyDe).Contains("Pokal gewonnen");
   }
 
   [Test]
@@ -488,6 +495,8 @@ public sealed class ProgressionAndContributionCommandHandlerTests
     await Assert.That(economy.Contributions.Single().Status).IsEqualTo(ContributionStatus.Approved);
     await Assert.That(economy.Ledger.Count).IsEqualTo(ledgerCountBeforeResolution);
     await Assert.That(economy.WalletFor(_childId).Balance).IsEqualTo(balanceBeforeResolution);
+    await Assert.That(store.EconomyPresentation.FocusAchievements.Select(item => item.FocusId.Value))
+      .IsEquivalentTo(["completed-focus"]);
   }
 
   [Test]

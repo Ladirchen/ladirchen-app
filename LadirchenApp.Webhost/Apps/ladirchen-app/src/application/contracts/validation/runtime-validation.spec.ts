@@ -203,6 +203,7 @@ describe("family aggregate runtime validation", () => {
     expect(
       isContributionsState({
         contributions: [],
+        focusAchievements: [],
         currentWeekApprovedContributionCountByMember: {},
         currentWeekEarnedByMember: {},
         perfectRatingBonusPercent: 15,
@@ -218,6 +219,8 @@ describe("family aggregate runtime validation", () => {
           },
         ],
         todayEarnedByMember: {},
+        totalApprovedContributionCountByMember: {},
+        totalEarnedByMember: {},
       }),
     ).toBe(false);
   });
@@ -239,10 +242,13 @@ describe("family aggregate runtime validation", () => {
     };
 
     const currentWeekReadModel = {
+      focusAchievements: [],
       currentWeekApprovedContributionCountByMember: { "child-2": 2 },
       currentWeekEarnedByMember: { "child-2": 25 },
       perfectRatingBonusPercent: 15,
       todayEarnedByMember: { "child-2": 25 },
+      totalApprovedContributionCountByMember: { "child-2": 7 },
+      totalEarnedByMember: { "child-2": 75 },
     };
 
     expect(isContributionsState({ contributions: [contribution], ...currentWeekReadModel, promotions: [] })).toBe(true);
@@ -266,11 +272,14 @@ describe("family aggregate runtime validation", () => {
   it("requires contribution calculations projected by the backend", () => {
     const contributions = {
       contributions: [],
+      focusAchievements: [],
       currentWeekApprovedContributionCountByMember: {},
       currentWeekEarnedByMember: {},
       perfectRatingBonusPercent: 15,
       promotions: [],
       todayEarnedByMember: {},
+      totalApprovedContributionCountByMember: {},
+      totalEarnedByMember: {},
     };
 
     expect(isContributionsState(contributions)).toBe(true);

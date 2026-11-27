@@ -83,6 +83,7 @@ export const lifecycleActions = {
       this.familyTimeZone = familyProfile.state.timeZone;
       this.avatarCatalog = familyProfile.state.avatarCatalog;
       this.contributions = [...contributions.state.contributions];
+      this.focusAchievements = [...contributions.state.focusAchievements];
       this.focusGoals = [...(contributions.state.focusGoals ?? [])];
       this.perfectRatingBonusPercent = contributions.state.perfectRatingBonusPercent;
       this.promotions = [...contributions.state.promotions];
@@ -91,6 +92,10 @@ export const lifecycleActions = {
       this.currentWeekApprovedContributionCountByMember = {
         ...contributions.state.currentWeekApprovedContributionCountByMember,
       };
+      this.totalApprovedContributionCountByMember = {
+        ...contributions.state.totalApprovedContributionCountByMember,
+      };
+      this.totalEarnedByMember = { ...contributions.state.totalEarnedByMember };
       this.balances = { ...savings.state.balances };
       this.availableBalances = { ...savings.state.availableBalances };
       this.behaviorStatuses = { ...savings.state.behaviorStatuses };
@@ -270,6 +275,7 @@ async function refreshFamilyReadModelSnapshot(
 
       if (snapshot) {
         context.contributions = [...snapshot.state.contributions];
+        context.focusAchievements = [...snapshot.state.focusAchievements];
         context.focusGoals = [...(snapshot.state.focusGoals ?? [])];
         context.perfectRatingBonusPercent = snapshot.state.perfectRatingBonusPercent;
         context.promotions = [...snapshot.state.promotions];
@@ -278,6 +284,10 @@ async function refreshFamilyReadModelSnapshot(
         context.currentWeekApprovedContributionCountByMember = {
           ...snapshot.state.currentWeekApprovedContributionCountByMember,
         };
+        context.totalApprovedContributionCountByMember = {
+          ...snapshot.state.totalApprovedContributionCountByMember,
+        };
+        context.totalEarnedByMember = { ...snapshot.state.totalEarnedByMember };
         context.readModelRevisions[readModelType] = snapshot.revision;
         context.revealNextContributionReward();
       }
